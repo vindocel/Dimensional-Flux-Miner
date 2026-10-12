@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "facing=north,formed=false": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 0
+    },
+    "facing=north,formed=true": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 0
+    },
+    "facing=east,formed=false": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 90
+    },
+    "facing=east,formed=true": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 90
+    },
+    "facing=south,formed=false": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 180
+    },
+    "facing=south,formed=true": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 180
+    },
+    "facing=west,formed=false": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 270
+    },
+    "facing=west,formed=true": {
+      "model": "dimensionalfluxminer:block/parts/miner_terminal",
+      "y": 270
+    }
+  }
+}

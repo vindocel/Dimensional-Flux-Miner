@@ -1,0 +1,94 @@
+name: Publish Mod
+
+# Publishes to CurseForge and Modrinth only when a GitHub Release is published, never on push. The release tag
+# must match mod_version in gradle.properties (v1.0.0 or mc1.21.1-v1.0.0 for mod_version=1.0.0).
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    environment: management
+
+    steps:
+      - name: Checkout the release commit
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Open-source (MIT) cache provider; the default one is a separately licensed component.
+          cache-provider: basic
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Clean build
+        run: ./gradlew clean build --console=plain
+
+      - name: GameTests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew runGameTestServer --console=plain | tee gametest.log
+          grep -q "required tests passed" gametest.log
+
+      - name: Check version and artifact
+        shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          MOD_VERSION="$(grep -E '^mod_version=' gradle.properties | head -n1 | cut -d= -f2- | tr -d '\r')"
+          if [ -z "$MOD_VERSION" ]; then
+            echo "mod_version not found in gradle.properties"
+            exit 1
+          fi
+
+          NORMALIZED_TAG="${TAG#v}"
+          NORMALIZED_TAG="${NORMALIZED_TAG##*-v}"
+          if [ "$NORMALIZED_TAG" != "$MOD_VERSION" ]; then
+            echo "Tag ($TAG) does not match mod_version ($MOD_VERSION)"
+            exit 1
+          fi
+
+          mapfile -t JARS < <(
+            find build/libs -maxdepth 1 -type f -name '*.jar' \
+              ! -name '*-sources.jar' ! -name '*-javadoc.jar' ! -name '*-dev.jar'
+          )
+          if [ "${#JARS[@]}" -ne 1 ]; then
+            echo "Expected exactly 1 distribution JAR; found ${#JARS[@]}"
+            printf '%s\n' "${JARS[@]}"
+            exit 1
+          fi
+          echo "Distribution JAR: ${JARS[0]}"
+
+      - name: Publish to CurseForge and Modrinth
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          curseforge-id: ${{ vars.ID_DO_CURSEFORGE }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          modrinth-id: ${{ vars.ID_DO_MODRINTH }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: build/libs/!(*-@(dev|sources|javadoc)).jar
+          name: ${{ github.event.release.name }}
+          version: ${{ github.event.release.tag_name }}
+          version-type: release
+          changelog: ${{ github.event.release.body }}
+          loaders: neoforge
+          game-versions: 1.21.1
+          game-version-filter: none
+          java: 21
+          fail-mode: fail

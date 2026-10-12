@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "dimensionalfluxminer:block/corruption/corrupted_sediment"
+  }
+}

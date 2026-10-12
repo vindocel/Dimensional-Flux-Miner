@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:dirt",
+    "#minecraft:sand",
+    "#minecraft:base_stone_overworld",
+    "#minecraft:base_stone_nether",
+    "#minecraft:terracotta",
+    "#dimensionalfluxminer:corrupted_terrain",
+    "#dimensionalfluxminer:corruptible_stone",
+    "#dimensionalfluxminer:corruptible_sediment",
+    "minecraft:sandstone",
+    "minecraft:red_sandstone",
+    "minecraft:clay",
+    "minecraft:snow_block",
+    "minecraft:ice",
+    "minecraft:packed_ice",
+    "minecraft:blue_ice",
+    "minecraft:calcite",
+    "minecraft:dripstone_block",
+    "minecraft:bedrock"
+  ]
+}

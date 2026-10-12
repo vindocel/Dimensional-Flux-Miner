@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "dimensionalfluxminer:block/corrupted_water"
+    }
+  }
+}

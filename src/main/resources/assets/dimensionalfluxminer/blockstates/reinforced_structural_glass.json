@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "formed=false": {
+      "model": "dimensionalfluxminer:block/parts/reinforced_structural_glass"
+    },
+    "formed=true": {
+      "model": "dimensionalfluxminer:block/parts/reinforced_structural_glass"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "dimensionalfluxminer:corrupted_water",
+    "dimensionalfluxminer:flowing_corrupted_water"
+  ]
+}

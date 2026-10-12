@@ -1,0 +1,47 @@
+name: CI
+
+# Compiles and tests every push and pull request. No publishing tokens: this workflow never uses the
+# "management" environment, so pull requests from forks never see the release credentials.
+on:
+  push:
+    branches:
+      - main
+      - '1.21.x'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and GameTests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Open-source (MIT) cache provider; the default one is a separately licensed component.
+          cache-provider: basic
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build
+        run: ./gradlew build --console=plain
+
+      - name: GameTests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew runGameTestServer --console=plain | tee gametest.log
+          # The run must end with every required test passing.
+          grep -q "required tests passed" gametest.log

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "formed=false": {
+      "model": "dimensionalfluxminer:block/parts/quantum_core"
+    },
+    "formed=true": {
+      "model": "dimensionalfluxminer:block/parts/quantum_core"
+    }
+  }
+}

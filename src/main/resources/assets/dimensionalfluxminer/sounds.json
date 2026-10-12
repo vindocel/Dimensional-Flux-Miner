@@ -1,0 +1,38 @@
+{
+  "machine.alloy_smelter.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.alloy_smelter.running",
+    "sounds": [
+      {
+        "name": "dimensionalfluxminer:machine/alloy_smelter_running",
+        "volume": 0.85
+      }
+    ]
+  },
+  "machine.dimensional_flux_miner.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.dimensional_flux_miner.running",
+    "sounds": [
+      {
+        "name": "dimensionalfluxminer:machine/dimensional_flux_miner_running",
+        "volume": 0.8
+      }
+    ]
+  },
+  "machine.dimensional_flux_miner.power_on": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.dimensional_flux_miner.power_on",
+    "sounds": [
+      {
+        "name": "dimensionalfluxminer:machine/dimensional_flux_miner_power_on",
+        "volume": 0.9
+      }
+    ]
+  },
+  "machine.dimensional_crusher.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.dimensional_crusher.running",
+    "sounds": [
+      {
+        "name": "dimensionalfluxminer:machine/dimensional_crusher_running",
+        "volume": 0.7
+      }
+    ]
+  }
+}

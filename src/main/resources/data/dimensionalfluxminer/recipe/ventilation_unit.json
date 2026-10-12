@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ISI",
+    "ICI",
+    "ISI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_bars"
+    },
+    "S": {
+      "tag": "c:ingots/steel"
+    },
+    "C": {
+      "item": "dimensionalfluxminer:steel_chassis"
+    }
+  },
+  "result": {
+    "id": "dimensionalfluxminer:ventilation_unit",
+    "count": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "dimensionalfluxminer:corrupted_dirt",
+    "dimensionalfluxminer:corrupted_grass",
+    "dimensionalfluxminer:corrupted_sediment"
+  ]
+}

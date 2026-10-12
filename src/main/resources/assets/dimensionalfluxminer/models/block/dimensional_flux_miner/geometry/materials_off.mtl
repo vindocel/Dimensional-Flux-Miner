@@ -1,0 +1,265 @@
+# Energy-off palette: every material uses normal lighting.
+newmtl containment_cap_glow
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #containment_cap_glow
+
+newmtl containment_side_glow
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #containment_side_glow
+
+newmtl core_side
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #core_side
+
+newmtl core_side_glow
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #core_side_glow
+
+newmtl matter_port_outer
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #matter_port_outer
+
+newmtl output_port_outer
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #output_port_outer
+
+newmtl rotor_plate_glow
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #rotor_plate_glow
+
+newmtl t_chassis_column_strip_28
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_column_strip_28
+
+newmtl t_chassis_column_strip_30
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_column_strip_30
+
+newmtl t_chassis_column_strip_30_alt
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_column_strip_30_alt
+
+newmtl t_chassis_front_rear_atlas
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_front_rear_atlas
+
+newmtl t_chassis_panel_wide
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_panel_wide
+
+newmtl t_chassis_plate_wide
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_plate_wide
+
+newmtl t_chassis_side
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_side
+
+newmtl t_chassis_sides_atlas
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_sides_atlas
+
+newmtl t_chassis_support_trim
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_support_trim
+
+newmtl t_chassis_triple
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_chassis_triple
+
+newmtl t_energy_input
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_energy_input
+
+newmtl t_safety_stripe_long
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_safety_stripe_long
+
+newmtl t_safety_stripe_short
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_safety_stripe_short
+
+newmtl t_structural_glass_containment
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_structural_glass_containment
+
+newmtl t_structural_glass_double
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_structural_glass_double
+
+newmtl t_top_vent
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_top_vent
+
+newmtl t_top_vent_long
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_top_vent_long
+
+newmtl t_underside
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_underside
+
+newmtl t_underside_connected
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_underside_connected
+
+newmtl t_underside_double
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_underside_double
+
+newmtl t_underside_triple
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_underside_triple
+
+newmtl t_vent_grille_narrow
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_vent_grille_narrow
+
+newmtl t_vent_grille_wide
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_vent_grille_wide
+
+newmtl t_vent_panel
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #t_vent_panel
+
+newmtl terminal_face
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #terminal_face
+
+newmtl terminal_face_glow
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 2
+map_Kd #terminal_face_glow
+

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ERE",
+    "RCR",
+    "ERE"
+  ],
+  "key": {
+    "E": {
+      "item": "dimensionalfluxminer:ender_eye_reinforced"
+    },
+    "R": {
+      "item": "dimensionalfluxminer:reinforced_structural_glass"
+    },
+    "C": {
+      "item": "minecraft:conduit"
+    }
+  },
+  "result": {
+    "id": "dimensionalfluxminer:quantum_core",
+    "count": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SRS",
+    "RER",
+    "SRS"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:ingots/steel"
+    },
+    "R": {
+      "item": "dimensionalfluxminer:reinforced_structural_glass"
+    },
+    "E": {
+      "item": "dimensionalfluxminer:ender_eye_reinforced"
+    }
+  },
+  "result": {
+    "id": "dimensionalfluxminer:steel_chassis",
+    "count": 1
+  }
+}

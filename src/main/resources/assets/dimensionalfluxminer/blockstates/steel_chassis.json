@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "formed=false": {
+      "model": "dimensionalfluxminer:block/parts/steel_chassis"
+    },
+    "formed=true": {
+      "model": "dimensionalfluxminer:block/parts/steel_chassis"
+    }
+  }
+}

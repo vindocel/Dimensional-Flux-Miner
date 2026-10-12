@@ -1,0 +1,17 @@
+{
+  "type": "dimensionalfluxminer:alloying",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "dimensionalfluxminer:slag_aggregate"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "dimensionalfluxminer:ingot_steel",
+    "count": 1
+  },
+  "processing_ticks": 100,
+  "experience": 0.0
+}

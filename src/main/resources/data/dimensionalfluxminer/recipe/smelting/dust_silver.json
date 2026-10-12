@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/silver"
+      }
+    }
+  ],
+  "type": "dimensionalfluxminer:tag_smelting",
+  "ingredient": {
+    "item": "dimensionalfluxminer:dust_silver"
+  },
+  "result_tag": "c:ingots/silver",
+  "experience": 0.7,
+  "cookingtime": 200
+}

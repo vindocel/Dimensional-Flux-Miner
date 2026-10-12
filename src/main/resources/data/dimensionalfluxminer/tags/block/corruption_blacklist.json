@@ -1,0 +1,23 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:bedrock",
+    "minecraft:reinforced_deepslate",
+    "minecraft:barrier",
+    "minecraft:end_portal_frame",
+    "minecraft:end_portal",
+    "minecraft:end_gateway",
+    "minecraft:nether_portal",
+    "minecraft:spawner",
+    "minecraft:trial_spawner",
+    "minecraft:vault",
+    "dimensionalfluxminer:steel_chassis",
+    "dimensionalfluxminer:ventilation_unit",
+    "dimensionalfluxminer:reinforced_structural_glass",
+    "dimensionalfluxminer:dimensional_port",
+    "dimensionalfluxminer:quantum_core",
+    "dimensionalfluxminer:miner_terminal",
+    "dimensionalfluxminer:dimensional_crusher",
+    "dimensionalfluxminer:alloy_smelter"
+  ]
+}

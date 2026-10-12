@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "dimensionalfluxminer:block/corruption/corrupted_grass_plant"
+    }
+  }
+}

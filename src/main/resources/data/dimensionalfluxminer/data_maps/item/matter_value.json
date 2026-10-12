@@ -1,0 +1,100 @@
+{
+  "values": {
+    "minecraft:stone": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:cobblestone": {
+      "dm": 0.3,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:deepslate": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:cobbled_deepslate": {
+      "dm": 0.3,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:granite": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:diorite": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:andesite": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:dirt": {
+      "dm": 0.1,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:netherrack": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:basalt": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:blackstone": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:end_stone": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_end"
+      ]
+    },
+    "#c:ores/copper": {
+      "dm": 0.5
+    },
+    "#c:ores/iron": {
+      "dm": 0.5
+    },
+    "#c:ores/diamond": {
+      "dm": 1.0
+    },
+    "#c:ores/emerald": {
+      "dm": 2.0
+    },
+    "#c:ores/uranium": {
+      "dm": 1.0
+    },
+    "#c:ores/platinum": {
+      "dm": 2.0
+    },
+    "#c:ores/quartz": {
+      "dm": 0.5
+    },
+    "minecraft:ancient_debris": {
+      "dm": 2.0
+    }
+  }
+}

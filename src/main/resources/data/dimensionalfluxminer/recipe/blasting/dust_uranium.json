@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/uranium"
+      }
+    }
+  ],
+  "type": "dimensionalfluxminer:tag_blasting",
+  "ingredient": {
+    "item": "dimensionalfluxminer:dust_uranium"
+  },
+  "result_tag": "c:ingots/uranium",
+  "experience": 0.7,
+  "cookingtime": 100
+}

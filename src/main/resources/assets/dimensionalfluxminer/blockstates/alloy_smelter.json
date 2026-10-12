@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "machine_state=off,facing=north": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/off"
+    },
+    "machine_state=off,facing=east": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/off",
+      "y": 90
+    },
+    "machine_state=off,facing=south": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/off",
+      "y": 180
+    },
+    "machine_state=off,facing=west": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/off",
+      "y": 270
+    },
+    "machine_state=idle,facing=north": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/idle"
+    },
+    "machine_state=idle,facing=east": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/idle",
+      "y": 90
+    },
+    "machine_state=idle,facing=south": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/idle",
+      "y": 180
+    },
+    "machine_state=idle,facing=west": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/idle",
+      "y": 270
+    },
+    "machine_state=active,facing=north": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/active"
+    },
+    "machine_state=active,facing=east": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/active",
+      "y": 90
+    },
+    "machine_state=active,facing=south": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/active",
+      "y": 180
+    },
+    "machine_state=active,facing=west": {
+      "model": "dimensionalfluxminer:block/alloy_smelter/active",
+      "y": 270
+    }
+  }
+}

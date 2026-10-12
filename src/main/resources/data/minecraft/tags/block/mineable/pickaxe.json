@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "dimensionalfluxminer:steel_chassis",
+    "dimensionalfluxminer:ventilation_unit",
+    "dimensionalfluxminer:reinforced_structural_glass",
+    "dimensionalfluxminer:dimensional_port",
+    "dimensionalfluxminer:quantum_core",
+    "dimensionalfluxminer:miner_terminal",
+    "dimensionalfluxminer:dimensional_crusher",
+    "dimensionalfluxminer:alloy_smelter",
+    "dimensionalfluxminer:slag_aggregate",
+    "dimensionalfluxminer:corrupted_stone"
+  ]
+}

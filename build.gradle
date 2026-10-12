@@ -8,11 +8,15 @@ tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+// gradle.properties holds the base version of the open update (mod_version=0.3.0); a release build passes the
+// full version from its tag (-Prelease_version=0.3.0-beta.1), so alphas and betas need no version commit.
+var releaseVersion = providers.gradleProperty('release_version').orElse(mod_version).get()
+version = releaseVersion
 group = mod_group_id
 
 base {
-    archivesName = mod_id
+    // The Minecraft version is part of the file name, so builds of different lines never look alike.
+    archivesName = "${mod_id}-${minecraft_version}"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -109,7 +113,7 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
-            mod_version            : mod_version,
+            mod_version            : releaseVersion,
     ]
     inputs.properties replaceProperties
     expand replaceProperties

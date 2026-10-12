@@ -130,7 +130,8 @@ standing on corrupted terrain. A centralized spawn manager adds bounded hostile 
 ./gradlew build
 ```
 
-On Windows, use `gradlew.bat build`. The jar is written to `build/libs/dimensionalfluxminer-<version>.jar`.
+On Windows, use `gradlew.bat build`. The jar is written to
+`build/libs/dimensionalfluxminer-<minecraft>-<version>.jar`.
 The Gradle wrapper provisions Gradle itself. A JDK 21 is required; the foojay toolchain resolver can also
 download one.
 
@@ -143,14 +144,16 @@ download one.
 
 ## Continuous integration and releases
 
-- **CI** (`.github/workflows/ci.yml`): every push to `main` or `1.21.x` and every pull request runs
-  `./gradlew build` and the GameTests on Java 21. It uses no publishing credentials.
-- **Release** (`.github/workflows/release.yml`): runs only when a GitHub Release is published. In the
-  `management` environment it builds the release commit from scratch, runs the GameTests, checks that the tag
-  matches `mod_version` (`v1.0.0`, or `mc1.21.1-v1.0.0` for `mod_version=1.0.0`) and that `build/libs` holds
-  exactly one distribution jar, then uploads that jar to CurseForge and Modrinth (NeoForge, Minecraft 1.21.1,
-  Java 21) with the release body as changelog. Tokens come from the `CURSEFORGE_TOKEN` / `MODRINTH_TOKEN`
-  secrets and the project ids from the `ID_DO_CURSEFORGE` / `ID_DO_MODRINTH` variables of that environment.
+- **CI** (`.github/workflows/ci.yml`): every push to `main`, `1.21.x` or `mc/**` and every pull request
+  checks that an `mc/<version>` branch builds that Minecraft version, then runs `./gradlew build` and the
+  GameTests on Java 21. It uses no publishing credentials.
+- **Release** (`.github/workflows/release.yml`): runs only when a GitHub Release is published. Tags look like
+  `v0.3.0-beta.1+1.21.1`: `gradle.properties` keeps the base version and the channel (alpha, beta, release)
+  comes from the tag. In the `management` environment the job validates the tag and its target branch, builds
+  the tagged commit from scratch with that version, runs the GameTests, checks the jar and uploads it to
+  CurseForge and Modrinth for the Minecraft version of that commit, with the release body as changelog.
+- Each Minecraft line lives on an `mc/<version>` branch. See [docs/RELEASING.md](docs/RELEASING.md) for the full
+  release and multi-version workflow.
 - Gradle caching uses the open-source `basic` provider of `gradle/actions/setup-gradle`.
 
 ## Development

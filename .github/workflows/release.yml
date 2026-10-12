@@ -23,7 +23,18 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
+          # All branches, to check that the tag belongs to the release target branch.
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Resolve tag, release channel, Minecraft and branch
+        id: release
+        shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+          TARGET: ${{ github.event.release.target_commitish }}
+        run: bash scripts/validate-release.sh tag
 
       - name: Set up Java 21
         uses: actions/setup-java@v6
@@ -40,7 +51,9 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Clean build
-        run: ./gradlew clean build --console=plain
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: ./gradlew clean build "-Prelease_version=$RELEASE_VERSION" --console=plain
 
       - name: GameTests
         shell: bash
@@ -49,13 +62,11 @@ jobs:
           ./gradlew runGameTestServer --console=plain | tee gametest.log
           grep -q "required tests passed" gametest.log
 
-      - name: Validate tag, release channel, Minecraft and artifact
-        id: metadata
+      - name: Validate artifact
         shell: bash
         env:
-          TAG: ${{ github.event.release.tag_name }}
-          PRERELEASE: ${{ github.event.release.prerelease }}
-        run: bash scripts/validate-release.sh
+          VERSION: ${{ steps.release.outputs.version }}
+        run: bash scripts/validate-release.sh artifact
 
       - name: Verify publishing configuration
         shell: bash
@@ -83,10 +94,10 @@ jobs:
           files: build/libs/!(*-@(dev|sources|javadoc)).jar
           name: ${{ github.event.release.name }}
           version: ${{ github.event.release.tag_name }}
-          version-type: ${{ steps.metadata.outputs.release_type }}
+          version-type: ${{ steps.release.outputs.release_type }}
           changelog: ${{ github.event.release.body }}
           loaders: neoforge
-          game-versions: ${{ steps.metadata.outputs.minecraft_version }}
+          game-versions: ${{ steps.release.outputs.minecraft_version }}
           game-version-filter: none
           java: 21
           fail-mode: fail

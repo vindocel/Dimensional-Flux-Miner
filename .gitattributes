@@ -5,4 +5,5 @@ src/generated/**/.cache/* text eol=lf
 src/generated/**/*.json text eol=lf
 # The CI runs gradlew on Linux; keep the launch scripts in their native line endings.
 gradlew text eol=lf
+*.sh text eol=lf
 *.bat text eol=crlf

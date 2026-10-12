@@ -22,6 +22,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check the Minecraft line of the branch
+        shell: bash
+        env:
+          # A pull request is checked against the branch it merges into.
+          BRANCH: ${{ github.base_ref || github.ref_name }}
+        run: bash scripts/validate-release.sh branch "$BRANCH"
+
       - name: Set up Java 21
         uses: actions/setup-java@v6
         with:

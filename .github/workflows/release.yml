@@ -1,7 +1,6 @@
 name: Publish Mod
 
-# Publishes to CurseForge and Modrinth only when a GitHub Release is published, never on push. The release tag
-# must match mod_version in gradle.properties (v1.0.0 or mc1.21.1-v1.0.0 for mod_version=1.0.0).
+# Publication only occurs when a GitHub Release is published.
 on:
   release:
     types: [published]
@@ -9,15 +8,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
 jobs:
   build-and-publish:
-    name: Build and publish
+    name: Build, validate and publish
     runs-on: ubuntu-latest
     environment: management
 
     steps:
-      - name: Checkout the release commit
+      - name: Checkout exact release tag
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
 
       - name: Set up Java 21
         uses: actions/setup-java@v6
@@ -28,7 +34,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          # Open-source (MIT) cache provider; the default one is a separately licensed component.
           cache-provider: basic
 
       - name: Make gradlew executable
@@ -44,36 +49,29 @@ jobs:
           ./gradlew runGameTestServer --console=plain | tee gametest.log
           grep -q "required tests passed" gametest.log
 
-      - name: Check version and artifact
+      - name: Validate tag, release channel, Minecraft and artifact
+        id: metadata
         shell: bash
         env:
           TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: bash scripts/validate-release.sh
+
+      - name: Verify publishing configuration
+        shell: bash
+        env:
+          CURSEFORGE_ID: ${{ vars.ID_DO_CURSEFORGE }}
+          MODRINTH_ID: ${{ vars.ID_DO_MODRINTH }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
           set -euo pipefail
-
-          MOD_VERSION="$(grep -E '^mod_version=' gradle.properties | head -n1 | cut -d= -f2- | tr -d '\r')"
-          if [ -z "$MOD_VERSION" ]; then
-            echo "mod_version not found in gradle.properties"
-            exit 1
-          fi
-
-          NORMALIZED_TAG="${TAG#v}"
-          NORMALIZED_TAG="${NORMALIZED_TAG##*-v}"
-          if [ "$NORMALIZED_TAG" != "$MOD_VERSION" ]; then
-            echo "Tag ($TAG) does not match mod_version ($MOD_VERSION)"
-            exit 1
-          fi
-
-          mapfile -t JARS < <(
-            find build/libs -maxdepth 1 -type f -name '*.jar' \
-              ! -name '*-sources.jar' ! -name '*-javadoc.jar' ! -name '*-dev.jar'
-          )
-          if [ "${#JARS[@]}" -ne 1 ]; then
-            echo "Expected exactly 1 distribution JAR; found ${#JARS[@]}"
-            printf '%s\n' "${JARS[@]}"
-            exit 1
-          fi
-          echo "Distribution JAR: ${JARS[0]}"
+          for name in CURSEFORGE_ID MODRINTH_ID CURSEFORGE_TOKEN MODRINTH_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing publishing configuration: $name"
+              exit 1
+            fi
+          done
 
       - name: Publish to CurseForge and Modrinth
         uses: Kira-NT/mc-publish@v3.3.1
@@ -85,10 +83,10 @@ jobs:
           files: build/libs/!(*-@(dev|sources|javadoc)).jar
           name: ${{ github.event.release.name }}
           version: ${{ github.event.release.tag_name }}
-          version-type: release
+          version-type: ${{ steps.metadata.outputs.release_type }}
           changelog: ${{ github.event.release.body }}
           loaders: neoforge
-          game-versions: 1.21.1
+          game-versions: ${{ steps.metadata.outputs.minecraft_version }}
           game-version-filter: none
           java: 21
           fail-mode: fail

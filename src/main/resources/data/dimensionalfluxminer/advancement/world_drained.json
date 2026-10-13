@@ -1,0 +1,18 @@
+{
+  "parent": "dimensionalfluxminer:column_drained",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:corrupted_stone" },
+    "title": { "translate": "advancements.dimensionalfluxminer.world_drained.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.world_drained.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "drained": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "world_drained" } }
+  },
+  "rewards": {
+    "loot": [ "dimensionalfluxminer:rewards/efficiency_upgrade" ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:miner_formed",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:stabilized_dimensional_core" },
+    "title": { "translate": "advancements.dimensionalfluxminer.matter_injected.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.matter_injected.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "injected": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "matter_injected" } }
+  }
+}

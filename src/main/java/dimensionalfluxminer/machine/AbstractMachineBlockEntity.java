@@ -1,5 +1,6 @@
 package dimensionalfluxminer.machine;
 
+import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
@@ -91,6 +92,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected boolean autoEject;
     /** Whether the last logical cycle advanced work (drives ACTIVE). */
     protected boolean workedThisTick;
+    private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
     /** The machine stays ACTIVE for half a second after the work pauses, so short gaps do not flicker it. */
     private static final int ACTIVE_LINGER_TICKS = 10;
     private int activeLinger;
@@ -330,6 +332,19 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     // ---------------------------------------------------------------- menu actions
 
     /** Applies a validated GUI button press on the server. */
+    private void reportMaxSpeed(Player player) {
+        if (rate == RateScale.MAX_LEVEL && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
+        }
+    }
+
+    /** Players near the machine see its advancement events (it has no owner), at most once every few seconds. */
+    protected void reportNearby(String event) {
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && advancements.ready(event, serverLevel.getGameTime())) {
+            DfmAdvancements.awardNearby(serverLevel, worldPosition, event);
+        }
+    }
+
     public boolean handleButton(Player player, int id) {
         if (id == BUTTON_RATE_DOWN || id == BUTTON_RATE_UP) {
             int next = RateScale.clampLevel(rate + (id == BUTTON_RATE_UP ? 1 : -1));
@@ -338,11 +353,13 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             }
             rate = next;
             setChanged();
+            reportMaxSpeed(player);
             return true;
         }
         if (id == BUTTON_RATE_CYCLE || id == BUTTON_RATE_CYCLE_BACK) {
             rate = RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE);
             setChanged();
+            reportMaxSpeed(player);
             return true;
         }
         if (id == BUTTON_REDSTONE_NEXT || id == BUTTON_REDSTONE_PREVIOUS) {

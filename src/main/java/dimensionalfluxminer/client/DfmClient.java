@@ -2,6 +2,11 @@ package dimensionalfluxminer.client;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.render.CrusherRenderer;
+import dimensionalfluxminer.client.render.GuideBookAnimation;
+import dimensionalfluxminer.client.render.GuideBookRenderer;
+import dimensionalfluxminer.registry.DfmItems;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import dimensionalfluxminer.client.render.ModelRendering;
 import dimensionalfluxminer.client.render.SmelterRenderer;
 import dimensionalfluxminer.client.screen.CrusherScreen;
@@ -52,6 +57,9 @@ public final class DfmClient {
         ClientHooks.minerSound = MinerClientEffects::runningSound;
         ClientHooks.formationEffect = MinerClientEffects::formationBurst;
         ClientHooks.assemblyHighlight = MinerAssemblyHighlight::show;
+        // Using the guide opens the book in the hand first; the screen follows once it is open.
+        ClientHooks.openGuide = GuideBookAnimation::requestOpen;
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GuideBookAnimation::onClientTick);
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.CORRUPTED_WATER.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.FLOWING_CORRUPTED_WATER.get(), RenderType.translucent());
@@ -93,10 +101,24 @@ public final class DfmClient {
         for (ResourceLocation model : dimensionalfluxminer.client.render.MinerRenderer.models()) {
             event.register(ModelRendering.standalone(model));
         }
+        for (ResourceLocation model : GuideBookRenderer.models()) {
+            event.register(ModelRendering.standalone(model));
+        }
     }
 
     @SubscribeEvent
     static void onClientExtensions(RegisterClientExtensionsEvent event) {
+        event.registerItem(new IClientItemExtensions() {
+            private GuideBookRenderer renderer;
+
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) {
+                    renderer = new GuideBookRenderer();
+                }
+                return renderer;
+            }
+        }, DfmItems.GUIDE_BOOK.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {

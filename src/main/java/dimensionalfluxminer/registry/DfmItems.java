@@ -1,6 +1,7 @@
 package dimensionalfluxminer.registry;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
+import dimensionalfluxminer.content.GuideBookItem;
 import dimensionalfluxminer.content.ReinforcedEnderEyeItem;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +39,10 @@ public final class DfmItems {
     public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", new Item.Properties().rarity(Rarity.RARE));
     public static final DeferredItem<Item> STABILIZED_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("stabilized_dimensional_core", new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<Item> EFFICIENCY_UPGRADE = ITEMS.registerSimpleItem("efficiency_upgrade", new Item.Properties().rarity(Rarity.EPIC));
+
+    // Guide
+    public static final DeferredItem<GuideBookItem> GUIDE_BOOK = ITEMS.registerItem("guide_book", GuideBookItem::new,
+            new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 
     // Materials
     public static final DeferredItem<ReinforcedEnderEyeItem> ENDER_EYE_REINFORCED = ITEMS.registerItem("ender_eye_reinforced", ReinforcedEnderEyeItem::new);

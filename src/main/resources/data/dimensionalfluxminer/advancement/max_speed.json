@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:first_ore",
+  "display": {
+    "icon": { "id": "minecraft:redstone_block" },
+    "title": { "translate": "advancements.dimensionalfluxminer.max_speed.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.max_speed.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "maxed": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "max_speed" } }
+  }
+}

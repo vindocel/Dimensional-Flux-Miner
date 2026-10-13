@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:miner_formed",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:basic_dimensional_core" },
+    "title": { "translate": "advancements.dimensionalfluxminer.column_drained.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.column_drained.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "drained": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "column_drained" } }
+  }
+}

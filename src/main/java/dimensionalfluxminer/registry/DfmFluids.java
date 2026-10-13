@@ -55,7 +55,8 @@ public final class DfmFluids {
                     .canDrown(true)
                     .canSwim(true)
                     .supportsBoating(true)
-                    .canHydrate(true)
+                    // The blight withers land plants: it never hydrates farmland or sugar cane.
+                    .canHydrate(false)
                     .motionScale(0.014D)
                     .pathType(PathType.WATER)
                     .adjacentPathType(PathType.WATER_BORDER)

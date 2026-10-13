@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:first_ore",
+  "display": {
+    "icon": { "id": "minecraft:hopper" },
+    "title": { "translate": "advancements.dimensionalfluxminer.ore_filtered.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.ore_filtered.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "filtered": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "ore_filtered" } }
+  }
+}

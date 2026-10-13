@@ -1,6 +1,7 @@
 package dimensionalfluxminer.smelter;
 
 import dimensionalfluxminer.DfmConfig;
+import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.ItemQueue;
 import dimensionalfluxminer.machine.NeighborTransfer;
@@ -623,6 +624,13 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         }
     }
 
+    /** Slag Aggregate turned back into steel ("Nothing Is Lost"). */
+    private static boolean recoversSlag(AlloyingRecipe recipe) {
+        ItemStack aggregate = new ItemStack(dimensionalfluxminer.registry.DfmItems.SLAG_AGGREGATE.get());
+        return recipe.result().is(dimensionalfluxminer.registry.DfmItems.INGOT_STEEL.get())
+                && recipe.ingredients().stream().anyMatch(sized -> sized.ingredient().test(aggregate));
+    }
+
     private boolean processAlloy() {
         AlloyRecipeInput input = new AlloyRecipeInput(inputs[0].firstPrototype(), inputs[1].firstPrototype(), inputs[2].firstPrototype());
         if (input.isEmpty()) {
@@ -688,6 +696,9 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
                 }
             });
             experience.add(recipe.experience() * ops);
+            if (recoversSlag(recipe)) {
+                reportNearby(DfmAdvancements.SLAG_RECOVERED);
+            }
         }
         energy.consume(plan.workDone() * (power / opsPerTick));
         alloyWork.commit(plan);

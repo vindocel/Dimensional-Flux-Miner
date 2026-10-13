@@ -1,5 +1,6 @@
 package dimensionalfluxminer.content;
 
+import dimensionalfluxminer.advancement.DfmAdvancements;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -48,6 +49,7 @@ public class ReinforcedEnderEyeItem extends Item {
                 level.addFreshEntity(eye);
                 if (player instanceof ServerPlayer serverPlayer) {
                     CriteriaTriggers.USED_ENDER_EYE.trigger(serverPlayer, target);
+                    DfmAdvancements.award(serverPlayer, DfmAdvancements.REINFORCED_EYE_USED);
                 }
                 float pitch = Mth.lerp(level.random.nextFloat(), 0.33F, 0.5F);
                 level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDER_EYE_LAUNCH, SoundSource.NEUTRAL, 1.0F, pitch);

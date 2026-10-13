@@ -17,6 +17,7 @@ public final class DfmCreativeTab {
             .title(Component.translatable("itemGroup.dimensionalfluxminer"))
             .icon(DfmCreativeTab::icon)
             .displayItems((params, output) -> {
+                output.accept(DfmItems.GUIDE_BOOK.get());
                 output.accept(DfmItems.STEEL_CHASSIS.get());
                 output.accept(DfmItems.VENTILATION_UNIT.get());
                 output.accept(DfmItems.REINFORCED_STRUCTURAL_GLASS.get());

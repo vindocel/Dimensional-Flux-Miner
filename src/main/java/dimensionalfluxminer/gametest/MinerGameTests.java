@@ -17,6 +17,7 @@ import dimensionalfluxminer.miner.profile.ResourceProfiles;
 import dimensionalfluxminer.registry.DfmBlocks;
 import dimensionalfluxminer.registry.DfmItems;
 import java.util.List;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -138,6 +139,27 @@ public final class MinerGameTests {
                 "upgrade installed from the held stack");
         dimensionalfluxminer.machine.QuickInstall.install(player, helper.getLevel(), chassis, cores);
         helper.assertTrue(cores.getCount() == 1 && c.coreSlot().getStackInSlot(0).getCount() == 1, "an occupied slot takes nothing");
+        helper.succeed();
+    }
+
+    /** Only cobblestone counts towards "From Trash to Treasure", and the count is kept in the block entity data. */
+    @GameTest(template = "empty_large")
+    public static void injectedCobblestoneIsCounted(GameTestHelper helper) {
+        MinerControllerBlockEntity c = build(helper);
+        c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
+        long left = MinerControllerBlockEntity.TRASH_TO_TREASURE_COBBLESTONE;
+        while (left > 0) {
+            int count = (int) Math.min(64, left);
+            ItemStack rest = c.insertSubstrate(new ItemStack(Items.COBBLESTONE, count), false);
+            helper.assertTrue(rest.isEmpty(), "the DM buffer refused cobblestone after " + c.cobblestoneInjected());
+            left -= count;
+        }
+        c.insertSubstrate(new ItemStack(Items.STONE, 64), false);
+        helper.assertTrue(c.cobblestoneInjected() == MinerControllerBlockEntity.TRASH_TO_TREASURE_COBBLESTONE,
+                "cobblestone counted: " + c.cobblestoneInjected());
+        CompoundTag saved = c.saveWithoutMetadata(helper.getLevel().registryAccess());
+        helper.assertTrue(saved.getLong("cobblestone_injected") == MinerControllerBlockEntity.TRASH_TO_TREASURE_COBBLESTONE,
+                "the count is not saved");
         helper.succeed();
     }
 

@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:scorched_earth",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:corrupted_water_bucket" },
+    "title": { "translate": "advancements.dimensionalfluxminer.purple_dive.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.purple_dive.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "dived": { "trigger": "minecraft:location", "conditions": { "player": { "location": { "fluid": { "fluids": [ "dimensionalfluxminer:corrupted_water", "dimensionalfluxminer:flowing_corrupted_water" ] } } } } }
+  }
+}

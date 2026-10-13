@@ -305,4 +305,4 @@ On Windows use `gradlew.bat`. The Gradle wrapper provisions Gradle itself; a JDK
 ## 📜 License and credits
 
 - 📄 Code and original assets: **EPL-2.0** — see [`LICENSE`](LICENSE).
-- 🎨 The machine screen textures come from an MIT-licensed project; the file list and the license text are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (also packaged in the mod jar).
+- 🎨 A few machine screen sprites (panel background, slots, button background and some icons) come from an MIT-licensed project; the file list and the license text are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (also packaged in the mod jar). Everything else was drawn for this mod.

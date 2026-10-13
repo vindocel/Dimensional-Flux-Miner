@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:first_ore",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:efficiency_upgrade" },
+    "title": { "translate": "advancements.dimensionalfluxminer.efficiency_upgrade.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.efficiency_upgrade.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "crafted": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:efficiency_upgrade" } ] } }
+  }
+}

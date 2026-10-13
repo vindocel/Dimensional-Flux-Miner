@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:reinforced_eye",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:miner_terminal" },
+    "title": { "translate": "advancements.dimensionalfluxminer.miner_formed.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.miner_formed.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "formed": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "miner_formed" } }
+  }
+}

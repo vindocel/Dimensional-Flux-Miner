@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:steel",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:ender_eye_reinforced" },
+    "title": { "translate": "advancements.dimensionalfluxminer.reinforced_eye.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.reinforced_eye.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "crafted": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:ender_eye_reinforced" } ] } }
+  }
+}

@@ -1,7 +1,10 @@
 package dimensionalfluxminer.miner;
 
 import dimensionalfluxminer.DfmConfig;
+import dimensionalfluxminer.advancement.DfmAdvancements;
+import dimensionalfluxminer.registry.DfmTags;
 import dimensionalfluxminer.machine.LogicalTickCounter;
+import dimensionalfluxminer.machine.ThroughputStreak;
 import dimensionalfluxminer.machine.NeighborTransfer;
 import dimensionalfluxminer.machine.ReadOnlyViews;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
@@ -39,6 +42,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
@@ -93,6 +97,20 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private boolean autoEject;
     private final Set<ResourceLocation> filter = new LinkedHashSet<>();
     private UUID owner;
+    /** Columns this Miner has drained in its life; drives the "whole area drained" advancement. */
+    private long columnsDrained;
+    /** Cobblestone this Miner has turned into DM in its life; drives the "From Trash to Treasure" advancement. */
+    private long cobblestoneInjected;
+    public static final long TRASH_TO_TREASURE_COBBLESTONE = 10_000;
+    private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
+    private final ThroughputStreak throughput = new ThroughputStreak(THOUSAND_PER_SECOND, THOUSAND_PER_SECOND_SECONDS);
+
+    /** "Thousand per second": at least this many rolls per second... */
+    public static final double THOUSAND_PER_SECOND = 1000.0;
+    /** ...kept for this many seconds in a row. */
+    public static final int THOUSAND_PER_SECOND_SECONDS = 5;
+    /** A 300 x 300 area worth of drained columns. */
+    public static final long WORLD_DRAINED_COLUMNS = 300L * 300L;
 
     private final ItemStackHandler coreSlot = new ItemStackHandler(1) {
         @Override
@@ -436,6 +454,13 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             lastSubstrate = stack.getItem().getDescriptionId();
             lastSubstrateUnits = perItem;
             setChanged();
+            report(DfmAdvancements.MATTER_INJECTED);
+            if (stack.is(DfmTags.Items.common("cobblestones"))) {
+                cobblestoneInjected += accepted;
+                if (cobblestoneInjected >= TRASH_TO_TREASURE_COBBLESTONE) {
+                    report(DfmAdvancements.TRASH_TO_TREASURE);
+                }
+            }
         }
         return stack.copyWithCount(stack.getCount() - accepted);
     }
@@ -516,6 +541,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         syncToClients();
         PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new net.minecraft.world.level.ChunkPos(worldPosition),
                 new MinerFormationPayload(s.members().stream().map(MinerStructure.Member::pos).toList()));
+        DfmAdvancements.awardOwner(serverLevel, owner, worldPosition, DfmAdvancements.MINER_FORMED);
         return null;
     }
 
@@ -602,6 +628,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         shownLimit = limitSinceRealTick;
         limitSinceRealTick = MinerStatus.LimitingFactor.NONE;
         smoothedLoad += LOAD_EMA_ALPHA * (load - smoothedLoad);
+        if (level != null && throughput.record(level.getGameTime(), actualRate)) {
+            report(DfmAdvancements.THOUSAND_PER_SECOND);
+        }
         boolean powered = formed && (energyBuffer.stored() > 0 || workedRecently());
         if (powered && !wasPowered && level instanceof ServerLevel serverLevel) {
             BlockPos core = structure() != null ? structure().core() : worldPosition;
@@ -705,6 +734,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (dmUnits < MatterValues.ROLL_COST_UNITS && !canRefill) {
             status = core == CoreKind.BASIC ? MinerStatus.NO_DRAINABLE_MATTER : MinerStatus.WAITING_FOR_MATTER;
             noteLimit(matterLimit(core));
+            if (core == CoreKind.BASIC) {
+                reportIfAreaDrained(survey);
+            }
             return;
         }
 
@@ -712,6 +744,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         long executed = 0;
         MinerStatus stop = null;
         boolean missed = false;
+        boolean producedOre = false;
+        boolean filteredOre = false;
         boolean upgrade = hasEfficiencyUpgrade();
         for (long i = 0; i < plan.operations(); i++) {
             if (dmUnits < MatterValues.ROLL_COST_UNITS) {
@@ -739,8 +773,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
                 }
                 dmUnits -= MatterValues.ROLL_COST_UNITS;
                 ItemHandlerHelper.insertItem(output, result, false);
+                producedOre = true;
             } else {
                 dmUnits -= MatterValues.ROLL_COST_UNITS;
+                filteredOre = true;
                 if (upgrade) {
                     OptionalInt base = MatterValues.baseUnits(result);
                     int recovered = MatterValues.filterRecoveryUnits(base.orElse(5));
@@ -766,10 +802,41 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             animationStartTick = serverLevel.getGameTime();
         }
         status = stop != null && executed == 0 ? stop : MinerStatus.RUNNING;
+        if (producedOre) {
+            report(DfmAdvancements.FIRST_ORE);
+        }
+        if (filteredOre) {
+            report(DfmAdvancements.ORE_FILTERED);
+        }
+        if (stop == MinerStatus.NO_DRAINABLE_MATTER) {
+            reportIfAreaDrained(survey);
+        }
         if (autoEject) {
             ejectOutput();
         }
         setChanged();
+    }
+
+    /** Reports an advancement event to the owner (or the players nearby), at most once every few seconds. */
+    private void report(String event) {
+        if (level instanceof ServerLevel serverLevel && advancements.ready(event, serverLevel.getGameTime())) {
+            DfmAdvancements.awardOwner(serverLevel, owner, worldPosition, event);
+        }
+    }
+
+    /** A whole area drained: a 300 x 300 area worth of columns taken and nothing left to drain around the Miner. */
+    private void reportIfAreaDrained(MinerSurvey survey) {
+        if (survey != null && survey.ready() && !survey.hasCandidates() && columnsDrained >= WORLD_DRAINED_COLUMNS) {
+            report(DfmAdvancements.WORLD_DRAINED);
+        }
+    }
+
+    public long columnsDrained() {
+        return columnsDrained;
+    }
+
+    public long cobblestoneInjected() {
+        return cobblestoneInjected;
     }
 
     /** Drains one valid cached column (revalidated now); returns true when 64 DM were credited. */
@@ -783,6 +850,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             }
             if (CorruptionService.corrupt(level, x, z, owner)) {
                 dmUnits += MatterValues.COLUMN_UNITS;
+                columnsDrained++;
+                report(DfmAdvancements.COLUMN_DRAINED);
                 return true;
             }
         }
@@ -959,6 +1028,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             }
             case BUTTON_RATE_CYCLE, BUTTON_RATE_CYCLE_BACK -> {
                 rate = RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE);
+                if (rate == RateScale.MAX_LEVEL && player instanceof ServerPlayer serverPlayer) {
+                    DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
+                }
                 return true;
             }
             case BUTTON_AUTO_INPUT -> {
@@ -1089,6 +1161,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (owner != null) {
             tag.putUUID("owner", owner);
         }
+        tag.putLong("columns_drained", columnsDrained);
+        tag.putLong("cobblestone_injected", cobblestoneInjected);
         tag.put("core", coreSlot.serializeNBT(registries));
         tag.put("upgrade", upgradeSlot.serializeNBT(registries));
         tag.put("output", output.serializeNBT(registries));
@@ -1115,6 +1189,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             }
         }
         owner = tag.hasUUID("owner") ? tag.getUUID("owner") : null;
+        columnsDrained = tag.getLong("columns_drained");
+        cobblestoneInjected = tag.getLong("cobblestone_injected");
         coreSlot.deserializeNBT(registries, tag.getCompound("core"));
         upgradeSlot.deserializeNBT(registries, tag.getCompound("upgrade"));
         output.deserializeNBT(registries, tag.getCompound("output"));

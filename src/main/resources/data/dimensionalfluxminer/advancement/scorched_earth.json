@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:column_drained",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:corrupted_grass" },
+    "title": { "translate": "advancements.dimensionalfluxminer.scorched_earth.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.scorched_earth.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "stepped": { "trigger": "minecraft:location", "conditions": { "player": { "stepping_on": { "block": { "blocks": [ "dimensionalfluxminer:corrupted_dirt", "dimensionalfluxminer:corrupted_grass" ] } } } } }
+  }
+}

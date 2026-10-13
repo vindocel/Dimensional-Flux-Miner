@@ -1,7 +1,9 @@
 package dimensionalfluxminer.crusher;
 
 import dimensionalfluxminer.DfmConfig;
+import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
+import dimensionalfluxminer.machine.ThroughputStreak;
 import dimensionalfluxminer.machine.ItemQueue;
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.machine.NeighborTransfer;
@@ -60,6 +62,7 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
     private final ItemQueue input = new ItemQueue(1);
     private final ItemQueue output = new ItemQueue(OUTPUT_KINDS);
     private final WorkAccumulator work = new WorkAccumulator();
+    private final ThroughputStreak throughput = new ThroughputStreak(1000.0, 5);
 
     private ItemStack cachedInput = ItemStack.EMPTY;
     private boolean cachedUpgrade;
@@ -154,6 +157,9 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
         // Energy follows the work really performed: a bottleneck never bills the full Rate.
         energy.consume(plan.workDone() * energyPerOperation);
         work.commit(plan);
+        if (level != null && throughput.record(level.getGameTime(), plan.operations())) {
+            reportNearby(DfmAdvancements.THOUSAND_PER_SECOND);
+        }
         boolean worked = plan.workDone() > 0;
         status = energyFraction < 1.0 ? "low_energy" : "running";
         setVisual(worked ? in : ItemStack.EMPTY);

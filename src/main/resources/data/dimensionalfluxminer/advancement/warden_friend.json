@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:purple_dive",
+  "display": {
+    "icon": { "id": "minecraft:sculk_shrieker" },
+    "title": { "translate": "advancements.dimensionalfluxminer.warden_friend.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.warden_friend.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "watched": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "warden_healed" } }
+  }
+}

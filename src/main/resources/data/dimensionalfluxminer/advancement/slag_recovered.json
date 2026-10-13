@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:steel",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:slag_aggregate" },
+    "title": { "translate": "advancements.dimensionalfluxminer.slag_recovered.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.slag_recovered.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "recovered": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "slag_recovered" } }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:miner_formed",
+  "display": {
+    "icon": { "id": "minecraft:iron_ore" },
+    "title": { "translate": "advancements.dimensionalfluxminer.first_ore.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.first_ore.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "produced": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "first_ore" } }
+  }
+}

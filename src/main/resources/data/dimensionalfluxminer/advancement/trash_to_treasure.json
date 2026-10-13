@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:matter_injected",
+  "display": {
+    "icon": { "id": "minecraft:cobblestone" },
+    "title": { "translate": "advancements.dimensionalfluxminer.trash_to_treasure.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.trash_to_treasure.description" },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "converted": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "trash_to_treasure" } }
+  }
+}

@@ -37,6 +37,7 @@ public final class DimensionalFluxMiner {
         DfmFluids.FLUIDS.register(modBus);
         DfmSounds.SOUNDS.register(modBus);
         DfmParticles.PARTICLES.register(modBus);
+        dimensionalfluxminer.advancement.DfmAdvancements.TRIGGERS.register(modBus);
         DfmRecipes.TYPES.register(modBus);
         DfmRecipes.SERIALIZERS.register(modBus);
         DfmCreativeTab.TABS.register(modBus);

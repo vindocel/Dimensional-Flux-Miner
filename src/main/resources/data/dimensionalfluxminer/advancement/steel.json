@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:smelter",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:ingot_steel" },
+    "title": { "translate": "advancements.dimensionalfluxminer.steel.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.steel.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "forged": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:ingot_steel" } ] } }
+  }
+}

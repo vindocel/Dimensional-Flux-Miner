@@ -9,7 +9,7 @@
 
 ### *Some machines dig. This one listens.*
 
-![Banner — the Dimensional Flux Miner working at night](IMAGE_BANNER)
+![Banner — the Dimensional Flux Miner working at night](https://cdn.modrinth.com/data/vTLvFHBt/images/8911bd71d9535f904cc2a64f96b360963e1959ff.png)
 
 The **Dimensional Flux Miner** tunes into the frequency of the dimension it stands in and makes that dimension's ores **appear out of nothing** — without opening a single hole in your world. Feed it energy and Dimensional Matter, choose how fast it runs, and watch the ores pour out.
 
@@ -32,11 +32,11 @@ Two support machines get you there: the **Dimensional Crusher** and the **Alloy 
 
 ## ⛏️ The Dimensional Flux Miner
 
-![The Miner built and running](IMAGE_MINER)
+![The Miner built and running](https://cdn.modrinth.com/data/vTLvFHBt/images/1f16852d9b52b9de15a6656592750438ce8be42e.png)
 
 Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-click it, and it places every missing part from your inventory for you, outlining where each one goes.
 
-![Assembly outlines](IMAGE_ASSEMBLY)
+![Assembly outlines](https://cdn.modrinth.com/data/vTLvFHBt/images/6cd15d054a7f29732011635ed39fac53c1501246.png)
 
 ### 💎 Choose your core
 
@@ -52,8 +52,6 @@ Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-clic
 - 🧲 A filter to keep only the ores you want.
 - 🔁 Auto Input / Auto Eject to the chests touching its ports.
 
-![Miner terminal screen](IMAGE_MINER_GUI)
-
 ---
 
 ## ⚙️ Dimensional Crusher
@@ -64,7 +62,7 @@ Steel jaws that grind any precious stone into grains.
 - 🧂 Ingots, raw ores and gems of any mod become dust; metal dusts smelt back into ingots.
 - 📦 Items dropped on top go in by themselves; full side configuration for pipes.
 
-![Crusher working](IMAGE_CRUSHER)
+![Crusher working](https://cdn.modrinth.com/data/vTLvFHBt/images/bad9976b3ab49508fbba4e9d237cdea9ac19125c.png)
 
 ---
 
@@ -84,7 +82,7 @@ A furnace without flame: three lanes of electric heat that smelt and join metals
 
 > 💡 **Crusher + Smelter together**: 1 ore → **3** ingots, up to **6** with both upgrades. A common furnace gives you 1.
 
-![Alloy Smelter modes](IMAGE_SMELTER)
+![Alloy Smelter modes](https://cdn.modrinth.com/data/vTLvFHBt/images/7b32a71f23771b9bb536f47365470acac1d035f3.png)
 
 ---
 
@@ -135,8 +133,6 @@ Forge your first **Pure Steel** and it is yours. Use it and the book **opens in 
 - 📄 Real pages with a clickable table of contents and page-turn animations.
 - 🧊 An interactive **3D view of the Miner** — rotate it, go layer by layer, highlight each part.
 - 🧾 Recipes, speed tables and matter values read live from your server.
-
-![Guide pages](IMAGE_GUIDE_PAGES)
 
 ---
 

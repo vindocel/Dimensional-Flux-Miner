@@ -522,10 +522,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
 
     enum SlotKind {
         NORMAL("slot/normal"),
-        INPUT("slot/input"),
         OUTPUT("slot/output"),
-        OUTPUT_2("slot/output_2"),
-        POWER("slot/power"),
         EXTRA("slot/extra"),
         OUTPUT_WARNING("slot/output_warning");
 

@@ -9,8 +9,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public final class ClientHooks {
     /** Starts/keeps the single looping sound of an active machine. */
     public static Consumer<BlockEntity> machineSound = be -> { };
-    /** Running loop of a formed Dimensional Flux Miner, anchored to the structure center. */
-    public static Consumer<BlockEntity> minerSound = be -> { };
+    /** Client tick of a formed Dimensional Flux Miner: its running loop and the motes its core pulls in. */
+    public static Consumer<BlockEntity> minerTick = be -> { };
     /** Short particle burst when a Miner assembly forms. */
     public static Consumer<java.util.List<net.minecraft.core.BlockPos>> formationEffect = positions -> { };
     /** Highlight of the parts still missing in a Miner assembly (an empty list clears it). */

@@ -66,13 +66,87 @@
         "minecraft:the_nether"
       ]
     },
+    "minecraft:crimson_nylium": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:warped_nylium": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:magma_block": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:glowstone": {
+      "dm": 1.0,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:soul_sand": {
+      "dm": 1.0,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:soul_soil": {
+      "dm": 1.0,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
+    "minecraft:nether_bricks": {
+      "dm": 1.5,
+      "dimensions": [
+        "minecraft:the_nether"
+      ]
+    },
     "minecraft:end_stone": {
       "dm": 0.5,
       "dimensions": [
         "minecraft:the_end"
       ]
     },
-    "#c:ores/copper": {
+    "minecraft:purpur_block": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:the_end"
+      ]
+    },
+    "minecraft:dragon_egg": {
+      "dm": 10.0,
+      "dimensions": [
+        "minecraft:the_end"
+      ]
+    },
+    "minecraft:obsidian": {
+      "dm": 1.0
+    },
+    "allthemodium:ancient_stone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "allthemodium" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "allthemodium:the_other"
+      ]
+    },
+    "allthemodium:ancient_dirt": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "allthemodium" }
+      ],
+      "dm": 0.1,
+      "dimensions": [
+        "allthemodium:the_other"
+      ]
+    },    "#c:ores/copper": {
       "dm": 0.5
     },
     "#c:ores/iron": {

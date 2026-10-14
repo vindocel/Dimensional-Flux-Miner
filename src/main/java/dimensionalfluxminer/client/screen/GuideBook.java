@@ -195,7 +195,7 @@ final class GuideBook {
 
     /** The contents: one line per chapter with its page number; clicking a line turns the book to it. */
     static final class Index implements GuideElement {
-        private static final int ROW = 15;
+        private static final int ROW = 14;
         private final GuideBook book;
 
         Index(GuideBook book) {
@@ -217,14 +217,14 @@ final class GuideBook {
                 }
                 g.pose().pushPose();
                 g.pose().translate(x, ry + 1, 0);
-                g.pose().scale(0.875F, 0.875F, 1.0F);
+                g.pose().scale(0.8125F, 0.8125F, 1.0F);
                 g.renderItem(book.chapters.get(c).icon().get(), 0, 0);
                 g.pose().popPose();
                 String page = Integer.toString(book.chapterStart[c] + 1);
                 int pageW = screen.font().width(page);
                 screen.fittedText(g, Component.translatable("guide.dimensionalfluxminer.chapter." + book.chapters.get(c).id()), x + 18,
-                        ry + 4, width - 24 - pageW, over ? GuideElements.HEADING : GuideElements.BODY);
-                g.drawString(screen.font(), page, x + width - pageW, ry + 4, GuideElements.MUTED, false);
+                        ry + 3, width - 24 - pageW, over ? GuideElements.HEADING : GuideElements.BODY);
+                g.drawString(screen.font(), page, x + width - pageW, ry + 3, GuideElements.MUTED, false);
             }
         }
 

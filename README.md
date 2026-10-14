@@ -61,15 +61,15 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 
 1. 🧱 Build a **Dimensional Crusher** and an **Alloy Smelter** (vanilla items only).
 2. ⚙️ In the Crusher, turn iron ingots into **Iron Dust**, coal into **Coal Dust** and calcite into **Calcite Grains**.
-3. 🔥 In the Smelter, combine the three into **Steel Ingots** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
-4. 👁️ With steel, craft the **Reinforced Eye of Ender**, the Miner parts and a **Dimensional Core**.
+3. 🔥 In the Smelter, combine the three into **Pure Steel** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
+4. 👁️ With Pure Steel, craft the **Reinforced Eye of Ender**, the Miner parts and a **Dimensional Core**.
 5. ⛏️ Build the Miner, insert the core, connect power and press the power button.
 
 ---
 
 ## 📖 Dimensional Flux Guide
 
-Every new player receives the guide with the mod's first advancement; it is also crafted from a **book + steel ingot + Reinforced Eye of Ender** (shapeless).
+Your first **Pure Steel** earns you the guide (through the "Forged in the Flux" advancement); more copies are crafted from a **book + Pure Steel + Reinforced Eye of Ender** (shapeless).
 
 - 🎞️ **Animated book**: using it opens the book in the hand with the model's own animation; it stays half open while you read, a leaf turns in your hand with every page, and it closes when you leave.
 - 📄 **Real pages**: the presentation and the clickable **contents** open the book; every chapter starts on a left page and the pages flow one after another, with a page-turn animation and sound. The violet ribbon goes back to the contents.
@@ -104,7 +104,17 @@ Looking at the terminal, the three identical ports become **Energy Input** (left
 | **Basic Dimensional Core** (Rare) | 🌀 **Dimensional Drain** | Surveys the loaded chunks within 300 blocks and harvests the dimensional energy of the land, column by column (**64 DM** per column). The drained land falls to the **Dimensional Death**. |
 | **Stabilized Dimensional Core** (Epic) | 💉 **Matter Injection** | Turns the items pushed into the Matter Input into DM at once. Never touches the environment. |
 
-Matter values (Matter Injection): dirt **0.1 DM**, cobblestone **0.3**, stone family **0.5** (each only in its own dimension); ores **0.5** in any dimension, diamond and uranium **1**, emerald, platinum and ancient debris **2**. All data driven.
+Matter Injection only takes matter of the Miner's own dimension. All values are data driven:
+
+| Dimension | Accepted matter |
+|---|---|
+| 🌍 Overworld | dirt **0.1 DM**, cobblestone and cobbled deepslate **0.3**, stone, deepslate, granite, diorite and andesite **0.5** |
+| 🔥 Nether | netherrack, basalt, blackstone, nylium and magma block **0.5**, glowstone, soul sand and soul soil **1**, nether bricks **1.5** |
+| 🌌 The End | end stone and purpur block **0.5**, dragon egg **10** |
+| 🧩 The Other (Allthemodium) | ancient dirt **0.1**, ancient stone **0.5** |
+| ✨ Any dimension | obsidian **1** |
+
+Ores count only in a dimension where that exact ore generates (Overworld diamond ore is refused in the Nether): **0.5 DM**, diamond and uranium **1**, emerald, platinum and ancient debris **2**. The Basic core only finds land to drain in the Overworld; the Nether and the End need the Stabilized core.
 
 ### 🎛️ Using it
 
@@ -176,11 +186,11 @@ There is **no speed upgrade to craft**. Every machine has a **speed selector fro
 
 | Machine | Speed 1 | Speed 10 |
 |---|---|---|
-| ⛏️ Miner | 500 FE/t — 0.25 ores/s | 1 500 000 FE/t — 1 280 ores/s |
-| ⚙️ Crusher | 250 FE/t — 1 item every 10 s | 500 000 FE/t — 1 280 items/s |
-| 🔥 Alloy Smelter | 600 FE/t — 0.1 items/s per lane | 600 000 FE/t — 3 840 items/s per lane |
+| ⛏️ Miner | 2 500 FE/t — 0.25 ores/s | 5 000 000 FE/t — 1 280 ores/s |
+| ⚙️ Crusher | 1 500 FE/t — 1 item every 10 s | 1 000 000 FE/t — 1 280 items/s |
+| 🔥 Alloy Smelter | 2 500 FE/t — 0.1 items/s per lane | 2 000 000 FE/t — 3 840 items/s per lane |
 
-Intermediate levels are geometric; the guide shows the full tables computed from the server configuration.
+Intermediate levels are geometric, except on the Miner: speeds 6 to 9 cost **double** the geometric scale, so running fast is paid for. The guide shows the full tables computed from the server configuration.
 
 **Dimensional Efficiency Upgrade** (one per machine):
 
@@ -208,10 +218,10 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 | | Advancement | How |
 |---|---|---|
-| 📖 | **Dimensional Flux** | join the world — gives the guide |
+| 📖 | **Dimensional Flux** | join the world |
 | ⚙️ | Ground and Sifted | build a Dimensional Crusher |
 | 🔥 | Electric Fire | build an Alloy Smelter |
-| 🔩 | Forged in the Flux | get a Steel Ingot |
+| 🔩 | Forged in the Flux | get your first Pure Steel (rewards the guide) |
 | ♻️ | Nothing Is Lost | turn Slag Aggregate back into steel |
 | 👁️ | Unbreakable Gaze | craft a Reinforced Eye of Ender |
 | 🏰 | To the Stronghold | reach a stronghold following a Reinforced Eye |

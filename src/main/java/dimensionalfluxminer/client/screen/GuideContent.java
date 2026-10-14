@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.material.Fluid;
 
@@ -40,7 +41,7 @@ final class GuideContent {
     static List<Chapter> chapters() {
         return List.of(
                 start(), materials(), crusher(), smelter(),
-                assembly(), miner(), rates(), blight());
+                assembly(), miner(), dimensions(), rates(), blight());
     }
 
     // ------------------------------------------------------------------ chapters
@@ -121,6 +122,22 @@ final class GuideContent {
         b.heading("redstone").text("redstone");
         b.heading("output").text("output");
         return b.chapter(DfmItems.BASIC_DIMENSIONAL_CORE);
+    }
+
+    private static Chapter dimensions() {
+        Builder b = new Builder("dimensions");
+        b.text("intro");
+        b.heading("overworld").items(Items.STONE, Items.DEEPSLATE, Items.DIRT, Items.DIAMOND_ORE).text("overworld");
+        b.heading("nether").items(Items.NETHERRACK, Items.GLOWSTONE, Items.SOUL_SAND, Items.NETHER_BRICKS, Items.NETHER_QUARTZ_ORE)
+                .text("nether");
+        b.heading("end").items(Items.END_STONE, Items.PURPUR_BLOCK).text("end");
+        b.item(Items.DRAGON_EGG, "egg");
+        b.tip("discover");
+        b.heading("ores").text("ores");
+        b.item(Items.OBSIDIAN, "obsidian");
+        b.heading("modded").text("modded");
+        b.tip("table");
+        return b.chapter(Items.CRYING_OBSIDIAN);
     }
 
     private static Chapter rates() {

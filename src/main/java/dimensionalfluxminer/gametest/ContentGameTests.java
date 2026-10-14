@@ -31,7 +31,10 @@ public final class ContentGameTests {
     private ContentGameTests() {
     }
 
-    /** 14 crafting + 3 crushing + 10 ore_crushing + 2 alloying = 29 definitions. */
+    /**
+     * 14 crafting + 3 crushing + 10 ore_crushing + 2 alloying = 29 definitions, plus the compatibility recipes of the
+     * mods present: Malum (5 ore_crushing), Forbidden Arcanus (2 ore_crushing) and Create (1 alloying).
+     */
     @GameTest(template = "empty_small")
     public static void allRecipeDefinitionsLoad(GameTestHelper helper) {
         RecipeManager recipes = helper.getLevel().getRecipeManager();
@@ -41,11 +44,16 @@ public final class ContentGameTests {
                 .count();
         int crushing = recipes.getAllRecipesFor(DfmRecipes.CRUSHING.get()).size();
         int ore = recipes.getAllRecipesFor(DfmRecipes.ORE_CRUSHING.get()).size();
-        int alloying = recipes.getAllRecipesFor(DfmRecipes.ALLOYING.get()).size();
+        long alloying = recipes.getAllRecipesFor(DfmRecipes.ALLOYING.get()).stream()
+                .filter(h -> h.id().getNamespace().equals(DimensionalFluxMiner.MOD_ID))
+                .count();
+        var mods = net.neoforged.fml.ModList.get();
+        int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0);
+        int expectedAlloying = 2 + (mods.isLoaded("create") ? 1 : 0);
         helper.assertTrue(crafting == 14, "crafting recipes: " + crafting);
         helper.assertTrue(crushing == 3, "crushing recipes: " + crushing);
-        helper.assertTrue(ore == 10, "ore_crushing recipes: " + ore);
-        helper.assertTrue(alloying == 2, "alloying recipes: " + alloying);
+        helper.assertTrue(ore == expectedOre, "ore_crushing recipes: " + ore + ", expected " + expectedOre);
+        helper.assertTrue(alloying == expectedAlloying, "alloying recipes: " + alloying + ", expected " + expectedAlloying);
         helper.succeed();
     }
 
@@ -110,9 +118,28 @@ public final class ContentGameTests {
                 .filter(holder -> holder.id().getNamespace().equals(DimensionalFluxMiner.MOD_ID))
                 .count();
         helper.assertTrue(total == ids.size(), "advancements of the mod: " + total);
-        // The root hands out the guide; the World Breaker an Efficiency Upgrade.
-        assertReward(helper, advancements, "root", "rewards/guide_book");
+        // The first Pure Steel hands out the guide (never the world start); the World Breaker an Efficiency Upgrade.
+        helper.assertTrue(advancements.get(DimensionalFluxMiner.id("root")).value().rewards().loot().isEmpty(), "root gives nothing");
+        assertReward(helper, advancements, "steel", "rewards/guide_book");
         assertReward(helper, advancements, "world_drained", "rewards/efficiency_upgrade");
+        helper.succeed();
+    }
+
+    /** Pure Steel is not common steel: it carries no steel tag and steel of other mods never replaces it. */
+    @GameTest(template = "empty_small")
+    public static void pureSteelIsNotCommonSteel(GameTestHelper helper) {
+        var steelTag = dimensionalfluxminer.registry.DfmTags.Items.common("ingots/steel");
+        helper.assertTrue(!new ItemStack(DfmItems.INGOT_STEEL.get()).is(steelTag), "Pure Steel must not be in c:ingots/steel");
+        helper.assertTrue(!new ItemStack(DfmItems.INGOT_STEEL.get()).is(dimensionalfluxminer.registry.DfmTags.Items.common("ingots")),
+                "Pure Steel must not be in c:ingots");
+        ItemStack eye = new ItemStack(DfmItems.ENDER_EYE_REINFORCED.get());
+        net.minecraft.core.registries.BuiltInRegistries.ITEM.getTag(steelTag).ifPresent(set -> set.forEach(foreign -> {
+            ItemStack result = craft(helper, List.of(
+                    ItemStack.EMPTY, eye, ItemStack.EMPTY,
+                    ItemStack.EMPTY, new ItemStack(foreign), ItemStack.EMPTY,
+                    ItemStack.EMPTY, ItemStack.EMPTY, new ItemStack(Items.BOOK)));
+            helper.assertTrue(result.isEmpty(), "steel of another mod made the guide: " + foreign.getRegisteredName());
+        }));
         helper.succeed();
     }
 

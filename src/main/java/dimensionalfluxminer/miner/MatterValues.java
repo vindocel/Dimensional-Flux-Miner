@@ -1,15 +1,26 @@
 package dimensionalfluxminer.miner;
 
+import dimensionalfluxminer.miner.profile.ProfileBuilder;
+import dimensionalfluxminer.miner.profile.ResourceProfiles;
 import dimensionalfluxminer.registry.DfmDataMaps;
 import dimensionalfluxminer.registry.DfmTags;
 import java.util.OptionalInt;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
  * Dimensional Matter values in fixed point (1 DM = 10 units). Values are data driven through the
  * {@code dimensionalfluxminer:matter_value} item data map; any other ore ({@code #c:ores}) is worth 0.5 DM.
+ * <p>
+ * The Matter Input only takes matter of its own dimension: an ore is accepted only where that exact ore item
+ * generates (it is part of the dimension's Resource Profile), and any other item only in the dimensions its data map
+ * entry lists (an entry without dimensions, such as obsidian, is accepted everywhere). Blocks made from those items
+ * (stairs, slabs, polished...) count too, see {@link MatterVariants}.
  */
 public final class MatterValues {
     public static final int UNITS_PER_DM = 10;
@@ -35,16 +46,35 @@ public final class MatterValues {
         return OptionalInt.empty();
     }
 
-    /** Base value of a substrate accepted by the Matter Input in this dimension. */
-    public static OptionalInt substrateUnits(ItemStack stack, ResourceKey<Level> dimension) {
+    /** Base value of a substrate accepted by the Matter Input of a Miner standing in {@code level}. */
+    public static OptionalInt substrateUnits(ItemStack stack, ServerLevel level) {
+        return substrateUnits(stack, level.dimension(), item -> ResourceProfiles.get(level).familyOf(item).isPresent(),
+                item -> MatterVariants.value(level.getRecipeManager(), level.registryAccess(), level.dimension(), item));
+    }
+
+    /**
+     * @param generatesHere whether an ore item generates in {@code dimension}
+     * @param variants      value of a variant of the substrates of {@code dimension} (empty for any other item)
+     */
+    public static OptionalInt substrateUnits(ItemStack stack, ResourceKey<Level> dimension, Predicate<Item> generatesHere,
+                                             Function<Item, OptionalInt> variants) {
+        boolean ore = isOre(stack);
+        if (ore && !generatesHere.test(stack.getItem())) {
+            return OptionalInt.empty();
+        }
         DfmDataMaps.MatterValue value = stack.getItemHolder().getData(DfmDataMaps.MATTER_VALUE);
         if (value != null) {
-            return value.acceptedIn(dimension) ? OptionalInt.of(value.units()) : OptionalInt.empty();
+            return ore || value.acceptedIn(dimension) ? OptionalInt.of(value.units()) : OptionalInt.empty();
         }
-        if (stack.is(DfmTags.Items.common("ores"))) {
+        if (ore) {
             return OptionalInt.of(DEFAULT_ORE_UNITS);
         }
-        return OptionalInt.empty();
+        return variants.apply(stack.getItem());
+    }
+
+    /** Ore block items: {@code #c:ores} members and the built-in vanilla ore families. */
+    public static boolean isOre(ItemStack stack) {
+        return stack.is(DfmTags.Items.common("ores")) || ProfileBuilder.familyOf(stack.getItem()).isPresent();
     }
 
     /** Matter Input conversion: base + 0.5 DM per item with the Efficiency Upgrade (no cap). */

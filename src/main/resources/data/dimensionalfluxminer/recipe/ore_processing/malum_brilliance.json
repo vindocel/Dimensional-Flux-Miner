@@ -1,0 +1,12 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "malum" }
+  ],
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": { "tag": "c:ores/brilliance" },
+  "result": {
+    "id": "malum:raw_brilliance"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "malum:soulstone_ore", "required": false },
+    { "id": "malum:deepslate_soulstone_ore", "required": false }
+  ]
+}

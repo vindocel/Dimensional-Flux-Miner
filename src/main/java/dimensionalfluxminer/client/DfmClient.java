@@ -17,6 +17,7 @@ import dimensionalfluxminer.registry.DfmBlockEntities;
 import dimensionalfluxminer.registry.DfmBlocks;
 import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmMenus;
+import dimensionalfluxminer.client.particle.CoreFluxParticle;
 import dimensionalfluxminer.registry.DfmParticles;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -54,7 +55,7 @@ public final class DfmClient {
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         ClientHooks.machineSound = MachineSounds::update;
-        ClientHooks.minerSound = MinerClientEffects::runningSound;
+        ClientHooks.minerTick = MinerClientEffects::tick;
         ClientHooks.formationEffect = MinerClientEffects::formationBurst;
         ClientHooks.assemblyHighlight = MinerAssemblyHighlight::show;
         // Using the guide opens the book in the hand first; the screen follows once it is open.
@@ -92,6 +93,8 @@ public final class DfmClient {
         event.registerSpriteSet(DfmParticles.CORRUPTED_BUBBLE.get(), BubbleParticle.Provider::new);
         event.registerSpriteSet(DfmParticles.CORRUPTED_BUBBLE_POP.get(), BubblePopParticle.Provider::new);
         event.registerSpriteSet(DfmParticles.CORRUPTED_SPLASH.get(), SplashParticle.Provider::new);
+        event.registerSpriteSet(DfmParticles.CORE_FLUX_BASIC.get(), CoreFluxParticle::basic);
+        event.registerSpriteSet(DfmParticles.CORE_FLUX_STABILIZED.get(), CoreFluxParticle::stabilized);
     }
 
     @SubscribeEvent

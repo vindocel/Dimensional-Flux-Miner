@@ -12,11 +12,11 @@ public final class DfmConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.DoubleValue MINER_MIN_FE = BUILDER
-            .comment("Dimensional Flux Miner: FE/t power limit at Flux Rate 1 (minimumFEPerTick).")
-            .defineInRange("miner.minimumFEPerTick", 500.0, 1.0, Integer.MAX_VALUE);
+            .comment("Dimensional Flux Miner: FE/t power limit at Flux Rate 1 (minimumFEPerTick). Rates 1-5 follow the geometric scale up to the maximum; Rates 6-9 cost double; Rate 10 is the maximum.")
+            .defineInRange("miner.minimumFEPerTick", 2_500.0, 1.0, Integer.MAX_VALUE);
     public static final ModConfigSpec.DoubleValue MINER_MAX_FE = BUILDER
             .comment("Dimensional Flux Miner: FE/t power limit at Flux Rate 10 (maximumFEPerTick). Must be greater than the minimum.")
-            .defineInRange("miner.maximumFEPerTick", 1_500_000.0, 2.0, Integer.MAX_VALUE);
+            .defineInRange("miner.maximumFEPerTick", 5_000_000.0, 2.0, Integer.MAX_VALUE);
     public static final ModConfigSpec.DoubleValue MINER_MIN_RATE = BUILDER
             .comment("Dimensional Flux Miner: resources per logical tick at the minimum power (minimumProductionRate).")
             .defineInRange("miner.minimumProductionRate", 0.0125, 0.0001, 64.0);
@@ -26,17 +26,17 @@ public final class DfmConfig {
 
     public static final ModConfigSpec.DoubleValue CRUSHER_MIN_FE = BUILDER
             .comment("Dimensional Crusher: FE/t at Rate 1.")
-            .defineInRange("crusher.minimumFEPerTick", 250.0, 1.0, Integer.MAX_VALUE);
+            .defineInRange("crusher.minimumFEPerTick", 1_500.0, 1.0, Integer.MAX_VALUE);
     public static final ModConfigSpec.DoubleValue CRUSHER_MAX_FE = BUILDER
             .comment("Dimensional Crusher: FE/t at Rate 10. Must be greater than the minimum.")
-            .defineInRange("crusher.maximumFEPerTick", 500_000.0, 2.0, Integer.MAX_VALUE);
+            .defineInRange("crusher.maximumFEPerTick", 1_000_000.0, 2.0, Integer.MAX_VALUE);
 
     public static final ModConfigSpec.DoubleValue SMELTER_MIN_FE = BUILDER
             .comment("Alloy Smelter: FE/t at Rate 1.")
-            .defineInRange("smelter.minimumFEPerTick", 600.0, 1.0, Integer.MAX_VALUE);
+            .defineInRange("smelter.minimumFEPerTick", 2_500.0, 1.0, Integer.MAX_VALUE);
     public static final ModConfigSpec.DoubleValue SMELTER_MAX_FE = BUILDER
             .comment("Alloy Smelter: FE/t at Rate 10. Must be greater than the minimum.")
-            .defineInRange("smelter.maximumFEPerTick", 600_000.0, 2.0, Integer.MAX_VALUE);
+            .defineInRange("smelter.maximumFEPerTick", 2_000_000.0, 2.0, Integer.MAX_VALUE);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> SMELTER_EXTERNAL_ALLOY_TYPES = BUILDER
             .comment("Alloy Smelter: recipe types of other mods also run as alloys when their recipes have 1 to 3 counted item",

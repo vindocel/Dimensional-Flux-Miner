@@ -116,13 +116,16 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /** Client-side ticker: the looping sound only (rendering is done by the block entity renderer). */
+    /** Client-side ticker: the looping sound and the core particles (rendering is done by the block entity renderer). */
     public static final class MinerControllerClientTicker {
         private MinerControllerClientTicker() {
         }
 
         static void tick(Level level, BlockPos pos, BlockState state, MinerControllerBlockEntity be) {
-            dimensionalfluxminer.machine.ClientHooks.minerSound.accept(be);
+            // Accelerated extra calls of the same game time add nothing: the effects keep their own pace.
+            if (be.firstClientTick()) {
+                dimensionalfluxminer.machine.ClientHooks.minerTick.accept(be);
+            }
         }
     }
 }

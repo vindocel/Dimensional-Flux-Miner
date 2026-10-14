@@ -43,7 +43,7 @@ Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-clic
 | Core | How it gets its matter |
 |---|---|
 | 🌀 **Basic Dimensional Core** | Stretches invisible roots for 300 blocks and harvests the dimensional energy of the land, column by column. Powerful… but the drained land falls to the **Dimensional Death**. |
-| 💉 **Stabilized Dimensional Core** | Feed it stone and ores and it turns them into matter on the spot. **The landscape stays untouched** — and that chest full of cobblestone is finally good for something. |
+| 💉 **Stabilized Dimensional Core** | Feed it the stone and ores of its own dimension and it turns them into matter on the spot. **The landscape stays untouched** — and that chest full of cobblestone is finally good for something. The only core that works in the Nether and the End. |
 
 ### 🎛️ In control
 
@@ -94,11 +94,11 @@ There is no speed upgrade to craft. Pick a speed on any machine; each level up a
 
 | Machine | Speed 1 | Speed 10 |
 |---|---|---|
-| ⛏️ Miner | 500 FE/t · 0.25 ores/s | 1 500 000 FE/t · **1 280 ores/s** |
-| ⚙️ Crusher | 250 FE/t · 1 item / 10 s | 500 000 FE/t · **1 280 items/s** |
-| 🔥 Alloy Smelter | 600 FE/t · 0.1 items/s per lane | 600 000 FE/t · **3 840 items/s per lane** |
+| ⛏️ Miner | 2 500 FE/t · 0.25 ores/s | 5 000 000 FE/t · **1 280 ores/s** |
+| ⚙️ Crusher | 1 500 FE/t · 1 item / 10 s | 1 000 000 FE/t · **1 280 items/s** |
+| 🔥 Alloy Smelter | 2 500 FE/t · 0.1 items/s per lane | 2 000 000 FE/t · **3 840 items/s per lane** |
 
-All values are configurable on the server.
+On the Miner, speeds 6 to 9 cost double: going fast has a price. All values are configurable on the server.
 
 **✨ Dimensional Efficiency Upgrade** — one per machine. *It costs a dragon, an enchanted apple and a piece of your soul.*
 
@@ -130,7 +130,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ![The guide open in hand](IMAGE_GUIDE_HAND)
 
-Every new player receives it. Use it and the book **opens in your hand**, stays half open while you read, and **turns a page in your hand** every time you turn one on screen.
+Forge your first **Pure Steel** and it is yours. Use it and the book **opens in your hand**, stays half open while you read, and **turns a page in your hand** every time you turn one on screen.
 
 - 📄 Real pages with a clickable table of contents and page-turn animations.
 - 🧊 An interactive **3D view of the Miner** — rotate it, go layer by layer, highlight each part.

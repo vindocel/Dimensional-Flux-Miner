@@ -64,7 +64,7 @@ public final class SmelterGameTests {
     public static void upgradeGivesTwoIngotsPerRawAndHalvesPower(GameTestHelper helper) {
         AlloySmelterBlockEntity be = place(helper);
         be.upgradeSlot().setStackInSlot(0, new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()));
-        helper.assertTrue(be.effectivePowerLimit() == 300_000, "Rate 10 with upgrade = 300000 FE/t");
+        helper.assertTrue(be.effectivePowerLimit() == 1_000_000, "Rate 10 with upgrade = 1000000 FE/t");
         be.input(1).insert(new ItemStack(Items.RAW_GOLD), 3, false);
         helper.succeedWhen(() -> helper.assertTrue(be.output(1).countOf(new ItemStack(Items.GOLD_INGOT)) == 6, "3 raw gold -> 6 ingots"));
     }
@@ -81,6 +81,32 @@ public final class SmelterGameTests {
             helper.assertTrue(be.alloyByproduct().countOf(new ItemStack(DfmItems.SLAG.get())) == 2, "2 slag");
             helper.assertTrue(be.experience().milli() == 0, "steel recipe gives no XP");
         });
+    }
+
+    /** With Create present: one andesite and one iron or zinc nugget make one andesite alloy. */
+    @GameTest(template = "empty_small")
+    public static void andesiteAlloyFromAndesiteAndANugget(GameTestHelper helper) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("create")) {
+            helper.succeed();
+            return;
+        }
+        var registry = net.minecraft.core.registries.BuiltInRegistries.ITEM;
+        var alloy = registry.get(net.minecraft.resources.ResourceLocation.parse("create:andesite_alloy"));
+        var zinc = registry.get(net.minecraft.resources.ResourceLocation.parse("create:zinc_nugget"));
+        AlloySmelterBlockEntity be = place(helper);
+        be.setMode(SmelterMode.ALLOY);
+        be.input(0).insert(new ItemStack(Items.ANDESITE), 2, false);
+        be.input(1).insert(new ItemStack(Items.IRON_NUGGET), 1, false);
+        // Once the iron nugget is used, a zinc nugget takes its lane for the second alloy.
+        boolean[] zincAdded = {false};
+        helper.onEachTick(() -> {
+            if (!zincAdded[0] && be.input(1).isEmpty()) {
+                zincAdded[0] = true;
+                be.input(1).insert(new ItemStack(zinc), 1, false);
+            }
+        });
+        helper.succeedWhen(() -> helper.assertTrue(be.alloyMain().countOf(new ItemStack(alloy)) == 2,
+                "2 andesite alloy (iron, then zinc), got " + be.alloyMain().countOf(new ItemStack(alloy))));
     }
 
     @GameTest(template = "empty_small")

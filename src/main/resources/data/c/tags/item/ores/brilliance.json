@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "malum:brilliant_stone", "required": false },
+    { "id": "malum:brilliant_deepslate", "required": false }
+  ]
+}

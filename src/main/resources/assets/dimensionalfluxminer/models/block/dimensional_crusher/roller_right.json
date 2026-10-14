@@ -10,8 +10,8 @@
   "ambientocclusion": false,
   "render_type": "minecraft:cutout",
   "textures": {
-    "atlas": "dimensionalfluxminer:block/dimensional_crusher/crusher_atlas",
-    "particle": "dimensionalfluxminer:block/dimensional_crusher/crusher_atlas"
+    "particle": "dimensionalfluxminer:block/dimensional_crusher/dimensional_crusher",
+    "machine": "dimensionalfluxminer:block/dimensional_crusher/dimensional_crusher"
   },
   "display": {
     "gui": {

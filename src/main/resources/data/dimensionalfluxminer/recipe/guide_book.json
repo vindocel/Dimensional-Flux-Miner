@@ -6,7 +6,7 @@
       "item": "minecraft:book"
     },
     {
-      "tag": "c:ingots/steel"
+      "item": "dimensionalfluxminer:ingot_steel"
     },
     {
       "item": "dimensionalfluxminer:ender_eye_reinforced"

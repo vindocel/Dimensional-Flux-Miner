@@ -97,7 +97,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private boolean autoEject;
     private final Set<ResourceLocation> filter = new LinkedHashSet<>();
     private UUID owner;
-    /** Columns this Miner has drained in its life; drives the "whole area drained" advancement. */
+    /** Columns this Miner has drained in its life; drives the "half of the area drained" advancement. */
     private long columnsDrained;
     /** Cobblestone this Miner has turned into DM in its life; drives the "From Trash to Treasure" advancement. */
     private long cobblestoneInjected;
@@ -109,8 +109,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public static final double THOUSAND_PER_SECOND = 1000.0;
     /** ...kept for this many seconds in a row. */
     public static final int THOUSAND_PER_SECOND_SECONDS = 5;
-    /** A 300 x 300 area worth of drained columns. */
-    public static final long WORLD_DRAINED_COLUMNS = 300L * 300L;
+    /** Half of every column inside the drain radius. */
+    public static long worldDrainedColumns() {
+        return dimensionalfluxminer.miner.survey.ColumnOrder.get().size() / 2;
+    }
 
     private final ItemStackHandler coreSlot = new ItemStackHandler(1) {
         @Override
@@ -154,6 +156,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     // ---------------------------------------------------------------- runtime state
     private final LogicalTickCounter tickCounter = new LogicalTickCounter();
+    /** Client side: tick accelerators never speed up the effects (one effect tick per game time). */
+    private final LogicalTickCounter clientTickCounter = new LogicalTickCounter();
     private final dimensionalfluxminer.machine.AccelerationDemand accelerationDemand = new dimensionalfluxminer.machine.AccelerationDemand();
     private final WorkAccumulator work = new WorkAccumulator();
     private CoreKind lastCore = CoreKind.NONE;
@@ -286,8 +290,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return level != null && coreKind() == CoreKind.STABILIZED
-                    && MatterValues.substrateUnits(stack, level.dimension()).isPresent();
+            return level instanceof ServerLevel serverLevel && coreKind() == CoreKind.STABILIZED
+                    && MatterValues.substrateUnits(stack, serverLevel).isPresent();
         }
     };
 
@@ -338,8 +342,14 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public void setRate(int rate) {
-        this.rate = RateScale.clampLevel(rate);
+        int level = RateScale.clampLevel(rate);
+        boolean changed = level != this.rate;
+        this.rate = level;
         setChanged();
+        if (changed) {
+            // The client speeds the core and its motes up with the Rate.
+            syncToClients();
+        }
     }
 
     public boolean runRequested() {
@@ -421,7 +431,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         try {
             return new MinerProductionCurve(power[0], power[1], minRate, maxRate);
         } catch (IllegalArgumentException e) {
-            return new MinerProductionCurve(500, 1_500_000, 0.0125, 64);
+            return new MinerProductionCurve(2_500, 5_000_000, 0.0125, 64);
         }
     }
 
@@ -435,10 +445,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
      * energy available for the work (and for any acceleration) is what limits the machine.
      */
     public ItemStack insertSubstrate(ItemStack stack, boolean simulate) {
-        if (stack.isEmpty() || level == null || !formed || coreKind() != CoreKind.STABILIZED) {
+        if (stack.isEmpty() || !(level instanceof ServerLevel serverLevel) || !formed || coreKind() != CoreKind.STABILIZED) {
             return stack;
         }
-        OptionalInt base = MatterValues.substrateUnits(stack, level.dimension());
+        OptionalInt base = MatterValues.substrateUnits(stack, serverLevel);
         if (base.isEmpty() || base.getAsInt() <= 0) {
             return stack;
         }
@@ -734,9 +744,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (dmUnits < MatterValues.ROLL_COST_UNITS && !canRefill) {
             status = core == CoreKind.BASIC ? MinerStatus.NO_DRAINABLE_MATTER : MinerStatus.WAITING_FOR_MATTER;
             noteLimit(matterLimit(core));
-            if (core == CoreKind.BASIC) {
-                reportIfAreaDrained(survey);
-            }
             return;
         }
 
@@ -808,9 +815,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (filteredOre) {
             report(DfmAdvancements.ORE_FILTERED);
         }
-        if (stop == MinerStatus.NO_DRAINABLE_MATTER) {
-            reportIfAreaDrained(survey);
-        }
         if (autoEject) {
             ejectOutput();
         }
@@ -821,13 +825,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private void report(String event) {
         if (level instanceof ServerLevel serverLevel && advancements.ready(event, serverLevel.getGameTime())) {
             DfmAdvancements.awardOwner(serverLevel, owner, worldPosition, event);
-        }
-    }
-
-    /** A whole area drained: a 300 x 300 area worth of columns taken and nothing left to drain around the Miner. */
-    private void reportIfAreaDrained(MinerSurvey survey) {
-        if (survey != null && survey.ready() && !survey.hasCandidates() && columnsDrained >= WORLD_DRAINED_COLUMNS) {
-            report(DfmAdvancements.WORLD_DRAINED);
         }
     }
 
@@ -852,6 +849,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
                 dmUnits += MatterValues.COLUMN_UNITS;
                 columnsDrained++;
                 report(DfmAdvancements.COLUMN_DRAINED);
+                if (columnsDrained >= worldDrainedColumns()) {
+                    report(DfmAdvancements.WORLD_DRAINED);
+                }
                 return true;
             }
         }
@@ -933,7 +933,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     /** True when a cycle of this game time or the previous one did work (accelerated cycles included). */
     private boolean workedRecently() {
-        return level != null && level.getGameTime() - lastWorkGameTime <= 1;
+        // Never worked yet: the subtraction from Long.MIN_VALUE would overflow into "just worked".
+        return level != null && lastWorkGameTime != Long.MIN_VALUE && level.getGameTime() - lastWorkGameTime <= 1;
     }
 
     private void updateVisual() {
@@ -975,6 +976,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         tag.putBoolean("formed", formed);
         tag.putString("stage", visualStage.key());
         tag.putInt("load", loadPercent);
+        tag.putInt("rate", rate);
         tag.putLong("anim_start", animationStartTick);
         return tag;
     }
@@ -1000,6 +1002,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         formed = tag.getBoolean("formed");
         visualStage = MinerVisualStage.byKey(tag.getString("stage"));
         loadPercent = tag.getInt("load");
+        rate = RateScale.clampLevel(tag.getInt("rate"));
         animationStartTick = tag.getLong("anim_start");
         clientFront = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
@@ -1008,6 +1011,11 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         Direction facing = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
         MinerStructure s = MinerStructure.layout(worldPosition, facing);
         return new AABB(s.core()).inflate(1.6);
+    }
+
+    /** True for the first client tick of this game time; extra calls made by tick accelerators return false. */
+    public boolean firstClientTick() {
+        return level != null && clientTickCounter.register(level.getGameTime());
     }
 
     public BlockPos corePos() {
@@ -1023,11 +1031,11 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
                 if (next == rate) {
                     return false;
                 }
-                rate = next;
+                setRate(next);
                 return true;
             }
             case BUTTON_RATE_CYCLE, BUTTON_RATE_CYCLE_BACK -> {
-                rate = RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE);
+                setRate(RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE));
                 if (rate == RateScale.MAX_LEVEL && player instanceof ServerPlayer serverPlayer) {
                     DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
                 }

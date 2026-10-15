@@ -80,6 +80,7 @@ public final class ProgressionGameTests {
     /**
      * Which items can be made from vanilla items, following the mod's recipes in order: crafting at once, Crusher
      * recipes once a Crusher exists, Smelter alloys once a Smelter exists. Returns the step each item becomes available.
+     * A step only uses what earlier steps made, so the result never depends on the order the recipes are listed in.
      */
     private static Map<Item, Integer> reachable(ServerLevel level, boolean withCrushing, boolean withAlloying) {
         Map<Item, Integer> step = new HashMap<>();
@@ -91,6 +92,8 @@ public final class ProgressionGameTests {
         while (changed) {
             changed = false;
             round++;
+            // Items made before this step; what this step makes is only usable from the next one.
+            Set<Item> known = new HashSet<>(step.keySet());
             for (RecipeHolder<?> holder : recipes) {
                 Recipe<?> recipe = holder.value();
                 ItemStack result = recipe.getResultItem(level.registryAccess());
@@ -100,7 +103,7 @@ public final class ProgressionGameTests {
                 }
                 boolean crushing = recipe.getType() == DfmRecipes.CRUSHING.get() || recipe.getType() == DfmRecipes.ORE_CRUSHING.get();
                 boolean alloying = recipe.getType() == DfmRecipes.ALLOYING.get();
-                if ((crushing && (!withCrushing || !step.containsKey(crusher))) || (alloying && (!withAlloying || !step.containsKey(smelter)))) {
+                if ((crushing && (!withCrushing || !known.contains(crusher))) || (alloying && (!withAlloying || !known.contains(smelter)))) {
                     continue;
                 }
                 boolean all = true;
@@ -108,7 +111,7 @@ public final class ProgressionGameTests {
                     boolean any = false;
                     for (ItemStack option : ingredient.getItems()) {
                         String ns = BuiltInRegistries.ITEM.getKey(option.getItem()).getNamespace();
-                        if (ns.equals("minecraft") || step.containsKey(option.getItem())) {
+                        if (ns.equals("minecraft") || known.contains(option.getItem())) {
                             any = true;
                             break;
                         }

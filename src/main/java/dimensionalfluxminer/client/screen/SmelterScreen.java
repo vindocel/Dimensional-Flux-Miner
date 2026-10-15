@@ -9,7 +9,7 @@ import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
 import dimensionalfluxminer.smelter.SmelterMenu;
 import dimensionalfluxminer.smelter.SmelterMode;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,9 +59,11 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
         imageHeight = HEIGHT;
         sideWindow = new SideConfigWindow(this, "smelter.side_config", SideRules.SMELTER,
                 List.of(Transmission.ITEM, Transmission.ENERGY, Transmission.EXPERIENCE), this::data, menu.pos(),
-                Set.of(Transmission.ITEM, Transmission.EXPERIENCE), List.of(
-                        Component.translatable("gui.dimensionalfluxminer.auto_input.help"),
-                        Component.translatable("gui.dimensionalfluxminer.smelter.auto_eject.help")));
+                Map.of(Transmission.ITEM, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.ITEMS, List.of(
+                                Component.translatable("gui.dimensionalfluxminer.auto_input.help"),
+                                Component.translatable("gui.dimensionalfluxminer.auto_eject.help"))),
+                        Transmission.EXPERIENCE, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.FLUID_OUTPUT, List.of(
+                                Component.translatable("gui.dimensionalfluxminer.smelter.auto_eject_fluid.help")))));
         upgradeWindow = new MachineWindows.UpgradeWindow(this, "smelter.upgrades", menu.upgradeSlot());
         detailsWindow = new MachineWindows.InfoWindow(this, "smelter.details", Component.translatable("gui.dimensionalfluxminer.details"),
                 () -> {
@@ -74,6 +76,7 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
                             MachineText.energyLine(d),
                             Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(d.getBoolean("auto_input"))),
                             Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(d.getBoolean("auto_eject"))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_eject_fluid", MachineText.onOff(d.getBoolean("auto_eject_fluid"))),
                             Component.translatable("gui.dimensionalfluxminer.auto_split", MachineText.onOff(d.getBoolean("auto_split"))),
                             MachineText.redstone(d));
                 });

@@ -28,6 +28,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 public final class ResourceProfiles {
     private static final Map<ResourceKey<Level>, ResourceProfile> CACHE = new ConcurrentHashMap<>();
     private static volatile List<ProfileOverride> overrides = List.of();
+    private static volatile List<ProfileDimensionRule> rules = List.of();
     /** Incremented on every rebuild so machines can prune filter selections. */
     private static volatile int generation;
 
@@ -35,7 +36,7 @@ public final class ResourceProfiles {
     }
 
     public static ResourceProfile get(ServerLevel level) {
-        return CACHE.computeIfAbsent(level.dimension(), key -> ProfileBuilder.build(level, overrides));
+        return CACHE.computeIfAbsent(level.dimension(), key -> ProfileBuilder.build(level, overrides, rules));
     }
 
     public static int generation() {
@@ -49,6 +50,10 @@ public final class ResourceProfiles {
 
     public static List<ProfileOverride> overrides() {
         return overrides;
+    }
+
+    public static List<ProfileDimensionRule> rules() {
+        return rules;
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -67,6 +72,7 @@ public final class ResourceProfiles {
         @Override
         protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
             List<ProfileOverride> parsed = new ArrayList<>();
+            List<ProfileDimensionRule> parsedRules = new ArrayList<>();
             files.forEach((id, json) -> {
                 List<JsonElement> entries = new ArrayList<>();
                 if (json instanceof JsonArray array) {
@@ -77,12 +83,20 @@ public final class ResourceProfiles {
                     entries.add(json);
                 }
                 for (JsonElement entry : entries) {
+                    // An entry with "empty_share" sets the void of a dimension; any other entry overrides a resource.
+                    if (entry instanceof JsonObject obj && obj.has("empty_share")) {
+                        ProfileDimensionRule.CODEC.parse(JsonOps.INSTANCE, entry)
+                                .resultOrPartial(err -> DimensionalFluxMiner.LOGGER.warn("Invalid dimensional miner rule {}: {}", id, err))
+                                .ifPresent(parsedRules::add);
+                        continue;
+                    }
                     ProfileOverride.CODEC.parse(JsonOps.INSTANCE, entry)
                             .resultOrPartial(err -> DimensionalFluxMiner.LOGGER.warn("Invalid dimensional miner resource {}: {}", id, err))
                             .ifPresent(parsed::add);
                 }
             });
             overrides = List.copyOf(parsed);
+            rules = List.copyOf(parsedRules);
             Map<Item, Item> crusherOverrides = new HashMap<>();
             for (ProfileOverride o : parsed) {
                 o.crusherOutput().ifPresent(out -> {

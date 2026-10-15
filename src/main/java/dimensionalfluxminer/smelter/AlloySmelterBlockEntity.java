@@ -1,6 +1,5 @@
 package dimensionalfluxminer.smelter;
 
-import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.ItemQueue;
@@ -15,15 +14,10 @@ import dimensionalfluxminer.machine.side.Transmission;
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.recipe.AlloyRecipeInput;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
-import dimensionalfluxminer.recipe.ExternalAlloying;
 import dimensionalfluxminer.registry.DfmBlockEntities;
-import dimensionalfluxminer.registry.DfmRecipes;
-import dimensionalfluxminer.registry.DfmTags;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -36,27 +30,23 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.FluidUtil;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
 public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     public static final int LANES = 3;
-    /** Rate 10 spends up to this many items per lane per logical tick. */
-    public static final int RATE_TEN_ITEMS_PER_TICK = 192;
-    /** Cooking time of a vanilla furnace recipe (10 s). */
-    private static final int STANDARD_COOKING_TICKS = 200;
+    /** Rate 10: operations of one lane per logical tick (furnace items, or standard alloy executions). */
+    public static final int RATE_TEN_OPERATIONS_PER_LANE = 64;
+    /** Rate 10: the three furnace lanes together. */
+    public static final int RATE_TEN_OPERATIONS_TOTAL = LANES * RATE_TEN_OPERATIONS_PER_LANE;
+    /** Cooking time of a vanilla furnace recipe (10 s): the standard recipe of both energy profiles. */
+    public static final int STANDARD_COOKING_TICKS = 200;
     /** Every input and output is a single slot of 64 items; a full output stops its lane. */
     public static final int SLOT_CAPACITY = ItemQueue.SLOT_LIMIT;
 
@@ -94,13 +84,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     private SmelterMode mode = SmelterMode.ALL;
     private boolean autoSplit;
 
-    private RecipeManager cachedManager;
-    private final ItemStack[] laneKey = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
-    @SuppressWarnings("unchecked")
-    private final Optional<AbstractCookingRecipe>[] laneRecipe = new Optional[] {Optional.empty(), Optional.empty(), Optional.empty()};
-    private ItemStack[] alloyKey = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
-    private Optional<AlloyingRecipe> alloyRecipe = Optional.empty();
-    private Set<Item> alloyIngredientItems = Set.of();
+    private final SmelterRecipes recipes = new SmelterRecipes(LANES);
 
     /** Ingredients shown inside the chamber (client render data). */
     private List<ItemStack> chamber = List.of();
@@ -157,10 +141,25 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         return mode.profile();
     }
 
+    /**
+     * FE/t of the selected Rate for standard recipes (200 ticks): the larger of what the profiles the mode can run ask for.
+     * The FE really charged follows the work done, one profile per job (see {@link #processNormal} and {@link #processAlloy}).
+     */
     @Override
     public long effectivePowerLimit() {
-        double[] range = DfmConfig.range(DfmConfig.SMELTER_MIN_FE, DfmConfig.SMELTER_MAX_FE);
-        return RateScale.powerLimit(rate, range[0], range[1], hasEfficiencyUpgrade() ? 0.5 : 1.0);
+        double alloy = SmelterEnergy.alloyStandardPower(rate, hasEfficiencyUpgrade());
+        double furnace = mode.canSmelt() ? SmelterEnergy.furnaceStandardPower(rate, hasEfficiencyUpgrade()) : 0.0;
+        return RateScale.powerLimit(Math.max(alloy, furnace));
+    }
+
+    /** Progress of a furnace lane towards its next item (0..1). */
+    public double laneWorkProgress(int lane) {
+        return laneWork[lane].progress();
+    }
+
+    /** Progress of the alloy towards its next execution (0..1). */
+    public double alloyWorkProgress() {
+        return alloyWork.progress();
     }
 
     /**
@@ -188,72 +187,23 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
 
     // ---------------------------------------------------------------- recipes
 
-    private void refreshCaches() {
-        RecipeManager manager = level.getRecipeManager();
-        if (manager != cachedManager) {
-            cachedManager = manager;
-            for (int i = 0; i < LANES; i++) {
-                laneKey[i] = ItemStack.EMPTY;
-                laneRecipe[i] = Optional.empty();
-            }
-            alloyKey = new ItemStack[] {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
-            alloyRecipe = Optional.empty();
-            Set<Item> items = new HashSet<>();
-            for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(manager, level.registryAccess())) {
-                for (SizedIngredient sized : holder.value().ingredients()) {
-                    for (ItemStack option : sized.ingredient().getItems()) {
-                        items.add(option.getItem());
-                    }
-                }
-            }
-            alloyIngredientItems = items;
-        }
-    }
-
     private Optional<AbstractCookingRecipe> cooking(int lane, ItemStack stack) {
-        refreshCaches();
-        if (!ItemStack.isSameItemSameComponents(laneKey[lane], stack)) {
-            laneKey[lane] = stack.copyWithCount(1);
-            laneRecipe[lane] = stack.isEmpty() ? Optional.empty() : cooking(stack);
-        }
-        return laneRecipe[lane];
+        return recipes.cooking(level, lane, stack);
     }
 
     /** Blast furnace recipe of the item, otherwise its furnace recipe. */
     private Optional<AbstractCookingRecipe> cooking(ItemStack stack) {
-        SingleRecipeInput input = new SingleRecipeInput(stack.copyWithCount(1));
-        RecipeManager manager = level.getRecipeManager();
-        Optional<AbstractCookingRecipe> blasting = manager.getRecipeFor(RecipeType.BLASTING, input, level)
-                .map(h -> (AbstractCookingRecipe) h.value());
-        return blasting.isPresent() ? blasting : manager.getRecipeFor(RecipeType.SMELTING, input, level)
-                .map(h -> (AbstractCookingRecipe) h.value());
+        return recipes.cooking(level, stack);
     }
 
     private Optional<AlloyingRecipe> alloy(AlloyRecipeInput input) {
-        refreshCaches();
-        boolean same = true;
-        for (int i = 0; i < LANES; i++) {
-            same &= ItemStack.isSameItemSameComponents(alloyKey[i], input.getItem(i));
-        }
-        if (!same) {
-            alloyKey = new ItemStack[] {input.lane1().copy(), input.lane2().copy(), input.lane3().copy()};
-            // The mod's own alloys first, then the alloys of other mods (configured recipe types).
-            alloyRecipe = ExternalAlloying.find(input, level);
-        }
-        return alloyRecipe;
+        return recipes.alloy(level, input);
     }
 
     /** Raw -> Ingot of the same material with a single result, the only case eligible for the bulk yield. */
     public static boolean isRawToIngot(ItemStack input, ItemStack result) {
-        if (result.getCount() != 1) {
-            return false;
-        }
-        return input.getTags()
-                .filter(t -> t.location().getNamespace().equals("c") && t.location().getPath().startsWith("raw_materials/"))
-                .map(t -> t.location().getPath().substring("raw_materials/".length()))
-                .anyMatch(material -> result.is(DfmTags.Items.common("ingots/" + material)));
+        return SmelterRecipes.isRawToIngot(input, result);
     }
-
     private boolean validForMode(ItemStack stack) {
         if (stack.isEmpty() || stack.is(dimensionalfluxminer.registry.DfmItems.EFFICIENCY_UPGRADE.get())) {
             return false;
@@ -262,8 +212,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     }
 
     private boolean isAlloyIngredient(ItemStack stack) {
-        refreshCaches();
-        return alloyIngredientItems.contains(stack.getItem());
+        return recipes.isAlloyIngredient(level, stack);
     }
 
     /**
@@ -280,23 +229,8 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         }
         for (ItemQueue lane : inputs) {
             ItemStack other = lane.firstPrototype();
-            if (!other.isEmpty() && !ItemStack.isSameItemSameComponents(other, stack) && alloyPartners(stack, other)) {
+            if (!other.isEmpty() && !ItemStack.isSameItemSameComponents(other, stack) && SmelterRecipes.alloyPartners(level, stack, other)) {
                 return true;
-            }
-        }
-        return false;
-    }
-
-    /** True when one alloy recipe uses both items as different ingredients. */
-    private boolean alloyPartners(ItemStack a, ItemStack b) {
-        for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(level.getRecipeManager(), level.registryAccess())) {
-            List<SizedIngredient> ingredients = holder.value().ingredients();
-            for (int i = 0; i < ingredients.size(); i++) {
-                for (int j = 0; j < ingredients.size(); j++) {
-                    if (i != j && ingredients.get(i).ingredient().test(a) && ingredients.get(j).ingredient().test(b)) {
-                        return true;
-                    }
-                }
             }
         }
         return false;
@@ -485,9 +419,8 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     }
 
     private boolean processNormal() {
-        long power = effectivePowerLimit();
-        double lanePower = power / (double) LANES;
         boolean upgrade = hasEfficiencyUpgrade();
+        double energyPerItem = SmelterEnergy.furnaceEnergyPerItem(rate, upgrade);
         record LanePlan(int lane, int target, AbstractCookingRecipe recipe, int unitItems, ItemStack unitOutput,
                         double unitsPerTick, long limit) {
         }
@@ -526,7 +459,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             unitItems[lane] = items;
         }
         // Second pass: pick an output slot per lane, keeping track of what this cycle already planned per slot.
-        OutputPlanner planner = new OutputPlanner(units);
+        SmelterOutputPlanner planner = new SmelterOutputPlanner(outputs, units);
         List<LanePlan> plans = new ArrayList<>();
         boolean blocked = false;
         for (int lane = 0; lane < LANES; lane++) {
@@ -542,20 +475,24 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             long fit = planner.room(target, unit) / unit.getCount();
             long limit = Math.min(inputs[lane].firstCount() / unitItems[lane], fit);
             planner.reserve(target, unit, limit * unit.getCount());
-            double itemsPerTick = RateScale.smelterOperationsPerTick(rate, recipes[lane].getCookingTime(), RATE_TEN_ITEMS_PER_TICK);
+            double itemsPerTick = SmelterEnergy.laneOperationsPerTick(rate, recipes[lane].getCookingTime());
             plans.add(new LanePlan(lane, target, recipes[lane], unitItems[lane], unit, itemsPerTick / unitItems[lane], limit));
         }
         if (plans.isEmpty()) {
             status = blocked ? "output_blocked" : anyInput ? "invalid_input" : "no_input";
             return false;
         }
-        long stored = energyBuffer.stored();
-        if (stored <= 0 || power <= 0) {
+        // Furnace profile: every item smelted costs the same FE, so only the lanes that really work are billed.
+        double demand = 0;
+        for (LanePlan p : plans) {
+            demand += RateScale.power(p.unitsPerTick * p.unitItems, energyPerItem);
+        }
+        double available = energyBuffer.available();
+        if (available <= 0 || demand <= 0) {
             status = "no_energy";
             return false;
         }
-        double demand = lanePower * plans.size();
-        double fraction = Math.min(1.0, stored / demand);
+        double fraction = Math.min(1.0, available / demand);
         boolean worked = false;
         for (LanePlan p : plans) {
             WorkAccumulator.Plan plan = laneWork[p.lane].plan(p.unitsPerTick * fraction, p.limit);
@@ -566,62 +503,14 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
                 // XP follows the base inputs processed; the bulk bonus multiplies items, not XP.
                 experience.add(p.recipe.getExperience() * consumed);
             }
-            energy.consume(plan.workDone() * (lanePower / p.unitsPerTick));
+            // Billed per input item: a Raw pair (2 items -> 3 ingots) costs two items.
+            energy.consume(plan.workDone() * p.unitItems * energyPerItem);
             laneWork[p.lane].commit(plan);
             laneProgress[p.lane] = laneWork[p.lane].progress();
             worked |= plan.workDone() > 0;
         }
         status = fraction < 1.0 ? "low_energy" : "running";
         return worked;
-    }
-
-    /**
-     * Output choice of the smelting lanes. A lane first uses the output under it; when that slot holds another
-     * item, it may use a slot that already holds its result, then an empty slot whose own lane is idle or makes
-     * the same item. An empty slot stays reserved for the lane above it when that lane makes something else.
-     */
-    private final class OutputPlanner {
-        private final ItemStack[] laneUnits;
-        private final ItemStack[] claimed = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
-        private final long[] planned = new long[LANES];
-
-        OutputPlanner(ItemStack[] laneUnits) {
-            this.laneUnits = laneUnits;
-        }
-
-        /** Items of {@code unit}'s kind the slot can still take this cycle. */
-        long room(int slot, ItemStack unit) {
-            if (!claimed[slot].isEmpty() && !ItemStack.isSameItemSameComponents(claimed[slot], unit)) {
-                return 0;
-            }
-            return Math.max(0, outputs[slot].acceptable(unit) - planned[slot]);
-        }
-
-        void reserve(int slot, ItemStack unit, long items) {
-            claimed[slot] = unit;
-            planned[slot] += items;
-        }
-
-        int choose(int lane, ItemStack unit) {
-            if (room(lane, unit) >= unit.getCount()) {
-                return lane;
-            }
-            for (int slot = 0; slot < LANES; slot++) {
-                if (slot != lane && !outputs[slot].isEmpty() && room(slot, unit) >= unit.getCount()) {
-                    return slot;
-                }
-            }
-            for (int slot = 0; slot < LANES; slot++) {
-                if (slot == lane || !outputs[slot].isEmpty() || room(slot, unit) < unit.getCount()) {
-                    continue;
-                }
-                ItemStack owner = laneUnits[slot];
-                if (owner.isEmpty() || ItemStack.isSameItemSameComponents(owner, unit)) {
-                    return slot;
-                }
-            }
-            return -1;
-        }
     }
 
     /** Slag Aggregate turned back into steel ("Nothing Is Lost"). */
@@ -649,10 +538,8 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             return false;
         }
         long limit = Long.MAX_VALUE;
-        int maxCount = 1;
         for (int i = 0; i < assignment.length; i++) {
             int q = recipe.ingredients().get(i).count();
-            maxCount = Math.max(maxCount, q);
             limit = Math.min(limit, inputs[assignment[i]].firstCount() / q);
         }
         if (limit <= 0) {
@@ -667,16 +554,16 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             status = "output_blocked";
             return false;
         }
-        long power = effectivePowerLimit();
-        long stored = energyBuffer.stored();
-        if (stored <= 0 || power <= 0) {
+        double opsPerTick = SmelterEnergy.alloyExecutionsPerTick(rate, recipe);
+        // Alloy profile: an execution costs its units of work, whatever the recipe's duration.
+        double energyPerExecution = SmelterEnergy.alloyExecutionEnergy(recipe, rate, hasEfficiencyUpgrade());
+        double demand = RateScale.power(opsPerTick, energyPerExecution);
+        double available = energyBuffer.available();
+        if (available <= 0 || demand <= 0) {
             status = "no_energy";
             return false;
         }
-        double fraction = Math.min(1.0, stored / (double) power);
-        // Each lane may spend R(n,T) items per tick; one combined operation needs every ingredient at once.
-        double itemsPerTick = RateScale.smelterOperationsPerTick(rate, recipe.processingTicks(), RATE_TEN_ITEMS_PER_TICK);
-        double opsPerTick = itemsPerTick / maxCount;
+        double fraction = Math.min(1.0, available / demand);
         WorkAccumulator.Plan plan = alloyWork.plan(opsPerTick * fraction, Math.min(limit, fit));
         if (plan.operations() > 0) {
             long ops = plan.operations();
@@ -700,7 +587,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
                 reportNearby(DfmAdvancements.SLAG_RECOVERED);
             }
         }
-        energy.consume(plan.workDone() * (power / opsPerTick));
+        energy.consume(plan.workDone() * energyPerExecution);
         alloyWork.commit(plan);
         for (int i = 0; i < LANES; i++) {
             laneProgress[i] = alloyWork.progress();
@@ -784,6 +671,11 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
                 NeighborTransfer.push(level, worldPosition, side, out, Long.MAX_VALUE);
             }
         }
+    }
+
+    /** Liquid XP is output-only: it has Auto Eject of its own and no Auto Input. */
+    @Override
+    protected void autoEjectFluidCycle() {
         for (RelativeFace face : RelativeFace.VALUES) {
             if (route(face, Transmission.EXPERIENCE) != SideRoute.XP_OUTPUT || experience.availableMillibuckets() <= 0) {
                 continue;
@@ -916,7 +808,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         tag.putBoolean("alloy_running", alloyRunning());
         tag.putLong("xp_milli", experience.milli());
         // Lane speed of the current rate for a standard furnace recipe, shown on the rate tab.
-        tag.putDouble("lane_speed", RateScale.smelterOperationsPerTick(rate, STANDARD_COOKING_TICKS, RATE_TEN_ITEMS_PER_TICK));
+        tag.putDouble("lane_speed", SmelterEnergy.laneOperationsPerTick(rate, STANDARD_COOKING_TICKS));
     }
 
     @Override
@@ -963,7 +855,10 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         for (int i = 0; i < LANES; i++) {
             tag.put("in" + i, inputs[i].save(registries));
             tag.put("out" + i, outputs[i].save(registries));
+            // Progress already paid for survives a save and reload.
+            tag.putDouble("lane_progress" + i, laneWork[i].progress());
         }
+        tag.putDouble("alloy_progress", alloyWork.progress());
         tag.putLong("xp_milli", experience.milli());
     }
 
@@ -979,7 +874,10 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         for (int i = 0; i < LANES; i++) {
             inputs[i].load(tag.getList("in" + i, Tag.TAG_COMPOUND), registries);
             outputs[i].load(tag.getList("out" + i, Tag.TAG_COMPOUND), registries);
+            laneWork[i].setProgress(tag.getDouble("lane_progress" + i));
+            laneProgress[i] = laneWork[i].progress();
         }
+        alloyWork.setProgress(tag.getDouble("alloy_progress"));
         // Saves from before the shared outputs kept alloy results apart: move them into the output slots.
         mergeLegacyOutput(tag.getList("alloy_main", Tag.TAG_COMPOUND), registries);
         mergeLegacyOutput(tag.getList("alloy_byproduct", Tag.TAG_COMPOUND), registries);

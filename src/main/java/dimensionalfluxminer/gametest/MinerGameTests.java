@@ -279,11 +279,11 @@ public final class MinerGameTests {
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.OAK_PLANKS, 3), false).getCount() == 3, "invalid substrate rejected");
         c.upgradeSlot().setStackInSlot(0, new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()));
         matter.insertItem(0, new ItemStack(Items.DIRT, 1), false);
-        helper.assertTrue(c.dmUnits() == 66, "dirt with upgrade = 0.6 DM (no cap on matter input)");
+        helper.assertTrue(c.dmUnits() == 62, "dirt with upgrade = 0.1 + min(0.1, 0.2) = 0.2 DM, got " + c.dmUnits());
         // Only what fits in the 5 000 DM buffer is accepted; the rest stays with the source.
         c.setDmUnits(MatterValues.BUFFER_UNITS - 25);
         ItemStack rest = matter.insertItem(0, new ItemStack(Items.STONE, 64), false);
-        helper.assertTrue(rest.getCount() == 62 && c.dmUnits() == MatterValues.BUFFER_UNITS - 5, "partial acceptance, got rest " + rest.getCount());
+        helper.assertTrue(rest.getCount() == 61 && c.dmUnits() == MatterValues.BUFFER_UNITS - 4, "partial acceptance (0.7 DM per stone), got rest " + rest.getCount());
         helper.succeed();
     }
 
@@ -740,6 +740,30 @@ public final class MinerGameTests {
         helper.succeed();
     }
 
+    /** Every terracotta becomes Corrupted Terracotta; calcite and dripstone count as stone. */
+    @GameTest(template = "empty_large", skyAccess = true)
+    public static void terracottaAndCalciteCorrupt(GameTestHelper helper) {
+        var level = helper.getLevel();
+        helper.setBlock(new BlockPos(1, 1, 1), Blocks.WHITE_GLAZED_TERRACOTTA);
+        helper.setBlock(new BlockPos(1, 2, 1), Blocks.RED_TERRACOTTA);
+        helper.setBlock(new BlockPos(1, 3, 1), Blocks.TERRACOTTA);
+        helper.setBlock(new BlockPos(3, 1, 1), Blocks.DIORITE);
+        helper.setBlock(new BlockPos(3, 2, 1), Blocks.DRIPSTONE_BLOCK);
+        helper.setBlock(new BlockPos(3, 3, 1), Blocks.CALCITE);
+        BlockPos terracotta = helper.absolutePos(new BlockPos(1, 0, 1));
+        BlockPos calcite = helper.absolutePos(new BlockPos(3, 0, 1));
+        helper.assertTrue(CorruptionService.corrupt(level, terracotta.getX(), terracotta.getZ(), null), "terracotta column corrupted");
+        helper.assertTrue(CorruptionService.corrupt(level, calcite.getX(), calcite.getZ(), null), "calcite column corrupted");
+        for (int y = 1; y <= 3; y++) {
+            helper.assertBlockPresent(DfmBlocks.CORRUPTED_TERRACOTTA.get(), new BlockPos(1, y, 1));
+            helper.assertBlockPresent(DfmBlocks.CORRUPTED_STONE.get(), new BlockPos(3, y, 1));
+        }
+        helper.assertFalse(CorruptionService.corrupt(level, terracotta.getX(), terracotta.getZ(), null), "corrupted terracotta is never corrupted again");
+        // Corrupted Terracotta is a terracotta for recipes and tags.
+        helper.assertTrue(new net.minecraft.world.item.ItemStack(DfmItems.CORRUPTED_TERRACOTTA.get()).is(net.minecraft.tags.ItemTags.TERRACOTTA), "item in #minecraft:terracotta");
+        helper.succeed();
+    }
+
     private record ModOre(String mod, String ore, String product, String family, int count) {
     }
 
@@ -865,7 +889,7 @@ public final class MinerGameTests {
                 .setValue(net.minecraft.world.level.block.TallSeagrassBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
         helper.setBlock(new BlockPos(4, 2, 4), Blocks.TALL_SEAGRASS.defaultBlockState()
                 .setValue(net.minecraft.world.level.block.TallSeagrassBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
-        helper.assertTrue(CorruptionService.corruptWaterAt(helper.getLevel(), helper.absolutePos(new BlockPos(4, 2, 4))), "upper half converted");
+        helper.assertTrue(dimensionalfluxminer.miner.corruption.WaterCorruption.corruptWaterAt(helper.getLevel(), helper.absolutePos(new BlockPos(4, 2, 4))), "upper half converted");
         helper.runAfterDelay(3, () -> {
             helper.assertBlockPresent(DfmBlocks.CORRUPTED_TALL_SEAGRASS.get(), new BlockPos(4, 1, 4));
             helper.assertBlockPresent(DfmBlocks.CORRUPTED_TALL_SEAGRASS.get(), new BlockPos(4, 2, 4));

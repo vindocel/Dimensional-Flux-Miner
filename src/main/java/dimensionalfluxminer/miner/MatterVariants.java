@@ -37,10 +37,14 @@ import net.minecraft.world.level.block.EntityBlock;
  */
 public final class MatterVariants {
     /** A recipe that may turn substrates into a block: the options of each ingredient, the block and how many. */
-    private record Making(List<Item[]> ingredients, Item output, int count) {
+    public record Making(List<Item[]> ingredients, Item output, int count) {
     }
 
-    private record Cache(RecipeManager recipes, List<Making> makings, Map<ResourceKey<Level>, Map<Item, Integer>> byDimension) {
+    /** Variants of one dimension, valued with the plain substrate values or with their Efficiency Upgrade values. */
+    private record Key(ResourceKey<Level> dimension, boolean upgrade) {
+    }
+
+    private record Cache(RecipeManager recipes, List<Making> makings, Map<Key, Map<Item, Integer>> byDimension) {
     }
 
     private static volatile Cache cache;
@@ -50,13 +54,28 @@ public final class MatterVariants {
 
     /** Value in units of a variant accepted in {@code dimension}; empty for any other item. */
     public static OptionalInt value(RecipeManager recipes, HolderLookup.Provider registries, ResourceKey<Level> dimension, Item item) {
+        return value(recipes, registries, dimension, item, false);
+    }
+
+    /**
+     * Value in units of a variant accepted in {@code dimension}. With {@code upgrade}, the same recipes are followed from
+     * the substrates' Efficiency Upgrade values: cutting one block into many pieces never multiplies the upgrade bonus,
+     * because each piece is worth its share of the upgraded block, not a bonus of its own.
+     */
+    public static OptionalInt value(RecipeManager recipes, HolderLookup.Provider registries, ResourceKey<Level> dimension, Item item,
+                                    boolean upgrade) {
         Cache current = cache;
         if (current == null || current.recipes() != recipes) {
             current = new Cache(recipes, makings(recipes, registries), new ConcurrentHashMap<>());
             cache = current;
         }
         List<Making> makings = current.makings();
-        Integer units = current.byDimension().computeIfAbsent(dimension, d -> variants(makings, d)).get(item);
+        Map<Key, Map<Item, Integer>> maps = current.byDimension();
+        // Accepted only when the plain values accept it; the upgrade never turns a rejected item into matter.
+        if (!maps.computeIfAbsent(new Key(dimension, false), k -> variants(makings, k)).containsKey(item)) {
+            return OptionalInt.empty();
+        }
+        Integer units = maps.computeIfAbsent(new Key(dimension, upgrade), k -> variants(makings, k)).get(item);
         return units == null ? OptionalInt.empty() : OptionalInt.of(units);
     }
 
@@ -90,14 +109,22 @@ public final class MatterVariants {
     }
 
     /** Every variant accepted in {@code dimension} and its value, by repeating the recipes until nothing gets cheaper. */
-    private static Map<Item, Integer> variants(List<Making> makings, ResourceKey<Level> dimension) {
+    private static Map<Item, Integer> variants(List<Making> makings, Key key) {
         Map<Item, Integer> substrates = new HashMap<>();
-        BuiltInRegistries.ITEM.getDataMap(DfmDataMaps.MATTER_VALUE).forEach((key, value) -> {
-            Item item = BuiltInRegistries.ITEM.get(key);
-            if (value.acceptedIn(dimension) && !MatterValues.isOre(new ItemStack(item))) {
-                substrates.put(item, value.units());
+        BuiltInRegistries.ITEM.getDataMap(DfmDataMaps.MATTER_VALUE).forEach((id, value) -> {
+            Item item = BuiltInRegistries.ITEM.get(id);
+            if (value.acceptedIn(key.dimension()) && !MatterValues.isOre(new ItemStack(item))) {
+                substrates.put(item, MatterValues.matterInputUnits(value.units(), key.upgrade()));
             }
         });
+        return variants(makings, substrates);
+    }
+
+    /**
+     * Every variant of {@code substrates} and its value, by repeating the recipes until nothing gets cheaper. Exposed
+     * for tests with made-up recipes.
+     */
+    public static Map<Item, Integer> variants(List<Making> makings, Map<Item, Integer> substrates) {
         Map<Item, Integer> variants = new HashMap<>();
         boolean changed = true;
         while (changed) {
@@ -121,7 +148,12 @@ public final class MatterVariants {
                 if (substrateIngredients == 0 || substrateIngredients * 2 < making.ingredients().size()) {
                     continue;
                 }
-                int units = Math.max(1, spent / making.count());
+                // Rounded down, and a piece worth less than one unit is no matter at all: rounding it up to one unit
+                // would let a recipe that makes many pieces (2 dirt + 2 gravel -> 4 coarse dirt) give more than it costs.
+                int units = spent / making.count();
+                if (units <= 0) {
+                    continue;
+                }
                 Integer known = variants.get(making.output());
                 if (known == null || units < known) {
                     variants.put(making.output(), units);

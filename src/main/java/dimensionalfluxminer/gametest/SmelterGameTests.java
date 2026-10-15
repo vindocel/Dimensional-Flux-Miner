@@ -1,6 +1,7 @@
 package dimensionalfluxminer.gametest;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
+import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.Transmission;
@@ -64,7 +65,8 @@ public final class SmelterGameTests {
     public static void upgradeGivesTwoIngotsPerRawAndHalvesPower(GameTestHelper helper) {
         AlloySmelterBlockEntity be = place(helper);
         be.upgradeSlot().setStackInSlot(0, new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()));
-        helper.assertTrue(be.effectivePowerLimit() == 1_000_000, "Rate 10 with upgrade = 1000000 FE/t");
+        // Furnace profile, three lanes of 64 items/tick at 25 000 / 3 FE per item.
+        helper.assertTrue(be.effectivePowerLimit() == 1_600_000, "Rate 10 with upgrade = 1600000 FE/t, got " + be.effectivePowerLimit());
         be.input(1).insert(new ItemStack(Items.RAW_GOLD), 3, false);
         helper.succeedWhen(() -> helper.assertTrue(be.output(1).countOf(new ItemStack(Items.GOLD_INGOT)) == 6, "3 raw gold -> 6 ingots"));
     }
@@ -344,6 +346,58 @@ public final class SmelterGameTests {
         helper.assertTrue(be.experience().milli() == 34, "fraction below 1 mB stays stored");
         helper.assertTrue(DfmFluids.LIQUID_EXPERIENCE.get().defaultFluidState().is(net.minecraft.tags.FluidTags.create(
                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "experience"))), "#c:experience");
+        helper.succeed();
+    }
+
+    private static net.minecraft.nbt.CompoundTag menuData(GameTestHelper helper, AlloySmelterBlockEntity be) {
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        be.writeMenuData(tag, helper.getLevel().registryAccess());
+        return tag;
+    }
+
+    @GameTest(template = "empty_small")
+    public static void itemAndFluidAutomationAreIndependent(GameTestHelper helper) {
+        AlloySmelterBlockEntity be = place(helper);
+        // The item mode cycle (OFF -> input -> eject -> both) never touches the fluid Auto Eject.
+        for (int i = 0; i < 4; i++) {
+            be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT);
+            helper.assertFalse(menuData(helper, be).getBoolean("auto_eject_fluid"), "item cycle leaves fluids off");
+        }
+        helper.assertTrue(be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID), "fluid toggle");
+        var data = menuData(helper, be);
+        helper.assertTrue(data.getBoolean("auto_eject_fluid") && !data.getBoolean("auto_input") && !data.getBoolean("auto_eject"),
+                "fluid Auto Eject on, items still off");
+        be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID);
+        helper.assertFalse(menuData(helper, be).getBoolean("auto_eject_fluid"), "fluid toggle back off");
+
+        // Items eject on their own: results leave, the liquid XP stays stored while the fluid Auto Eject is off.
+        be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT);
+        be.configureSide(RelativeFace.BACK, Transmission.EXPERIENCE, SideRoute.XP_OUTPUT);
+        BlockPos chest = MACHINE.relative(RelativeFace.BACK.toDirection(be.facing()));
+        helper.setBlock(chest, net.minecraft.world.level.block.Blocks.CHEST);
+        be.output(0).insert(new ItemStack(Items.IRON_INGOT), 10, false);
+        be.experience().setMilli(5000);
+        be.setAutoEject(true);
+        helper.runAfterDelay(2, () -> {
+            helper.assertTrue(be.output(0).isEmpty(), "items ejected into the chest");
+            helper.assertTrue(be.experience().milli() == 5000, "XP not moved by the item Auto Eject");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty_small")
+    public static void oldSavesKeepTheirFluidAutoEject(GameTestHelper helper) {
+        var registries = helper.getLevel().registryAccess();
+        AlloySmelterBlockEntity be = place(helper);
+        be.setAutoEject(true);
+        net.minecraft.nbt.CompoundTag old = be.saveWithoutMetadata(registries);
+        old.remove("auto_eject_fluid");
+        be.loadWithComponents(old, registries);
+        helper.assertTrue(menuData(helper, be).getBoolean("auto_eject_fluid"), "a save from before the split ejected XP with the items");
+        be.setAutoEjectFluid(false);
+        be.loadWithComponents(be.saveWithoutMetadata(registries), registries);
+        var data = menuData(helper, be);
+        helper.assertTrue(data.getBoolean("auto_eject") && !data.getBoolean("auto_eject_fluid"), "new saves keep each setting");
         helper.succeed();
     }
 

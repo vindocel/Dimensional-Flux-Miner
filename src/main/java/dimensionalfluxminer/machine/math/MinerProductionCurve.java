@@ -1,109 +1,84 @@
 package dimensionalfluxminer.machine.math;
 
 /**
- * Production curve of the Dimensional Flux Miner: every Flux Rate level n has a production R(n) and a power P(n).
+ * Production curve of the Dimensional Flux Miner: every Flux Rate level n has a production R(n) and a cost per attempt
+ * E(n).
  * <pre>
- * R(n) = Rmin * (Rmax / Rmin)^((n - 1) / 9)
- * B(n) = Pmin * (Pmax / Pmin)^((n - 1) / 9)
- * P(n) = B(n)                for n = 1..5
- *        2 * B(n)            for n = 6..9 (when that stays under Pmax; otherwise sqrt(P(n - 1) * Pmax))
- *        Pmax                for n = 10
+ * R(n) = Rmin * (Rmax / Rmin)^((n - 1) / 9)     or a configured table of the ten levels
+ * E(n) = E                                     or P(n) / R(n) with a configured table of FE/t P(n)
+ * P(n) = R(n) * E(n)
  * </pre>
- * The high levels cost double, so running fast is paid for. Between two levels, production and power are
- * interpolated on a log-log scale; the inverse is used to charge FE for the work that was actually performed.
+ * By default the cost of an attempt is the same at every level. The FE charged is always the work really performed
+ * times the cost of the level it was performed at.
  */
 public final class MinerProductionCurve {
     /** The Miner can never produce more than this per normal logical cycle, whatever the configuration says. */
     public static final double HARD_CAP_PER_CYCLE = 64.0;
-    /** Levels from this one up to the level below the maximum cost double the geometric scale. */
-    public static final int DOUBLED_FROM_LEVEL = 6;
 
-    private final double minPower;
-    private final double maxPower;
-    private final double minRate;
-    private final double maxRate;
-    /** Power and production of each level; index 0 is level 1. */
-    private final double[] power = new double[RateScale.MAX_LEVEL];
+    /** Production of each level; index 0 is level 1. */
     private final double[] rate = new double[RateScale.MAX_LEVEL];
-    /** Log-log slope between level i + 1 and level i + 2. */
-    private final double[] slope = new double[RateScale.MAX_LEVEL - 1];
+    /** FE of one attempt at each level. */
+    private final double[] cost = new double[RateScale.MAX_LEVEL];
 
-    public MinerProductionCurve(double minPower, double maxPower, double minRate, double maxRate) {
-        if (!(minPower > 0) || !(maxPower > minPower)) {
-            throw new IllegalArgumentException("Miner power limits require 0 < min < max");
+    /** The default curve: geometric production and the same cost per attempt at every level. */
+    public MinerProductionCurve(double minRate, double maxRate, double energyPerAttempt) {
+        this(geometric(minRate, maxRate), null, energyPerAttempt);
+    }
+
+    /**
+     * @param rates            production of the ten levels (each capped at {@link #HARD_CAP_PER_CYCLE})
+     * @param power            FE/t of the ten levels, or null for {@code energyPerAttempt} at every level
+     * @param energyPerAttempt FE of one attempt when {@code power} is null
+     */
+    public MinerProductionCurve(LevelTable rates, LevelTable power, double energyPerAttempt) {
+        if (power == null && (!(energyPerAttempt > 0) || !Double.isFinite(energyPerAttempt))) {
+            throw new IllegalArgumentException("Miner energy per attempt must be positive");
         }
+        for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
+            int i = level - RateScale.MIN_LEVEL;
+            rate[i] = Math.min(rates.at(level), HARD_CAP_PER_CYCLE);
+            cost[i] = power == null ? energyPerAttempt : power.at(level) / rate[i];
+        }
+    }
+
+    private static LevelTable geometric(double minRate, double maxRate) {
         double cappedMax = Math.min(maxRate, HARD_CAP_PER_CYCLE);
         if (!(minRate > 0) || !(cappedMax > minRate)) {
             throw new IllegalArgumentException("Miner production limits require 0 < min < max <= 64");
         }
-        this.minPower = minPower;
-        this.maxPower = maxPower;
-        this.minRate = minRate;
-        this.maxRate = cappedMax;
-        for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
-            int i = level - RateScale.MIN_LEVEL;
-            rate[i] = RateScale.value(level, minRate, cappedMax);
-            double base = RateScale.value(level, minPower, maxPower);
-            if (level == RateScale.MAX_LEVEL) {
-                power[i] = maxPower;
-            } else if (level >= DOUBLED_FROM_LEVEL) {
-                // Strictly between the previous level and the maximum, even with narrow power limits.
-                power[i] = 2 * base < maxPower ? 2 * base : Math.sqrt(power[i - 1] * maxPower);
-            } else {
-                power[i] = base;
-            }
-        }
-        for (int i = 0; i < slope.length; i++) {
-            slope[i] = Math.log(rate[i + 1] / rate[i]) / Math.log(power[i + 1] / power[i]);
-        }
+        return LevelTable.geometric(minRate, cappedMax);
     }
 
+    /** FE of one attempt at {@code level}. */
+    public double energyPerAttempt(int level) {
+        return cost[RateScale.clampLevel(level) - RateScale.MIN_LEVEL];
+    }
+
+    /** The lowest FE/t of the ten levels. */
     public double minPower() {
-        return minPower;
+        double min = Double.MAX_VALUE;
+        for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
+            min = Math.min(min, levelPower(level));
+        }
+        return min;
     }
 
-    public double maxPower() {
-        return maxPower;
-    }
-
-    public double minRate() {
-        return minRate;
-    }
-
-    public double maxRate() {
-        return maxRate;
-    }
-
-    /** Production rate (resources per logical tick) sustained by {@code power} FE/t. */
-    public double rateForPower(double power) {
-        if (power < minPower) {
+    /** Attempts per logical tick that {@code power} FE/t pays for at {@code level} (never above the level's production). */
+    public double rateForPower(int level, double power) {
+        if (!(power > 0)) {
             return 0.0;
         }
-        if (power >= maxPower) {
-            return maxRate;
-        }
-        int i = 0;
-        while (i < slope.length - 1 && power >= this.power[i + 1]) {
-            i++;
-        }
-        return Math.min(maxRate, rate[i] * Math.pow(power / this.power[i], slope[i]));
+        return Math.min(levelRate(level), power / energyPerAttempt(level));
     }
 
-    /** FE/t required to perform {@code rate} resources per logical tick. */
-    public double powerForRate(double rate) {
-        if (rate <= 0) {
-            return 0.0;
-        }
-        int i = 0;
-        while (i < slope.length - 1 && rate >= this.rate[i + 1]) {
-            i++;
-        }
-        return power[i] * Math.pow(rate / this.rate[i], 1.0 / slope[i]);
+    /** FE/t required to perform {@code rate} attempts per logical tick at {@code level}. */
+    public double powerForRate(int level, double rate) {
+        return RateScale.power(rate, energyPerAttempt(level));
     }
 
-    /** Power limit of a Flux Rate level. */
+    /** FE/t of a Flux Rate level at full speed. */
     public double levelPower(int level) {
-        return power[RateScale.clampLevel(level) - RateScale.MIN_LEVEL];
+        return powerForRate(level, levelRate(level));
     }
 
     /** Nominal production of a Flux Rate level at full power. */

@@ -28,6 +28,8 @@ Two support machines get you there: the **Dimensional Crusher** and the **Alloy 
 | ☠️ **Dimensional Death** | Mining has a price. Drain the land and it rots forever… or choose the clean way. |
 | 📖 **An animated guide** | A real 3D book that opens in your hand and turns its pages as you read. |
 
+![From first ingot to last dragon — the three machines](https://cdn.modrinth.com/data/vTLvFHBt/images/9130431154f17303132db94b168439be3dd19e80.png)
+
 ---
 
 ## ⛏️ The Dimensional Flux Miner
@@ -45,12 +47,16 @@ Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-clic
 | 🌀 **Basic Dimensional Core** | Stretches invisible roots for 300 blocks and harvests the dimensional energy of the land, column by column. Powerful… but the drained land falls to the **Dimensional Death**. |
 | 💉 **Stabilized Dimensional Core** | Feed it the stone and ores of its own dimension and it turns them into matter on the spot. **The landscape stays untouched** — and that chest full of cobblestone is finally good for something. The only core that works in the Nether and the End. |
 
+![Dimensional Drain — the Basic core harvesting the land](https://cdn.modrinth.com/data/vTLvFHBt/images/c6812da151ac55df5feff01c44794e158cdd7f3e.png)
+
 ### 🎛️ In control
 
 - 🔌 A power button — it never starts by itself, and redstone can stop it but never wake it.
 - 🖥️ A terminal screen that tells you exactly what is holding production back.
 - 🧲 A filter to keep only the ores you want.
 - 🔁 Auto Input / Auto Eject to the chests touching its ports.
+
+![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/efb9e8babe52ac0eecaac3962021044ee339ce13.png)
 
 ---
 
@@ -64,11 +70,15 @@ Steel jaws that grind any precious stone into grains.
 
 ![Crusher working](https://cdn.modrinth.com/data/vTLvFHBt/images/bad9976b3ab49508fbba4e9d237cdea9ac19125c.png)
 
+![Crusher screen](https://cdn.modrinth.com/data/vTLvFHBt/images/9e1f2926875a65b68ba3719425f5a6db67de974b.png)
+
 ---
 
 ## 🔥 Alloy Smelter
 
 A furnace without flame: three lanes of electric heat that smelt and join metals.
+
+![Alloy Smelter at work](https://cdn.modrinth.com/data/vTLvFHBt/images/7b32a71f23771b9bb536f47365470acac1d035f3.png)
 
 | Mode | |
 |---|---|
@@ -82,7 +92,9 @@ A furnace without flame: three lanes of electric heat that smelt and join metals
 
 > 💡 **Crusher + Smelter together**: 1 ore → **3** ingots, up to **6** with both upgrades. A common furnace gives you 1.
 
-![Alloy Smelter modes](https://cdn.modrinth.com/data/vTLvFHBt/images/7b32a71f23771b9bb536f47365470acac1d035f3.png)
+![Alloy Smelter modes](https://cdn.modrinth.com/data/vTLvFHBt/images/1c4cb9a6133e73f9dd1fda83f3fbfe93535a6760.png)
+
+![Alloy Smelter screen — three lanes](https://cdn.modrinth.com/data/vTLvFHBt/images/3e113ee1f7b9ff5984dfa0d97b8916b3653a0985.png)
 
 ---
 
@@ -92,11 +104,11 @@ There is no speed upgrade to craft. Pick a speed on any machine; each level up a
 
 | Machine | Speed 1 | Speed 10 |
 |---|---|---|
-| ⛏️ Miner | 2 500 FE/t · 0.25 ores/s | 5 000 000 FE/t · **1 280 ores/s** |
-| ⚙️ Crusher | 1 500 FE/t · 1 item / 10 s | 1 000 000 FE/t · **1 280 items/s** |
-| 🔥 Alloy Smelter | 2 500 FE/t · 0.1 items/s per lane | 2 000 000 FE/t · **3 840 items/s per lane** |
+| ⛏️ Miner | 2 500 FE/t · 0.25 ores/s | 12 800 000 FE/t · **1 280 ores/s** |
+| ⚙️ Crusher | 100 FE/t · 1 item / 10 s | 1 280 000 FE/t · **1 280 items/s** |
+| 🔥 Alloy Smelter (3 lanes) | 250 FE/t · 0.1 items/s per lane | 3 200 000 FE/t · **1 280 items/s per lane, 3 840 in total** |
 
-On the Miner, speeds 6 to 9 cost double: going fast has a price. All values are configurable on the server.
+Every operation costs the same energy at every speed: 200 000 FE per Miner attempt, 20 000 FE per crushed item, 50 000 / 3 FE per smelted item and 30 000 FE per alloy. All costs are configurable on the server.
 
 **✨ Dimensional Efficiency Upgrade** — one per machine. *It costs a dragon, an enchanted apple and a piece of your soul.*
 
@@ -104,7 +116,7 @@ On the Miner, speeds 6 to 9 cost double: going fast has a price. All values are 
 |---|---|
 | ⚙️ Crusher | half the energy, 3 products per ore |
 | 🔥 Alloy Smelter | half the energy, raw bonus 1 → 2 |
-| ⛏️ Miner | +0.5 Dimensional Matter per item injected; filtered ores come back as matter |
+| ⛏️ Miner | up to +0.2 Dimensional Matter per item injected; filtered ores come back as matter |
 
 > 🔋 This mod generates **no energy**. Bring your generators from any other mod.
 
@@ -112,11 +124,11 @@ On the Miner, speeds 6 to 9 cost double: going fast has a price. All values are 
 
 ## ☠️ Dimensional Death
 
-![Corrupted landscape](IMAGE_DEATH)
+![Dimensional Death — the corrupted land](https://cdn.modrinth.com/data/vTLvFHBt/images/f1b62223b9b189e2b172f32765f956a2b4ff0377.png)
 
 Dimensional energy is the glue that holds the world together. Where the Basic core harvests it, the land falls apart.
 
-- 🟣 Dirt, grass and stone darken; sand and gravel turn into **Corrupted Sediment**; flowers become wither roses.
+- 🟣 Dirt, grass and stone darken; terracotta turns into **Corrupted Terracotta**; sand and gravel turn into **Corrupted Sediment**; flowers become wither roses.
 - 💧 **Corrupted Water** turns purple and sinks, layer by layer. No land plant drinks from it — only sea life endures. *No, it is not grape juice.*
 - 🧟 It hurts players and peaceful creatures and **heals hostile ones**. You would not want to face a drowned bathed in it.
 
@@ -126,13 +138,17 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ## 📖 Dimensional Flux Guide
 
-![The guide open in hand](IMAGE_GUIDE_HAND)
+![An animated book — the guide open in hand](https://cdn.modrinth.com/data/vTLvFHBt/images/a46b9283e9e4fd374a90703761ec03dd05a32fb1.png)
+
+![The whole mod, in game — the guide's pages](https://cdn.modrinth.com/data/vTLvFHBt/images/7d82c97b1f0597aacf59da14439690a5d8603191.png)
 
 Forge your first **Pure Steel** and it is yours. Use it and the book **opens in your hand**, stays half open while you read, and **turns a page in your hand** every time you turn one on screen.
 
 - 📄 Real pages with a clickable table of contents and page-turn animations.
 - 🧊 An interactive **3D view of the Miner** — rotate it, go layer by layer, highlight each part.
 - 🧾 Recipes, speed tables and matter values read live from your server.
+
+![Every chapter, explained](https://cdn.modrinth.com/data/vTLvFHBt/images/92be03d133d5834e628fb27ebb50400e4e8c0ffe.png)
 
 ---
 

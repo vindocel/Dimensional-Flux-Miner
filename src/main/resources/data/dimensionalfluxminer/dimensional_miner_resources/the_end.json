@@ -1,0 +1,6 @@
+{
+  "dimension": "minecraft:the_end",
+  "empty_share": 0.97,
+  "min_families": 5,
+  "curve": "geometric"
+}

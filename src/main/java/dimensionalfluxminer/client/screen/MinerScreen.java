@@ -296,6 +296,9 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
             lines.add(Component.translatable("gui.dimensionalfluxminer.miner.core_required"));
         }
         lines.add(Component.translatable("gui.dimensionalfluxminer.miner.dimension", d.getString("dimension")));
+        if (d.getDouble("empty_share") > 0) {
+            lines.add(Component.translatable("gui.dimensionalfluxminer.miner.details.void", percent(d.getDouble("empty_share"))));
+        }
         lines.add(Component.translatable("gui.dimensionalfluxminer.rate.tooltip", d.getInt("rate")));
         lines.add(Component.translatable("gui.dimensionalfluxminer.miner.potential", number(d.getDouble("potential"))));
         lines.add(Component.translatable("gui.dimensionalfluxminer.miner.actual", number(d.getDouble("actual"))));

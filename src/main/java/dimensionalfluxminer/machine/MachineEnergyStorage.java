@@ -7,7 +7,6 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 public final class MachineEnergyStorage implements IEnergyStorage {
     private final DynamicEnergyBuffer buffer;
     private final Runnable onChange;
-    private double fractionalDebt;
 
     public MachineEnergyStorage(DynamicEnergyBuffer buffer, Runnable onChange) {
         this.buffer = buffer;
@@ -52,20 +51,12 @@ public final class MachineEnergyStorage implements IEnergyStorage {
         return true;
     }
 
-    /** Charges operational FE, keeping fractions so low rates are billed exactly over time. */
+    /** Charges operational FE, keeping fractions so low rates and fractional costs are billed exactly over time. */
     public void consume(double fe) {
         if (!(fe > 0)) {
             return;
         }
-        fractionalDebt += fe;
-        long whole = (long) Math.floor(fractionalDebt);
-        if (whole > 0) {
-            long used = buffer.consume(whole);
-            fractionalDebt -= used;
-            if (used < whole) {
-                fractionalDebt = 0;
-            }
-            onChange.run();
-        }
+        buffer.charge(fe);
+        onChange.run();
     }
 }

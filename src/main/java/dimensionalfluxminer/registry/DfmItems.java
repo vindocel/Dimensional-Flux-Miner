@@ -56,6 +56,7 @@ public final class DfmItems {
     public static final DeferredItem<?> CORRUPTED_DIRT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_DIRT);
     public static final DeferredItem<?> CORRUPTED_GRASS = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_GRASS);
     public static final DeferredItem<?> CORRUPTED_STONE = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_STONE);
+    public static final DeferredItem<?> CORRUPTED_TERRACOTTA = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_TERRACOTTA);
     public static final DeferredItem<?> CORRUPTED_SEDIMENT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_SEDIMENT);
     public static final DeferredItem<?> CORRUPTED_GRASS_PLANT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_GRASS_PLANT);
     public static final DeferredItem<BucketItem> CORRUPTED_WATER_BUCKET = ITEMS.registerItem("corrupted_water_bucket",

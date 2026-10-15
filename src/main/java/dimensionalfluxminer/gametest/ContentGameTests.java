@@ -31,6 +31,18 @@ public final class ContentGameTests {
     private ContentGameTests() {
     }
 
+    /** Every terrain conversion is data driven: each corruptible tag holds the vanilla blocks it replaces by default. */
+    @GameTest(template = "empty_small")
+    public static void corruptionConversionsAreTags(GameTestHelper helper) {
+        helper.assertTrue(Blocks.DIRT.defaultBlockState().is(dimensionalfluxminer.registry.DfmTags.Blocks.CORRUPTIBLE_DIRT), "dirt");
+        helper.assertTrue(Blocks.GRASS_BLOCK.defaultBlockState().is(dimensionalfluxminer.registry.DfmTags.Blocks.CORRUPTIBLE_GRASS), "grass block");
+        helper.assertTrue(Blocks.POPPY.defaultBlockState().is(dimensionalfluxminer.registry.DfmTags.Blocks.CORRUPTIBLE_FLOWERS), "flowers");
+        helper.assertFalse(Blocks.COARSE_DIRT.defaultBlockState().is(dimensionalfluxminer.registry.DfmTags.Blocks.CORRUPTIBLE_DIRT),
+                "coarse dirt is not corrupted unless a datapack adds it");
+        helper.assertTrue(Blocks.DIRT.defaultBlockState().is(dimensionalfluxminer.registry.DfmTags.Blocks.CORRUPTION_GROUND), "dirt is ground");
+        helper.succeed();
+    }
+
     /**
      * 14 crafting + 3 crushing + 10 ore_crushing + 2 alloying = 29 definitions, plus the compatibility recipes of the
      * mods present: Malum (5 ore_crushing), Forbidden Arcanus (2 ore_crushing) and Create (1 alloying).

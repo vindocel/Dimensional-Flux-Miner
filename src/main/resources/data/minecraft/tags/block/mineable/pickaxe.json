@@ -10,6 +10,7 @@
     "dimensionalfluxminer:dimensional_crusher",
     "dimensionalfluxminer:alloy_smelter",
     "dimensionalfluxminer:slag_aggregate",
-    "dimensionalfluxminer:corrupted_stone"
+    "dimensionalfluxminer:corrupted_stone",
+    "dimensionalfluxminer:corrupted_terracotta"
   ]
 }

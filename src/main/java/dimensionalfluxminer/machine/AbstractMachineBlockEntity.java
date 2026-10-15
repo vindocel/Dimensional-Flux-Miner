@@ -38,7 +38,8 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 
 /**
  * Shared behaviour of the single-block machines (Crusher and Smelter): dynamic energy buffer, Rate 1..10,
- * Efficiency Upgrade slot, Auto-Input/Auto-Eject toggles (default OFF), per-transmission side configuration,
+ * Efficiency Upgrade slot, Auto-Input/Auto-Eject of items and Auto-Eject of fluids, each on its own (default OFF),
+ * per-transmission side configuration,
  * whole-block redstone control (ignored / high / low) and external tick acceleration (each extra ticker call in the same game
  * time runs one more complete logical cycle).
  */
@@ -64,6 +65,8 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     /** Automation mode cycle: OFF -> Auto Input -> Auto Eject -> Input + Eject (and back). */
     public static final int BUTTON_AUTO_IO_NEXT = 2300;
     public static final int BUTTON_AUTO_IO_PREVIOUS = 2301;
+    /** Fluid automation: Auto Eject of fluids on / off (fluids have no Auto Input). */
+    public static final int BUTTON_AUTO_EJECT_FLUID = 2302;
 
     protected final DynamicEnergyBuffer energyBuffer = new DynamicEnergyBuffer(0);
     protected final MachineEnergyStorage energy = new MachineEnergyStorage(energyBuffer, this::setChanged);
@@ -88,8 +91,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     };
 
     protected int rate = RateScale.MIN_LEVEL;
+    /** Item automation. */
     protected boolean autoInput;
     protected boolean autoEject;
+    /** Fluid automation, independent of the items (only machines with a fluid output use it). */
+    protected boolean autoEjectFluid;
     /** Whether the last logical cycle advanced work (drives ACTIVE). */
     protected boolean workedThisTick;
     private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
@@ -129,6 +135,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
 
     public void setAutoEject(boolean autoEject) {
         this.autoEject = autoEject;
+        setChanged();
+    }
+
+    public void setAutoEjectFluid(boolean autoEjectFluid) {
+        this.autoEjectFluid = autoEjectFluid;
         setChanged();
     }
 
@@ -204,7 +215,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         }
         energyBuffer.setTarget(RateScale.energyBufferTarget(effectivePowerLimit()));
         // The input also accepts what the accelerated cycles of one game time use, so they run at full power.
-        energyBuffer.setHeadroom(accelerationDemand.extraPerTick(gameTime) * effectivePowerLimit());
+        energyBuffer.setHeadroom(RateScale.saturatedMultiply(accelerationDemand.extraPerTick(gameTime), effectivePowerLimit()));
         redstoneHalt = !redstoneAllows();
         workedThisTick = false;
         if (autoInput) {
@@ -218,15 +229,24 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         if (autoEject) {
             autoEjectCycle();
         }
+        if (autoEjectFluid) {
+            autoEjectFluidCycle();
+        }
         updateMachineState();
     }
 
     /** Machine work for one logical cycle; returns true if progress advanced. */
     protected abstract boolean processCycle();
 
+    /** Pulls items from the item input faces. */
     protected abstract void autoInputCycle();
 
+    /** Pushes items through the item output faces. */
     protected abstract void autoEjectCycle();
+
+    /** Pushes fluids through the fluid output faces; machines without a fluid output do nothing. */
+    protected void autoEjectFluidCycle() {
+    }
 
     protected void clientEffects() {
     }
@@ -376,6 +396,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             setChanged();
             return true;
         }
+        if (id == BUTTON_AUTO_EJECT_FLUID) {
+            autoEjectFluid = !autoEjectFluid;
+            setChanged();
+            return true;
+        }
         if (id == BUTTON_AUTO_INPUT) {
             autoInput = !autoInput;
             setChanged();
@@ -438,6 +463,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         tag.putInt("rate", rate);
         tag.putBoolean("auto_input", autoInput);
         tag.putBoolean("auto_eject", autoEject);
+        tag.putBoolean("auto_eject_fluid", autoEjectFluid);
         tag.putLong("fe", energyBuffer.stored());
         tag.putLong("fe_capacity", energyBuffer.capacity());
         tag.putLong("power", effectivePowerLimit());
@@ -455,9 +481,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putLong("energy", energyBuffer.stored());
+        tag.putDouble("energy_debt", energyBuffer.debt());
         tag.putInt("rate", rate);
         tag.putBoolean("auto_input", autoInput);
         tag.putBoolean("auto_eject", autoEject);
+        tag.putBoolean("auto_eject_fluid", autoEjectFluid);
         tag.putString("redstone_mode", redstoneMode.name());
         tag.put("sides", sides.save());
         tag.put("upgrade", upgradeSlot.serializeNBT(registries));
@@ -467,9 +495,12 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         energyBuffer.setStored(tag.getLong("energy"));
-        rate = RateScale.clampLevel(tag.contains("rate") ? tag.getInt("rate") : RateScale.MIN_LEVEL);
+        energyBuffer.setDebt(tag.getDouble("energy_debt"));
+        rate =RateScale.clampLevel(tag.contains("rate") ? tag.getInt("rate") : RateScale.MIN_LEVEL);
         autoInput = tag.getBoolean("auto_input");
         autoEject = tag.getBoolean("auto_eject");
+        // Saves from before the split: one Auto Eject moved items and fluids, so the fluids keep that setting.
+        autoEjectFluid = tag.contains("auto_eject_fluid") ? tag.getBoolean("auto_eject_fluid") : autoEject;
         redstoneMode = RedstoneMode.byName(tag.getString("redstone_mode"));
         sides.load(tag.getCompound("sides"));
         upgradeSlot.deserializeNBT(registries, tag.getCompound("upgrade"));

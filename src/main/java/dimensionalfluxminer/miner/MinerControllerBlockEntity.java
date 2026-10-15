@@ -8,6 +8,7 @@ import dimensionalfluxminer.machine.ThroughputStreak;
 import dimensionalfluxminer.machine.NeighborTransfer;
 import dimensionalfluxminer.machine.ReadOnlyViews;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
+import dimensionalfluxminer.machine.math.LevelTable;
 import dimensionalfluxminer.machine.math.MinerProductionCurve;
 import dimensionalfluxminer.machine.math.RateScale;
 import dimensionalfluxminer.machine.math.WorkAccumulator;
@@ -58,7 +59,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -67,9 +67,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * machine and drives production, the Basic environmental drain and the Stabilized Matter Injection.
  */
 public class MinerControllerBlockEntity extends BlockEntity implements MenuProvider {
-    public static final int OUTPUT_SLOTS = 27;
+    public static final int OUTPUT_SLOTS = MinerOutput.SLOTS;
     public static final int MAX_ROLLS_PER_CYCLE = 64;
-    private static final double LOAD_EMA_ALPHA = 0.0952380952;
     /** The animation and the sound go on for 1 s after the work pauses, so short gaps do not flicker them. */
     private static final int VISUAL_LINGER_TICKS = 20;
 
@@ -89,7 +88,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     // ---------------------------------------------------------------- persistent state
     private boolean formed;
     private final DynamicEnergyBuffer energyBuffer = new DynamicEnergyBuffer(0);
-    private long dmUnits;
+    /** Dimensional Matter buffer; see {@link MatterBuffer}. */
+    private final MatterBuffer matter = new MatterBuffer();
     private int rate = RateScale.MIN_LEVEL;
     private boolean runRequested;
     private boolean redstoneControl;
@@ -146,13 +146,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             setChanged();
         }
     };
-    /** 27 physical output-only slots (3 x 9). Only the machine inserts here. */
-    private final ItemStackHandler output = new ItemStackHandler(OUTPUT_SLOTS) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            setChanged();
-        }
-    };
+    /** Output Buffer (27 output-only slots); see {@link MinerOutput}. */
+    private final MinerOutput output = new MinerOutput(this::setChanged);
 
     // ---------------------------------------------------------------- runtime state
     private final LogicalTickCounter tickCounter = new LogicalTickCounter();
@@ -162,14 +157,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private final WorkAccumulator work = new WorkAccumulator();
     private CoreKind lastCore = CoreKind.NONE;
     private MinerStatus status = MinerStatus.MULTIBLOCK_INVALID;
-    private double workThisRealTick;
-    private double smoothedLoad;
-    /** Results per game tick, accelerated cycles included: what it could roll and what it really rolled. */
-    private double potentialRate;
-    private double actualRate;
-    /** Strongest limit met by any cycle since the previous normal tick, and the one shown for the last tick. */
-    private MinerStatus.LimitingFactor limitSinceRealTick = MinerStatus.LimitingFactor.NONE;
-    private MinerStatus.LimitingFactor shownLimit = MinerStatus.LimitingFactor.NONE;
+    /** Pace shown to the player (load, potential and actual attempts, limiting factor). */
+    private final MinerMetrics metrics = new MinerMetrics();
     private boolean processing;
     /** Ticks the processing visuals still last after the work paused (see {@link #VISUAL_LINGER_TICKS}). */
     private int visualLinger;
@@ -225,39 +214,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         @Override
         public boolean canReceive() {
             return formed;
-        }
-    };
-
-    /** Extraction-only view of the Output Buffer for the Item Output Port (no item limit per tick). */
-    private final IItemHandler outputPort = new IItemHandler() {
-        @Override
-        public int getSlots() {
-            return OUTPUT_SLOTS;
-        }
-
-        @Override
-        public ItemStack getStackInSlot(int slot) {
-            return output.getStackInSlot(slot);
-        }
-
-        @Override
-        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            return stack;
-        }
-
-        @Override
-        public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return output.extractItem(slot, amount, simulate);
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return output.getSlotLimit(slot);
-        }
-
-        @Override
-        public boolean isItemValid(int slot, ItemStack stack) {
-            return false;
         }
     };
 
@@ -321,7 +277,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public ItemStackHandler output() {
-        return output;
+        return output.handler();
     }
 
     public DynamicEnergyBuffer energyBuffer() {
@@ -329,11 +285,11 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public long dmUnits() {
-        return dmUnits;
+        return matter.units();
     }
 
     public void setDmUnits(long units) {
-        dmUnits = Math.max(0, Math.min(MatterValues.BUFFER_UNITS, units));
+        matter.set(units);
         setChanged();
     }
 
@@ -424,20 +380,46 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         return CoreKind.NONE;
     }
 
+    /** The curve of the last configured values seen; rebuilt only when they change. */
+    private record CurveKey(double minRate, double maxRate, double energy, LevelTable speed, LevelTable power, MinerProductionCurve curve) {
+    }
+
+    private static volatile CurveKey cachedCurve;
+
+    /** The production curve of the configuration: the default curve, or the per-level tables when they are set. */
     public static MinerProductionCurve curve() {
-        double[] power = DfmConfig.range(DfmConfig.MINER_MIN_FE, DfmConfig.MINER_MAX_FE);
-        double minRate = DfmConfig.SPEC.isLoaded() ? DfmConfig.MINER_MIN_RATE.get() : DfmConfig.MINER_MIN_RATE.getDefault();
-        double maxRate = DfmConfig.SPEC.isLoaded() ? DfmConfig.MINER_MAX_RATE.get() : DfmConfig.MINER_MAX_RATE.getDefault();
+        double[] rates = DfmConfig.range(DfmConfig.MINER_MIN_RATE, DfmConfig.MINER_MAX_RATE);
+        double energy = DfmConfig.energy(DfmConfig.MINER_ENERGY_PER_ATTEMPT);
+        LevelTable speed = DfmConfig.levelTable(DfmConfig.MINER_SPEED_BY_LEVEL);
+        LevelTable power = DfmConfig.levelTable(DfmConfig.MINER_POWER_BY_LEVEL);
+        CurveKey cached = cachedCurve;
+        if (cached != null && cached.minRate() == rates[0] && cached.maxRate() == rates[1] && cached.energy() == energy
+                && cached.speed() == speed && cached.power() == power) {
+            return cached.curve();
+        }
+        MinerProductionCurve curve = buildCurve(rates, energy, speed, power);
+        cachedCurve = new CurveKey(rates[0], rates[1], energy, speed, power, curve);
+        return curve;
+    }
+
+    private static MinerProductionCurve buildCurve(double[] rates, double energy, LevelTable speed, LevelTable power) {
         try {
-            return new MinerProductionCurve(power[0], power[1], minRate, maxRate);
+            return new MinerProductionCurve(speed != null ? speed : LevelTable.geometric(rates[0], Math.min(rates[1],
+                    MinerProductionCurve.HARD_CAP_PER_CYCLE)), power, energy);
         } catch (IllegalArgumentException e) {
-            return new MinerProductionCurve(2_500, 5_000_000, 0.0125, 64);
+            return new MinerProductionCurve(DfmConfig.MINER_MIN_RATE.getDefault(), DfmConfig.MINER_MAX_RATE.getDefault(),
+                    DfmConfig.MINER_ENERGY_PER_ATTEMPT.getDefault());
         }
     }
 
-    /** Power limit of the selected Flux Rate; the Efficiency Upgrade never changes the Miner's FE. */
+    /** FE/t of the selected Flux Rate; the Efficiency Upgrade never changes the Miner's FE. */
     public long powerLimit() {
-        return Math.round(curve().levelPower(rate));
+        return RateScale.powerLimit(curve().levelPower(rate));
+    }
+
+    /** Progress towards the next mining attempt (0..1). */
+    public double workProgress() {
+        return work.progress();
     }
 
     /**
@@ -448,19 +430,19 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (stack.isEmpty() || !(level instanceof ServerLevel serverLevel) || !formed || coreKind() != CoreKind.STABILIZED) {
             return stack;
         }
-        OptionalInt base = MatterValues.substrateUnits(stack, serverLevel);
-        if (base.isEmpty() || base.getAsInt() <= 0) {
+        OptionalInt units = MatterValues.matterInputUnits(stack, serverLevel, hasEfficiencyUpgrade());
+        if (units.isEmpty() || units.getAsInt() <= 0) {
             return stack;
         }
-        int perItem = MatterValues.matterInputUnits(base.getAsInt(), hasEfficiencyUpgrade());
-        long space = MatterValues.BUFFER_UNITS - dmUnits;
+        int perItem = units.getAsInt();
+        long space = matter.room();
         int byMatter = (int) Math.min(Integer.MAX_VALUE, space / perItem);
         int accepted = Math.min(stack.getCount(), byMatter);
         if (accepted <= 0) {
             return stack;
         }
         if (!simulate) {
-            dmUnits += (long) accepted * perItem;
+            matter.add((long) accepted * perItem);
             lastSubstrate = stack.getItem().getDescriptionId();
             lastSubstrateUnits = perItem;
             setChanged();
@@ -484,10 +466,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             return null;
         }
         if (side == null) {
-            return ReadOnlyViews.items(output);
+            return ReadOnlyViews.items(output.handler());
         }
         return s.member(portPos).filter(m -> m.outward() == side).map(m -> switch (m.slot().role()) {
-            case ITEM_OUTPUT -> outputPort;
+            case ITEM_OUTPUT -> output.extractionView();
             case MATTER_INPUT -> coreKind() == CoreKind.STABILIZED ? matterPort : null;
             default -> null;
         }).orElse(null);
@@ -571,10 +553,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         List<ItemStack> drops = new ArrayList<>();
         drops.add(coreSlot.getStackInSlot(0).copy());
         drops.add(upgradeSlot.getStackInSlot(0).copy());
-        for (int i = 0; i < OUTPUT_SLOTS; i++) {
-            drops.add(output.getStackInSlot(i).copy());
-            output.setStackInSlot(i, ItemStack.EMPTY);
-        }
+        drops.addAll(output.takeAll());
         coreSlot.setStackInSlot(0, ItemStack.EMPTY);
         upgradeSlot.setStackInSlot(0, ItemStack.EMPTY);
         for (ItemStack stack : drops) {
@@ -583,7 +562,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             }
         }
         energyBuffer.setStored(0);
-        dmUnits = 0;
+        energyBuffer.setDebt(0);
+        matter.set(0);
         work.reset();
         processing = false;
         status = MinerStatus.MULTIBLOCK_INVALID;
@@ -626,19 +606,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         cycle(true);
         noteLimit(status.limitingFactor());
         // Work of every cycle since the previous normal tick, accelerated ones included.
-        double nominal = curve().levelRate(rate);
-        double load = nominal > 0 ? Math.max(0, Math.min(1, workThisRealTick / nominal)) : 0;
-        if (!processing && !workedRecently()) {
-            load = 0;
-        }
         int cycles = 1 + (level != null ? accelerationDemand.extraPerTick(level.getGameTime()) : 0);
-        potentialRate = formed ? nominal * cycles : 0;
-        actualRate = workThisRealTick;
-        workThisRealTick = 0;
-        shownLimit = limitSinceRealTick;
-        limitSinceRealTick = MinerStatus.LimitingFactor.NONE;
-        smoothedLoad += LOAD_EMA_ALPHA * (load - smoothedLoad);
-        if (level != null && throughput.record(level.getGameTime(), actualRate)) {
+        metrics.closeRealTick(curve().levelRate(rate), cycles, formed, processing || workedRecently());
+        if (level != null && throughput.record(level.getGameTime(), metrics.actualRate())) {
             report(DfmAdvancements.THOUSAND_PER_SECOND);
         }
         boolean powered = formed && (energyBuffer.stored() > 0 || workedRecently());
@@ -663,11 +633,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         noteLimit(status.limitingFactor());
     }
 
-    /** Keeps the strongest limit met since the previous normal tick (enum order is the priority). */
     private void noteLimit(MinerStatus.LimitingFactor factor) {
-        if (factor.ordinal() < limitSinceRealTick.ordinal()) {
-            limitSinceRealTick = factor;
-        }
+        metrics.noteLimit(factor);
     }
 
     /** Why matter ran out: nothing left to drain (Basic) or no substrate coming in (Stabilized). */
@@ -682,10 +649,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
         MinerProductionCurve curve = curve();
-        long cyclePower = Math.round(curve.levelPower(rate));
+        long cyclePower = RateScale.powerLimit(curve.levelPower(rate));
         energyBuffer.setTarget(RateScale.energyBufferTarget(cyclePower));
         // The input also accepts what the accelerated cycles of one game time use, so they run at full power.
-        energyBuffer.setHeadroom(accelerationDemand.extraPerTick(serverLevel.getGameTime()) * cyclePower);
+        energyBuffer.setHeadroom(RateScale.saturatedMultiply(accelerationDemand.extraPerTick(serverLevel.getGameTime()), cyclePower));
         CoreKind core = coreKind();
         // Auto Eject / Auto Input work whenever they are switched on, also while the machine is off (so the DM buffer
         // fills before it starts); only a Redstone Control halt freezes them.
@@ -721,18 +688,19 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             if (realTick) {
                 SurveyManager.request(serverLevel, structure().core());
             }
-            if (!survey.ready() && dmUnits < MatterValues.ROLL_COST_UNITS) {
+            if (!survey.ready() && !matter.canPayAttempt()) {
                 status = MinerStatus.DIMENSIONAL_SURVEY;
                 return;
             }
         }
-        if (!anyKeptResultFits(profile)) {
+        if (!output.anyKeptResultFits(profile, filter)) {
             status = MinerStatus.OUTPUT_BLOCKED;
             return;
         }
+        // Every attempt costs the same FE: without the full FE/t of the level, it attempts proportionally less.
         double levelPower = curve.levelPower(rate);
-        double available = Math.min(levelPower, energyBuffer.stored());
-        double rateNow = curve.rateForPower(available);
+        double available = Math.min(levelPower, energyBuffer.available());
+        double rateNow = curve.rateForPower(rate, available);
         if (rateNow <= 0) {
             status = MinerStatus.WAITING_FOR_ENERGY;
             return;
@@ -741,63 +709,29 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             noteLimit(MinerStatus.LimitingFactor.FLUX);
         }
         boolean canRefill = core == CoreKind.BASIC && survey.hasCandidates();
-        if (dmUnits < MatterValues.ROLL_COST_UNITS && !canRefill) {
+        if (!matter.canPayAttempt() && !canRefill) {
             status = core == CoreKind.BASIC ? MinerStatus.NO_DRAINABLE_MATTER : MinerStatus.WAITING_FOR_MATTER;
             noteLimit(matterLimit(core));
             return;
         }
 
         WorkAccumulator.Plan plan = work.plan(rateNow, MAX_ROLLS_PER_CYCLE);
-        long executed = 0;
+        // Basic: corruption is the source of matter, performed only when the buffer needs it.
+        MinerSurvey drainSurvey = survey;
+        MinerAttempts.Result attempts = MinerAttempts.run(plan.operations(), profile, serverLevel.random, filter, hasEfficiencyUpgrade(), matter,
+                core == CoreKind.BASIC ? () -> drainColumn(serverLevel, drainSurvey) : () -> false, output);
+        long executed = attempts.executed();
+        boolean missed = attempts.missed();
         MinerStatus stop = null;
-        boolean missed = false;
-        boolean producedOre = false;
-        boolean filteredOre = false;
-        boolean upgrade = hasEfficiencyUpgrade();
-        for (long i = 0; i < plan.operations(); i++) {
-            if (dmUnits < MatterValues.ROLL_COST_UNITS) {
-                // Basic: corruption is the source of matter, performed only when the buffer needs it.
-                if (core == CoreKind.BASIC) {
-                    drainColumn(serverLevel, survey);
-                }
-                if (dmUnits < MatterValues.ROLL_COST_UNITS) {
-                    stop = core == CoreKind.BASIC ? MinerStatus.NO_DRAINABLE_MATTER : MinerStatus.WAITING_FOR_MATTER;
-                    noteLimit(matterLimit(core));
-                    break;
-                }
-            }
-            ResourceFamily family = profile.rollFamily(serverLevel.random);
-            ItemStack result = new ItemStack(family.pickVariant(serverLevel.random));
-            boolean kept = filter.isEmpty() || filter.contains(family.key());
-            if (kept) {
-                if (!ItemHandlerHelper.insertItem(output, result, true).isEmpty()) {
-                    // No room for this result: the roll is lost. It still takes its time and FE like any roll (only
-                    // the DM is kept), so every result keeps its own chance and pace: a nearly full output never
-                    // turns into fast production of the one ore that still fits.
-                    missed = true;
-                    executed++;
-                    continue;
-                }
-                dmUnits -= MatterValues.ROLL_COST_UNITS;
-                ItemHandlerHelper.insertItem(output, result, false);
-                producedOre = true;
-            } else {
-                dmUnits -= MatterValues.ROLL_COST_UNITS;
-                filteredOre = true;
-                if (upgrade) {
-                    OptionalInt base = MatterValues.baseUnits(result);
-                    int recovered = MatterValues.filterRecoveryUnits(base.orElse(5));
-                    dmUnits = Math.min(MatterValues.BUFFER_UNITS, dmUnits + recovered);
-                }
-            }
-            executed++;
+        if (attempts.matterRanOut()) {
+            stop = core == CoreKind.BASIC ? MinerStatus.NO_DRAINABLE_MATTER : MinerStatus.WAITING_FOR_MATTER;
+            noteLimit(matterLimit(core));
         }
         plan = work.truncate(plan, executed);
-        // FE follows the work really performed through the inverse curve P(R), never a linear scaling.
-        double fePerTick = curve.powerForRate(plan.workDone());
-        energyBuffer.consume(Math.round(Math.min(fePerTick, energyBuffer.stored())));
+        // FE follows the attempts really performed (filtered and lost ones included), at the same cost per attempt.
+        energyBuffer.charge(curve.powerForRate(rate, plan.workDone()));
         work.commit(plan);
-        workThisRealTick += plan.workDone();
+        metrics.addWork(plan.workDone());
         if (missed) {
             noteLimit(MinerStatus.LimitingFactor.OUTPUT);
         }
@@ -809,10 +743,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             animationStartTick = serverLevel.getGameTime();
         }
         status = stop != null && executed == 0 ? stop : MinerStatus.RUNNING;
-        if (producedOre) {
+        if (attempts.producedOre()) {
             report(DfmAdvancements.FIRST_ORE);
         }
-        if (filteredOre) {
+        if (attempts.filteredOre()) {
             report(DfmAdvancements.ORE_FILTERED);
         }
         if (autoEject) {
@@ -842,40 +776,17 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             long packed = survey.pollCandidate();
             int x = (int) (packed >> 32);
             int z = (int) packed;
-            if (dmUnits + MatterValues.COLUMN_UNITS > MatterValues.BUFFER_UNITS) {
+            if (matter.room() < MatterValues.COLUMN_UNITS) {
                 return false;
             }
             if (CorruptionService.corrupt(level, x, z, owner)) {
-                dmUnits += MatterValues.COLUMN_UNITS;
+                matter.add(MatterValues.COLUMN_UNITS);
                 columnsDrained++;
                 report(DfmAdvancements.COLUMN_DRAINED);
                 if (columnsDrained >= worldDrainedColumns()) {
                     report(DfmAdvancements.WORLD_DRAINED);
                 }
                 return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * True when at least one result the machine keeps (all families, or the filtered ones) still fits in the output.
-     * Only then is the output really blocked: a single roll that does not fit is just a discarded attempt.
-     */
-    private boolean anyKeptResultFits(ResourceProfile profile) {
-        for (int i = 0; i < OUTPUT_SLOTS; i++) {
-            if (output.getStackInSlot(i).isEmpty()) {
-                return true;
-            }
-        }
-        for (ResourceFamily family : profile.families()) {
-            if (!filter.isEmpty() && !filter.contains(family.key())) {
-                continue;
-            }
-            for (ResourceFamily.Variant variant : family.variants()) {
-                if (ItemHandlerHelper.insertItem(output, new ItemStack(variant.item()), true).isEmpty()) {
-                    return true;
-                }
             }
         }
         return false;
@@ -905,17 +816,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             if (target == null) {
                 return;
             }
-            for (int slot = 0; slot < OUTPUT_SLOTS; slot++) {
-                ItemStack stack = output.getStackInSlot(slot);
-                if (stack.isEmpty()) {
-                    continue;
-                }
-                ItemStack left = ItemHandlerHelper.insertItemStacked(target, stack.copy(), false);
-                int moved = stack.getCount() - left.getCount();
-                if (moved > 0) {
-                    output.extractItem(slot, moved, false);
-                }
-            }
+            output.ejectTo(target);
         });
     }
 
@@ -952,7 +853,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             visualLinger--;
         }
         MinerVisualStage next = MinerVisualStage.select(core, hasEnergy, formed && (worked || visualLinger > 0));
-        int percent = (int) Math.round(smoothedLoad * 100);
+        int percent = (int) Math.round(metrics.smoothedLoad() * 100);
         boolean changed = next != visualStage || Math.abs(percent - loadPercent) >= 1;
         if (next.processing() && !visualStage.processing() && level != null) {
             animationStartTick = level.getGameTime();
@@ -1089,32 +990,26 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public void writeMenuData(CompoundTag tag) {
         tag.putBoolean("formed", formed);
         tag.putString("status", status.name());
-        tag.putString("limit", shownLimit.name());
+        tag.putString("limit", metrics.shownLimit().name());
         tag.putString("core", coreKind().name());
         tag.putInt("rate", rate);
         tag.putLong("power", powerLimit());
         tag.putLong("fe", energyBuffer.stored());
         tag.putLong("fe_capacity", energyBuffer.capacity());
-        tag.putLong("dm", dmUnits);
+        tag.putLong("dm", matter.units());
         tag.putBoolean("run", runRequested);
         tag.putBoolean("redstone", redstoneControl);
         tag.putBoolean("redstone_signal", formed && redstoneSignal());
         tag.putBoolean("auto_input", autoInput);
         tag.putBoolean("auto_eject", autoEject);
-        tag.putDouble("potential", potentialRate);
-        tag.putDouble("actual", actualRate);
-        tag.putDouble("load", smoothedLoad);
+        tag.putDouble("potential", metrics.potentialRate());
+        tag.putDouble("actual", metrics.actualRate());
+        tag.putDouble("load", metrics.smoothedLoad());
         tag.putDouble("nominal", curve().levelRate(rate));
         if (level != null) {
             tag.putString("dimension", level.dimension().location().toString());
         }
-        int used = 0;
-        for (int i = 0; i < OUTPUT_SLOTS; i++) {
-            if (!output.getStackInSlot(i).isEmpty()) {
-                used++;
-            }
-        }
-        tag.putInt("output_used", used);
+        tag.putInt("output_used", output.usedSlots());
         if (level instanceof ServerLevel serverLevel) {
             ResourceProfile profile = ResourceProfiles.get(serverLevel);
             pruneFilter(profile);
@@ -1128,6 +1023,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
                 families.add(ft);
             }
             tag.put("families", families);
+            tag.putDouble("empty_share", profile.emptyShare());
             if (coreKind() == CoreKind.BASIC && structure() != null) {
                 MinerSurvey survey = SurveyManager.survey(serverLevel, structure().core());
                 tag.putDouble("survey_coverage", survey.coverage());
@@ -1157,7 +1053,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         super.saveAdditional(tag, registries);
         tag.putBoolean("formed", formed);
         tag.putLong("energy", energyBuffer.stored());
-        tag.putLong("dm", dmUnits);
+        tag.putDouble("energy_debt", energyBuffer.debt());
+        // Progress already paid for survives a save and reload.
+        tag.putDouble("work_progress", work.progress());
+        tag.putLong("dm", matter.units());
         tag.putInt("rate", rate);
         tag.putBoolean("run_requested", runRequested);
         tag.putBoolean("redstone_control", redstoneControl);
@@ -1173,7 +1072,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         tag.putLong("cobblestone_injected", cobblestoneInjected);
         tag.put("core", coreSlot.serializeNBT(registries));
         tag.put("upgrade", upgradeSlot.serializeNBT(registries));
-        tag.put("output", output.serializeNBT(registries));
+        tag.put("output", output.save(registries));
     }
 
     @Override
@@ -1181,7 +1080,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         super.loadAdditional(tag, registries);
         formed = tag.getBoolean("formed");
         energyBuffer.setStored(tag.getLong("energy"));
-        dmUnits = Math.max(0, Math.min(MatterValues.BUFFER_UNITS, tag.getLong("dm")));
+        energyBuffer.setDebt(tag.getDouble("energy_debt"));
+        work.setProgress(tag.getDouble("work_progress"));
+        matter.set(tag.getLong("dm"));
         rate = RateScale.clampLevel(tag.contains("rate") ? tag.getInt("rate") : 1);
         // A normal save/restart with the structure intact keeps the manual START state.
         runRequested = tag.getBoolean("run_requested") && formed;
@@ -1201,7 +1102,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         cobblestoneInjected = tag.getLong("cobblestone_injected");
         coreSlot.deserializeNBT(registries, tag.getCompound("core"));
         upgradeSlot.deserializeNBT(registries, tag.getCompound("upgrade"));
-        output.deserializeNBT(registries, tag.getCompound("output"));
+        output.load(registries, tag.getCompound("output"));
         lastCore = coreKind();
         structure = null;
         wasPowered = energyBuffer.stored() > 0;

@@ -61,15 +61,15 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 
 1. 🧱 Build a **Dimensional Crusher** and an **Alloy Smelter** (vanilla items only).
 2. ⚙️ In the Crusher, turn iron ingots into **Iron Dust**, coal into **Coal Dust** and calcite into **Calcite Grains**.
-3. 🔥 In the Smelter, combine the three into **Steel Ingots** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
-4. 👁️ With steel, craft the **Reinforced Eye of Ender**, the Miner parts and a **Dimensional Core**.
+3. 🔥 In the Smelter, combine the three into **Pure Steel** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
+4. 👁️ With Pure Steel, craft the **Reinforced Eye of Ender**, the Miner parts and a **Dimensional Core**.
 5. ⛏️ Build the Miner, insert the core, connect power and press the power button.
 
 ---
 
 ## 📖 Dimensional Flux Guide
 
-Every new player receives the guide with the mod's first advancement; it is also crafted from a **book + steel ingot + Reinforced Eye of Ender** (shapeless).
+Your first **Pure Steel** earns you the guide (through the "Forged in the Flux" advancement); more copies are crafted from a **book + Pure Steel + Reinforced Eye of Ender** (shapeless).
 
 - 🎞️ **Animated book**: using it opens the book in the hand with the model's own animation; it stays half open while you read, a leaf turns in your hand with every page, and it closes when you leave.
 - 📄 **Real pages**: the presentation and the clickable **contents** open the book; every chapter starts on a left page and the pages flow one after another, with a page-turn animation and sound. The violet ribbon goes back to the contents.
@@ -104,7 +104,19 @@ Looking at the terminal, the three identical ports become **Energy Input** (left
 | **Basic Dimensional Core** (Rare) | 🌀 **Dimensional Drain** | Surveys the loaded chunks within 300 blocks and harvests the dimensional energy of the land, column by column (**64 DM** per column). The drained land falls to the **Dimensional Death**. |
 | **Stabilized Dimensional Core** (Epic) | 💉 **Matter Injection** | Turns the items pushed into the Matter Input into DM at once. Never touches the environment. |
 
-Matter values (Matter Injection): dirt **0.1 DM**, cobblestone **0.3**, stone family **0.5** (each only in its own dimension); ores **0.5** in any dimension, diamond and uranium **1**, emerald, platinum and ancient debris **2**. All data driven.
+Matter Injection only takes matter of the Miner's own dimension. All values are data driven:
+
+| Dimension | Accepted matter |
+|---|---|
+| 🌍 Overworld | dirt **0.1 DM**, cobblestone and cobbled deepslate **0.3**, stone, deepslate, granite, diorite and andesite **0.5** |
+| 🔥 Nether | netherrack, basalt, blackstone, nylium and magma block **0.5**, glowstone, soul sand and soul soil **1**, nether bricks **1.5** |
+| 🌌 The End | end stone and purpur block **0.5**, dragon egg **10** |
+| 🧩 The Other (Allthemodium) | ancient dirt **0.1**, ancient stone **0.5** |
+| ✨ Any dimension | obsidian **1** |
+
+Ores count only in a dimension where that exact ore generates (Overworld diamond ore is refused in the Nether): **0.5 DM**, diamond and uranium **1**, emerald, platinum and ancient debris **2**. The Basic core only finds land to drain in the Overworld; the Nether and the End need the Stabilized core.
+
+🕳️ **The void of the End**: where few ore families are born, part of the attempts find nothing (they still cost FE and DM). By default only the End: 97% with one family, shrinking geometrically to none at five families. The terminal's details show the void chance.
 
 ### 🎛️ Using it
 
@@ -129,7 +141,7 @@ Matter values (Matter Injection): dirt **0.1 DM**, cobblestone **0.3**, stone fa
 - The limiting factor is the strongest limit met by any cycle of the last tick, accelerated ones included; the screen also shows the potential and real production of the tick.
 - The animation and the sound bridge pauses of up to 1 s, so they never flicker.
 - Auto Input pulls repeatedly until the DM buffer or the source runs out, so a single-slot bulk or creative storage feeds it at full speed. Only a Redstone Control halt freezes Auto Input / Auto Eject.
-- With the Efficiency Upgrade, every injected item gives +0.5 DM and every ore rejected by the filter returns `min(base + 0.5, 2) DM`.
+- With the Efficiency Upgrade, every injected item gives `+ min(value, 0.2)` DM (an ore the Miner can make never more than 2 DM in total) and every ore rejected by the filter returns `min(base + 0.5, 2) DM`.
 </details>
 
 ---
@@ -155,6 +167,7 @@ Matter values (Matter Injection): dirt **0.1 DM**, cobblestone **0.3**, stone fa
 - 🎁 **Raw ore bonus**: 2 raw → 3 ingots, or 1 raw → 2 ingots with the Efficiency Upgrade.
 - 🔀 **Auto Split** spreads items evenly over the free lanes, wherever they come from.
 - ✨ Recipe XP is stored as **Liquid Experience** (`#c:experience`, 1 XP = 20 mB): pipes extract it from the EXPERIENCE faces, and breaking the machine drops it as orbs.
+- 🔁 **Automation per material** (Side Configuration): items have Auto Input and Auto Eject; Liquid Experience, which only leaves the machine, has its own Auto Eject, switched on and off apart from the items.
 - 🧪 Also runs the alloy recipes of other mods (EnderIO and Oritech by default).
 
 > 💡 **Crusher + Smelter**: 1 ore → **3** ingots without upgrades, **4.5** with the upgrade in the Crusher, **4** with it in the Smelter, **6** with both — against 1 ingot in a common furnace.
@@ -172,15 +185,16 @@ Matter values (Matter Injection): dirt **0.1 DM**, cobblestone **0.3**, stone fa
 
 ## ⚡ Speed and the Efficiency Upgrade
 
-There is **no speed upgrade to craft**. Every machine has a **speed selector from 1 to 10** (the tab with colored strips): each level uses 2 to 2.5 times more energy and works faster in the same proportion. Your power generation is the only limit, so the same machine follows you from the first ingot to the last dragon. A machine only spends the energy of the work it really does.
+There is **no speed upgrade to craft**. Every machine has a **speed selector from 1 to 10** (the tab with colored strips): every operation costs the same energy at every level, so a higher level works faster and asks for more FE/t in the same proportion, with no discount and no penalty. Your power generation is the only limit, so the same machine follows you from the first ingot to the last dragon. A machine only spends the energy of the work it really does.
 
-| Machine | Speed 1 | Speed 10 |
-|---|---|---|
-| ⛏️ Miner | 500 FE/t — 0.25 ores/s | 1 500 000 FE/t — 1 280 ores/s |
-| ⚙️ Crusher | 250 FE/t — 1 item every 10 s | 500 000 FE/t — 1 280 items/s |
-| 🔥 Alloy Smelter | 600 FE/t — 0.1 items/s per lane | 600 000 FE/t — 3 840 items/s per lane |
+| Machine | Cost per operation | Speed 1 | Speed 10 |
+|---|---|---|---|
+| ⛏️ Miner | 200 000 FE per attempt | 2 500 FE/t — 0.25 ores/s | 12 800 000 FE/t — 1 280 ores/s |
+| ⚙️ Crusher | 20 000 FE per item | 100 FE/t — 1 item every 10 s | 1 280 000 FE/t — 1 280 items/s |
+| 🔥 Alloy Smelter (furnace) | 50 000 / 3 FE per item | 250 FE/t (3 lanes) — 0.1 items/s per lane | 3 200 000 FE/t — 1 280 items/s per lane, 3 840 items/s in total |
+| 🔥 Alloy Smelter (alloy) | 30 000 FE per execution | 150 FE/t | 1 920 000 FE/t — 1 280 alloys/s |
 
-Intermediate levels are geometric; the guide shows the full tables computed from the server configuration.
+The Smelter values are for a standard recipe (10 s); the Efficiency Upgrade halves the Crusher and Smelter costs. Intermediate levels are geometric. The guide shows the full tables computed from the server configuration.
 
 **Dimensional Efficiency Upgrade** (one per machine):
 
@@ -188,7 +202,7 @@ Intermediate levels are geometric; the guide shows the full tables computed from
 |---|---|
 | ⚙️ Crusher | half the energy, 3 products per ore instead of 2 |
 | 🔥 Alloy Smelter | half the energy, raw bonus 1 → 2 instead of 2 → 3 |
-| ⛏️ Miner | energy unchanged; +0.5 DM per injected item; ores rejected by the filter return DM |
+| ⛏️ Miner | energy unchanged; up to +0.2 DM per injected item; ores rejected by the filter return DM |
 
 ---
 
@@ -196,7 +210,7 @@ Intermediate levels are geometric; the guide shows the full tables computed from
 
 Dimensional energy is the glue that holds the world together. Where the Basic core's drain harvests it, the land falls apart.
 
-- 🟣 **Terrain**: dirt, grass and the stone family become corrupted; sands and gravels become **Corrupted Sediment** (falls like sand, smelts into glass). It reaches the ground through trees and buildings (up to 32 blocks of cover). Weeds become corrupted grass and flowers become wither roses.
+- 🟣 **Terrain**: dirt, grass and the stone family (calcite, dripstone and modded stones such as Create's asurine and AE2's sky stone included) become corrupted; every terracotta becomes **Corrupted Terracotta**; sands and gravels become **Corrupted Sediment** (falls like sand, smelts into glass). It reaches the ground through trees and buildings (up to 32 blocks of cover). Weeds become corrupted grass and flowers become wither roses.
 - 💧 **Corrupted Water**: flows, makes infinite sources and puts out fire, with a purple underwater view and purple bubbles; it sinks layer by layer but never spreads sideways. **No land plant can drink from it** (no farmland, no sugar cane); kelp and seagrass survive in it.
 - 🧟 **Creatures**: it hurts players and peaceful mobs and heals hostile ones (the Warden one heart every half second; never the Ender Dragon or the Wither). Hostiles do not burn in daylight on corrupted terrain and more of them appear near the corruption.
 
@@ -208,10 +222,10 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 | | Advancement | How |
 |---|---|---|
-| 📖 | **Dimensional Flux** | join the world — gives the guide |
+| 📖 | **Dimensional Flux** | join the world |
 | ⚙️ | Ground and Sifted | build a Dimensional Crusher |
 | 🔥 | Electric Fire | build an Alloy Smelter |
-| 🔩 | Forged in the Flux | get a Steel Ingot |
+| 🔩 | Forged in the Flux | get your first Pure Steel (rewards the guide) |
 | ♻️ | Nothing Is Lost | turn Slag Aggregate back into steel |
 | 👁️ | Unbreakable Gaze | craft a Reinforced Eye of Ender |
 | 🏰 | To the Stronghold | reach a stronghold following a Reinforced Eye |
@@ -243,7 +257,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 <summary>🔬 More compatibility details</summary>
 
 - **Tick acceleration**: the energy buffer stays 10 × the FE/t of the speed, but the energy input also accepts what the extra cycles of one game time use, so a source that refills once per game time keeps an accelerated machine at full power. A machine whose accelerated cycles worked in the last tick always shows as powered and running. Covered by GameTests and observed in game with Soul Surge.
-- **Claims**: corruption goes through an adapter registry (`ProtectionService`). No claim mod adapter ships yet (FTB Chunks and Open Parties and Claims are planned), so corruption currently respects only the built-in blacklist.
+- **Claims**: corruption respects **FTB Chunks** and **Open Parties and Claims** when they are installed (optional, no dependency). The Basic Core only corrupts unclaimed land or claims where the Miner's owner may build (team members in FTB Chunks; the claim's own access rules in Open Parties and Claims); a claim of someone else, or a check that fails, is never corrupted and gives no DM. A column is checked as a whole before anything changes, and Corrupted Water never flows or sinks across a claim border. Server config: `corruption.enabled`, `corruption.blockedDimensions`, `corruption.respectSpawnProtection`, `corruption.protectedRegions` and `corruption.claimFailurePolicy` (`deny` by default). Tested with FTB Chunks 2101.1.22; the Open Parties and Claims adapter follows its public API but was not run against the mod.
 - **Recipe viewers**: with both installed, only the EMI plugin runs. The Alloy Smelter categories use the machine's own processing element.
 - **Jade**: every machine answers the no-face (`null` side) capability query with read-only views; text too long for a bar slides from side to side. Taking Smelter results by hand collects the stored XP, as from a vanilla furnace.
 - **Alloys of other mods**: recipe types listed in `smelter.externalAlloyRecipeTypes` (default `enderio:alloy_smelting`, `oritech:foundry`) are read through their own codecs: 1–3 counted item ingredients, item results (a second result becomes the byproduct), experience and time. Recipes with fluids or more ingredients are skipped, and so are plain furnace copies. No other mod is needed to build or run.
@@ -254,24 +268,9 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ## 🧩 Configuration and datapacks
 
-The server config `dimensionalfluxminer-server.toml` sets the FE extremes of each machine and the Miner production extremes; every intermediate speed level is recalculated from them. The Miner maximum can be lowered but never raised above 64 per cycle.
+Modpack creators, modders and server administrators can customize machine settings, dimensional resource profiles, Matter values, recipes, corruption tags and compatibility.
 
-<details>
-<summary>📂 Datapack reference</summary>
-
-| Path | Purpose |
-|---|---|
-| `data/<ns>/dimensional_miner_resources/*.json` | Resource Profile overrides: `resource`, `dimension`, `family`, `weight` (share of the profile, 0–1], `enabled`, `crusher_output` |
-| `data/<ns>/data_maps/item/matter_value.json` | DM value of substrates (`dm`, optional `dimensions`) |
-| `data/dimensionalfluxminer/tags/block/corruptible_stone.json` | Stone-family blocks converted to corrupted stone |
-| `data/dimensionalfluxminer/tags/block/corruptible_sediment.json` | Sands and gravels converted to corrupted sediment |
-| `data/dimensionalfluxminer/tags/block/corruptible_weeds.json` | Weeds converted to corrupted grass |
-| `data/dimensionalfluxminer/tags/block/corruption_ground.json` | Natural ground: the corruption looks through every other block above it |
-| `data/dimensionalfluxminer/tags/block/corruption_blacklist.json` | Blocks never corrupted |
-| `data/dimensionalfluxminer/tags/entity_type/*.json` | Dimensional Death spawn blacklist, light-bypass eligibility, Corrupted Water heal blacklist and heart-heal list |
-| recipe types `crushing`, `ore_crushing`, `alloying` | Machine recipes |
-| recipe types `tag_smelting`, `tag_blasting` | Furnace / blast furnace recipes whose result is the first item of `result_tag` |
-</details>
+For supported options, limits, JSON/TOML examples and datapack instructions, see the **[Complete Customization Guide](docs/CUSTOMIZATION.md)**.
 
 ---
 
@@ -279,13 +278,16 @@ The server config `dimensionalfluxminer-server.toml` sets the FE extremes of eac
 
 ```bash
 ./gradlew build                # jar in build/libs/dimensionalfluxminer-<minecraft>-<version>.jar
-./gradlew test                 # JUnit: rate curves, production curve, buffers, bulk bonus, auto-split, layout
+./gradlew test                 # JUnit: rate curves, production curve, buffers, bulk bonus, auto-split, matter math, ore weights, void curve, layout
 ./gradlew runGameTestServer    # in-world GameTests for the machines, the corruption and the content
 ./gradlew runClient            # development client
 ./gradlew runServer            # development server
 ```
 
 On Windows use `gradlew.bat`. The Gradle wrapper provisions Gradle itself; a JDK 21 is required (the foojay toolchain resolver can download one).
+
+- 🧭 Code layout, tests and development rules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- ⚖️ Every balance number (speed and energy tables, matter, ore distribution, protections, server config): [docs/BALANCE.md](docs/BALANCE.md).
 
 ---
 

@@ -40,6 +40,7 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.CORRUPTED_DIRT.get());
                 output.accept(DfmItems.CORRUPTED_GRASS.get());
                 output.accept(DfmItems.CORRUPTED_STONE.get());
+                output.accept(DfmItems.CORRUPTED_TERRACOTTA.get());
                 output.accept(DfmItems.CORRUPTED_SEDIMENT.get());
                 output.accept(DfmItems.CORRUPTED_GRASS_PLANT.get());
                 output.accept(DfmItems.CORRUPTED_WATER_BUCKET.get());

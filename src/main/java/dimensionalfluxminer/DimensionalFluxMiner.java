@@ -48,6 +48,10 @@ public final class DimensionalFluxMiner {
         modBus.addListener(DfmNetwork::register);
 
         container.registerConfig(ModConfig.Type.SERVER, DfmConfig.SPEC);
+        modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Loading.class, DfmConfig::onConfigChanged);
+        modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Reloading.class, DfmConfig::onConfigChanged);
+        modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Unloading.class, DfmConfig::onConfigChanged);
+        dimensionalfluxminer.compat.claims.ClaimAdapters.registerInstalled();
 
         NeoForge.EVENT_BUS.addListener(ContentEvents::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(ContentEvents::onLootTableLoad);

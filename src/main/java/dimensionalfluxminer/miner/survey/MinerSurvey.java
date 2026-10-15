@@ -1,7 +1,6 @@
 package dimensionalfluxminer.miner.survey;
 
 import dimensionalfluxminer.miner.corruption.CorruptionService;
-import java.util.ArrayDeque;
 import java.util.BitSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -19,7 +18,8 @@ public final class MinerSurvey {
     private final ColumnOrder order = ColumnOrder.get();
     private final BitSet seen = new BitSet();
     private final BitSet inspectedThisPass = new BitSet();
-    private final ArrayDeque<Long> candidates = new ArrayDeque<>();
+    /** Drainable columns found, packed as {@code x << 32 | z}, unboxed. */
+    private final it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue candidates = new it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue();
     private int pointer;
     private int seenCount;
     private boolean candidateFoundThisPass;
@@ -62,8 +62,8 @@ public final class MinerSurvey {
                 seenCount++;
             }
             inspected++;
-            if (CorruptionService.plan(level, x, z).drainable()) {
-                candidates.add(((long) x << 32) | (z & 0xFFFFFFFFL));
+            if (CorruptionService.drainable(level, x, z)) {
+                candidates.enqueue(((long) x << 32) | (z & 0xFFFFFFFFL));
                 candidateFoundThisPass = true;
             }
         }
@@ -93,7 +93,6 @@ public final class MinerSurvey {
 
     /** Takes the next cached target; the caller revalidates it before corrupting. */
     public long pollCandidate() {
-        Long next = candidates.poll();
-        return next == null ? Long.MIN_VALUE : next;
+        return candidates.isEmpty() ? Long.MIN_VALUE : candidates.dequeueLong();
     }
 }

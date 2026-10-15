@@ -1,6 +1,5 @@
 package dimensionalfluxminer.client.screen;
 
-import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.compat.RecipeViewers;
 import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
@@ -19,6 +18,7 @@ import java.util.Locale;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.material.Fluid;
 
@@ -40,7 +40,7 @@ final class GuideContent {
     static List<Chapter> chapters() {
         return List.of(
                 start(), materials(), crusher(), smelter(),
-                assembly(), miner(), rates(), blight());
+                assembly(), miner(), dimensions(), rates(), blight());
     }
 
     // ------------------------------------------------------------------ chapters
@@ -123,6 +123,22 @@ final class GuideContent {
         return b.chapter(DfmItems.BASIC_DIMENSIONAL_CORE);
     }
 
+    private static Chapter dimensions() {
+        Builder b = new Builder("dimensions");
+        b.text("intro");
+        b.heading("overworld").items(Items.STONE, Items.DEEPSLATE, Items.DIRT, Items.DIAMOND_ORE).text("overworld");
+        b.heading("nether").items(Items.NETHERRACK, Items.GLOWSTONE, Items.SOUL_SAND, Items.NETHER_BRICKS, Items.NETHER_QUARTZ_ORE)
+                .text("nether");
+        b.heading("end").items(Items.END_STONE, Items.PURPUR_BLOCK).text("end");
+        b.item(Items.DRAGON_EGG, "egg");
+        b.tip("discover");
+        b.heading("ores").text("ores");
+        b.item(Items.OBSIDIAN, "obsidian");
+        b.heading("modded").text("modded");
+        b.tip("table");
+        return b.chapter(Items.CRYING_OBSIDIAN);
+    }
+
     private static Chapter rates() {
         Builder b = new Builder("rates");
         b.text("intro").text("buffer");
@@ -136,7 +152,7 @@ final class GuideContent {
     private static Chapter blight() {
         Builder b = new Builder("blight");
         b.text("intro");
-        b.itemsAndFluids(List.of(DfmItems.CORRUPTED_GRASS, DfmItems.CORRUPTED_DIRT, DfmItems.CORRUPTED_STONE, DfmItems.CORRUPTED_SEDIMENT,
+        b.itemsAndFluids(List.of(DfmItems.CORRUPTED_GRASS, DfmItems.CORRUPTED_DIRT, DfmItems.CORRUPTED_STONE, DfmItems.CORRUPTED_TERRACOTTA, DfmItems.CORRUPTED_SEDIMENT,
                 DfmItems.CORRUPTED_GRASS_PLANT), List.<Supplier<? extends Fluid>>of(DfmFluids.CORRUPTED_WATER));
         b.heading("terrain").text("terrain");
         b.heading("water").text("water");
@@ -149,13 +165,11 @@ final class GuideContent {
 
     private static GuideElement minerTable() {
         return new GuideElements.Table(headers("level", "fe", "ores", "dm"), new float[] {0.6F, 1.2F, 1.2F, 1.0F}, () -> {
-            double[] fe = DfmConfig.range(DfmConfig.MINER_MIN_FE, DfmConfig.MINER_MAX_FE);
-            double[] rate = DfmConfig.range(DfmConfig.MINER_MIN_RATE, DfmConfig.MINER_MAX_RATE);
-            MinerProductionCurve curve = new MinerProductionCurve(fe[0], fe[1], rate[0], rate[1]);
+            MinerProductionCurve curve = dimensionalfluxminer.miner.MinerControllerBlockEntity.curve();
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
                 double perSecond = curve.levelRate(level) * 20;
-                rows.add(List.of(Integer.toString(level), DfmScreen.compact(Math.round(curve.levelPower(level))),
+                rows.add(List.of(Integer.toString(level), DfmScreen.compact(RateScale.powerLimit(curve.levelPower(level))),
                         number(perSecond), number(perSecond * 2)));
             }
             return rows;
@@ -164,13 +178,13 @@ final class GuideContent {
 
     private static GuideElement crusherTable() {
         return new GuideElements.Table(headers("level", "fe", "fe_upgrade", "operations"), new float[] {0.6F, 1.1F, 1.3F, 1.2F}, () -> {
-            double[] fe = DfmConfig.range(DfmConfig.CRUSHER_MIN_FE, DfmConfig.CRUSHER_MAX_FE);
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
-                double perSecond = RateScale.value(level, DimensionalCrusherBlockEntity.MIN_OPERATIONS_PER_TICK,
-                        DimensionalCrusherBlockEntity.MAX_OPERATIONS_PER_TICK) * 20;
-                rows.add(List.of(Integer.toString(level), DfmScreen.compact(RateScale.powerLimit(level, fe[0], fe[1], 1.0)),
-                        DfmScreen.compact(RateScale.powerLimit(level, fe[0], fe[1], 0.5)), number(perSecond)));
+                double ops = DimensionalCrusherBlockEntity.operationsPerTick(level);
+                rows.add(List.of(Integer.toString(level),
+                        DfmScreen.compact(RateScale.powerLimit(RateScale.power(ops, DimensionalCrusherBlockEntity.energyPerOperation(level, false)))),
+                        DfmScreen.compact(RateScale.powerLimit(RateScale.power(ops, DimensionalCrusherBlockEntity.energyPerOperation(level, true)))),
+                        number(ops * 20)));
             }
             return rows;
         });
@@ -178,13 +192,13 @@ final class GuideContent {
 
     private static GuideElement smelterTable() {
         return new GuideElements.Table(headers("level", "fe", "fe_upgrade", "lane"), new float[] {0.6F, 1.0F, 1.2F, 1.1F}, () -> {
-            double[] fe = DfmConfig.range(DfmConfig.SMELTER_MIN_FE, DfmConfig.SMELTER_MAX_FE);
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
-                double lane = RateScale.smelterOperationsPerTick(level, STANDARD_RECIPE_TICKS,
-                        AlloySmelterBlockEntity.RATE_TEN_ITEMS_PER_TICK) * 20;
-                rows.add(List.of(Integer.toString(level), DfmScreen.compact(RateScale.powerLimit(level, fe[0], fe[1], 1.0)),
-                        DfmScreen.compact(RateScale.powerLimit(level, fe[0], fe[1], 0.5)), number(lane)));
+                double lane = dimensionalfluxminer.smelter.SmelterEnergy.laneOperationsPerTick(level, STANDARD_RECIPE_TICKS) * 20;
+                // Furnace profile with the three lanes busy, the larger of the two profiles.
+                rows.add(List.of(Integer.toString(level),
+                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.smelter.SmelterEnergy.furnaceStandardPower(level, false))),
+                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.smelter.SmelterEnergy.furnaceStandardPower(level, true))), number(lane)));
             }
             return rows;
         });

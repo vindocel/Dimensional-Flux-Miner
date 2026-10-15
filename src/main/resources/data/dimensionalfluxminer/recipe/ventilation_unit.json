@@ -11,7 +11,7 @@
       "item": "minecraft:iron_bars"
     },
     "S": {
-      "tag": "c:ingots/steel"
+      "item": "dimensionalfluxminer:ingot_steel"
     },
     "C": {
       "item": "dimensionalfluxminer:steel_chassis"

@@ -17,15 +17,16 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 
 /**
  * Draws the formed machine once at the controller. Standby/unpowered stages use the static {@code states}
  * model; while really processing, the fixed {@code body} is drawn plus the outer cage, the counter-rotating
  * inner cage and the breathing energy core. Rotation speed follows five load stages (with hysteresis) and is
- * never above stage 5, whatever the external acceleration. The cages speed up from rest, leaning into their
- * tilt, and after processing ends they slow down and straighten out until they stop on the rest pose of the
- * static model (straight cages, whole revolution).
+ * never above stage 5, whatever the external acceleration, and a little faster at higher Flux Rates. The cages
+ * speed up from rest, leaning into their tilt; after processing ends they slow down, straighten out and stop on
+ * an aligned pose (square cages, every quarter turn).
  */
 public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEntity> {
     private static final String[] PARTS = {"states", "body", "outer", "inner", "energy"};
@@ -75,7 +76,7 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         pose.translate(0.5, 0, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
         pose.translate(-0.5, 0, -0.5);
-        // Spinning up while processing; once it stops, spinning down until the rest pose of the static model.
+        // Spinning up while processing; once it stops, the moving parts brake onto an aligned pose.
         Spin spin = spins.get(be);
         if (stage.processing() && spin == null) {
             spin = new Spin();
@@ -84,9 +85,16 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         boolean moving = false;
         if (spin != null) {
             float now = be.getLevel().getGameTime() + partialTick;
-            moving = spin.advance(stage.processing(), be.loadPercent() / 100.0, now);
-            if (!moving) {
+            double wanted = 0;
+            if (stage.processing()) {
+                spin.updateStage(be.loadPercent() / 100.0);
+                wanted = DEGREES_PER_TICK * STAGE_SPEED[spin.stage] * MinerVisualStage.rateSpeed(be.rate());
+            }
+            spin.advance(wanted, now);
+            if (!stage.processing() && spin.atRestPose()) {
                 spins.remove(be);
+            } else {
+                moving = true;
             }
         }
         ModelRendering.render(pose, buffers, ModelRendering.model(model(moving ? "body" : "states", stage)), fullLight, overlay);
@@ -154,52 +162,105 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
     }
 
     /**
-     * Client-only rotation state. From rest the cages speed up at {@link #ACCELERATION} to the speed of the load
-     * stage (smoothed with hysteresis). When processing ends they keep turning, then brake at the same rate so
-     * they come to rest exactly on a whole revolution, the pose of the static model.
+     * Client-only rotation state, driven like a magnetic motor: every change of target speed (start, a new Rate, a new
+     * load stage) is covered at a constant acceleration in a short time that grows a little with the size of the
+     * change, never instant and never sluggish. To stop, it keeps its pace (at least the base speed) and then brakes
+     * at a constant rate so that it lands exactly on the next aligned pose (the cages are square: every quarter turn).
      */
     private static final class Spin {
-        /** Degrees per tick squared: the base speed is reached in 2 s from rest. */
-        private static final double ACCELERATION = DEGREES_PER_TICK / 40.0;
+        /** Shortest and longest time (ticks) of a change of speed while running. */
+        private static final double RAMP_MIN_TICKS = 15;
+        private static final double RAMP_MAX_TICKS = 40;
+        /** Start from rest: the base speed in 40 ticks, then 10 more ticks per extra base speed, at most 5.5 s. */
+        private static final double START_MIN_TICKS = 40;
+        private static final double START_MAX_TICKS = 110;
+        /** Shortest and longest braking time (ticks) of a stop. */
+        private static final double STOP_MIN_TICKS = 30;
+        private static final double STOP_MAX_TICKS = 70;
+        /**
+         * Starts and stops never accelerate harder than at this Flux Rate: faster Rates reach their speed (and come to
+         * rest) with the same feel, just a little later.
+         */
+        private static final int GENTLEST_RATE = 6;
+        /** The cages look the same every quarter turn; a stop always lands on one of these poses. */
+        private static final double ALIGNED_STEP = 90.0;
 
         int stage = 1;
         double angle;
         double speed;
+        double target;
+        double acceleration;
+        /** Angle where the current stop lands (NaN while running). */
         double restAngle = Double.NaN;
+        double cruise;
         float lastTime = Float.NaN;
 
-        /** Advances the rotation; false once it is back at rest. */
-        boolean advance(boolean processing, double load, float now) {
+        /** Moves the speed toward {@code wanted} (0 to stop on an aligned pose) and turns the cages. */
+        void advance(double wanted, float now) {
             float dt = Float.isNaN(lastTime) ? 0 : Math.max(0, Math.min(20, now - lastTime));
             lastTime = now;
-            if (processing) {
+            if (wanted > 0) {
                 restAngle = Double.NaN;
-                updateStage(load);
-                double target = DEGREES_PER_TICK * STAGE_SPEED[stage];
-                speed = speed < target ? Math.min(target, speed + ACCELERATION * dt) : Math.max(target, speed - ACCELERATION * dt);
+                if (Math.abs(wanted - target) > 1.0E-6 || (acceleration == 0 && speed != wanted)) {
+                    target = wanted;
+                    double change = Math.abs(wanted - speed);
+                    // From (almost) rest the motor spins up gently, more slowly the faster it has to go.
+                    if (speed < DEGREES_PER_TICK * 0.25 && wanted > speed) {
+                        acceleration = Math.min(startAcceleration(change), startAcceleration(gentlestSpeed()));
+                    } else {
+                        acceleration = change / Mth.clamp(RAMP_MIN_TICKS + 10 * change / DEGREES_PER_TICK, RAMP_MIN_TICKS, RAMP_MAX_TICKS);
+                    }
+                }
+                speed = speed < target ? Math.min(target, speed + acceleration * dt) : Math.max(target, speed - acceleration * dt);
                 angle = (angle + speed * dt) % 360.0;
-                return true;
+                return;
+            }
+            if (speed == 0 && Double.isNaN(restAngle)) {
+                return;
             }
             if (Double.isNaN(restAngle)) {
-                // The first whole revolution it can still brake smoothly into.
-                restAngle = Math.ceil((angle + speed * speed / (2 * ACCELERATION) + 1.0E-3) / 360.0) * 360.0;
+                // Plan the stop: brake in a comfortable time and land on the first aligned pose past that distance.
+                target = 0;
+                cruise = Math.max(speed, DEGREES_PER_TICK);
+                acceleration = Math.min(stopAcceleration(cruise), stopAcceleration(Math.max(gentlestSpeed(), DEGREES_PER_TICK)));
+                double braking = cruise * cruise / (2 * acceleration);
+                restAngle = Math.ceil((angle + braking + 1.0E-3) / ALIGNED_STEP) * ALIGNED_STEP;
             }
             double remaining = restAngle - angle;
-            // Keeps turning (at least at the base speed) until the braking curve that ends right on the rest pose.
-            double cruise = Math.max(DEGREES_PER_TICK, Math.min(speed, DEGREES_PER_TICK * STAGE_SPEED[5]));
-            double braking = Math.sqrt(2 * ACCELERATION * Math.max(0, remaining));
-            double wanted = Math.min(cruise, braking);
-            speed = speed < wanted ? Math.min(wanted, speed + ACCELERATION * dt) : wanted;
+            // Keep the pace until the constant braking curve that ends right on the aligned pose, then follow it.
+            double wantedSpeed = Math.min(cruise, Math.sqrt(2 * acceleration * Math.max(0, remaining)));
+            speed = speed < wantedSpeed ? Math.min(wantedSpeed, speed + acceleration * dt) : wantedSpeed;
             double step = speed * dt;
             if (remaining <= 1.0E-3 || step >= remaining) {
-                angle = 0;
+                angle = restAngle % 360.0;
                 speed = 0;
-                return false;
+                restAngle = Double.NaN;
+                return;
             }
             angle += step;
-            return true;
         }
 
+        /** Running speed of the gentlest Rate at the current load stage. */
+        private double gentlestSpeed() {
+            return DEGREES_PER_TICK * STAGE_SPEED[stage] * MinerVisualStage.rateSpeed(GENTLEST_RATE);
+        }
+
+        /** Acceleration of a start from rest to {@code speed}. */
+        private static double startAcceleration(double speed) {
+            return speed / Mth.clamp(START_MIN_TICKS + 10 * (speed / DEGREES_PER_TICK - 1), START_MIN_TICKS, START_MAX_TICKS);
+        }
+
+        /** Deceleration of a stop from {@code speed}. */
+        private static double stopAcceleration(double speed) {
+            double ticks = Mth.clamp(STOP_MIN_TICKS + 10 * speed / DEGREES_PER_TICK, STOP_MIN_TICKS, STOP_MAX_TICKS);
+            return Math.max(speed / ticks, DEGREES_PER_TICK / STOP_MIN_TICKS);
+        }
+
+        /** Stopped right on the rest pose of the static model. */
+        boolean atRestPose() {
+            double a = ((angle % 360.0) + 360.0) % 360.0;
+            return speed == 0 && Double.isNaN(restAngle) && (a < 1.0E-3 || a > 360.0 - 1.0E-3);
+        }
         /** Breathing strength of the core: 0 at rest, 1 from the base speed up. */
         float intensity() {
             return (float) Math.min(1.0, speed / DEGREES_PER_TICK);
@@ -207,20 +268,19 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
 
         /**
          * Share of the running tilt (eased): 0 at rest, where the cages stand straight as in the static model, and
-         * 1 from the base speed up. Below the base speed the stop is the final braking curve onto the rest pose,
-         * so the cages straighten out exactly as they land on it.
+         * 1 from the base speed up, so the cages straighten out as they stop.
          */
         float tilt() {
             float s = intensity();
             return s * s * (3 - 2 * s);
         }
 
-        private void updateStage(double load) {
-            int target = load <= 0 ? 1 : Math.min(5, (int) Math.ceil(load / 0.2));
-            if (target > stage && load > (stage * 0.2) + HYSTERESIS) {
-                stage = target;
-            } else if (target < stage && load < ((stage - 1) * 0.2) - HYSTERESIS) {
-                stage = Math.max(1, target);
+        void updateStage(double load) {
+            int wanted = load <= 0 ? 1 : Math.min(5, (int) Math.ceil(load / 0.2));
+            if (wanted > stage && load > (stage * 0.2) + HYSTERESIS) {
+                stage = wanted;
+            } else if (wanted < stage && load < ((stage - 1) * 0.2) - HYSTERESIS) {
+                stage = Math.max(1, wanted);
             }
         }
     }

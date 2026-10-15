@@ -7,6 +7,10 @@
     "minecraft:cobbled_deepslate",
     "minecraft:granite",
     "minecraft:diorite",
-    "minecraft:andesite"
+    "minecraft:andesite",
+    "minecraft:calcite",
+    "minecraft:dripstone_block",
+    { "id": "create:asurine", "required": false },
+    { "id": "ae2:sky_stone_block", "required": false }
   ]
 }

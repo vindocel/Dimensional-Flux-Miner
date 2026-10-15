@@ -8,7 +8,7 @@ import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -27,42 +27,49 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * Side Configuration window (156 x 135): one tab per transmission on its left edge, the six faces as 22 px buttons
- * (top / left-front-right / back-bottom) tinted with the route color, the automation button (OFF, Auto Input,
- * Auto Eject, both) and the batch button
- * (every side to the next/previous route, Shift clears every transmission). Left click selects the next route of a
- * face, right click the previous one.
+ * (top / left-front-right / back-bottom) tinted with the route color, the automation button of the current tab and
+ * the batch button (every side to the next/previous route, Shift clears every transmission). Left click selects the
+ * next route of a face, right click the previous one.
+ * <p>
+ * Every material has its own automation: on the item tab the button cycles OFF, Auto Input, Auto Eject and both; on a
+ * fluid tab that only outputs it switches Auto Eject on and off.
  */
 final class SideConfigWindow extends DfmScreen.Window {
     private static final int SIDE = 22;
+
+    /** The automation a tab controls. */
+    enum Automation {
+        /** Auto Input and Auto Eject of items. */
+        ITEMS,
+        /** Auto Eject of an output-only fluid (no Auto Input). */
+        FLUID_OUTPUT
+    }
+
+    /** One tab's automation and the lines explaining it on this machine. */
+    record AutomationTab(Automation automation, List<Component> help) {
+    }
 
     private final SideRules rules;
     private final List<Transmission> transmissions;
     private final Supplier<CompoundTag> data;
     private final BlockPos pos;
-    private final Set<Transmission> ejectable;
-    private final List<Component> automationHelp;
+    private final Map<Transmission, AutomationTab> automation;
     private Transmission current;
     private RelativeFace focused;
     private ItemStack[] neighbors;
 
     /**
-     * @param ejectable transmissions moved by the automation button (it is active on their tabs)
-     * @param automationHelp lines explaining Auto Input and Auto Eject on this machine
+     * @param automation the automation of each tab that has one (the button is disabled on the other tabs)
      */
     SideConfigWindow(DfmScreen<?> screen, String key, SideRules rules, List<Transmission> transmissions, Supplier<CompoundTag> data,
-                     BlockPos pos, Set<Transmission> ejectable, List<Component> automationHelp) {
+                     BlockPos pos, Map<Transmission, AutomationTab> automation) {
         super(screen, key, 156);
         this.rules = rules;
         this.transmissions = transmissions;
         this.data = data;
         this.pos = pos;
-        this.ejectable = ejectable;
-        this.automationHelp = automationHelp;
+        this.automation = automation;
         this.current = transmissions.getFirst();
-    }
-
-    private boolean ejectable(Transmission transmission) {
-        return ejectable.contains(transmission);
     }
 
     @Override
@@ -142,9 +149,11 @@ final class SideConfigWindow extends DfmScreen.Window {
                     }, null, () -> List.of(Component.translatable(t.translationKey())));
         }
 
-        boolean ejectable = ejectable(current);
-        boolean input = d.getBoolean("auto_input");
-        boolean eject = d.getBoolean("auto_eject");
+        AutomationTab tabAutomation = automation.get(current);
+        boolean ejectable = tabAutomation != null;
+        boolean items = ejectable && tabAutomation.automation() == Automation.ITEMS;
+        boolean input = items && d.getBoolean("auto_input");
+        boolean eject = items ? d.getBoolean("auto_eject") : d.getBoolean("auto_eject_fluid");
         String mode = input ? eject ? "both" : "input" : eject ? "eject" : "off";
         screen.innerScreen(g, x + 38, y + 25, 80, 12);
         Component screenText = ejectable
@@ -156,16 +165,27 @@ final class SideConfigWindow extends DfmScreen.Window {
                     () -> List.of(Component.translatable("gui.dimensionalfluxminer.side_config.cant_eject")), 0);
         }
 
-        // Automation mode: OFF -> Auto Input -> Auto Eject -> Input + Eject (right click goes back).
+        // Items: OFF -> Auto Input -> Auto Eject -> Input + Eject (right click goes back). Output-only fluid: on / off.
+        int next = items ? AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT : AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID;
+        int previous = items ? AbstractMachineBlockEntity.BUTTON_AUTO_IO_PREVIOUS : AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID;
         screen.imageButton(g, x + 136, y + 6, 14, DfmScreen.sprite("button/auto_eject"), ejectable, false, mouseX, mouseY,
-                () -> AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT, () -> AbstractMachineBlockEntity.BUTTON_AUTO_IO_PREVIOUS, () -> {
+                () -> next, () -> previous, () -> {
                     List<Component> lines = new ArrayList<>();
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(input)));
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)));
-                    for (Component help : automationHelp) {
+                    if (!ejectable) {
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.side_config.cant_eject"));
+                        return lines;
+                    }
+                    if (items) {
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(input)));
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)));
+                    } else {
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject_fluid", MachineText.onOff(eject)));
+                    }
+                    for (Component help : tabAutomation.help()) {
                         lines.add(help.copy().withStyle(ChatFormatting.GRAY));
                     }
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.side_config.auto.cycle").withStyle(ChatFormatting.DARK_GRAY));
+                    lines.add(Component.translatable(items ? "gui.dimensionalfluxminer.side_config.auto.cycle"
+                            : "gui.dimensionalfluxminer.side_config.auto.toggle").withStyle(ChatFormatting.DARK_GRAY));
                     return lines;
                 });
 

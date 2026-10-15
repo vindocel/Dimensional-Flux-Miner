@@ -1,23 +1,18 @@
 package dimensionalfluxminer.miner.corruption;
 
 import dimensionalfluxminer.registry.DfmBlocks;
-import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmTags;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoublePlantBlock;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.material.Fluids;
 
 /**
  * Dimensional Drain: plans and applies the corruption of one X/Z column following its own topography.
@@ -40,7 +35,7 @@ public final class CorruptionService {
     private CorruptionService() {
     }
 
-    /** {@code to} is the terrain block to place, or null for a water layer ({@link #corruptWaterAt}). */
+    /** {@code to} is the terrain block to place, or null for a water layer ({@link WaterCorruption#corruptWaterAt}). */
     public record Conversion(BlockPos pos, BlockState to) {
     }
 
@@ -67,7 +62,7 @@ public final class CorruptionService {
         BlockPos.MutableBlockPos pos = ground.mutable();
         int waterLayers = 0;
         while (pos.getY() >= min && waterLayers < WATER_DEPTH) {
-            if (!isCorruptibleWater(level.getBlockState(pos))) {
+            if (!WaterCorruption.isCorruptibleWater(level.getBlockState(pos))) {
                 break;
             }
             conversions.add(new Conversion(pos.immutable(), null));
@@ -94,6 +89,34 @@ public final class CorruptionService {
     }
 
     /**
+     * Same answer as {@code plan(level, x, z).drainable()} without building the plan: the survey asks it for every
+     * column it inspects.
+     */
+    public static boolean drainable(ServerLevel level, int x, int z) {
+        BlockPos ground = findGround(level, x, z, null);
+        if (ground == null) {
+            return false;
+        }
+        BlockState state = level.getBlockState(ground);
+        if (WaterCorruption.isCorruptibleWater(state)) {
+            return true;
+        }
+        int min = level.getMinBuildHeight();
+        BlockPos.MutableBlockPos pos = ground.mutable();
+        for (int layer = 0; layer < SOLID_DEPTH && pos.getY() >= min; layer++) {
+            state = level.getBlockState(pos);
+            if (!state.isCollisionShapeFullBlock(level, pos)) {
+                return false;
+            }
+            if (corruptedTerrain(level, pos, state) != null) {
+                return true;
+            }
+            pos.move(0, -1, 0);
+        }
+        return false;
+    }
+
+    /**
      * The column's ground (or first water layer), found from the top through air, decorative vegetation and cover:
      * trees, buildings, machines or anything else that is not natural ground ({@code corruption_ground}). Null when
      * more than {@link #MAX_COVER} cover blocks stand above it.
@@ -109,12 +132,14 @@ public final class CorruptionService {
         int cover = 0;
         while (pos.getY() >= min) {
             BlockState state = level.getBlockState(pos);
-            if (isCorruptibleWater(state) || isCorruptedWater(state) || state.is(DfmTags.Blocks.CORRUPTION_GROUND)) {
+            if (WaterCorruption.isCorruptibleWater(state) || WaterCorruption.isCorruptedWater(state) || state.is(DfmTags.Blocks.CORRUPTION_GROUND)) {
                 return pos.immutable();
             }
             if (!state.isAir()) {
                 if (isDecorative(level, pos, state)) {
-                    decorative.add(pos.immutable());
+                    if (decorative != null) {
+                        decorative.add(pos.immutable());
+                    }
                 } else if (++cover > MAX_COVER) {
                     return null;
                 }
@@ -135,7 +160,7 @@ public final class CorruptionService {
         if (state.is(DfmTags.Blocks.CORRUPTIBLE_WEEDS)) {
             // Weeds (two-cell ones atomically) become one corrupted grass plant at their base.
             out.add(new Vegetation(above, upper, DfmBlocks.CORRUPTED_GRASS_PLANT.get().defaultBlockState()));
-        } else if (state.is(BlockTags.FLOWERS) && !state.is(Blocks.WITHER_ROSE)) {
+        } else if (state.is(DfmTags.Blocks.CORRUPTIBLE_FLOWERS) && !state.is(Blocks.WITHER_ROSE)) {
             out.add(new Vegetation(above, upper, Blocks.WITHER_ROSE.defaultBlockState()));
         }
     }
@@ -148,14 +173,17 @@ public final class CorruptionService {
         if (!level.hasChunk(x >> 4, z >> 4)) {
             return false;
         }
+        if (!ProtectionService.corruptionAllowed(level)) {
+            return false;
+        }
         ColumnPlan plan = plan(level, x, z);
         if (!plan.drainable()) {
             return false;
         }
-        for (Conversion c : plan.conversions()) {
-            if (ProtectionService.check(level, c.pos(), owner) == ProtectionService.Result.DENY) {
-                return false;
-            }
+        // The whole column is authorized or denied before anything changes: terrain, water, the plants on it and both
+        // halves of tall plants. A denied column changes nothing and is worth nothing.
+        if (!ProtectionService.allowsAll(level, positions(plan), owner)) {
+            return false;
         }
         for (Vegetation v : plan.vegetation()) {
             if (v.upper() != null) {
@@ -165,7 +193,7 @@ public final class CorruptionService {
         }
         for (Conversion c : plan.conversions()) {
             if (c.to() == null) {
-                corruptWaterAt(level, c.pos());
+                WaterCorruption.corruptWaterAt(level, c.pos());
             } else {
                 level.setBlock(c.pos(), c.to(), Block.UPDATE_ALL);
             }
@@ -179,91 +207,30 @@ public final class CorruptionService {
         return true;
     }
 
-    static boolean isWater(BlockState state) {
-        return state.is(Blocks.WATER) && (state.getFluidState().is(Fluids.WATER) || state.getFluidState().is(Fluids.FLOWING_WATER));
-    }
-
-    /** The Corrupted Water copy of a vanilla water plant (kelp, seagrass), or null. */
-    private static Block corruptedPlant(BlockState state) {
-        if (state.is(Blocks.KELP)) {
-            return DfmBlocks.CORRUPTED_KELP.get();
+    /** Every position a plan changes. */
+    public static List<BlockPos> positions(ColumnPlan plan) {
+        List<BlockPos> out = new ArrayList<>();
+        for (Conversion c : plan.conversions()) {
+            out.add(c.pos());
         }
-        if (state.is(Blocks.KELP_PLANT)) {
-            return DfmBlocks.CORRUPTED_KELP_PLANT.get();
-        }
-        if (state.is(Blocks.SEAGRASS)) {
-            return DfmBlocks.CORRUPTED_SEAGRASS.get();
-        }
-        if (state.is(Blocks.TALL_SEAGRASS)) {
-            return DfmBlocks.CORRUPTED_TALL_SEAGRASS.get();
-        }
-        return null;
-    }
-
-    /** Vanilla water the corruption turns into Corrupted Water: water blocks and the water plants. */
-    public static boolean isCorruptibleWater(BlockState state) {
-        return isWater(state) || corruptedPlant(state) != null;
-    }
-
-    private static boolean isCorruptedWater(BlockState state) {
-        return state.getFluidState().getType().isSame(DfmFluids.CORRUPTED_WATER.get());
-    }
-
-    private static boolean isKelp(BlockState state) {
-        return state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT);
-    }
-
-    /**
-     * Turns the vanilla water at {@code pos} into Corrupted Water: a water block keeps its level; a kelp or seagrass
-     * stays, swapped for its copy holding Corrupted Water (a whole kelp column or both halves of a tall seagrass at
-     * once, so the plant never breaks). Also used by Corrupted Water to turn the water below it.
-     * @return true when something was converted
-     */
-    public static boolean corruptWaterAt(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (isWater(state)) {
-            level.setBlock(pos, DfmBlocks.CORRUPTED_WATER.get().defaultBlockState().setValue(LiquidBlock.LEVEL, state.getValue(LiquidBlock.LEVEL)),
-                    Block.UPDATE_ALL);
-            return true;
-        }
-        if (corruptedPlant(state) == null) {
-            return false;
-        }
-        List<BlockPos> cells = new ArrayList<>();
-        if (isKelp(state)) {
-            BlockPos bottom = pos;
-            while (isKelp(level.getBlockState(bottom.below()))) {
-                bottom = bottom.below();
-            }
-            for (BlockPos cell = bottom; isKelp(level.getBlockState(cell)); cell = cell.above()) {
-                cells.add(cell);
-            }
-        } else if (state.is(Blocks.TALL_SEAGRASS)) {
-            BlockPos lower = state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
-            cells.add(lower);
-            cells.add(lower.above());
-        } else {
-            cells.add(pos);
-        }
-        for (BlockPos cell : cells) {
-            BlockState current = level.getBlockState(cell);
-            Block target = corruptedPlant(current);
-            if (target != null) {
-                // No shape updates while swapping: the plant is never seen half vanilla, half corrupted.
-                level.setBlock(cell, target.withPropertiesOf(current), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        for (Vegetation v : plan.vegetation()) {
+            out.add(v.base());
+            if (v.upper() != null) {
+                out.add(v.upper());
             }
         }
-        // Keeps the corruption sinking below the plant.
-        BlockPos bottom = cells.getFirst();
-        level.scheduleTick(bottom, DfmFluids.CORRUPTED_WATER.get(), DfmFluids.CORRUPTED_WATER.get().getTickDelay(level));
-        return true;
+        return out;
     }
 
     private static boolean isDecorative(ServerLevel level, BlockPos pos, BlockState state) {
         return state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty();
     }
 
-    /** Data-driven terrain mapping; blacklisted blocks, block entities and corrupted terrain are never converted. */
+    /**
+     * Data-driven terrain mapping: each {@code corruptible_*} tag names the corrupted block that replaces its members
+     * (first match in this order: sediment, dirt, grass, stone, terracotta). Blacklisted blocks, block entities and
+     * corrupted terrain are never converted.
+     */
     static BlockState corruptedTerrain(ServerLevel level, BlockPos pos, BlockState state) {
         if (state.is(DfmTags.Blocks.CORRUPTION_BLACKLIST) || state.hasBlockEntity() || state.is(DfmTags.Blocks.CORRUPTED_TERRAIN)) {
             return null;
@@ -271,14 +238,17 @@ public final class CorruptionService {
         if (state.is(DfmTags.Blocks.CORRUPTIBLE_SEDIMENT)) {
             return DfmBlocks.CORRUPTED_SEDIMENT.get().defaultBlockState();
         }
-        if (state.is(Blocks.DIRT)) {
+        if (state.is(DfmTags.Blocks.CORRUPTIBLE_DIRT)) {
             return DfmBlocks.CORRUPTED_DIRT.get().defaultBlockState();
         }
-        if (state.is(Blocks.GRASS_BLOCK)) {
+        if (state.is(DfmTags.Blocks.CORRUPTIBLE_GRASS)) {
             return DfmBlocks.CORRUPTED_GRASS.get().defaultBlockState();
         }
         if (state.is(DfmTags.Blocks.CORRUPTIBLE_STONE)) {
             return DfmBlocks.CORRUPTED_STONE.get().defaultBlockState();
+        }
+        if (state.is(DfmTags.Blocks.CORRUPTIBLE_TERRACOTTA)) {
+            return DfmBlocks.CORRUPTED_TERRACOTTA.get().defaultBlockState();
         }
         return null;
     }

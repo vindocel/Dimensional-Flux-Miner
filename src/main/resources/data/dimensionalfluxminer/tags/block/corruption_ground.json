@@ -9,6 +9,9 @@
     "#dimensionalfluxminer:corrupted_terrain",
     "#dimensionalfluxminer:corruptible_stone",
     "#dimensionalfluxminer:corruptible_sediment",
+    "#dimensionalfluxminer:corruptible_dirt",
+    "#dimensionalfluxminer:corruptible_grass",
+    "#dimensionalfluxminer:corruptible_terracotta",
     "minecraft:sandstone",
     "minecraft:red_sandstone",
     "minecraft:clay",
@@ -18,6 +21,8 @@
     "minecraft:blue_ice",
     "minecraft:calcite",
     "minecraft:dripstone_block",
-    "minecraft:bedrock"
+    "minecraft:bedrock",
+    { "id": "create:asurine", "required": false },
+    { "id": "ae2:sky_stone_block", "required": false }
   ]
 }

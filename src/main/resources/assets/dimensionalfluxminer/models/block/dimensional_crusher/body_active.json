@@ -10,13 +10,9 @@
   "ambientocclusion": false,
   "render_type": "minecraft:cutout",
   "textures": {
-    "atlas": "dimensionalfluxminer:block/dimensional_crusher/crusher_atlas",
-    "casing": "dimensionalfluxminer:block/dimensional_crusher/crusher_connection_panel",
-    "front_panel": "dimensionalfluxminer:block/dimensional_crusher/crusher_front_panel",
-    "hazard_stripe": "dimensionalfluxminer:block/alloy_smelter/smelter_hazard_stripe",
     "terminal": "dimensionalfluxminer:block/alloy_smelter/smelter_terminal_active",
-    "terminal_mask": "dimensionalfluxminer:block/dimensional_crusher/crusher_terminal_mask",
-    "particle": "dimensionalfluxminer:block/dimensional_crusher/crusher_atlas"
+    "particle": "dimensionalfluxminer:block/dimensional_crusher/dimensional_crusher",
+    "machine": "dimensionalfluxminer:block/dimensional_crusher/dimensional_crusher"
   },
   "display": {
     "gui": {

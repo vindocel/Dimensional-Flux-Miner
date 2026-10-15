@@ -71,6 +71,42 @@ class WorkAndEnergyTest {
     }
 
     @Test
+    void fractionalFurnaceCostAddsUpExactly() {
+        // 50 000 / 3 FE per item at Rate 1: 1/200 item per tick on each of three lanes, 600 000 ticks.
+        DynamicEnergyBuffer buffer = new DynamicEnergyBuffer(0);
+        buffer.setStored(1_000_000_000L);
+        WorkAccumulator[] lanes = {new WorkAccumulator(), new WorkAccumulator(), new WorkAccumulator()};
+        long items = 0;
+        for (int tick = 0; tick < 600_000; tick++) {
+            for (WorkAccumulator lane : lanes) {
+                WorkAccumulator.Plan plan = lane.plan(1.0 / 200, Long.MAX_VALUE);
+                items += plan.operations();
+                buffer.charge(plan.workDone() * (50_000 / 3.0));
+                lane.commit(plan);
+            }
+        }
+        assertEquals(9_000, items);
+        // 9 000 items x 50 000 / 3 = 150 000 000 FE, without drift from the repeating fraction.
+        assertEquals(1_000_000_000L - 150_000_000L, buffer.stored(), 1);
+        assertTrue(buffer.debt() >= 0 && buffer.debt() < 1, "only a fraction of one FE waits for the next charge");
+    }
+
+    @Test
+    void chargesNeverRunOnCredit() {
+        DynamicEnergyBuffer buffer = new DynamicEnergyBuffer(1_000);
+        buffer.setStored(10);
+        assertEquals(10.0, buffer.available());
+        buffer.charge(10.4);
+        assertEquals(0, buffer.stored());
+        assertEquals(0.4, buffer.debt(), 1e-9);
+        assertEquals(0.0, buffer.available(), "the unpaid fraction is owed, never free work");
+        buffer.receive(5, false);
+        assertEquals(4.6, buffer.available(), 1e-9, "the next FE pays the debt first");
+        buffer.setDebt(Double.NaN);
+        assertEquals(0.0, buffer.debt());
+    }
+
+    @Test
     void accelerationDemandFollowsTheExtraCyclesOfEachGameTime() {
         dimensionalfluxminer.machine.AccelerationDemand demand = new dimensionalfluxminer.machine.AccelerationDemand();
         assertEquals(0, demand.extraPerTick(100));

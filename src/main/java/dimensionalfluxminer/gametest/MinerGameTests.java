@@ -279,11 +279,131 @@ public final class MinerGameTests {
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.OAK_PLANKS, 3), false).getCount() == 3, "invalid substrate rejected");
         c.upgradeSlot().setStackInSlot(0, new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()));
         matter.insertItem(0, new ItemStack(Items.DIRT, 1), false);
-        helper.assertTrue(c.dmUnits() == 66, "dirt with upgrade = 0.6 DM (no cap on matter input)");
+        helper.assertTrue(c.dmUnits() == 62, "dirt with upgrade = 0.1 + min(0.1, 0.2) = 0.2 DM, got " + c.dmUnits());
         // Only what fits in the 5 000 DM buffer is accepted; the rest stays with the source.
         c.setDmUnits(MatterValues.BUFFER_UNITS - 25);
         ItemStack rest = matter.insertItem(0, new ItemStack(Items.STONE, 64), false);
-        helper.assertTrue(rest.getCount() == 62 && c.dmUnits() == MatterValues.BUFFER_UNITS - 5, "partial acceptance, got rest " + rest.getCount());
+        helper.assertTrue(rest.getCount() == 61 && c.dmUnits() == MatterValues.BUFFER_UNITS - 4, "partial acceptance (0.7 DM per stone), got rest " + rest.getCount());
+        helper.succeed();
+    }
+
+    /**
+     * Only matter of the Miner's own dimension: ores only where that exact ore generates, other items only in the
+     * dimensions of their data map entry, obsidian everywhere.
+     */
+    @GameTest(template = "empty_large")
+    public static void matterInputOnlyTakesMatterOfItsOwnDimension(GameTestHelper helper) {
+        MinerControllerBlockEntity c = build(helper);
+        c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
+        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH);
+        helper.assertTrue(matter.insertItem(0, new ItemStack(Items.DIAMOND_ORE, 2), false).isEmpty(), "Overworld diamond ore accepted");
+        helper.assertTrue(c.dmUnits() == 20, "2 diamond ore = 2 DM, got " + c.dmUnits());
+        for (var foreign : List.of(Items.NETHER_QUARTZ_ORE, Items.NETHER_GOLD_ORE, Items.ANCIENT_DEBRIS, Items.NETHERRACK,
+                Items.GLOWSTONE, Items.SOUL_SAND, Items.NETHER_BRICKS, Items.END_STONE)) {
+            helper.assertTrue(matter.insertItem(0, new ItemStack(foreign, 4), false).getCount() == 4, "rejected in the Overworld: " + foreign);
+        }
+        helper.assertTrue(matter.insertItem(0, new ItemStack(Items.OBSIDIAN, 3), false).isEmpty(), "obsidian accepted everywhere");
+        helper.assertTrue(c.dmUnits() == 50, "3 obsidian = 3 DM, got " + c.dmUnits());
+
+        // The same rules against the Nether's own profile.
+        var server = helper.getLevel().getServer();
+        var nether = server.getLevel(net.minecraft.world.level.Level.NETHER);
+        helper.assertTrue(nether != null, "the test server has a Nether");
+        var units = new java.util.LinkedHashMap<net.minecraft.world.item.Item, Integer>();
+        units.put(Items.NETHERRACK, 5);
+        units.put(Items.BASALT, 5);
+        units.put(Items.BLACKSTONE, 5);
+        units.put(Items.CRIMSON_NYLIUM, 5);
+        units.put(Items.MAGMA_BLOCK, 5);
+        units.put(Items.GLOWSTONE, 10);
+        units.put(Items.SOUL_SAND, 10);
+        units.put(Items.SOUL_SOIL, 10);
+        units.put(Items.NETHER_BRICKS, 15);
+        units.put(Items.OBSIDIAN, 10);
+        units.put(Items.NETHER_QUARTZ_ORE, 5);
+        units.put(Items.ANCIENT_DEBRIS, 20);
+        units.forEach((item, expected) -> {
+            var value = MatterValues.substrateUnits(new ItemStack(item), nether);
+            helper.assertTrue(value.isPresent() && value.getAsInt() == expected, item + " in the Nether: " + value);
+        });
+        for (var foreign : List.of(Items.DIAMOND_ORE, Items.DEEPSLATE_DIAMOND_ORE, Items.IRON_ORE, Items.STONE, Items.DIRT, Items.END_STONE)) {
+            helper.assertTrue(MatterValues.substrateUnits(new ItemStack(foreign), nether).isEmpty(), "rejected in the Nether: " + foreign);
+        }
+
+        // Stonecutter variants: worth their source divided by the items one cut gives, in the source's dimensions.
+        var overworld = helper.getLevel();
+        var variants = new java.util.LinkedHashMap<net.minecraft.world.item.Item, Integer>();
+        variants.put(Items.POLISHED_ANDESITE, 5);
+        variants.put(Items.STONE_BRICKS, 5);
+        variants.put(Items.STONE_BRICK_STAIRS, 5);
+        variants.put(Items.STONE_SLAB, 2);
+        variants.put(Items.COBBLESTONE_STAIRS, 3);
+        variants.put(Items.POLISHED_DEEPSLATE, 3);
+        variants.forEach((item, expected) -> {
+            var value = MatterValues.substrateUnits(new ItemStack(item), overworld);
+            helper.assertTrue(value.isPresent() && value.getAsInt() == expected, item + " in the Overworld: " + value);
+            helper.assertTrue(MatterValues.substrateUnits(new ItemStack(item), nether).isEmpty(), item + " rejected in the Nether");
+        });
+        var netherVariants = new java.util.LinkedHashMap<net.minecraft.world.item.Item, Integer>();
+        netherVariants.put(Items.POLISHED_BASALT, 5);
+        netherVariants.put(Items.POLISHED_BLACKSTONE_BRICKS, 5);
+        netherVariants.put(Items.NETHER_BRICK_STAIRS, 15);
+        netherVariants.put(Items.NETHER_BRICK_SLAB, 7);
+        netherVariants.forEach((item, expected) -> {
+            var value = MatterValues.substrateUnits(new ItemStack(item), nether);
+            helper.assertTrue(value.isPresent() && value.getAsInt() == expected, item + " in the Nether: " + value);
+            helper.assertTrue(MatterValues.substrateUnits(new ItemStack(item), overworld).isEmpty(), item + " rejected in the Overworld");
+        });
+        helper.assertTrue(MatterValues.substrateUnits(new ItemStack(Items.END_STONE_BRICKS), nether).isEmpty(), "End variants stay in the End");
+
+        // Furnace and crafting variants (extra ingredients such as vines add nothing), followed through chains.
+        variants.clear();
+        variants.put(Items.SMOOTH_STONE, 5);
+        variants.put(Items.SMOOTH_STONE_SLAB, 2);
+        variants.put(Items.CRACKED_STONE_BRICKS, 5);
+        variants.put(Items.MOSSY_COBBLESTONE, 3);
+        variants.put(Items.MOSSY_STONE_BRICKS, 5);
+        variants.put(Items.MOSSY_STONE_BRICK_STAIRS, 5);
+        variants.put(Items.CHISELED_STONE_BRICKS, 4);
+        variants.forEach((item, expected) -> {
+            var value = MatterValues.substrateUnits(new ItemStack(item), overworld);
+            helper.assertTrue(value.isPresent() && value.getAsInt() == expected, item + " in the Overworld: " + value);
+        });
+        netherVariants.clear();
+        netherVariants.put(Items.SMOOTH_BASALT, 5);
+        netherVariants.put(Items.CRACKED_NETHER_BRICKS, 15);
+        netherVariants.forEach((item, expected) -> {
+            var value = MatterValues.substrateUnits(new ItemStack(item), nether);
+            helper.assertTrue(value.isPresent() && value.getAsInt() == expected, item + " in the Nether: " + value);
+        });
+        // Not matter: block entities, mostly-other recipes, items that are no blocks, anything made from ores.
+        for (var notMatter : List.of(Items.FURNACE, Items.PISTON, Items.STONE_PICKAXE, Items.IRON_INGOT, Items.IRON_BLOCK,
+                Items.NETHERITE_SCRAP)) {
+            helper.assertTrue(MatterValues.substrateUnits(new ItemStack(notMatter), overworld).isEmpty(), "not matter: " + notMatter);
+            helper.assertTrue(MatterValues.substrateUnits(new ItemStack(notMatter), nether).isEmpty(), "not matter in the Nether: " + notMatter);
+        }
+
+        // The End: end stone and purpur, with their variants.
+        var end = server.getLevel(net.minecraft.world.level.Level.END);
+        helper.assertTrue(end != null, "the test server has an End");
+        var endBlocks = new java.util.LinkedHashMap<net.minecraft.world.item.Item, Integer>();
+        endBlocks.put(Items.END_STONE, 5);
+        endBlocks.put(Items.END_STONE_BRICKS, 5);
+        endBlocks.put(Items.PURPUR_BLOCK, 5);
+        // Also made from two slabs (2 + 2): the cheapest way sets the value.
+        endBlocks.put(Items.PURPUR_PILLAR, 4);
+        endBlocks.put(Items.PURPUR_STAIRS, 5);
+        endBlocks.put(Items.PURPUR_SLAB, 2);
+        endBlocks.put(Items.OBSIDIAN, 10);
+        endBlocks.put(Items.DRAGON_EGG, 100);
+        endBlocks.forEach((item, expected) -> {
+            var value = MatterValues.substrateUnits(new ItemStack(item), end);
+            helper.assertTrue(value.isPresent() && value.getAsInt() == expected, item + " in the End: " + value);
+        });
+        for (var foreign : List.of(Items.PURPUR_BLOCK, Items.PURPUR_PILLAR)) {
+            helper.assertTrue(MatterValues.substrateUnits(new ItemStack(foreign), overworld).isEmpty(), foreign + " rejected in the Overworld");
+        }
+        helper.assertTrue(MatterValues.substrateUnits(new ItemStack(Items.STONE_BRICKS), end).isEmpty(), "Overworld variants rejected in the End");
         helper.succeed();
     }
 
@@ -384,6 +504,20 @@ public final class MinerGameTests {
             helper.assertTrue(chance < 0.15, "test needs a rare family, chance " + chance);
             helper.assertTrue(produced <= 2, "lost rolls must not be retried at once: produced " + produced);
             helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty_large")
+    public static void newMachineWithoutEnergyLooksUnpowered(GameTestHelper helper) {
+        MinerControllerBlockEntity c = build(helper);
+        helper.runAfterDelay(5, () -> {
+            helper.assertTrue(c.visualStage() == dimensionalfluxminer.miner.MinerVisualStage.NO_ENERGY, "gray until powered: " + c.visualStage());
+            c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
+            helper.runAfterDelay(2, () -> {
+                helper.assertTrue(c.visualStage() == dimensionalfluxminer.miner.MinerVisualStage.NO_ENERGY_CORE_BASIC,
+                        "a core does not light it either: " + c.visualStage());
+                helper.succeed();
+            });
         });
     }
 
@@ -598,11 +732,84 @@ public final class MinerGameTests {
             helper.assertTrue(family.weight() >= 1, "minimum weight 1");
             for (ResourceFamily.Variant v : family.variants()) {
                 var resolution = dimensionalfluxminer.crusher.CrusherProcessing.resolve(helper.getLevel(), new ItemStack(v.item()), false);
-                helper.assertTrue(resolution.isPresent() && resolution.get().ore() && resolution.get().result().getCount() == 2,
-                        "every producible ore is processed by the Crusher (2x): " + v.item());
+                helper.assertTrue(resolution.isPresent() && resolution.get().ore() && resolution.get().result().getCount() >= 1,
+                        "every producible ore is processed by the Crusher: " + v.item());
             }
         }
         helper.assertTrue(profile.family(net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron")).isPresent(), "iron family present");
+        helper.succeed();
+    }
+
+    /** Every terracotta becomes Corrupted Terracotta; calcite and dripstone count as stone. */
+    @GameTest(template = "empty_large", skyAccess = true)
+    public static void terracottaAndCalciteCorrupt(GameTestHelper helper) {
+        var level = helper.getLevel();
+        helper.setBlock(new BlockPos(1, 1, 1), Blocks.WHITE_GLAZED_TERRACOTTA);
+        helper.setBlock(new BlockPos(1, 2, 1), Blocks.RED_TERRACOTTA);
+        helper.setBlock(new BlockPos(1, 3, 1), Blocks.TERRACOTTA);
+        helper.setBlock(new BlockPos(3, 1, 1), Blocks.DIORITE);
+        helper.setBlock(new BlockPos(3, 2, 1), Blocks.DRIPSTONE_BLOCK);
+        helper.setBlock(new BlockPos(3, 3, 1), Blocks.CALCITE);
+        BlockPos terracotta = helper.absolutePos(new BlockPos(1, 0, 1));
+        BlockPos calcite = helper.absolutePos(new BlockPos(3, 0, 1));
+        helper.assertTrue(CorruptionService.corrupt(level, terracotta.getX(), terracotta.getZ(), null), "terracotta column corrupted");
+        helper.assertTrue(CorruptionService.corrupt(level, calcite.getX(), calcite.getZ(), null), "calcite column corrupted");
+        for (int y = 1; y <= 3; y++) {
+            helper.assertBlockPresent(DfmBlocks.CORRUPTED_TERRACOTTA.get(), new BlockPos(1, y, 1));
+            helper.assertBlockPresent(DfmBlocks.CORRUPTED_STONE.get(), new BlockPos(3, y, 1));
+        }
+        helper.assertFalse(CorruptionService.corrupt(level, terracotta.getX(), terracotta.getZ(), null), "corrupted terracotta is never corrupted again");
+        // Corrupted Terracotta is a terracotta for recipes and tags.
+        helper.assertTrue(new net.minecraft.world.item.ItemStack(DfmItems.CORRUPTED_TERRACOTTA.get()).is(net.minecraft.tags.ItemTags.TERRACOTTA), "item in #minecraft:terracotta");
+        helper.succeed();
+    }
+
+    private record ModOre(String mod, String ore, String product, String family, int count) {
+    }
+
+    /**
+     * Ores of Malum and Forbidden Arcanus (when present) have a family and a Crusher product, so the Miner keeps them;
+     * Stella Arcanum gives a single piece.
+     */
+    @GameTest(template = "empty_small")
+    public static void modOresHaveAFamilyAndACrusherProduct(GameTestHelper helper) {
+        var mods = net.neoforged.fml.ModList.get();
+        List<ModOre> ores = List.of(
+                new ModOre("forbidden_arcanus", "forbidden_arcanus:runic_stone", "forbidden_arcanus:rune", "c:runic", 2),
+                new ModOre("forbidden_arcanus", "forbidden_arcanus:runic_deepslate", "forbidden_arcanus:rune", "c:runic", 2),
+                new ModOre("forbidden_arcanus", "forbidden_arcanus:runic_darkstone", "forbidden_arcanus:rune", "c:runic", 2),
+                new ModOre("forbidden_arcanus", "forbidden_arcanus:stella_arcanum", "forbidden_arcanus:stellarite_piece", "c:stellarite", 1),
+                new ModOre("malum", "malum:soulstone_ore", "malum:raw_soulstone", "c:soulstone", 2),
+                new ModOre("malum", "malum:deepslate_soulstone_ore", "malum:raw_soulstone", "c:soulstone", 2),
+                new ModOre("malum", "malum:brilliant_stone", "malum:raw_brilliance", "c:brilliance", 2),
+                new ModOre("malum", "malum:brilliant_deepslate", "malum:raw_brilliance", "c:brilliance", 2),
+                new ModOre("malum", "malum:blazing_quartz_ore", "malum:blazing_quartz", "c:blazing_quartz", 2),
+                new ModOre("malum", "malum:cthonic_gold_ore", "malum:cthonic_gold_fragment", "c:cthonic_gold", 2),
+                new ModOre("malum", "malum:natural_quartz_ore", "malum:natural_quartz", "minecraft:quartz", 2),
+                new ModOre("malum", "malum:deepslate_quartz_ore", "malum:natural_quartz", "minecraft:quartz", 2));
+        var registry = net.minecraft.core.registries.BuiltInRegistries.ITEM;
+        for (ModOre o : ores) {
+            if (!mods.isLoaded(o.mod())) {
+                continue;
+            }
+            var ore = registry.get(net.minecraft.resources.ResourceLocation.parse(o.ore()));
+            var family = dimensionalfluxminer.miner.profile.ProfileBuilder.familyOf(ore);
+            helper.assertTrue(family.isPresent() && family.get().toString().equals(o.family()), o.ore() + " family: " + family);
+            var resolution = dimensionalfluxminer.crusher.CrusherProcessing.resolve(helper.getLevel(), new ItemStack(ore), false);
+            helper.assertTrue(resolution.isPresent() && resolution.get().ore() && resolution.get().result().getCount() == o.count()
+                            && registry.getKey(resolution.get().result().getItem()).toString().equals(o.product()),
+                    o.ore() + " crushes into " + o.count() + " " + o.product() + ", got " + resolution.map(r -> r.result().toString()).orElse("nothing"));
+            if (o.count() == 1) {
+                var upgraded = dimensionalfluxminer.crusher.CrusherProcessing.resolve(helper.getLevel(), new ItemStack(ore), true);
+                helper.assertTrue(upgraded.isPresent() && upgraded.get().result().getCount() == 1, o.ore() + " stays at 1 with the upgrade");
+            }
+        }
+        if (mods.isLoaded("forbidden_arcanus")) {
+            ResourceProfile profile = ResourceProfiles.get(helper.getLevel());
+            for (String key : List.of("c:runic", "c:stellarite")) {
+                helper.assertTrue(profile.family(net.minecraft.resources.ResourceLocation.parse(key)).isPresent(), "overworld profile has " + key);
+            }
+        }
         helper.succeed();
     }
 
@@ -682,7 +889,7 @@ public final class MinerGameTests {
                 .setValue(net.minecraft.world.level.block.TallSeagrassBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
         helper.setBlock(new BlockPos(4, 2, 4), Blocks.TALL_SEAGRASS.defaultBlockState()
                 .setValue(net.minecraft.world.level.block.TallSeagrassBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
-        helper.assertTrue(CorruptionService.corruptWaterAt(helper.getLevel(), helper.absolutePos(new BlockPos(4, 2, 4))), "upper half converted");
+        helper.assertTrue(dimensionalfluxminer.miner.corruption.WaterCorruption.corruptWaterAt(helper.getLevel(), helper.absolutePos(new BlockPos(4, 2, 4))), "upper half converted");
         helper.runAfterDelay(3, () -> {
             helper.assertBlockPresent(DfmBlocks.CORRUPTED_TALL_SEAGRASS.get(), new BlockPos(4, 1, 4));
             helper.assertBlockPresent(DfmBlocks.CORRUPTED_TALL_SEAGRASS.get(), new BlockPos(4, 2, 4));

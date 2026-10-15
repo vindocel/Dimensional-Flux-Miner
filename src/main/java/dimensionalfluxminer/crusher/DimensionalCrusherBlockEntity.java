@@ -8,6 +8,7 @@ import dimensionalfluxminer.machine.ItemQueue;
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.machine.NeighborTransfer;
 import dimensionalfluxminer.machine.QueueItemHandler;
+import dimensionalfluxminer.machine.math.LevelTable;
 import dimensionalfluxminer.machine.math.RateScale;
 import dimensionalfluxminer.machine.math.WorkAccumulator;
 import dimensionalfluxminer.machine.side.RelativeFace;
@@ -86,14 +87,40 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
         return output;
     }
 
+    /** FE/t of the selected Rate: its operations per tick times the cost of one operation at that Rate. */
     @Override
     public long effectivePowerLimit() {
-        double[] range = DfmConfig.range(DfmConfig.CRUSHER_MIN_FE, DfmConfig.CRUSHER_MAX_FE);
-        return RateScale.powerLimit(rate, range[0], range[1], hasEfficiencyUpgrade() ? 0.5 : 1.0);
+        return RateScale.powerLimit(RateScale.power(targetOperationsPerTick(), energyPerOperation()));
+    }
+
+    /** FE of one input item crushed at the selected Rate (halved by the Efficiency Upgrade). */
+    public double energyPerOperation() {
+        return energyPerOperation(rate, hasEfficiencyUpgrade());
+    }
+
+    /**
+     * FE of one input item crushed at {@code level}: the configured cost, the same at every Rate, or the level's FE/t
+     * divided by its operations per tick when {@code crusher.powerByLevel} is set. Halved by the Efficiency Upgrade.
+     */
+    public static double energyPerOperation(int level, boolean upgrade) {
+        LevelTable power = DfmConfig.levelTable(DfmConfig.CRUSHER_POWER_BY_LEVEL);
+        double cost = power != null ? power.at(level) / operationsPerTick(level) : DfmConfig.energy(DfmConfig.CRUSHER_ENERGY_PER_OPERATION);
+        return cost * (upgrade ? 0.5 : 1.0);
     }
 
     public double targetOperationsPerTick() {
-        return RateScale.value(rate, MIN_OPERATIONS_PER_TICK, MAX_OPERATIONS_PER_TICK);
+        return operationsPerTick(rate);
+    }
+
+    /** Operations per tick of {@code level}: the geometric curve, or {@code crusher.speedByLevel} when it is set. */
+    public static double operationsPerTick(int level) {
+        LevelTable speed = DfmConfig.levelTable(DfmConfig.CRUSHER_SPEED_BY_LEVEL);
+        return speed != null ? speed.at(level) : RateScale.value(level, MIN_OPERATIONS_PER_TICK, MAX_OPERATIONS_PER_TICK);
+    }
+
+    /** Progress towards the next operation (0..1). */
+    public double workProgress() {
+        return work.progress();
     }
 
     public Optional<CrusherProcessing.Resolution> resolve(ItemStack stack) {
@@ -140,21 +167,22 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
             setVisual(ItemStack.EMPTY);
             return false;
         }
-        double power = effectivePowerLimit();
+        double energyPerOperation = energyPerOperation();
         double rateTarget = targetOperationsPerTick();
-        long stored = energyBuffer.stored();
-        if (stored <= 0 || power <= 0) {
+        double demand = RateScale.power(rateTarget, energyPerOperation);
+        double available = energyBuffer.available();
+        if (available <= 0 || demand <= 0) {
             status = "no_energy";
             return false;
         }
-        double energyFraction = Math.min(1.0, stored / power);
-        double energyPerOperation = power / rateTarget;
+        // Without enough FE the work slows down in proportion: never an operation that was not paid for.
+        double energyFraction = Math.min(1.0, available / demand);
         WorkAccumulator.Plan plan = work.plan(rateTarget * energyFraction, Math.min(input.firstCount(), fit));
         if (plan.operations() > 0) {
             input.remove(0, plan.operations(), false);
             output.insert(perOperation, plan.operations() * perOperation.getCount(), false);
         }
-        // Energy follows the work really performed: a bottleneck never bills the full Rate.
+        // Energy follows the work really performed (per input item, not per product): a bottleneck never bills the full Rate.
         energy.consume(plan.workDone() * energyPerOperation);
         work.commit(plan);
         if (level != null && throughput.record(level.getGameTime(), plan.operations())) {
@@ -316,6 +344,8 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
         super.saveAdditional(tag, registries);
         tag.put("input", input.save(registries));
         tag.put("output", output.save(registries));
+        // Progress already paid for survives a save and reload.
+        tag.putDouble("work_progress", work.progress());
     }
 
     @Override
@@ -323,6 +353,7 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
         super.loadAdditional(tag, registries);
         input.load(tag.getList("input", Tag.TAG_COMPOUND), registries);
         output.load(tag.getList("output", Tag.TAG_COMPOUND), registries);
+        work.setProgress(tag.getDouble("work_progress"));
     }
 
     @Override

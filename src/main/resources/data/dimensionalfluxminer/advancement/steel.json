@@ -11,5 +11,8 @@
   },
   "criteria": {
     "forged": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:ingot_steel" } ] } }
+  },
+  "rewards": {
+    "loot": [ "dimensionalfluxminer:rewards/guide_book" ]
   }
 }

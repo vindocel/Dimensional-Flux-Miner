@@ -8,7 +8,7 @@ import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -39,10 +39,10 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
         imageHeight = CrusherMenu.INVENTORY_TOP + 82;
         sideWindow = new SideConfigWindow(this, "crusher.side_config", SideRules.CRUSHER,
                 List.of(Transmission.ITEM, Transmission.ENERGY), this::data, menu.pos(),
-                Set.of(Transmission.ITEM), List.of(
+                Map.of(Transmission.ITEM, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.ITEMS, List.of(
                         Component.translatable("gui.dimensionalfluxminer.auto_input.help"),
                         Component.translatable("gui.dimensionalfluxminer.auto_eject.help"),
-                        Component.translatable("gui.dimensionalfluxminer.crusher.top_note")));
+                        Component.translatable("gui.dimensionalfluxminer.crusher.top_note")))));
         upgradeWindow = new MachineWindows.UpgradeWindow(this, "crusher.upgrades", menu.upgradeSlot());
         detailsWindow = new MachineWindows.InfoWindow(this, "crusher.details", Component.translatable("gui.dimensionalfluxminer.details"),
                 () -> {

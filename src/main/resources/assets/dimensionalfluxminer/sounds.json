@@ -13,7 +13,7 @@
     "sounds": [
       {
         "name": "dimensionalfluxminer:machine/dimensional_flux_miner_running",
-        "volume": 0.8
+        "volume": 1.0
       }
     ]
   },

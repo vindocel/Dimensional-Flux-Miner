@@ -55,6 +55,10 @@ public final class DfmBlocks {
     public static final DeferredBlock<Block> CORRUPTED_STONE = BLOCKS.registerSimpleBlock("corrupted_stone",
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASEDRUM)
                     .requiresCorrectToolForDrops().strength(1.5F, 6.0F));
+    /** Replaces every terracotta (plain, colored and glazed). */
+    public static final DeferredBlock<Block> CORRUPTED_TERRACOTTA = BLOCKS.registerSimpleBlock("corrupted_terracotta",
+            BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_PURPLE).instrument(NoteBlockInstrument.BASEDRUM)
+                    .requiresCorrectToolForDrops().strength(1.25F, 4.2F));
     /** Replaces sands and gravels; falls like them and smelts into glass. */
     public static final DeferredBlock<ColoredFallingBlock> CORRUPTED_SEDIMENT = BLOCKS.registerBlock("corrupted_sediment",
             props -> new ColoredFallingBlock(new ColorRGBA(0x4A3550), props),

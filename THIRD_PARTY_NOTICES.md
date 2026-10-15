@@ -14,12 +14,9 @@ All files are under `src/main/resources/assets/dimensionalfluxminer/textures/gui
 | `panel/background.png` | `gui/base.png` |
 | `button/disabled.png`, `button/normal.png` | `gui/button.png` |
 | `slot/normal.png` | `gui/slot/normal.png` |
-| `slot/input.png` | `gui/slot/input.png` |
 | `slot/output.png` | `gui/slot/output.png` |
-| `slot/output_2.png` | `gui/slot/output_2.png` |
 | `slot/extra.png` | `gui/slot/extra.png` |
 | `slot/output_warning.png` | `gui/slot/output_warning.png` |
-| `slot/power.png` (modified) | `gui/slot/power.png` |
 | `slot/overlay_check.png` (modified) | `gui/slot/overlay_check.png` |
 | `icon/side_config.png` (modified) | `gui/configuration.png` |
 | `icon/upgrade.png` (modified) | `gui/upgrade.png` |

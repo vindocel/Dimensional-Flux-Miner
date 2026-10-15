@@ -6,35 +6,63 @@ import org.junit.jupiter.api.Test;
 
 class RateScaleTest {
     @Test
-    void minerPowerLevelsMatchContract() {
-        long[] expected = {500, 1217, 2963, 7211, 17553, 42727, 104004, 253161, 616232, 1500000};
-        for (int n = 1; n <= 10; n++) {
-            assertEquals(expected[n - 1], RateScale.powerLimit(n, 500, 1_500_000, 1.0), "level " + n);
-        }
-    }
-
-    @Test
     void crusherPowerAndThroughputMatchContract() {
-        long[] power = {250, 582, 1354, 3150, 7329, 17055, 39685, 92344, 214876, 500000};
-        long[] efficiency = {125, 291, 677, 1575, 3665, 8527, 19843, 46172, 107438, 250000};
+        // 20 000 FE per operation (10 000 with the upgrade), 1 operation / 200 ticks -> 64 per tick.
+        long[] power = {100, 286, 818, 2_339, 6_690, 19_133, 54_719, 156_494, 447_562, 1_280_000};
+        long[] efficiency = {50, 143, 409, 1_170, 3_345, 9_567, 27_360, 78_247, 223_781, 640_000};
         double[] ops = {0.005, 0.014299691, 0.040896235, 0.11696071, 0.334500412, 0.95665054, 2.735961515, 7.824681114, 22.378105176, 64.0};
         for (int n = 1; n <= 10; n++) {
-            assertEquals(power[n - 1], RateScale.powerLimit(n, 250, 500_000, 1.0), "power " + n);
-            assertEquals(efficiency[n - 1], RateScale.powerLimit(n, 250, 500_000, 0.5), "efficiency " + n);
-            assertEquals(ops[n - 1], RateScale.value(n, 0.005, 64), 1e-6, "ops " + n);
+            double rate = RateScale.value(n, 0.005, 64);
+            assertEquals(ops[n - 1], rate, 1e-6, "ops " + n);
+            assertEquals(power[n - 1], RateScale.powerLimit(RateScale.power(rate, 20_000)), "power " + n);
+            assertEquals(efficiency[n - 1], RateScale.powerLimit(RateScale.power(rate, 10_000)), "efficiency " + n);
         }
     }
 
     @Test
-    void smelterPowerAndLaneThroughputMatchContract() {
-        long[] power = {600, 1293, 2785, 6000, 12927, 27850, 60000, 129266, 278495, 600000};
-        long[] efficiency = {300, 646, 1392, 3000, 6463, 13925, 30000, 64633, 139248, 300000};
-        double[] lane = {0.01, 0.029917297, 0.089504468, 0.26777318, 0.801104986, 2.396689613, 7.170247594, 21.451442975, 64.176919927, 192.0};
+    void smelterProfilesFollowTheWorkOfAStandardRecipe() {
+        // Standard recipe (200 ticks). Alloy: 30 000 FE per execution; furnace: 50 000 / 3 FE per item, three lanes.
+        long[] alloy = {150, 429, 1_227, 3_509, 10_035, 28_700, 82_079, 234_740, 671_343, 1_920_000};
+        long[] furnace = {250, 715, 2_045, 5_848, 16_725, 47_833, 136_798, 391_234, 1_118_905, 3_200_000};
         for (int n = 1; n <= 10; n++) {
-            assertEquals(power[n - 1], RateScale.powerLimit(n, 600, 600_000, 1.0), "power " + n);
-            assertEquals(efficiency[n - 1], RateScale.powerLimit(n, 600, 600_000, 0.5), "efficiency " + n);
-            assertEquals(lane[n - 1], RateScale.smelterOperationsPerTick(n, 100, 192), 1e-6, "lane " + n);
+            double lane = RateScale.smelterOperationsPerTick(n, 200, 64);
+            assertEquals(alloy[n - 1], RateScale.powerLimit(RateScale.power(lane, 30_000)), "alloy " + n);
+            assertEquals(furnace[n - 1], RateScale.powerLimit(3 * RateScale.power(lane, 50_000 / 3.0)), "furnace " + n);
         }
+    }
+
+    @Test
+    void recipeDurationChangesTheDemandButNotTheCostPerItem() {
+        for (int n = 1; n <= 10; n++) {
+            double fast = RateScale.smelterOperationsPerTick(n, 100, 64);
+            double standard = RateScale.smelterOperationsPerTick(n, 200, 64);
+            assertEquals(30_000, RateScale.power(fast, 30_000) / fast, 1e-6);
+            assertEquals(30_000, RateScale.power(standard, 30_000) / standard, 1e-6);
+        }
+        assertEquals(2 * RateScale.smelterOperationsPerTick(1, 200, 64), RateScale.smelterOperationsPerTick(1, 100, 64), 1e-12);
+    }
+
+    @Test
+    void laneThroughputMatchesContract() {
+        double[] lane = {0.01, 0.026479445, 0.070116103, 0.185663553, 0.491626794, 1.301800488, 3.447095504, 9.127717745, 24.169690434, 64.0};
+        for (int n = 1; n <= 10; n++) {
+            assertEquals(lane[n - 1], RateScale.smelterOperationsPerTick(n, 100, 64), 1e-6, "lane " + n);
+        }
+    }
+
+    @Test
+    void aLaneSpeedTableKeepsTheProportionOfOtherDurations() {
+        double[] values = {0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 32};
+        LevelTable table = new LevelTable(values);
+        for (int n = 1; n <= 10; n++) {
+            assertEquals(values[n - 1], RateScale.smelterOperationsPerTick(n, 200, 64, table, 200), 1e-12, "standard recipe, level " + n);
+            double ratio = RateScale.smelterOperationsPerTick(n, 100, 64) / RateScale.smelterOperationsPerTick(n, 200, 64);
+            assertEquals(Math.min(64, values[n - 1] * ratio), RateScale.smelterOperationsPerTick(n, 100, 64, table, 200), 1e-9, "100 ticks, level " + n);
+            assertEquals(RateScale.smelterOperationsPerTick(n, 100, 64), RateScale.smelterOperationsPerTick(n, 100, 64, null, 200), 1e-12,
+                    "no table: the default curve");
+        }
+        LevelTable fast = new LevelTable(new double[] {64, 64, 64, 64, 64, 64, 64, 64, 64, 64});
+        assertEquals(64, RateScale.smelterOperationsPerTick(1, 100, 64, fast, 200), 1e-12, "never above 64 per lane");
     }
 
     @Test
@@ -46,9 +74,12 @@ class RateScaleTest {
     }
 
     @Test
-    void bufferIsTenTicksOfEffectivePower() {
-        assertEquals(15_000_000, RateScale.energyBufferTarget(RateScale.powerLimit(10, 500, 1_500_000, 1.0)));
-        assertEquals(1_250, RateScale.energyBufferTarget(RateScale.powerLimit(1, 250, 500_000, 0.5)));
-        assertEquals(3_000_000, RateScale.energyBufferTarget(RateScale.powerLimit(10, 600, 600_000, 0.5)));
+    void bufferIsTenTicksOfEffectivePowerAndNeverOverflows() {
+        assertEquals(128_000_000, RateScale.energyBufferTarget(12_800_000));
+        assertEquals(1_000, RateScale.energyBufferTarget(100));
+        assertEquals(Long.MAX_VALUE, RateScale.energyBufferTarget(Long.MAX_VALUE / 2));
+        assertEquals(Long.MAX_VALUE, RateScale.saturatedMultiply(Integer.MAX_VALUE, Long.MAX_VALUE / 1000));
+        assertEquals(Long.MAX_VALUE, RateScale.powerLimit(1e30));
+        assertEquals(0, RateScale.powerLimit(Double.NaN));
     }
 }

@@ -44,8 +44,9 @@ public class DfmEmiPlugin implements EmiPlugin {
     public void register(EmiRegistry registry) {
         // Machine items are drawn by the screen, not in vanilla slots: R / U work on them through this provider. It is
         // generic because EMI matches class providers on the exact screen class (each machine has its own subclass).
+        // Not clickable: mouse clicks stay with the screen, which takes and places the items.
         registry.addGenericStackProvider((screen, x, y) -> screen instanceof DfmScreen<?> machine
-                ? machine.machineItemAt(x, y).map(item -> new EmiStackInteraction(EmiStack.of(item.stack())))
+                ? machine.machineItemAt(x, y).map(item -> new EmiStackInteraction(EmiStack.of(item.stack()), null, false))
                         .orElse(EmiStackInteraction.EMPTY)
                 : EmiStackInteraction.EMPTY);
         registry.addCategory(CRUSHING);

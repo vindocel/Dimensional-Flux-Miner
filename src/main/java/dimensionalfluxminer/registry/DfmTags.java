@@ -16,6 +16,13 @@ public final class DfmTags {
         public static final TagKey<Block> CORRUPTION_BLACKLIST = tag("corruption_blacklist");
         /** Stone-family sources converted into corrupted stone; extensible by datapacks. */
         public static final TagKey<Block> CORRUPTIBLE_STONE = tag("corruptible_stone");
+        public static final TagKey<Block> CORRUPTIBLE_TERRACOTTA = tag("corruptible_terracotta");
+        /** Blocks converted into corrupted dirt; extensible by datapacks. */
+        public static final TagKey<Block> CORRUPTIBLE_DIRT = tag("corruptible_dirt");
+        /** Blocks converted into corrupted grass; extensible by datapacks. */
+        public static final TagKey<Block> CORRUPTIBLE_GRASS = tag("corruptible_grass");
+        /** Plants on a corrupted column that become wither roses; extensible by datapacks. */
+        public static final TagKey<Block> CORRUPTIBLE_FLOWERS = tag("corruptible_flowers");
         /** Corrupted solid terrain used by the Blight systems. */
         public static final TagKey<Block> CORRUPTED_TERRAIN = tag("corrupted_terrain");
         /** Loose gravity terrain (sands, gravels) converted into corrupted sediment; extensible by datapacks. */

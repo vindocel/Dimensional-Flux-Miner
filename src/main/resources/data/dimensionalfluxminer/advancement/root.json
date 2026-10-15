@@ -11,8 +11,5 @@
   },
   "criteria": {
     "joined": { "trigger": "minecraft:tick" }
-  },
-  "rewards": {
-    "loot": [ "dimensionalfluxminer:rewards/guide_book" ]
   }
 }

@@ -89,11 +89,11 @@ All text lives in the language files (`guide.dimensionalfluxminer.*`), in Englis
 
 | Layer | Parts |
 |---|---|
-| 1 — bottom | 8 **Steel Chassis** around, the **Miner Terminal** in the front middle |
-| 2 — middle | **Quantum Core** in the center, **Dimensional Ports** left / right / back, **Reinforced Structural Glass** in front, **Ventilation Units** in the corners |
+| 1 — bottom | 7 **Dimensional Ports** around, a **Steel Chassis** in the center, the **Miner Terminal** in the front middle |
+| 2 — middle | **Quantum Core** in the center, **Reinforced Structural Glass** in front and on both sides, a **Steel Chassis** at the back, **Ventilation Units** in the corners |
 | 3 — top | **Reinforced Structural Glass** in the center, front and sides, **Ventilation Units** in the corners and the back middle |
 
-Looking at the terminal, the three identical ports become **Energy Input** (left), **Item Output** (right) and **Matter Input** (back) when the structure forms.
+The ports of the bottom layer have **nine configurable faces**: three on each side and three at the back. In the **Side Configuration** you pick one face for the **Item Output** and, with the Stabilized core, one for the **Matter Input** (both may share a face). **Energy** enters through any face by default, and a port appears where a cable touches it; pick the energy faces by hand and they stay visible. Until a core is inserted, only the Core slot can be used.
 
 > 💡 Place the terminal first and right-click it: every click places the next missing part from your inventory (bottom layer first) and outlines where the others go, colored by part, red where a block is in the way. The structure forms with the last part.
 
@@ -123,7 +123,7 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 - 🔌 **Power button**: a new Miner starts off and only this button starts it; redstone can stop it but never start it.
 - 🖥️ **Terminal screen**: status, core, **limiting factor** (energy, no matter, output full, nothing to drain, redstone) and the DM stored.
 - 🧲 **Filter**: an allow-list of ore families; with nothing selected the filter is off.
-- 🔁 **Auto Input / Auto Eject** (Settings window): work with the inventories touching the ports, even while the machine is off.
+- 🔁 **Auto Input / Auto Eject** (Side Configuration): work with the inventories touching the item ports, even while the machine is off.
 - 🔴 **Redstone Control**: a signal on any bottom-layer block becomes an extra lock.
 - ⚡ **Quick install**: sneak + right-click with an Efficiency Upgrade or a core on any part installs it.
 
@@ -250,7 +250,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 - 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face.
 - 📘 **EMI / JEI** (optional): Crushing, Alloy Smelter (Furnace) and Alloy Smelter (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Smelter's stored XP in mB.
-- ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom Steel Chassis are receivers.
+- ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
 - 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Smelter work through the common tags.
 
 <details>
@@ -270,7 +270,8 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 Modpack creators, modders and server administrators can customize machine settings, dimensional resource profiles, Matter values, recipes, corruption tags and compatibility.
 
-For supported options, limits, JSON/TOML examples and datapack instructions, see the **[Complete Customization Guide](docs/CUSTOMIZATION.md)**.
+Everything can also be done from a KubeJS server script (optional). For supported options, limits, JSON/TOML/KubeJS
+examples and datapack instructions, see the **[Complete Customization Guide](docs/CUSTOMIZATION.md)**.
 
 ---
 

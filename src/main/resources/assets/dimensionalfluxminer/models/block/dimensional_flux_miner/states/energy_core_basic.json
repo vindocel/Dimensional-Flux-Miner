@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/block",
   "loader": "neoforge:obj",
-  "model": "dimensionalfluxminer:models/block/dimensional_flux_miner/geometry/full_basic.obj",
+  "model": "dimensionalfluxminer:models/block/dimensional_flux_miner/geometry/full.obj",
   "mtl_override": "dimensionalfluxminer:models/block/dimensional_flux_miner/geometry/materials.mtl",
   "automatic_culling": false,
   "shade_quads": true,
@@ -16,7 +16,6 @@
     "terminal_face_glow": "dimensionalfluxminer:block/dimensional_flux_miner/terminal_face_cyan_active_glow",
     "containment_side_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_cyan_active_glow",
     "containment_cap_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_cap_cyan_active_glow",
-    "output_port_outer": "dimensionalfluxminer:block/dimensional_flux_miner/output_port_outer_powered",
     "rotor_plate_glow": "dimensionalfluxminer:block/dimensional_flux_miner/rotor_bar_cyan_active_glow",
     "core_side": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_cyan_body",
     "machine": "dimensionalfluxminer:block/dimensional_flux_miner/dimensional_flux_miner"

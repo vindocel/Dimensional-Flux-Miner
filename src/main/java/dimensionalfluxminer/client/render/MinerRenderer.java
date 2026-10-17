@@ -99,6 +99,8 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         }
         ModelRendering.render(pose, buffers, ModelRendering.model(model(moving ? "body" : "states", stage)), fullLight, overlay);
         pose.popPose();
+        // Configured ports of the lower layer, drawn in world axes over the casing.
+        MinerPortRenderer.render(pose, buffers, be.portLooks(), be.nodeColors(), front, fullLight);
 
         if (moving) {
             float angle = (float) (spin.angle % 360.0);

@@ -1,6 +1,7 @@
 package dimensionalfluxminer.machine;
 
 import dimensionalfluxminer.advancement.DfmAdvancements;
+import dimensionalfluxminer.compat.LogisticsNetworksCompat;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
@@ -232,7 +233,92 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         if (autoEjectFluid) {
             autoEjectFluidCycle();
         }
+        if (normalCall && gameTime % 10 == 0) {
+            scanNetworkNodes();
+        }
         updateMachineState();
+    }
+
+    /**
+     * Logistics Networks nodes on this block: the side each enabled channel uses gets the route it needs (a sending
+     * item channel an item output, a receiving one an item input, both an input/output, a receiving energy channel
+     * energy, a sending fluid channel the experience output) and is locked in the Side Configuration while the node
+     * is there. The node keeps its own look.
+     */
+    private void scanNetworkNodes() {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel) || !LogisticsNetworksCompat.loaded()) {
+            return;
+        }
+        int faces = RelativeFace.VALUES.length;
+        boolean[] pull = new boolean[faces];
+        boolean[] push = new boolean[faces];
+        boolean[] power = new boolean[faces];
+        boolean[] fluidOut = new boolean[faces];
+        for (LogisticsNetworksCompat.Node node : LogisticsNetworksCompat.nodesAt(serverLevel, worldPosition)) {
+            for (LogisticsNetworksCompat.Channel channel : node.channels()) {
+                if (channel.side() == null) {
+                    continue;
+                }
+                int face = RelativeFace.of(facing(), channel.side()).ordinal();
+                switch (channel.type()) {
+                    case "ITEM" -> {
+                        pull[face] |= channel.sends();
+                        push[face] |= !channel.sends();
+                    }
+                    case "ENERGY" -> power[face] |= !channel.sends();
+                    case "FLUID" -> fluidOut[face] |= channel.sends();
+                    default -> {
+                    }
+                }
+            }
+        }
+        int profile = itemProfile();
+        int[] locks = new int[Transmission.VALUES.length];
+        boolean routes = false;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            int i = face.ordinal();
+            if (pull[i] || push[i]) {
+                SideRoute now = sides.get(face, Transmission.ITEM, profile);
+                boolean ok = (!pull[i] || now.extractsItems()) && (!push[i] || now.insertsItems());
+                if (!ok) {
+                    SideRoute wanted = pull[i] && push[i] ? SideRoute.ITEM_INPUT_OUTPUT_ALL
+                            : pull[i] ? SideRoute.ITEM_OUTPUT : SideRoute.ITEM_INPUT_ALL;
+                    ok = sides.set(face, Transmission.ITEM, profile, wanted)
+                            || sides.set(face, Transmission.ITEM, profile, SideRoute.ITEM_INPUT_OUTPUT_ALL);
+                    routes |= ok;
+                }
+                if (ok) {
+                    locks[Transmission.ITEM.ordinal()] |= 1 << i;
+                }
+            }
+            routes |= nodeRoute(face, power[i], Transmission.ENERGY, SideRoute.ENERGY_INPUT, locks);
+            routes |= nodeRoute(face, fluidOut[i], Transmission.EXPERIENCE, SideRoute.XP_OUTPUT, locks);
+        }
+        boolean locksChanged = false;
+        for (Transmission transmission : Transmission.VALUES) {
+            locksChanged |= sides.setLocks(transmission, locks[transmission.ordinal()]);
+        }
+        if (routes) {
+            onSidesChanged();
+        } else if (locksChanged) {
+            setChanged();
+        }
+    }
+
+    /** Gives {@code face} the {@code route} a node needs (when the machine allows it) and locks it; true if it changed. */
+    private boolean nodeRoute(RelativeFace face, boolean needed, Transmission transmission, SideRoute route, int[] locks) {
+        if (!needed) {
+            return false;
+        }
+        boolean changed = false;
+        if (sides.get(face, transmission, itemProfile()) != route) {
+            if (!sides.set(face, transmission, itemProfile(), route)) {
+                return false;
+            }
+            changed = true;
+        }
+        locks[transmission.ordinal()] |= 1 << face.ordinal();
+        return changed;
     }
 
     /** Machine work for one logical cycle; returns true if progress advanced. */
@@ -473,6 +559,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         tag.putString("state", machineState().getSerializedName());
         tag.putInt("profile", itemProfile());
         tag.put("sides", sides.save());
+        int[] locks = new int[Transmission.VALUES.length];
+        for (Transmission transmission : Transmission.VALUES) {
+            locks[transmission.ordinal()] = sides.locks(transmission);
+        }
+        tag.putIntArray("node_sides", locks);
     }
 
     // ---------------------------------------------------------------- persistence

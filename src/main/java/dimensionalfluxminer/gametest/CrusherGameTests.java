@@ -282,6 +282,23 @@ public final class CrusherGameTests {
     }
 
     @GameTest(template = "empty_small")
+    public static void sidesUsedByANetworkNodeAreLocked(GameTestHelper helper) {
+        // What a Logistics Networks node on the machine sets (read from its channels when the mod is installed).
+        DimensionalCrusherBlockEntity be = place(helper);
+        be.sides().set(RelativeFace.LEFT, Transmission.ITEM, 0, SideRoute.ITEM_OUTPUT);
+        be.sides().setLocks(Transmission.ITEM, 1 << RelativeFace.LEFT.ordinal());
+        int left = AbstractMachineBlockEntity.BUTTON_SIDE_BASE + RelativeFace.LEFT.ordinal() * 16 + Transmission.ITEM.ordinal() * 2;
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        helper.assertFalse(be.handleButton(player, left), "a node's side does not cycle");
+        be.handleButton(player, AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + Transmission.ITEM.ordinal() * 2);
+        be.handleButton(player, AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL);
+        helper.assertTrue(be.sides().get(RelativeFace.LEFT, Transmission.ITEM, 0) == SideRoute.ITEM_OUTPUT, "batch and clear keep it");
+        be.sides().setLocks(Transmission.ITEM, 0);
+        helper.assertTrue(be.handleButton(player, left), "free again without the node");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
     public static void rateCycleAndSideBatchButtons(GameTestHelper helper) {
         DimensionalCrusherBlockEntity be = place(helper);
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE);

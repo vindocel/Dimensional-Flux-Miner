@@ -4,6 +4,30 @@
 
 ### ✨ Added
 
+- ⛏️ **New Miner model and nine configurable ports.** The formed Miner has a new model and textures. Its base now has
+  nine port faces (three on each side, three at the back), set in the new **Side Configuration** tab (left side, on
+  top, as on the Crusher and Smelter):
+  - one face for the **Item Output** and, with the Stabilized Core, one for the **Matter Input**; both may share a face,
+    drawn half orange, half violet;
+  - clicking a face offers the free role first, then both, then the role taken from another face (Item Output on
+    one face: the next face goes Matter Input, both, Item Output);
+  - **energy** enters through any face by default, and a blue port appears where a cable touches it; faces picked by
+    hand are the only ones that take energy and stay visible; the clear button returns to the default;
+  - **Auto Input / Auto Eject** moved into the Side Configuration;
+  - the ports are painted in code: energy in the blue of the energy bar, Item Output orange, Matter Input violet.
+- 🔗 Logistics Networks support: a node on a Miner port sets the port itself (a sending item channel takes the Item
+  Output, a receiving item channel the Matter Input with the Stabilized Core, a receiving energy channel an energy
+  face), reaches it from any side and locks it in the Side Configuration until the node is removed. The node's box
+  is hidden (its wrench still shows it) and the port gets a thin frame in the network's color. On the Crusher and
+  the Alloy Smelter, the side each node channel uses gets the route it needs and is locked in the Side Configuration;
+  the node keeps its own look.
+- 🔌 Dynamic Miner ports for any cable or pipe: a cable that keeps pulling items from a port face gets the Item
+  Output there, one that keeps pushing Matter (Stabilized Core) gets the Matter Input. The face is locked in the Side
+  Configuration while the cable stays active and is freed a few seconds after it stops; the role stays.
+- 🔎 The Miner's filter has a search box (ore name in your language or family key; marks are kept), and each
+  family's tooltip shows the ore's name.
+- 🔒 Until a core is inserted, only the Core slot of the Miner works: settings, upgrades and the output stay locked,
+  and the terminal asks for a core.
 - 🟪 **Corrupted Terracotta**: Dimensional Death now turns every terracotta (plain, colored and glazed) into it; it
   counts as terracotta in recipes and tags. Calcite, dripstone blocks, Create's asurine and AE2's sky stone now
   corrupt into Corrupted Stone.
@@ -35,12 +59,26 @@
   of the Side Configuration keeps OFF / Auto Input / Auto Eject / both, and the experience tab has its own Auto Eject,
   switched on and off by itself (liquid XP is only extracted, so it has no Auto Input). Existing Smelters keep ejecting
   XP if their Auto Eject was on.
+- 📜 **KubeJS support (optional).** Everything the server configuration and the datapacks change can now come from
+  a KubeJS server script, applied with `/reload`; without KubeJS nothing changes:
+  - the five recipe types: `event.recipes.dimensionalfluxminer.crushing`, `ore_crushing`, `alloying`, `tag_smelting`
+    and `tag_blasting`, with functions such as `.resultTag()`, `.byproduct({id, count, chance})` and `.xp()`;
+  - `DimensionalFluxMinerEvents.config`: any option of `dimensionalfluxminer-server.toml`, with the same limits; a
+    script value wins over the file without being written to it, and the players' guide shows it;
+  - `DimensionalFluxMinerEvents.matterValues`: Dimensional Matter values of items and tags, per dimension, or removed;
+  - `DimensionalFluxMinerEvents.resourceProfiles`: Resource Profile entries and void rules, in the datapack format,
+    winning over the datapacks;
+  - the mod's block and entity tags through KubeJS's own `ServerEvents.tags`.
+  See the new KubeJS part of the [Customization Guide](docs/CUSTOMIZATION.md#15-kubejs-scripts).
 - 📚 New documentation: the [Customization Guide](docs/CUSTOMIZATION.md) (every server option, datapack format,
   limit and example), [docs/BALANCE.md](docs/BALANCE.md) (every balance number) and
   [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (code layout, tests, development rules). The README links to them.
 
 ### 🔄 Changed
 
+- 🧱 **New Miner assembly.** The bottom layer has 7 Dimensional Ports around a Steel Chassis (and the terminal); the
+  middle layer has glass on both sides and a Steel Chassis at the back. ⚠️ Miners built with the old layout come apart
+  when the world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
 - ⚡ **Fixed energy cost per operation.** Every operation costs the same FE at every speed, so a faster speed asks
   for more FE/t in exactly the same proportion (no discount, no penalty; the Miner's double cost at speeds 6–9 is gone).
   Production per speed is unchanged.
@@ -87,6 +125,17 @@
 - Alloy Smelter speed: speed 10 is **64 operations per lane per tick** (192 for the three furnace lanes, 64 standard
   alloys), no longer 192 per lane. Speed 10 uses 3 200 000 FE/t smelting with three lanes and 1 920 000 FE/t on alloys.
 - Alloy Smelter slots hold at most **64 items** each, inputs and outputs alike, like every other machine slot.
+- The Miner only finds the ore variants that can generate in its dimension. A vein that lists one variant per stone
+  (stone, deepslate, netherrack, end stone, a modded stone) now only counts the variants of the stone the dimension's
+  terrain is made of: in All the Mods' The Other it finds the Other ores, not the Overworld or End ones.
+- Allthemodium's Unobtainium is rare in the End again: it is fixed at 0.1% of the End's attempts (it came out at about
+  0.7%). Resource files now accept `neoforge:conditions`, so this entry only loads with Allthemodium installed.
+- EvilCraft's Dark Ore shows up in the Miner: it had no Crusher product (EvilCraft does not tag the Dark Gem by
+  material), so its family was dropped. It now crushes into 2 Dark Gems (3 with the upgrade).
+- Carry On can no longer pick up the blocks of a formed Miner (loose parts still can).
+- A thin see-through line at the top of the Miner's back wall, seen from the front, is closed.
+- A Miner copied and pasted with Building Gadgets no longer comes out invisible: pasted blocks come back loose and
+  the machine forms again once the paste is complete.
 
 ### 🧪 Tests
 

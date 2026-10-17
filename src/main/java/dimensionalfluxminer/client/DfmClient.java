@@ -61,6 +61,9 @@ public final class DfmClient {
         // Using the guide opens the book in the hand first; the screen follows once it is open.
         ClientHooks.openGuide = GuideBookAnimation::requestOpen;
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GuideBookAnimation::onClientTick);
+        // Script values of the configuration belong to the server just left.
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut loggingOut) -> dimensionalfluxminer.DfmConfig.setOverrides(java.util.Map.of()));
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.CORRUPTED_WATER.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.FLOWING_CORRUPTED_WATER.get(), RenderType.translucent());

@@ -72,6 +72,11 @@ public class MinerPartBlock extends Block {
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!oldState.is(state.getBlock()) && level instanceof ServerLevel serverLevel) {
+            // Only formation turns an existing part formed: a new block placed already formed is a copy (Building
+            // Gadgets, structure tools), which would stay invisible without its machine. It comes back loose.
+            if (state.getValue(DfmStateProperties.FORMED)) {
+                level.setBlock(pos, state.setValue(DfmStateProperties.FORMED, false), Block.UPDATE_ALL);
+            }
             MinerStructureEvents.onPartPlaced(serverLevel, pos);
         }
     }

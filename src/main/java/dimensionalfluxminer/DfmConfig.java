@@ -2,6 +2,7 @@ package dimensionalfluxminer;
 
 import dimensionalfluxminer.machine.math.LevelTable;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -136,7 +137,106 @@ public final class DfmConfig {
         }
     }
 
+    /**
+     * Values set by server scripts, by key ("miner.energyPerAttempt"). They take precedence over the file while the
+     * scripts that set them are loaded, are never written to the file, and are sent to the clients (guide numbers).
+     */
+    private static volatile Map<String, Object> overrides = Map.of();
+    private static volatile Map<String, ModConfigSpec.ConfigValue<?>> keys;
+
+    /** Every option of the file, by key. */
+    public static Map<String, ModConfigSpec.ConfigValue<?>> keys() {
+        Map<String, ModConfigSpec.ConfigValue<?>> map = keys;
+        if (map == null) {
+            Map<String, ModConfigSpec.ConfigValue<?>> found = new java.util.TreeMap<>();
+            collect(SPEC.getValues().valueMap().values(), found);
+            keys = map = java.util.Collections.unmodifiableMap(found);
+        }
+        return map;
+    }
+
+    private static void collect(Iterable<Object> values, Map<String, ModConfigSpec.ConfigValue<?>> found) {
+        for (Object value : values) {
+            if (value instanceof ModConfigSpec.ConfigValue<?> config) {
+                found.put(String.join(".", config.getPath()), config);
+            } else if (value instanceof com.electronwill.nightconfig.core.UnmodifiableConfig inner) {
+                collect(inner.valueMap().values(), found);
+            }
+        }
+    }
+
+    /**
+     * Converts a script or network value to the type of the option and checks it against the same limits as the file.
+     *
+     * @throws IllegalArgumentException for an unknown key or a value the file would not accept
+     */
+    public static Object checkedOverride(String key, Object raw) {
+        ModConfigSpec.ConfigValue<?> config = keys().get(key);
+        if (config == null) {
+            throw new IllegalArgumentException("Unknown option '" + key + "'. Options: " + String.join(", ", keys().keySet()));
+        }
+        Object converted = convert(config.getDefault(), raw);
+        if (converted == null || !config.getSpec().test(converted)) {
+            var range = config.getSpec().getRange();
+            throw new IllegalArgumentException("Invalid value " + raw + " for '" + key + "'"
+                    + (range != null ? " (allowed: " + range + ")" : ""));
+        }
+        return converted;
+    }
+
+    private static Object convert(Object def, Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (def instanceof Long) {
+            return raw instanceof Number n && Double.isFinite(n.doubleValue()) && n.doubleValue() == Math.rint(n.doubleValue())
+                    ? (Object) n.longValue() : null;
+        }
+        if (def instanceof Double) {
+            return raw instanceof Number n ? (Object) n.doubleValue() : null;
+        }
+        if (def instanceof Boolean) {
+            return raw instanceof Boolean b ? b : null;
+        }
+        if (def instanceof String) {
+            return raw instanceof CharSequence s ? s.toString() : null;
+        }
+        if (def instanceof List<?> && raw instanceof Iterable<?> items) {
+            List<Object> list = new java.util.ArrayList<>();
+            for (Object item : items) {
+                if (item instanceof Number n) {
+                    double d = n.doubleValue();
+                    list.add(Double.isFinite(d) && d == Math.rint(d) && Math.abs(d) < 9.0E15 ? (Object) n.longValue() : (Object) d);
+                } else if (item instanceof CharSequence s) {
+                    list.add(s.toString());
+                } else {
+                    return null;
+                }
+            }
+            return List.copyOf(list);
+        }
+        return null;
+    }
+
+    /** Replaces every script value at once ({@link #checkedOverride} values) and drops what was parsed from the old ones. */
+    public static void setOverrides(Map<String, Object> values) {
+        overrides = Map.copyOf(values);
+        invalidateCaches();
+    }
+
+    public static Map<String, Object> overrides() {
+        return overrides;
+    }
+
+    @SuppressWarnings("unchecked")
     private static <T> T value(ModConfigSpec.ConfigValue<T> config) {
+        Map<String, Object> current = overrides;
+        if (!current.isEmpty()) {
+            Object override = current.get(String.join(".", config.getPath()));
+            if (override != null) {
+                return (T) override;
+            }
+        }
         return SPEC.isLoaded() ? config.get() : config.getDefault();
     }
 
@@ -156,7 +256,7 @@ public final class DfmConfig {
                     value(CORRUPTION_SPAWN_PROTECTION),
                     value(CORRUPTION_PROTECTED_REGIONS).stream().map(Region::parse).filter(java.util.Objects::nonNull).toList(),
                     !"ignore".equals(value(CLAIM_FAILURE_POLICY)));
-            if (SPEC.isLoaded()) {
+            if (SPEC.isLoaded() || !overrides.isEmpty()) {
                 corruptionRules = rules;
             }
         }
@@ -189,11 +289,11 @@ public final class DfmConfig {
      * default curve. Parsed once per configuration load.
      */
     public static LevelTable levelTable(ModConfigSpec.ConfigValue<List<? extends Number>> config) {
-        if (!SPEC.isLoaded()) {
+        if (!SPEC.isLoaded() && !overrides.containsKey(String.join(".", config.getPath()))) {
             return null;
         }
         return LEVEL_TABLES.computeIfAbsent(config, c -> {
-            List<? extends Number> values = c.get();
+            List<? extends Number> values = value(c);
             if (values.isEmpty()) {
                 return java.util.Optional.empty();
             }
@@ -235,20 +335,20 @@ public final class DfmConfig {
 
     /** Recipe types of other mods run as alloys by the Alloy Smelter. */
     public static List<ResourceLocation> externalAlloyTypes() {
-        List<? extends String> ids = SPEC.isLoaded() ? SMELTER_EXTERNAL_ALLOY_TYPES.get() : SMELTER_EXTERNAL_ALLOY_TYPES.getDefault();
+        List<? extends String> ids = value(SMELTER_EXTERNAL_ALLOY_TYPES);
         return ids.stream().map(ResourceLocation::tryParse).filter(java.util.Objects::nonNull).toList();
     }
 
     /** FE cost of one operation; the default while the server configuration is not loaded. */
     public static long energy(ModConfigSpec.LongValue cost) {
-        long value = SPEC.isLoaded() ? cost.get() : cost.getDefault();
+        long value = value(cost);
         return Math.max(1L, Math.min(MAX_ENERGY_PER_OPERATION, value));
     }
 
     /** Returns a valid {min, max} pair; an invalid configuration falls back to the defaults. */
     public static double[] range(ModConfigSpec.DoubleValue min, ModConfigSpec.DoubleValue max) {
-        double lo = SPEC.isLoaded() ? min.get() : min.getDefault();
-        double hi = SPEC.isLoaded() ? max.get() : max.getDefault();
+        double lo = value(min);
+        double hi = value(max);
         if (!(lo > 0) || !(hi > lo)) {
             return new double[] {min.getDefault(), max.getDefault()};
         }

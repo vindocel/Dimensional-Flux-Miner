@@ -31,22 +31,6 @@ d 1
 illum 2
 map_Kd #core_side_glow
 
-newmtl matter_port_outer
-Ka 0 0 0
-Kd 1 1 1
-Ks 0 0 0
-d 1
-illum 2
-map_Kd #matter_port_outer
-
-newmtl output_port_outer
-Ka 0 0 0
-Kd 1 1 1
-Ks 0 0 0
-d 1
-illum 2
-map_Kd #output_port_outer
-
 newmtl rotor_plate_glow
 Ka 1 1 1
 Kd 1 1 1

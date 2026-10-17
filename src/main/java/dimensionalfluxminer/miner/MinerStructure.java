@@ -3,7 +3,6 @@ package dimensionalfluxminer.miner;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.miner.MinerLayout.Front;
 import dimensionalfluxminer.miner.MinerLayout.Part;
-import dimensionalfluxminer.miner.MinerLayout.PortRole;
 import dimensionalfluxminer.miner.MinerLayout.Slot;
 import dimensionalfluxminer.registry.DfmBlocks;
 import java.util.ArrayList;
@@ -18,8 +17,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /** A concrete, world-positioned Dimensional Flux Miner assembly. */
 public record MinerStructure(BlockPos terminal, Direction front, BlockPos core, List<Member> members) {
-    /** One of the 27 participants. {@code outward} is set for ports only. */
-    public record Member(BlockPos pos, Slot slot, Direction outward) {
+    /** One of the 27 participants. */
+    public record Member(BlockPos pos, Slot slot) {
     }
 
     /** Result of a validation attempt, with the first mismatch for player feedback. */
@@ -54,12 +53,7 @@ public record MinerStructure(BlockPos terminal, Direction front, BlockPos core, 
         List<Member> members = new ArrayList<>(27);
         for (Slot slot : MinerLayout.BASE_SLOTS) {
             int[] o = MinerLayout.offsetFromCore(slot, front);
-            Direction outward = null;
-            if (slot.role() != null) {
-                int[] out = MinerLayout.rotate(slot.outX(), slot.outZ(), front);
-                outward = Direction.fromDelta(out[0], 0, out[1]);
-            }
-            members.add(new Member(core.offset(o[0], o[1], o[2]), slot, outward));
+            members.add(new Member(core.offset(o[0], o[1], o[2]), slot));
         }
         return new MinerStructure(terminal, facing, core, List.copyOf(members));
     }
@@ -108,15 +102,6 @@ public record MinerStructure(BlockPos terminal, Direction front, BlockPos core, 
     public Optional<Member> member(BlockPos pos) {
         for (Member member : members) {
             if (member.pos.equals(pos)) {
-                return Optional.of(member);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public Optional<Member> port(PortRole role) {
-        for (Member member : members) {
-            if (member.slot.role() == role) {
                 return Optional.of(member);
             }
         }

@@ -9,7 +9,7 @@
 
 ### *Some machines dig. This one listens.*
 
-![Banner — the Dimensional Flux Miner working at night](https://cdn.modrinth.com/data/vTLvFHBt/images/8911bd71d9535f904cc2a64f96b360963e1959ff.png)
+![Banner — the Dimensional Flux Miner working at night](https://cdn.modrinth.com/data/vTLvFHBt/images/917b8bd0c0b8449d1632273cf8827692c8456144.png)
 
 The **Dimensional Flux Miner** tunes into the frequency of the dimension it stands in and makes that dimension's ores **appear out of nothing** — without opening a single hole in your world. Feed it energy and Dimensional Matter, choose how fast it runs, and watch the ores pour out.
 
@@ -28,17 +28,17 @@ Two support machines get you there: the **Dimensional Crusher** and the **Alloy 
 | ☠️ **Dimensional Death** | Mining has a price. Drain the land and it rots forever… or choose the clean way. |
 | 📖 **An animated guide** | A real 3D book that opens in your hand and turns its pages as you read. |
 
-![From first ingot to last dragon — the three machines](https://cdn.modrinth.com/data/vTLvFHBt/images/9130431154f17303132db94b168439be3dd19e80.png)
+![From first ingot to last dragon — the three machines](https://cdn.modrinth.com/data/vTLvFHBt/images/2de3358f90e73b5c113f1abd382758aad0d18315.png)
 
 ---
 
 ## ⛏️ The Dimensional Flux Miner
 
-![The Miner built and running](https://cdn.modrinth.com/data/vTLvFHBt/images/1f16852d9b52b9de15a6656592750438ce8be42e.png)
+![The Miner built and running](https://cdn.modrinth.com/data/vTLvFHBt/images/d99728b2a1e59419478654ceaff15ab756908bdd.png)
 
 Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-click it, and it places every missing part from your inventory for you, outlining where each one goes.
 
-![Assembly outlines](https://cdn.modrinth.com/data/vTLvFHBt/images/6cd15d054a7f29732011635ed39fac53c1501246.png)
+![Assembly outlines](https://cdn.modrinth.com/data/vTLvFHBt/images/afa92fe1ff35853ba3bff1ceabe6e772a7131a4a.png)
 
 ### 💎 Choose your core
 
@@ -47,16 +47,16 @@ Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-clic
 | 🌀 **Basic Dimensional Core** | Stretches invisible roots for 300 blocks and harvests the dimensional energy of the land, column by column. Powerful… but the drained land falls to the **Dimensional Death**. |
 | 💉 **Stabilized Dimensional Core** | Feed it the stone and ores of its own dimension and it turns them into matter on the spot. **The landscape stays untouched** — and that chest full of cobblestone is finally good for something. The only core that works in the Nether and the End. |
 
-![Dimensional Drain — the Basic core harvesting the land](https://cdn.modrinth.com/data/vTLvFHBt/images/c6812da151ac55df5feff01c44794e158cdd7f3e.png)
+![Dimensional Drain — the Basic core harvesting the land](https://cdn.modrinth.com/data/vTLvFHBt/images/12b3789219fb58fc190a6169361f0ac17443c9a7.png)
 
 ### 🎛️ In control
 
 - 🔌 A power button — it never starts by itself, and redstone can stop it but never wake it.
 - 🖥️ A terminal screen that tells you exactly what is holding production back.
 - 🧲 A filter to keep only the ores you want.
-- 🔁 Auto Input / Auto Eject to the chests touching its ports.
+- 🔁 Nine configurable ports on its base, with Auto Input / Auto Eject to the chests touching them.
 
-![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/efb9e8babe52ac0eecaac3962021044ee339ce13.png)
+![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/f4728923e251dc0e79b6900931f045c11c921096.png)
 
 ---
 
@@ -124,7 +124,7 @@ Every operation costs the same energy at every speed: 200 000 FE per Miner attem
 
 ## ☠️ Dimensional Death
 
-![Dimensional Death — the corrupted land](https://cdn.modrinth.com/data/vTLvFHBt/images/f1b62223b9b189e2b172f32765f956a2b4ff0377.png)
+![Dimensional Death — the corrupted land](https://cdn.modrinth.com/data/vTLvFHBt/images/a660705648fb7769d1ee441925f932f0afac7c4b.png)
 
 Dimensional energy is the glue that holds the world together. Where the Basic core harvests it, the land falls apart.
 
@@ -165,6 +165,7 @@ Forge your first **Pure Steel** and it is yours. Use it and the book **opens in 
 - 🔍 **Jade**: machine energy bars, items and stored XP.
 - ⏩ Tick accelerators: the machines run every extra cycle they are given — at full energy cost.
 - 🌍 Ores and dusts of other mods through the common tags.
+- 📜 **KubeJS** (optional): server options, recipes, Matter values, Resource Profiles and tags from a script.
 - 🌐 English and Brazilian Portuguese.
 
 ---

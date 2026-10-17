@@ -24,8 +24,8 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `recipe` | Recipe types (`crushing`, `ore_crushing`, `alloying`, `tag_smelting`, `tag_blasting`) and the reader of other mods' alloy recipes |
 | `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) |
 | `advancement` | Custom advancement trigger |
-| `network` | Payloads (menu sync, Miner assembly outline, formation burst) |
-| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection) |
+| `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
+| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`) |
 | `mixin` | Corrupted Water on entities and particles, sunlight on corrupted terrain |
 | `client` | Renderers, screens, the guide, sounds, particles. Common code reaches it only through `machine.ClientHooks`; the EMI, JEI and Jade plugins are client side and may use it |
 | `gametest` | In-world GameTests (see [Tests](#tests)) |
@@ -58,7 +58,7 @@ products (explicit recipes first, then the common tags).
 ### Miner
 
 The Miner is a 3×3×3 multiblock. Every part is a `MinerPartBlock`; the parts that need a block entity (ports, chassis)
-use `MinerLinkBlockEntity`: a port exposes its role's capability on its outward face, and the eight bottom chassis pass
+use `MinerLinkBlockEntity`: the controller answers the capability of each of the nine port faces (`MinerPorts`), and the eight bottom blocks pass
 tick acceleration to the controller.
 
 | Class | Responsibility |
@@ -69,6 +69,7 @@ tick acceleration to the controller.
 | `MinerOutput` | The 27 output slots: insertion slot, batch change notification, eject, NBT |
 | `MatterBuffer` | The DM buffer in fixed point (1 DM = 10 units, 5 000 DM) |
 | `MinerMetrics` | Potential and real rate, smoothed load, limiting factor per real tick |
+| `MinerPorts` | The nine configurable faces of the lower layer: Item Output, Matter Input and energy faces, saved and synced; `client/render/MinerPortRenderer` paints the ports in code |
 | `MatterValues`, `MatterMath`, `MatterVariants` | DM of an item, the Efficiency Upgrade bonus, values of crafted variants |
 | `MinerStatus`, `MinerVisualStage` | Status and limiting factor shown on the screen, visual stage for the renderer |
 
@@ -83,7 +84,7 @@ tick acceleration to the controller.
 **Resource Profiles** (`miner.profile`): `ProfileBuilder` reads the real ore features of a dimension, `ProfileWeights`
 turns generation scores into weights (exponent 0.75), datapack overrides (`ProfileOverride`) reserve exact shares and
 `ProfileDimensionRule` + `VoidCurve` add the void of sparse dimensions. `ResourceProfile` is immutable; `ResourceProfiles`
-caches one per dimension and rebuilds them on reload. `rollIndex` is a binary search over cumulative weights.
+caches one per dimension and rebuilds them on reload; it combines the datapack entries with those of server scripts. `rollIndex` is a binary search over cumulative weights.
 
 **Survey** (`miner.survey`): `MinerSurvey` walks the loaded columns of the 300-block circle in `ColumnOrder`;
 `SurveyManager` enforces the per-dimension budget.
@@ -107,9 +108,17 @@ caches one per dimension and rebuilds them on reload. `rollIndex` is a binary se
 | `data/<ns>/data_maps/item/matter_value.json` | `MatterValues` |
 | `data/dimensionalfluxminer/tags/block/corrupt*.json` | `CorruptionService` |
 | recipe types | `crusher`, `smelter`, `recipe` |
+| `data/dimensionalfluxminer/kubejs/recipe_schema/*.json` | KubeJS only: the script form of each recipe type |
 
 Integrations with other mods use only optional data (`neoforge:conditions` with `mod_loaded`, tag entries with
 `"required": false`) or code isolated in `compat`.
+
+**Script values (KubeJS).** `compat.kubejs.DfmKubeJSPlugin` posts the `DimensionalFluxMinerEvents` right after the
+server scripts load, before the datapacks are read. Each event lands in a layer the mod has without KubeJS:
+`DfmConfig.setOverrides` (values above the file, checked by the same spec, sent to clients by
+`ConfigOverridesPayload` on login and after every reload, cleared when the server stops or the client leaves),
+`ResourceProfiles.setScripted` (entries applied after the datapack ones, void rules before them) and a
+`matter_value` data map file in KubeJS's last generated pack. Recipe types need no code: the JSON schemas above.
 
 ## Saves and compatibility
 

@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Steel chassis: structural part; the lower eight are redstone and external tick-acceleration receivers. */
+/** Steel chassis: structural part; the lower one is a redstone and external tick-acceleration receiver. */
 public class MinerChassisBlock extends MinerPartBlock implements EntityBlock {
     public static final com.mojang.serialization.MapCodec<MinerChassisBlock> CODEC = simpleCodec(MinerChassisBlock::new);
 

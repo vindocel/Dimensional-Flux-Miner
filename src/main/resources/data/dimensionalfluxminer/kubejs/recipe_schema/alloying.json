@@ -1,0 +1,48 @@
+{
+  "keys": [
+    {
+      "name": "result",
+      "role": "output",
+      "type": "item_stack"
+    },
+    {
+      "name": "ingredients",
+      "role": "input",
+      "type": {
+        "type": "list",
+        "component": "sized_ingredient"
+      }
+    },
+    {
+      "name": "byproduct",
+      "role": "output",
+      "type": {
+        "type": "custom_object",
+        "keys": [
+          { "name": "id", "component": "id" },
+          { "name": "count", "component": "positive_int", "optional": true },
+          { "name": "chance", "component": { "type": "float", "min": 0.0, "max": 1.0 }, "optional": true }
+        ]
+      },
+      "default_optional": true
+    },
+    {
+      "name": "processing_ticks",
+      "role": "input",
+      "type": "ticks",
+      "function_names": ["processingTicks", "time"],
+      "optional": 100
+    },
+    {
+      "name": "experience",
+      "role": "output",
+      "type": {
+        "type": "float",
+        "min": 0.0
+      },
+      "function_names": ["experience", "xp"],
+      "optional": 0.0
+    }
+  ],
+  "unique": ["result"]
+}

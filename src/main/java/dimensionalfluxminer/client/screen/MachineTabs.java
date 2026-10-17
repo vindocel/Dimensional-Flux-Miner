@@ -38,7 +38,7 @@ final class MachineTabs {
         s.rateTab(g, x + s.panelWidth(), y + ROW_2, false, d.getInt("rate"), nextId, previousId, mouseX, mouseY, () -> details);
     }
 
-    static void sideConfig(DfmScreen<?> s, GuiGraphics g, int x, int y, SideConfigWindow window, int mouseX, int mouseY) {
+    static void sideConfig(DfmScreen<?> s, GuiGraphics g, int x, int y, DfmScreen.Window window, int mouseX, int mouseY) {
         s.windowTab(g, x - DfmScreen.TAB_SIZE, y + TOP_Y, true, DfmScreen.TAB_DEFAULT, DfmScreen.ICON_SIDE_CONFIG, window,
                 mouseX, mouseY, () -> List.of(Component.translatable("gui.dimensionalfluxminer.side_config")));
     }

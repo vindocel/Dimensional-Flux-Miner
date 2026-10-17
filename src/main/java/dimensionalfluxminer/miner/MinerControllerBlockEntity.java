@@ -12,7 +12,6 @@ import dimensionalfluxminer.machine.math.LevelTable;
 import dimensionalfluxminer.machine.math.MinerProductionCurve;
 import dimensionalfluxminer.machine.math.RateScale;
 import dimensionalfluxminer.machine.math.WorkAccumulator;
-import dimensionalfluxminer.miner.MinerLayout.PortRole;
 import dimensionalfluxminer.miner.MinerVisualStage.CoreKind;
 import dimensionalfluxminer.miner.corruption.CorruptionService;
 import dimensionalfluxminer.miner.profile.ResourceFamily;
@@ -24,9 +23,12 @@ import dimensionalfluxminer.network.MinerFormationPayload;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import dimensionalfluxminer.registry.DfmItems;
 import dimensionalfluxminer.registry.DfmSounds;
+import dimensionalfluxminer.compat.LogisticsNetworksCompat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +86,18 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public static final int BUTTON_FILTER_CLEAR = 2999;
     /** {@code + index} in the synced family list. */
     public static final int BUTTON_FILTER_TOGGLE = 3000;
+    /** Automation cycle of the item ports: OFF -> Auto Input -> Auto Eject -> both (and back). */
+    public static final int BUTTON_AUTO_IO_NEXT = 2300;
+    public static final int BUTTON_AUTO_IO_PREVIOUS = 2301;
+    /** {@code + face * 2 + (forward ? 0 : 1)}: next / previous item role of a port face. */
+    public static final int BUTTON_PORT_ITEMS = 4000;
+    /** {@code + face}: adds or removes a hand-picked energy face. */
+    public static final int BUTTON_PORT_ENERGY = 4100;
+    public static final int BUTTON_PORTS_CLEAR_ITEMS = 4200;
+    /** Back to the default energy: every face accepts it. */
+    public static final int BUTTON_PORTS_RESET_ENERGY = 4201;
+    /** How often (ticks) the faces look for something with energy touching them. */
+    private static final int ENERGY_SCAN_TICKS = 10;
 
     // ---------------------------------------------------------------- persistent state
     private boolean formed;
@@ -95,6 +109,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private boolean redstoneControl;
     private boolean autoInput;
     private boolean autoEject;
+    /** The nine configurable faces of the lower layer; see {@link MinerPorts}. */
+    private final MinerPorts ports = new MinerPorts();
     private final Set<ResourceLocation> filter = new LinkedHashSet<>();
     private UUID owner;
     /** Columns this Miner has drained in its life; drives the "half of the area drained" advancement. */
@@ -172,8 +188,30 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private String lastSubstrate = "";
     private long lastSubstrateUnits;
     private MinerStructure structure;
+    /** Faces with something that holds energy touching them (bit per {@link MinerPorts.Face}). */
+    private int energyConnected;
+    private int[] nodeColors = new int[MinerPorts.Face.VALUES.length];
+    /** A cable that pulled from / pushed into a face this recently still counts as using it. */
+    public static final int CABLE_ACTIVE_TICKS = 100;
+    private final PortHandler[] portHandlers = new PortHandler[MinerPorts.Face.VALUES.length];
+    private final long[] pullSeen = never();
+    private final long[] pushSeen = never();
+    private int cableOutput = -1;
+    private int cableMatter = -1;
+    /** Faces whose role a cable sets (for the Side Configuration). */
+    private int cableFaces;
+
+    private static long[] never() {
+        long[] seen = new long[MinerPorts.Face.VALUES.length];
+        java.util.Arrays.fill(seen, Long.MIN_VALUE / 2);
+        return seen;
+    }
+    /** The structure was checked against the current layout since loading (a machine of an older layout comes apart). */
+    private boolean layoutVerified;
 
     // ---------------------------------------------------------------- client render state
+    /** How the nine faces look, 3 bits each ({@link MinerPorts#packLooks}); server and client. */
+    private int portLooks;
     private MinerVisualStage visualStage = MinerVisualStage.NO_ENERGY;
     private int loadPercent;
     private Direction clientFront = Direction.SOUTH;
@@ -459,7 +497,29 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     // ---------------------------------------------------------------- port capabilities
 
-    /** The {@code null} side of every miner block is a read-only view of the output buffer (Jade). */
+    public MinerPorts ports() {
+        return ports;
+    }
+
+    /** The configurable face of the lower layer at {@code pos} facing {@code side}, or null. */
+    private MinerPorts.Face face(BlockPos pos, Direction side) {
+        MinerStructure s = structure();
+        if (s == null || side == null) {
+            return null;
+        }
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
+            if (face.outward(front) == side && face.owner(s.core(), front).equals(pos)) {
+                return face;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Item capability of a face: Item Output, Matter Input (Stabilized Core only) or both on the same face. The
+     * {@code null} side of every miner block is a read-only view of the output buffer (Jade).
+     */
     public IItemHandler itemPort(BlockPos portPos, Direction side) {
         MinerStructure s = structure();
         if (!formed || s == null) {
@@ -468,14 +528,96 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (side == null) {
             return ReadOnlyViews.items(output.handler());
         }
-        return s.member(portPos).filter(m -> m.outward() == side).map(m -> switch (m.slot().role()) {
-            case ITEM_OUTPUT -> output.extractionView();
-            case MATTER_INPUT -> coreKind() == CoreKind.STABILIZED ? matterPort : null;
-            default -> null;
-        }).orElse(null);
+        MinerPorts.Face face = face(portPos, side);
+        if (face == null || !ports.isOutput(face) && !ports.isMatter(face)) {
+            // A network node on the block reaches its face from whatever side its channel is set to.
+            MinerPorts.Face node = nodeFace(portPos, ports.nodeItemFaces());
+            face = node != null ? node : face;
+        }
+        if (face == null) {
+            return null;
+        }
+        if (portHandlers[face.ordinal()] == null) {
+            portHandlers[face.ordinal()] = new PortHandler(face);
+        }
+        return portHandlers[face.ordinal()];
     }
 
-    /** The {@code null} side of every miner block is a read-only view of the energy buffer (Jade). */
+    /**
+     * The item handler of one face. Every outward face has one, whatever its role, so a cable can be noticed: a cable
+     * that pulls from a face (extracts) asks for the Item Output, one that pushes Matter (inserts a substrate, Stabilized
+     * Core) asks for the Matter Input. The face only gives or takes items once it has the role; the next scan moves
+     * the role there (see {@link #scanAutomaticPorts}). Slots: the output slots, then one insertion-only matter slot.
+     */
+    private final class PortHandler implements IItemHandler {
+        private final MinerPorts.Face face;
+        private final IItemHandler view = output.extractionView();
+
+        PortHandler(MinerPorts.Face face) {
+            this.face = face;
+        }
+
+        private boolean matterOpen() {
+            return ports.isMatter(face) && coreKind() == CoreKind.STABILIZED;
+        }
+
+        @Override
+        public int getSlots() {
+            return view.getSlots() + 1;
+        }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) {
+            return slot < view.getSlots() ? view.getStackInSlot(slot) : ItemStack.EMPTY;
+        }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            if (stack.isEmpty() || !matterPort.isItemValid(0, stack)) {
+                return stack;
+            }
+            notePush(face);
+            // Any slot feeds the Matter Input (cables that only insert into the first slot work too).
+            return matterOpen() ? matterPort.insertItem(0, stack, simulate) : stack;
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (slot >= view.getSlots() || amount <= 0 || view.getStackInSlot(slot).isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            notePull(face);
+            return ports.isOutput(face) ? view.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return slot < view.getSlots() ? view.getSlotLimit(slot) : matterPort.getSlotLimit(0);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            // Yes to a substrate even before the face has the role, so a pushing cable tries.
+            return matterPort.isItemValid(0, stack);
+        }
+    }
+
+    private void notePull(MinerPorts.Face face) {
+        if (level != null) {
+            pullSeen[face.ordinal()] = level.getGameTime();
+        }
+    }
+
+    private void notePush(MinerPorts.Face face) {
+        if (level != null) {
+            pushSeen[face.ordinal()] = level.getGameTime();
+        }
+    }
+
+    /**
+     * Energy capability of a face: every face by default, only the hand-picked ones once the player chose some. The
+     * {@code null} side of every miner block is a read-only view of the energy buffer (Jade).
+     */
     public IEnergyStorage energyPort(BlockPos portPos, Direction side) {
         MinerStructure s = structure();
         if (!formed || s == null) {
@@ -484,20 +626,174 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (side == null) {
             return ReadOnlyViews.energy(energyPort);
         }
-        return s.member(portPos).filter(m -> m.outward() == side && m.slot().role() == PortRole.ENERGY_INPUT)
-                .map(m -> energyPort).orElse(null);
+        MinerPorts.Face face = face(portPos, side);
+        if (face != null && ports.acceptsEnergy(face)) {
+            return energyPort;
+        }
+        return nodeFace(portPos, ports.nodeEnergyFaces()) != null ? energyPort : null;
     }
 
+    /** A face of the block at {@code pos} among the network node faces {@code mask}, or null. */
+    private MinerPorts.Face nodeFace(BlockPos pos, int mask) {
+        MinerStructure s = structure();
+        if (s == null || mask == 0) {
+            return null;
+        }
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
+            if ((mask & face.bit()) != 0 && face.owner(s.core(), front).equals(pos)) {
+                return face;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Roles set from outside, every 10 ticks: first the Logistics Networks nodes on the port blocks (a node that pulls
+     * items takes the Item Output, one that pushes items the Matter Input with the Stabilized Core, one that pushes
+     * energy an energy face; their own box is hidden and the port draws a frame in the network's color instead), then
+     * any cable that keeps pulling from or pushing Matter into a face ({@link PortHandler}). A face set this way is
+     * locked in the Side Configuration while the node is there or the cable stays active.
+     */
+    private void scanAutomaticPorts() {
+        MinerStructure s = structure();
+        if (!(level instanceof ServerLevel serverLevel) || s == null) {
+            return;
+        }
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        boolean stabilized = coreKind() == CoreKind.STABILIZED;
+        int out = -1;
+        int matter = -1;
+        int energy = 0;
+        int[] colors = new int[MinerPorts.Face.VALUES.length];
+        Map<BlockPos, List<MinerPorts.Face>> blocks = new LinkedHashMap<>();
+        for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
+            blocks.computeIfAbsent(face.owner(s.core(), front), k -> new ArrayList<>()).add(face);
+        }
+        for (Map.Entry<BlockPos, List<MinerPorts.Face>> block : LogisticsNetworksCompat.loaded() ? blocks.entrySet()
+                : java.util.Set.<Map.Entry<BlockPos, List<MinerPorts.Face>>>of()) {
+            List<MinerPorts.Face> faces = block.getValue();
+            for (LogisticsNetworksCompat.Node node : LogisticsNetworksCompat.nodesAt(serverLevel, block.getKey())) {
+                LogisticsNetworksCompat.hide(node);
+                MinerPorts.Face chosen = null;
+                if (node.takesItems() && out < 0) {
+                    chosen = faces.stream().filter(ports::isOutput).findFirst().orElse(faces.get(0));
+                    out = chosen.ordinal();
+                }
+                if (node.givesItems() && stabilized && matter < 0) {
+                    // One node that pulls and pushes items: both roles on its face (half orange, half violet).
+                    if (chosen == null) {
+                        chosen = faces.stream().filter(ports::isMatter).findFirst().orElse(faces.get(0));
+                    }
+                    matter = chosen.ordinal();
+                }
+                if (node.givesEnergy()) {
+                    if (chosen == null) {
+                        chosen = faces.get(0);
+                    }
+                    energy |= chosen.bit();
+                }
+                if (chosen != null) {
+                    colors[chosen.ordinal()] = node.color() | 0xFF000000;
+                }
+            }
+        }
+        // Cables: the face that keeps being pulled from / pushed into, unless a node already holds that role.
+        long now = level.getGameTime();
+        cableOutput = activeFace(pullSeen, cableOutput, now);
+        cableMatter = stabilized ? activeFace(pushSeen, cableMatter, now) : -1;
+        int cables = 0;
+        if (out < 0 && cableOutput >= 0) {
+            out = cableOutput;
+            cables |= 1 << out;
+        }
+        if (matter < 0 && cableMatter >= 0) {
+            matter = cableMatter;
+            cables |= 1 << matter;
+        }
+        cableFaces = cables;
+        boolean changed = ports.applyNodes(out, matter, energy);
+        if (changed) {
+            invalidatePorts();
+            setChanged();
+        }
+        if (changed || !java.util.Arrays.equals(colors, nodeColors)) {
+            nodeColors = colors;
+            syncToClients();
+        }
+    }
+
+    /**
+     * The face a cable is using for one role: the current holder while its cable stays active, otherwise the face
+     * used most recently within {@link #CABLE_ACTIVE_TICKS}, or -1.
+     */
+    private static int activeFace(long[] seen, int holder, long now) {
+        if (holder >= 0 && now - seen[holder] <= CABLE_ACTIVE_TICKS) {
+            return holder;
+        }
+        int best = -1;
+        for (int i = 0; i < seen.length; i++) {
+            if (now - seen[i] <= CABLE_ACTIVE_TICKS && (best < 0 || seen[i] > seen[best])) {
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    /** Color (ARGB, 0 = none) of the network node frame drawn on each face. */
+    public int[] nodeColors() {
+        return nodeColors;
+    }
+
+    /** The port blocks of the lower layer changed what they expose: cables and pipes around them look again. */
     private void invalidatePorts() {
         if (level == null) {
             return;
         }
         MinerStructure s = MinerStructure.layout(worldPosition, getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING));
-        for (MinerStructure.Member m : s.members()) {
-            if (m.slot().role() != null) {
-                level.invalidateCapabilities(m.pos());
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        Set<BlockPos> owners = new LinkedHashSet<>();
+        for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
+            owners.add(face.owner(s.core(), front));
+        }
+        for (BlockPos owner : owners) {
+            level.invalidateCapabilities(owner);
+            level.updateNeighborsAt(owner, level.getBlockState(owner).getBlock());
+        }
+        updatePortLooks();
+    }
+
+    /** Looks again for something with energy touching each face, outside the machine. */
+    private void scanEnergyNeighbors() {
+        MinerStructure s = structure();
+        if (s == null || level == null) {
+            energyConnected = 0;
+            return;
+        }
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        int mask = 0;
+        for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
+            Direction out = face.outward(front);
+            BlockPos neighbor = face.owner(s.core(), front).relative(out);
+            if (level.isLoaded(neighbor) && level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
+                    neighbor, out.getOpposite()) != null) {
+                mask |= face.bit();
             }
         }
+        energyConnected = mask;
+    }
+
+    /** Recomputes how the faces look and sends it to the clients when it changed. */
+    private void updatePortLooks() {
+        int looks = formed ? ports.packLooks(energyConnected) : 0;
+        if (looks != portLooks) {
+            portLooks = looks;
+            syncToClients();
+        }
+    }
+
+    public int portLooks() {
+        return portLooks;
     }
 
     // ---------------------------------------------------------------- formation
@@ -519,6 +815,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         }
         structure = s;
         formed = true;
+        layoutVerified = true;
         runRequested = false;
         work.reset();
         wasPowered = false;
@@ -581,6 +878,37 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         syncToClients();
     }
 
+    /**
+     * A machine saved as formed is checked once against the current layout, as soon as its 27 positions are loaded. A
+     * machine assembled with an older layout comes apart (its items drop and every part returns to a loose block), so
+     * the player rebuilds it with the current one.
+     */
+    private void verifyLayout() {
+        MinerStructure expected = MinerStructure.layout(worldPosition, getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING));
+        for (MinerStructure.Member m : expected.members()) {
+            if (!level.isLoaded(m.pos())) {
+                return;
+            }
+        }
+        layoutVerified = true;
+        if (MinerStructure.check(level, worldPosition).structure().isPresent()) {
+            return;
+        }
+        invalidate();
+        // Parts of the older layout may stand where the current one expects other blocks: release every one of them.
+        for (MinerStructure.Member m : expected.members()) {
+            BlockState state = level.getBlockState(m.pos());
+            if (state.hasProperty(dimensionalfluxminer.content.DfmStateProperties.FORMED)
+                    && state.getValue(dimensionalfluxminer.content.DfmStateProperties.FORMED)) {
+                level.setBlock(m.pos(), state.setValue(dimensionalfluxminer.content.DfmStateProperties.FORMED, false),
+                        net.minecraft.world.level.block.Block.UPDATE_ALL);
+            }
+            if (level.getBlockEntity(m.pos()) instanceof MinerLinkBlockEntity link) {
+                link.unlink();
+            }
+        }
+    }
+
     private void onCoreChanged() {
         CoreKind now = coreKind();
         if (now != lastCore) {
@@ -588,6 +916,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             runRequested = false;
             lastCore = now;
             work.reset();
+            // The Matter Input only exists with the Stabilized Core.
+            if (now != CoreKind.STABILIZED) {
+                ports.clearMatter();
+            }
             invalidatePorts();
         }
         setChanged();
@@ -603,6 +935,14 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private void realTick() {
+        if (formed && !layoutVerified) {
+            verifyLayout();
+        }
+        if (formed && level != null && level.getGameTime() % ENERGY_SCAN_TICKS == 0) {
+            scanEnergyNeighbors();
+            scanAutomaticPorts();
+            updatePortLooks();
+        }
         cycle(true);
         noteLimit(status.limitingFactor());
         // Work of every cycle since the previous normal tick, accelerated ones included.
@@ -808,26 +1148,26 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     private void ejectOutput() {
         MinerStructure s = structure();
-        if (s == null || level == null) {
+        if (s == null || level == null || ports.outputFace() < 0) {
             return;
         }
-        s.port(PortRole.ITEM_OUTPUT).ifPresent(port -> {
-            IItemHandler target = NeighborTransfer.neighbor(level, port.pos(), port.outward());
-            if (target == null) {
-                return;
-            }
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        MinerPorts.Face face = MinerPorts.Face.VALUES[ports.outputFace()];
+        IItemHandler target = NeighborTransfer.neighbor(level, face.owner(s.core(), front), face.outward(front));
+        if (target != null) {
             output.ejectTo(target);
-        });
+        }
     }
 
     private void pullSubstrate() {
         MinerStructure s = structure();
-        if (s == null || level == null) {
+        if (s == null || level == null || ports.matterFace() < 0) {
             return;
         }
+        MinerLayout.Front front = MinerStructure.toFront(s.front());
+        MinerPorts.Face face = MinerPorts.Face.VALUES[ports.matterFace()];
         // No item limit: the pull stops when the DM buffer is full or the source is empty.
-        s.port(PortRole.MATTER_INPUT).ifPresent(port ->
-                NeighborTransfer.pull(level, port.pos(), port.outward(), this::insertSubstrate, Long.MAX_VALUE));
+        NeighborTransfer.pull(level, face.owner(s.core(), front), face.outward(front), this::insertSubstrate, Long.MAX_VALUE);
     }
 
     // ---------------------------------------------------------------- visuals
@@ -879,6 +1219,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         tag.putInt("load", loadPercent);
         tag.putInt("rate", rate);
         tag.putLong("anim_start", animationStartTick);
+        tag.putInt("port_looks", portLooks);
+        tag.putIntArray("node_colors", nodeColors);
         return tag;
     }
 
@@ -905,6 +1247,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         loadPercent = tag.getInt("load");
         rate = RateScale.clampLevel(tag.getInt("rate"));
         animationStartTick = tag.getLong("anim_start");
+        portLooks = tag.getInt("port_looks");
+        int[] colors = tag.getIntArray("node_colors");
+        nodeColors = colors.length == MinerPorts.Face.VALUES.length ? colors : new int[MinerPorts.Face.VALUES.length];
         clientFront = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
@@ -925,7 +1270,32 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     // ---------------------------------------------------------------- menu
 
+    /** Until a Core is inserted the machine is locked: only the Core slot can be used. */
+    public boolean locked() {
+        return coreKind() == CoreKind.NONE;
+    }
+
     public boolean handleButton(Player player, int id) {
+        if (locked()) {
+            return false;
+        }
+        if (handlePortButton(id)) {
+            invalidatePorts();
+            setChanged();
+            return true;
+        }
+        switch (id) {
+            case BUTTON_AUTO_IO_NEXT, BUTTON_AUTO_IO_PREVIOUS -> {
+                // Bit 0 = Auto Input, bit 1 = Auto Eject: 0 OFF, 1 input, 2 eject, 3 both.
+                int mode = (autoInput ? 1 : 0) | (autoEject ? 2 : 0);
+                int next = Math.floorMod(mode + (id == BUTTON_AUTO_IO_NEXT ? 1 : -1), 4);
+                autoInput = (next & 1) != 0;
+                autoEject = (next & 2) != 0;
+                return true;
+            }
+            default -> {
+            }
+        }
         switch (id) {
             case BUTTON_RATE_DOWN, BUTTON_RATE_UP -> {
                 int next = RateScale.clampLevel(rate + (id == BUTTON_RATE_UP ? 1 : -1));
@@ -982,6 +1352,29 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
+    /** Port configuration buttons; returns true when the configuration changed. */
+    private boolean handlePortButton(int id) {
+        int faces = MinerPorts.Face.VALUES.length;
+        if (id >= BUTTON_PORT_ITEMS && id < BUTTON_PORT_ITEMS + faces * 2) {
+            int local = id - BUTTON_PORT_ITEMS;
+            ports.cycleItems(MinerPorts.Face.VALUES[local / 2], coreKind() == CoreKind.STABILIZED, local % 2 == 0);
+            return true;
+        }
+        if (id >= BUTTON_PORT_ENERGY && id < BUTTON_PORT_ENERGY + faces) {
+            ports.toggleEnergy(MinerPorts.Face.VALUES[id - BUTTON_PORT_ENERGY]);
+            return true;
+        }
+        if (id == BUTTON_PORTS_CLEAR_ITEMS) {
+            ports.clearItems();
+            return true;
+        }
+        if (id == BUTTON_PORTS_RESET_ENERGY) {
+            ports.resetEnergy();
+            return true;
+        }
+        return false;
+    }
+
     /** Drops filter selections whose family no longer exists after a reload; an empty filter means OFF. */
     private void pruneFilter(ResourceProfile profile) {
         filter.removeIf(key -> profile.family(key).isEmpty());
@@ -1002,6 +1395,12 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         tag.putBoolean("redstone_signal", formed && redstoneSignal());
         tag.putBoolean("auto_input", autoInput);
         tag.putBoolean("auto_eject", autoEject);
+        tag.putBoolean("locked", locked());
+        tag.put("ports", ports.save());
+        tag.putInt("energy_connected", energyConnected);
+        tag.putInt("node_item_faces", ports.nodeItemFaces());
+        tag.putInt("node_energy_faces", ports.nodeEnergyFaces());
+        tag.putInt("cable_faces", cableFaces);
         tag.putDouble("potential", metrics.potentialRate());
         tag.putDouble("actual", metrics.actualRate());
         tag.putDouble("load", metrics.smoothedLoad());
@@ -1062,6 +1461,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         tag.putBoolean("redstone_control", redstoneControl);
         tag.putBoolean("auto_input", autoInput);
         tag.putBoolean("auto_eject", autoEject);
+        tag.put("ports", ports.save());
         ListTag filterTag = new ListTag();
         filter.forEach(key -> filterTag.add(StringTag.valueOf(key.toString())));
         tag.put("filter", filterTag);
@@ -1089,6 +1489,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         redstoneControl = tag.getBoolean("redstone_control");
         autoInput = tag.getBoolean("auto_input");
         autoEject = tag.getBoolean("auto_eject");
+        ports.load(tag.getCompound("ports"));
         filter.clear();
         ListTag filterTag = tag.getList("filter", Tag.TAG_STRING);
         for (int i = 0; i < filterTag.size(); i++) {

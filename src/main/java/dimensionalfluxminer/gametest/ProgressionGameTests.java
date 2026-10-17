@@ -272,6 +272,45 @@ public final class ProgressionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty_small")
+    public static void onlyOreVariantsOfTheDimensionStoneCount(GameTestHelper helper) {
+        // The terrain comes from the noise settings of each dimension.
+        ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        ServerLevel end = helper.getLevel().getServer().getLevel(Level.END);
+        Set<net.minecraft.world.level.block.state.BlockState> netherTerrain = ProfileBuilder.terrainBlocks(nether);
+        Set<net.minecraft.world.level.block.state.BlockState> endTerrain = ProfileBuilder.terrainBlocks(end);
+        helper.assertTrue(netherTerrain != null && netherTerrain.contains(net.minecraft.world.level.block.Blocks.NETHERRACK.defaultBlockState())
+                && !netherTerrain.contains(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()), "Nether terrain is netherrack");
+        helper.assertTrue(endTerrain != null && endTerrain.contains(net.minecraft.world.level.block.Blocks.END_STONE.defaultBlockState())
+                && !endTerrain.contains(net.minecraft.world.level.block.Blocks.DEEPSLATE.defaultBlockState()), "End terrain is end stone");
+        // A vein listing a variant per stone keeps only the variant of the stone that is there.
+        var ops = net.minecraft.resources.RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, helper.getLevel().registryAccess());
+        var gold = helper.getLevel().registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE)
+                .get(ResourceLocation.withDefaultNamespace("ore_gold"));
+        var shape = ProfileBuilder.oreShape(gold, ops).orElseThrow();
+        var onStone = shape.replacing(Set.of(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState())).targets();
+        helper.assertTrue(onStone.size() == 1 && onStone.get(0).is(net.minecraft.world.level.block.Blocks.GOLD_ORE), "stone: gold ore only");
+        helper.assertTrue(shape.replacing(endTerrain).targets().isEmpty(), "end stone: no gold variant");
+        // Overworld biomes on netherrack: no Overworld ore family is generated.
+        Set<Holder<Biome>> overworld = biomes(helper.getLevel(), BiomeTags.IS_OVERWORLD);
+        var stone = ProfileBuilder.rawScores(overworld, helper.getLevel().registryAccess(),
+                Set.of(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()));
+        var rack = ProfileBuilder.rawScores(overworld, helper.getLevel().registryAccess(), netherTerrain);
+        ResourceLocation iron = ResourceLocation.withDefaultNamespace("iron");
+        helper.assertTrue(stone.containsKey(iron) && !rack.containsKey(iron), "iron only where its stone exists");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void conditionalResourceFilesFollowTheirMods(GameTestHelper helper) {
+        // compat/allthemodium_unobtainium.json only loads with Allthemodium installed.
+        ResourceLocation unobtainium = ResourceLocation.fromNamespaceAndPath("allthemodium", "unobtainium_ore");
+        boolean loaded = dimensionalfluxminer.miner.profile.ResourceProfiles.overrides().stream()
+                .anyMatch(o -> o.resource().equals(unobtainium));
+        helper.assertTrue(loaded == net.neoforged.fml.ModList.get().isLoaded("allthemodium"), "Unobtainium entry follows Allthemodium");
+        helper.succeed();
+    }
+
     // ---------------------------------------------------------------- distribution
 
     private static Set<Holder<Biome>> biomes(ServerLevel level, TagKey<Biome> tag) {

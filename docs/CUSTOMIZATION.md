@@ -1,7 +1,8 @@
 # 🧩 Customization Guide
 
-How to change Dimensional Flux Miner with a server configuration file and datapacks: what each option does, where
-its limits are, what cannot be changed without editing the code, and how to check that a change really took effect.
+How to change Dimensional Flux Miner with a server configuration file, datapacks or KubeJS scripts: what each option
+does, where its limits are, what cannot be changed without editing the code, and how to check that a change really took
+effect.
 
 This guide is for modpack creators, server administrators and modders. You do not need to know the mod's code to use
 it, but you should know how to edit a text file and how to put a folder inside a world save.
@@ -55,16 +56,21 @@ the player-facing overview in the [README](../README.md).
 13. [Applying and checking changes](#13-applying-and-checking-changes)
 14. [Troubleshooting](#14-troubleshooting)
 
+**Part V: KubeJS**
+
+15. [KubeJS scripts](#15-kubejs-scripts)
+
 ---
 
 # Part I: Server configuration
 
-## 1. Four ways to change the mod
+## 1. Five ways to change the mod
 
 | Mechanism | What it is | What it changes in this mod | Needs a restart? |
 |---|---|---|---|
 | **Server configuration** | The file `dimensionalfluxminer-server.toml` | Energy costs, speed and FE/t of every level, alloy recipe types of other mods, Dimensional Death switches and protections | No, in most cases (see [2](#when-a-change-is-applied)) |
 | **Datapack** | A folder or zip of JSON files loaded with the world | Ores the Miner makes, Dimensional Matter values, recipes, block and entity tags | No: `/reload` |
+| **KubeJS** (optional mod) | Server scripts in `kubejs/server_scripts/` | Everything of the two rows above, from one script ([15](#15-kubejs-scripts)) | No: `/reload` |
 | **Resource pack** | A folder or zip of client assets | Textures, models, sounds and translations only. No gameplay value can be changed with it | No: `F3 + T` |
 | **Java code** | Editing and rebuilding the mod | Everything else: the number of levels, buffers, slots, Dimensional Matter rules, corruption depth and radius, effects | Rebuild the mod |
 
@@ -526,8 +532,9 @@ Rules worth knowing:
 - The same ore listed by several entries: the result depends on loading order, which is not guaranteed. Keep one
   entry per ore and dimension.
 - An unknown `resource` item logs a warning and the entry is skipped. An unknown `crusher_output` item is ignored.
-- These files do **not** support `neoforge:conditions`. An entry for an ore of a mod that is not installed is simply
-  skipped with a warning, which is harmless.
+- A file may have `neoforge:conditions` at its root (for example `{"type": "neoforge:mod_loaded", "modid": "..."}`):
+  the whole file is skipped when they do not hold. Without conditions, an entry for an ore of a mod that is not
+  installed is skipped with a warning, which is harmless.
 
 **Dimension rule (the void)**: an entry that has `empty_share`.
 
@@ -1195,7 +1202,7 @@ the code.
 
 ## 9. Compatibility with other mods
 
-The mod has no scripting integration of its own. Everything below uses standard Minecraft and NeoForge data.
+Everything below uses standard Minecraft and NeoForge data. KubeJS scripts can do all of it too ([15](#15-kubejs-scripts)).
 
 | Goal | How |
 |---|---|
@@ -1222,11 +1229,12 @@ The mod has no scripting integration of its own. Everything below uses standard 
 | Recipes | `"neoforge:conditions": [{ "type": "neoforge:mod_loaded", "modid": "<mod>" }]` at the top of the recipe |
 | Data map entries | The same `neoforge:conditions` inside the entry |
 | Tags | `{ "id": "<id>", "required": false }` |
-| Resource Profile entries | No conditions. An entry with an unknown item is skipped with a warning |
+| Resource Profile entries | `neoforge:conditions` at the root of the file. Without it, an entry with an unknown item is skipped with a warning |
 | Server configuration | Types and dimensions of missing mods are ignored |
+| KubeJS scripts | `if (Platform.isLoaded('<mod>')) { ... }` around the lines of that mod |
 
-Tools that write recipes, tags or data maps in the standard formats (KubeJS, CraftTweaker and similar) work with
-these formats like any datapack would, but the mod has no direct integration with them and they are not tested.
+Other tools that write recipes, tags or data maps in the standard formats (CraftTweaker and similar) work with these
+formats like any datapack would, but the mod has no direct integration with them and they are not tested.
 
 ---
 
@@ -1269,8 +1277,11 @@ these formats like any datapack would, but the mod has no direct integration wit
 | Corrupted Water | 🟡 | ❌ | 🔧 | Stopped by the corruption switches; its behaviour is fixed |
 | Models, textures, sounds, translations | ❌ | ❌ | | Resource pack |
 | Animations | ❌ | ❌ | 🔧 | |
-| Ports, slots and automation | ❌ | ❌ | 🔧 | Side Configuration in game; slot counts fixed |
+| Ports, slots and automation | ❌ | ❌ | 🔧 | Side Configuration in game, including the Miner's nine port faces; slot counts and port positions fixed |
 | Other mods' compatibility | 🟡 | ✅ | 🔧 | Data and tags; new claim systems or recipe formats need code |
+
+A KubeJS script reaches everything marked ✅ or 🟡 in the TOML and Datapack columns, with the same limits
+([15](#15-kubejs-scripts)). It cannot change anything marked 🔧.
 
 ## 11. Internal limits and invalid values
 
@@ -1447,3 +1458,181 @@ JSON files cannot hold comments: keep explanations in a separate README of your 
 | A datapack has invalid JSON | Missing comma or quote, comments in the file | The log names the file; validate it with any JSON validator |
 | Two datapacks conflict | Same recipe path in both (the higher one wins); different files for the same input or ore (undefined) | `/datapack list` order; keep one definition per ID |
 | Errors when an optional mod is missing | Recipe without `neoforge:mod_loaded`; tag entry without `"required": false`; data map entry without a condition | The log line names the missing ID |
+
+
+---
+
+# Part V: KubeJS
+
+## 15. KubeJS scripts
+
+[KubeJS](https://kubejs.com) is an optional mod. With it installed, one server script can do everything the
+configuration file and the datapacks of this guide do. Without it, nothing changes: the mod never needs it.
+
+| | |
+|---|---|
+| KubeJS | 2101.7 or newer (NeoForge 1.21.1) |
+| Where | `kubejs/server_scripts/<any name>.js` in the instance or server folder |
+| Apply | `/reload`, or restart |
+| Errors | `logs/kubejs/server.log`, with the file and line |
+
+| Change | In a script | Same rules as |
+|---|---|---|
+| Server options | `DimensionalFluxMinerEvents.config` ([15.1](#151-server-options)) | [2](#2-the-server-configuration-file) |
+| Recipes of the five types | `ServerEvents.recipes` with `event.recipes.dimensionalfluxminer.*` ([15.2](#152-recipes)) | [6](#6-recipes) |
+| Dimensional Matter values | `DimensionalFluxMinerEvents.matterValues` ([15.3](#153-dimensional-matter-values)) | [5](#5-dimensional-matter-values) |
+| Resource Profiles | `DimensionalFluxMinerEvents.resourceProfiles` ([15.4](#154-resource-profiles)) | [4](#4-resource-profiles-the-ores-the-miner-makes) |
+| Block and entity tags | `ServerEvents.tags` ([15.5](#155-tags)) | [7](#7-dimensional-death-block-tags), [8](#8-entity-tags) |
+
+Scripts and datapacks can be used together. A script's change is applied on top of the datapacks: its value wins
+when both change the same thing.
+
+### 15.1 Server options
+
+```js
+DimensionalFluxMinerEvents.config(event => {
+  event.set('miner.energyPerAttempt', 100000)
+  event.set('crusher.speedByLevel', [0.01, 0.03, 0.1, 0.3, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
+  event.set('smelter.externalAlloyRecipeTypes', ['enderio:alloy_smelting'])
+  event.set('corruption.blockedDimensions', ['minecraft:the_nether'])
+  console.info(event.keys) // every key
+})
+```
+
+- The keys, types and limits are the ones of the [option table](#all-options). A list is a JavaScript array.
+- An unknown key or a value the file would not accept is an error in the script log, with the allowed range, and that
+  value is not used. The other options keep their values.
+- A value set by a script **wins over the file** (the main file and a world's `serverconfig` alike) while the script
+  sets it. It is never written to the file: delete the line and `/reload`, and the file's value is back.
+- The value is sent to the players, so the guide and the machine screens show it.
+- The interactions of section 2 do not change: `minimumProductionRate` must stay below `maximumProductionRate`, a level
+  table must list the ten levels, and so on.
+- `smelter.externalAlloyRecipeTypes` set by a script already applies to the recipes of the same reload.
+
+### 15.2 Recipes
+
+KubeJS knows the five recipe types of the mod. The arguments come in the order below; every other field has a
+function of its own.
+
+| Type | Script | Functions |
+|---|---|---|
+| `crushing` | `crushing(result, ingredient)` | |
+| `ore_crushing` | `ore_crushing(ingredient)`, `ore_crushing(result, ingredient)` or `ore_crushing(result, ingredient, base, upgrade)` | `.result(item)`, `.resultTag(tag)`, `.baseCount(n)`, `.efficiencyUpgradeCount(n)` |
+| `alloying` | `alloying(result, [ingredients])`, one to three ingredients, `'4x #c:nuggets/gold'` for a count | `.byproduct({id, count, chance})`, `.processingTicks(n)` (or `.time(n)`), `.xp(n)` |
+| `tag_smelting` | `tag_smelting(resultTag, ingredient)` | `.xp(n)`, `.cookingTime(n)` |
+| `tag_blasting` | `tag_blasting(resultTag, ingredient)` | `.xp(n)`, `.cookingTime(n)` |
+
+```js
+ServerEvents.recipes(event => {
+  const dfm = event.recipes.dimensionalfluxminer
+
+  // Crusher: a fixed result.
+  dfm.crushing('3x minecraft:blaze_powder', 'minecraft:blaze_rod').id('my_modpack:crushing/blaze_rod')
+
+  // Crusher: ore yield from a tag (2, 3 with the upgrade), and diamonds 1 / 2 replacing the mod's recipe.
+  dfm.ore_crushing('#c:ores/copper').resultTag('c:raw_materials/copper').id('my_modpack:ore_crushing/copper')
+  event.remove({ id: 'dimensionalfluxminer:ore_processing/diamond' })
+  dfm.ore_crushing('minecraft:diamond', '#c:ores/diamond', 1, 2).id('my_modpack:ore_crushing/diamond')
+
+  // Alloy Smelter: three ingredients, a byproduct with a 25% chance.
+  dfm.alloying('minecraft:gilded_blackstone', ['minecraft:blackstone', '4x #c:nuggets/gold', 'minecraft:magma_cream'])
+    .byproduct({ id: 'minecraft:gold_nugget', count: 1, chance: 0.25 })
+    .processingTicks(200)
+    .xp(0.5)
+    .id('my_modpack:alloying/gilded_blackstone')
+
+  // Only when the mod that adds zinc is installed.
+  if (Platform.isLoaded('create')) {
+    dfm.tag_blasting('c:ingots/zinc', 'dimensionalfluxminer:dust_zinc').xp(0.7).id('my_modpack:blasting/dust_zinc')
+  }
+
+  // Remove every alloy of the mod.
+  // event.remove({ type: 'dimensionalfluxminer:alloying' })
+})
+```
+
+- Every rule of section 6 applies: a recipe needs `result` **or** `resultTag` (ore crushing), one to three alloy
+  ingredients, `chance` from 0 to 1, and so on. A broken recipe is an error in the script log.
+- KubeJS refuses an empty ingredient, so a tag that no installed mod fills (`#c:ores/zinc` without a zinc mod) is an
+  error. Put the recipes of optional mods inside `if (Platform.isLoaded('<mod>'))`.
+- `event.custom({ type: 'dimensionalfluxminer:...', ... })` with the JSON of section 6 also works.
+- `.id(...)` is optional, but a fixed ID keeps the recipe the same after every reload. Use your own namespace.
+- Removing the recipe of an item the progression needs can make the Miner impossible to build
+  ([6.5](#65-replacing-and-removing-recipes)).
+
+### 15.3 Dimensional Matter values
+
+```js
+DimensionalFluxMinerEvents.matterValues(event => {
+  event.set('minecraft:cobblestone', 0.4, ['minecraft:overworld']) // only in the Overworld
+  event.set('minecraft:tuff', 0.5)                                  // every dimension
+  event.set('#c:ores/tin', 1.0)                                     // a tag
+  event.remove('minecraft:dragon_egg')
+  // event.replaceAll()  // drop the values of the mod and of every datapack first
+})
+```
+
+| Function | Meaning |
+|---|---|
+| `set(item, dm)` | Value of an item or a tag (`'#namespace:path'`), accepted in every dimension |
+| `set(item, dm, dimensions)` | Accepted only in the listed dimensions (an empty list means every dimension) |
+| `remove(item)` | Removes the value of an item or tag |
+| `replaceAll()` | Drops every value of the mod and of the datapacks before the script's |
+
+- The script writes the same `matter_value` data map, above every datapack, so a script value wins and replaces the
+  whole earlier value of that item: keep `dimensions` when you change only the DM.
+- `dm` goes from 0 to 5 000 and is rounded to 0.1 DM ([5.2](#52-precision)). An unknown item is an error in the script
+  log. The fixed rules of [5.3](#53-rules-the-data-map-cannot-change) still apply (ores only where they generate, at
+  most 2 DM for ores the Miner makes, variants).
+
+### 15.4 Resource Profiles
+
+```js
+DimensionalFluxMinerEvents.resourceProfiles(event => {
+  event.add({ resource: 'minecraft:diamond_ore', dimension: 'minecraft:overworld', weight: 0.03 })
+  // examplemod: a placeholder, use the real IDs of the mod.
+  event.add({ resource: 'examplemod:tin_ore', dimension: 'minecraft:overworld', family: 'c:tin', weight: 0.05,
+              crusher_output: 'examplemod:raw_tin' })
+  event.add({ dimension: 'minecraft:the_end', empty_share: 0.8, min_families: 3, curve: 'linear' })
+  event.remove('minecraft:emerald_ore', 'minecraft:overworld')
+  event.remove('minecraft:deepslate_emerald_ore') // every dimension
+})
+```
+
+| Function | Meaning |
+|---|---|
+| `add(entry)` | One entry with the fields of [4.3](#43-entry-fields): a resource entry, or a void rule when it has `empty_share` |
+| `remove(resource)` | `enabled: false` in every dimension |
+| `remove(resource, dimension)` | `enabled: false` in one dimension |
+
+- The entries are applied after every datapack entry, so a script entry wins for the same ore, and a void rule of a
+  script replaces the datapack rule of its dimension (the End's rule of the mod included).
+- Every rule of section 4 applies: `weight` is a share, an ore added where it does not generate needs `weight`, a
+  family disappears only when all its ores are removed, every family needs a Crusher product.
+- An invalid field or an unknown item is an error in the script log; the entry is not used.
+
+### 15.5 Tags
+
+The tags of sections 7 and 8 are ordinary tags, changed with KubeJS's own tag event:
+
+```js
+ServerEvents.tags('block', event => {
+  event.add('dimensionalfluxminer:corruptible_stone', 'create:limestone')
+  event.add('dimensionalfluxminer:corruption_blacklist', 'minecraft:calcite')
+  event.remove('dimensionalfluxminer:corruptible_sediment', 'minecraft:red_sand')
+})
+
+ServerEvents.tags('entity_type', event => {
+  event.add('dimensionalfluxminer:corrupted_water_heal_blacklist', 'minecraft:elder_guardian')
+})
+```
+
+The rules of sections 7 and 8 do not change: a block in one conversion tag only, the blacklist always wins, blocks with
+a block entity are never converted.
+
+### 15.6 Checking a script
+
+- After `/reload`, `logs/kubejs/server.log` says how many scripts loaded and lists every error with its file and line.
+- The checks of [13](#13-applying-and-checking-changes) are the same: the guide and the screens for server options,
+  EMI or JEI for recipes, the filter tooltips for Resource Profiles, the guide's matter table for DM values.
+- Changing a script never rewrites the configuration file or blocks already in the world.

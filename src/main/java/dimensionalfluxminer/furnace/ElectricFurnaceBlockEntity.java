@@ -1,4 +1,4 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
@@ -39,7 +39,7 @@ import net.neoforged.neoforge.fluids.FluidUtil;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
-public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
+public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity {
     public static final int LANES = 3;
     /** Rate 10: operations of one lane per logical tick (furnace items, or standard alloy executions). */
     public static final int RATE_TEN_OPERATIONS_PER_LANE = 64;
@@ -81,17 +81,17 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     private final StoredExperience experience = new StoredExperience();
     private final ExperienceFluidHandler experienceHandler = new ExperienceFluidHandler(experience, this::setChanged);
 
-    private SmelterMode mode = SmelterMode.ALL;
+    private ElectricFurnaceMode mode = ElectricFurnaceMode.ALL;
     private boolean autoSplit;
 
-    private final SmelterRecipes recipes = new SmelterRecipes(LANES);
+    private final ElectricFurnaceRecipes recipes = new ElectricFurnaceRecipes(LANES);
 
     /** Ingredients shown inside the chamber (client render data). */
     private List<ItemStack> chamber = List.of();
     private double[] laneProgress = new double[LANES];
 
-    public AlloySmelterBlockEntity(BlockPos pos, BlockState state) {
-        super(DfmBlockEntities.ALLOY_SMELTER.get(), pos, state, SideRules.SMELTER);
+    public ElectricFurnaceBlockEntity(BlockPos pos, BlockState state) {
+        super(DfmBlockEntities.ELECTRIC_FURNACE.get(), pos, state, SideRules.ELECTRIC_FURNACE);
         for (int i = 0; i < LANES; i++) {
             inputs[i] = new ItemQueue(1);
             outputs[i] = new ItemQueue(1);
@@ -101,7 +101,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         }
     }
 
-    public SmelterMode mode() {
+    public ElectricFurnaceMode mode() {
         return mode;
     }
 
@@ -147,8 +147,8 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
      */
     @Override
     public long effectivePowerLimit() {
-        double alloy = SmelterEnergy.alloyStandardPower(rate, hasEfficiencyUpgrade());
-        double furnace = mode.canSmelt() ? SmelterEnergy.furnaceStandardPower(rate, hasEfficiencyUpgrade()) : 0.0;
+        double alloy = ElectricFurnaceEnergy.alloyStandardPower(rate, hasEfficiencyUpgrade());
+        double furnace = mode.canSmelt() ? ElectricFurnaceEnergy.furnaceStandardPower(rate, hasEfficiencyUpgrade()) : 0.0;
         return RateScale.powerLimit(Math.max(alloy, furnace));
     }
 
@@ -172,7 +172,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     }
 
     /** Changes the mode; outputs keep their items and stay extractable in every mode. */
-    public boolean setMode(SmelterMode next) {
+    public boolean setMode(ElectricFurnaceMode next) {
         if (next == mode) {
             return false;
         }
@@ -202,7 +202,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
 
     /** Raw -> Ingot of the same material with a single result, the only case eligible for the bulk yield. */
     public static boolean isRawToIngot(ItemStack input, ItemStack result) {
-        return SmelterRecipes.isRawToIngot(input, result);
+        return ElectricFurnaceRecipes.isRawToIngot(input, result);
     }
     private boolean validForMode(ItemStack stack) {
         if (stack.isEmpty() || stack.is(dimensionalfluxminer.registry.DfmItems.EFFICIENCY_UPGRADE.get())) {
@@ -229,7 +229,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         }
         for (ItemQueue lane : inputs) {
             ItemStack other = lane.firstPrototype();
-            if (!other.isEmpty() && !ItemStack.isSameItemSameComponents(other, stack) && SmelterRecipes.alloyPartners(level, stack, other)) {
+            if (!other.isEmpty() && !ItemStack.isSameItemSameComponents(other, stack) && ElectricFurnaceRecipes.alloyPartners(level, stack, other)) {
                 return true;
             }
         }
@@ -260,7 +260,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
                 same.add(i);
             }
         }
-        if (mode == SmelterMode.ALLOY || (mode == SmelterMode.ALL && keepForAlloy(stack))) {
+        if (mode == ElectricFurnaceMode.ALLOY || (mode == ElectricFurnaceMode.ALL && keepForAlloy(stack))) {
             // An alloy ingredient stays in a single lane so the combined recipe keeps one lane per ingredient.
             int lane = !same.isEmpty() ? same.getFirst() : !empty.isEmpty() ? empty.getFirst() : -1;
             return lane < 0 ? stack : inputs[lane].insert(stack, simulate);
@@ -325,7 +325,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
      * and in ALL mode the alloy ingredients kept for an alloy ({@link #keepForAlloy}), are never split.
      */
     private void rebalanceLanes() {
-        if (!autoSplit || !mode.canSmelt() || (mode == SmelterMode.ALL && alloyMatches())) {
+        if (!autoSplit || !mode.canSmelt() || (mode == ElectricFurnaceMode.ALL && alloyMatches())) {
             return;
         }
         List<ItemStack> kinds = new ArrayList<>();
@@ -351,7 +351,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         long biggestTotal = -1;
         for (int k = 0; k < kinds.size(); k++) {
             ItemStack prototype = kinds.get(k);
-            if (cooking(prototype).isEmpty() || (mode == SmelterMode.ALL && keepForAlloy(prototype))) {
+            if (cooking(prototype).isEmpty() || (mode == ElectricFurnaceMode.ALL && keepForAlloy(prototype))) {
                 kindLanes.set(k, List.of());
                 continue;
             }
@@ -404,10 +404,10 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
 
     /** True while the lanes run (or wait for) an alloy instead of smelting each lane. */
     private boolean alloyRunning() {
-        if (mode == SmelterMode.ALLOY) {
+        if (mode == ElectricFurnaceMode.ALLOY) {
             return true;
         }
-        return mode == SmelterMode.ALL && level != null && alloyMatches();
+        return mode == ElectricFurnaceMode.ALL && level != null && alloyMatches();
     }
 
     private boolean alloyMatches() {
@@ -420,7 +420,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
 
     private boolean processNormal() {
         boolean upgrade = hasEfficiencyUpgrade();
-        double energyPerItem = SmelterEnergy.furnaceEnergyPerItem(rate, upgrade);
+        double energyPerItem = ElectricFurnaceEnergy.furnaceEnergyPerItem(rate, upgrade);
         record LanePlan(int lane, int target, AbstractCookingRecipe recipe, int unitItems, ItemStack unitOutput,
                         double unitsPerTick, long limit) {
         }
@@ -459,7 +459,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             unitItems[lane] = items;
         }
         // Second pass: pick an output slot per lane, keeping track of what this cycle already planned per slot.
-        SmelterOutputPlanner planner = new SmelterOutputPlanner(outputs, units);
+        ElectricFurnaceOutputPlanner planner = new ElectricFurnaceOutputPlanner(outputs, units);
         List<LanePlan> plans = new ArrayList<>();
         boolean blocked = false;
         for (int lane = 0; lane < LANES; lane++) {
@@ -475,7 +475,7 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             long fit = planner.room(target, unit) / unit.getCount();
             long limit = Math.min(inputs[lane].firstCount() / unitItems[lane], fit);
             planner.reserve(target, unit, limit * unit.getCount());
-            double itemsPerTick = SmelterEnergy.laneOperationsPerTick(rate, recipes[lane].getCookingTime());
+            double itemsPerTick = ElectricFurnaceEnergy.laneOperationsPerTick(rate, recipes[lane].getCookingTime());
             plans.add(new LanePlan(lane, target, recipes[lane], unitItems[lane], unit, itemsPerTick / unitItems[lane], limit));
         }
         if (plans.isEmpty()) {
@@ -554,9 +554,9 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
             status = "output_blocked";
             return false;
         }
-        double opsPerTick = SmelterEnergy.alloyExecutionsPerTick(rate, recipe);
+        double opsPerTick = ElectricFurnaceEnergy.alloyExecutionsPerTick(rate, recipe);
         // Alloy profile: an execution costs its units of work, whatever the recipe's duration.
-        double energyPerExecution = SmelterEnergy.alloyExecutionEnergy(recipe, rate, hasEfficiencyUpgrade());
+        double energyPerExecution = ElectricFurnaceEnergy.alloyExecutionEnergy(recipe, rate, hasEfficiencyUpgrade());
         double demand = RateScale.power(opsPerTick, energyPerExecution);
         double available = energyBuffer.available();
         if (available <= 0 || demand <= 0) {
@@ -808,17 +808,17 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
         tag.putBoolean("alloy_running", alloyRunning());
         tag.putLong("xp_milli", experience.milli());
         // Lane speed of the current rate for a standard furnace recipe, shown on the rate tab.
-        tag.putDouble("lane_speed", SmelterEnergy.laneOperationsPerTick(rate, STANDARD_COOKING_TICKS));
+        tag.putDouble("lane_speed", ElectricFurnaceEnergy.laneOperationsPerTick(rate, STANDARD_COOKING_TICKS));
     }
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.dimensionalfluxminer.alloy_smelter");
+        return Component.translatable("block.dimensionalfluxminer.electric_furnace");
     }
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new SmelterMenu(containerId, inventory, this);
+        return new ElectricFurnaceMenu(containerId, inventory, this);
     }
 
     // ---------------------------------------------------------------- client data
@@ -866,9 +866,9 @@ public class AlloySmelterBlockEntity extends AbstractMachineBlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         try {
-            mode = SmelterMode.valueOf(tag.getString("mode"));
+            mode = ElectricFurnaceMode.valueOf(tag.getString("mode"));
         } catch (IllegalArgumentException e) {
-            mode = SmelterMode.ALL;
+            mode = ElectricFurnaceMode.ALL;
         }
         autoSplit = tag.getBoolean("auto_split");
         for (int i = 0; i < LANES; i++) {

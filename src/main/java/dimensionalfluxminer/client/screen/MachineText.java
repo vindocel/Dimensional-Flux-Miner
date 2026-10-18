@@ -28,7 +28,7 @@ final class MachineText {
         return status(d).copy().withColor(color & 0xFFFFFF);
     }
 
-    /** "Redstone Detection: NORMAL" line of Crusher and Smelter. */
+    /** "Redstone Detection: NORMAL" line of Crusher and Electric Furnace. */
     static Component redstone(CompoundTag d) {
         return Component.translatable("gui.dimensionalfluxminer.redstone_control",
                 Component.translatable(RedstoneMode.byName(d.getString("redstone_mode")).translationKey()));

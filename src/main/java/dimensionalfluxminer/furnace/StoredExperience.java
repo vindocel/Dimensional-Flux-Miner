@@ -1,7 +1,7 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 /**
- * Smelter experience kept in fixed point (1 XP = 1000 milli). The liquid view exposes whole millibuckets only:
+ * Electric Furnace experience kept in fixed point (1 XP = 1000 milli). The liquid view exposes whole millibuckets only:
  * 1 XP = 20 mB, so 1 mB = 50 milli-XP; fractions below 1 mB stay stored.
  */
 public final class StoredExperience {

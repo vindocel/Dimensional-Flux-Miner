@@ -79,13 +79,13 @@ public final class ProgressionGameTests {
 
     /**
      * Which items can be made from vanilla items, following the mod's recipes in order: crafting at once, Crusher
-     * recipes once a Crusher exists, Smelter alloys once a Smelter exists. Returns the step each item becomes available.
+     * recipes once a Crusher exists, Electric Furnace alloys once an Electric Furnace exists. Returns the step each item becomes available.
      * A step only uses what earlier steps made, so the result never depends on the order the recipes are listed in.
      */
     private static Map<Item, Integer> reachable(ServerLevel level, boolean withCrushing, boolean withAlloying) {
         Map<Item, Integer> step = new HashMap<>();
         Item crusher = DfmItems.MECHANICAL_CRUSHER.get();
-        Item smelter = DfmItems.ALLOY_SMELTER.get();
+        Item furnace = DfmItems.ELECTRIC_FURNACE.get();
         List<RecipeHolder<?>> recipes = new ArrayList<>(level.getRecipeManager().getRecipes());
         boolean changed = true;
         int round = 0;
@@ -103,7 +103,7 @@ public final class ProgressionGameTests {
                 }
                 boolean crushing = recipe.getType() == DfmRecipes.CRUSHING.get() || recipe.getType() == DfmRecipes.ORE_CRUSHING.get();
                 boolean alloying = recipe.getType() == DfmRecipes.ALLOYING.get();
-                if ((crushing && (!withCrushing || !known.contains(crusher))) || (alloying && (!withAlloying || !known.contains(smelter)))) {
+                if ((crushing && (!withCrushing || !known.contains(crusher))) || (alloying && (!withAlloying || !known.contains(furnace)))) {
                     continue;
                 }
                 boolean all = true;
@@ -131,7 +131,7 @@ public final class ProgressionGameTests {
     public static void progressionIsReachableInOrderAndPureSteelNeedsBothMachines(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Map<Item, Integer> step = reachable(level, true, true);
-        List<Item> chain = List.of(DfmItems.MECHANICAL_CRUSHER.get(), DfmItems.ALLOY_SMELTER.get(), DfmItems.INGOT_STEEL.get(),
+        List<Item> chain = List.of(DfmItems.MECHANICAL_CRUSHER.get(), DfmItems.ELECTRIC_FURNACE.get(), DfmItems.INGOT_STEEL.get(),
                 DfmItems.ENDER_EYE_REINFORCED.get(), DfmItems.REINFORCED_STRUCTURAL_GLASS.get(), DfmItems.STEEL_CHASSIS.get(),
                 DfmItems.VENTILATION_UNIT.get(), DfmItems.DIMENSIONAL_PORT.get(), DfmItems.MINER_TERMINAL.get(), DfmItems.QUANTUM_CORE.get(),
                 DfmItems.BASIC_DIMENSIONAL_CORE.get(), DfmItems.STABILIZED_DIMENSIONAL_CORE.get(), DfmItems.EFFICIENCY_UPGRADE.get());
@@ -141,11 +141,11 @@ public final class ProgressionGameTests {
             map.append(BuiltInRegistries.ITEM.getKey(item).getPath()).append('=').append(step.get(item)).append(' ');
         }
         DimensionalFluxMiner.LOGGER.info("Progression steps: {}", map.toString().trim());
-        helper.assertTrue(step.get(DfmItems.INGOT_STEEL.get()) > step.get(DfmItems.ALLOY_SMELTER.get()), "steel after the Smelter");
+        helper.assertTrue(step.get(DfmItems.INGOT_STEEL.get()) > step.get(DfmItems.ELECTRIC_FURNACE.get()), "steel after the Electric Furnace");
         helper.assertTrue(step.get(DfmItems.STEEL_CHASSIS.get()) > step.get(DfmItems.INGOT_STEEL.get()), "chassis after steel");
         helper.assertTrue(step.get(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()) > step.get(DfmItems.BASIC_DIMENSIONAL_CORE.get()), "stabilized after basic");
-        // Pure Steel cannot skip either machine: no Smelter, no steel; no Crusher, no calcite grains.
-        helper.assertFalse(reachable(level, true, false).containsKey(DfmItems.INGOT_STEEL.get()), "no steel without the Smelter");
+        // Pure Steel cannot skip either machine: no Electric Furnace, no steel; no Crusher, no calcite grains.
+        helper.assertFalse(reachable(level, true, false).containsKey(DfmItems.INGOT_STEEL.get()), "no steel without the Electric Furnace");
         helper.assertFalse(reachable(level, false, true).containsKey(DfmItems.INGOT_STEEL.get()), "no steel without the Crusher");
         helper.succeed();
     }

@@ -7,7 +7,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "dimensionalfluxminer:alloy_smelter"
+          "name": "dimensionalfluxminer:electric_furnace"
         }
       ],
       "conditions": [
@@ -17,5 +17,5 @@
       ]
     }
   ],
-  "random_sequence": "dimensionalfluxminer:blocks/alloy_smelter"
+  "random_sequence": "dimensionalfluxminer:blocks/electric_furnace"
 }

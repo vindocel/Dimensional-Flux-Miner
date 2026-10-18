@@ -1,4 +1,4 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 import com.mojang.serialization.MapCodec;
 import dimensionalfluxminer.content.DfmStateProperties;
@@ -12,10 +12,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class AlloySmelterBlock extends HorizontalMachineBlock {
-    public static final MapCodec<AlloySmelterBlock> CODEC = simpleCodec(AlloySmelterBlock::new);
+public class ElectricFurnaceBlock extends HorizontalMachineBlock {
+    public static final MapCodec<ElectricFurnaceBlock> CODEC = simpleCodec(ElectricFurnaceBlock::new);
 
-    public AlloySmelterBlock(Properties properties) {
+    public ElectricFurnaceBlock(Properties properties) {
         super(properties);
     }
 
@@ -31,11 +31,11 @@ public class AlloySmelterBlock extends HorizontalMachineBlock {
 
     @Override
     protected BlockEntityType<? extends AbstractMachineBlockEntity> blockEntityType() {
-        return DfmBlockEntities.ALLOY_SMELTER.get();
+        return DfmBlockEntities.ELECTRIC_FURNACE.get();
     }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new AlloySmelterBlockEntity(pos, state);
+        return new ElectricFurnaceBlockEntity(pos, state);
     }
 }

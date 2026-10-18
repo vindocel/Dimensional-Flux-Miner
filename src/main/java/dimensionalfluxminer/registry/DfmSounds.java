@@ -9,7 +9,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class DfmSounds {
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(Registries.SOUND_EVENT, DimensionalFluxMiner.MOD_ID);
 
-    public static final DeferredHolder<SoundEvent, SoundEvent> ALLOY_SMELTER_RUNNING = register("machine.alloy_smelter.running");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ELECTRIC_FURNACE_RUNNING = register("machine.electric_furnace.running");
     public static final DeferredHolder<SoundEvent, SoundEvent> MINER_RUNNING = register("machine.dimensional_flux_miner.running");
     public static final DeferredHolder<SoundEvent, SoundEvent> MINER_POWER_ON = register("machine.dimensional_flux_miner.power_on");
     public static final DeferredHolder<SoundEvent, SoundEvent> CRUSHER_RUNNING = register("machine.mechanical_crusher.running");

@@ -4,7 +4,7 @@ import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.miner.MinerLinkBlockEntity;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -20,8 +20,8 @@ public final class DfmBlockEntities {
             BLOCK_ENTITIES.register("mechanical_crusher", () -> BlockEntityType.Builder.of(MechanicalCrusherBlockEntity::new, DfmBlocks.MECHANICAL_CRUSHER.get()).build(null));
 
     @SuppressWarnings("DataFlowIssue")
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AlloySmelterBlockEntity>> ALLOY_SMELTER =
-            BLOCK_ENTITIES.register("alloy_smelter", () -> BlockEntityType.Builder.of(AlloySmelterBlockEntity::new, DfmBlocks.ALLOY_SMELTER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ElectricFurnaceBlockEntity>> ELECTRIC_FURNACE =
+            BLOCK_ENTITIES.register("electric_furnace", () -> BlockEntityType.Builder.of(ElectricFurnaceBlockEntity::new, DfmBlocks.ELECTRIC_FURNACE.get()).build(null));
 
     @SuppressWarnings("DataFlowIssue")
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MinerControllerBlockEntity>> MINER_CONTROLLER =
@@ -40,9 +40,9 @@ public final class DfmBlockEntities {
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MINER_LINK.get(), MinerLinkBlockEntity::energyStorage);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, MECHANICAL_CRUSHER.get(), (be, side) -> be.itemHandlerFor(side));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MECHANICAL_CRUSHER.get(), (be, side) -> be.energyFor(side));
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ALLOY_SMELTER.get(), (be, side) -> be.itemHandlerFor(side));
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ALLOY_SMELTER.get(), (be, side) -> be.energyFor(side));
-        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ALLOY_SMELTER.get(), (be, side) -> be.experienceFor(side));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ELECTRIC_FURNACE.get(), (be, side) -> be.itemHandlerFor(side));
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ELECTRIC_FURNACE.get(), (be, side) -> be.energyFor(side));
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ELECTRIC_FURNACE.get(), (be, side) -> be.experienceFor(side));
     }
 
     private DfmBlockEntities() {

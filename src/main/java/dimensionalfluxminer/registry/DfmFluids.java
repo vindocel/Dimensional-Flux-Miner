@@ -26,7 +26,7 @@ public final class DfmFluids {
     public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, DimensionalFluxMiner.MOD_ID);
     public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(Registries.FLUID, DimensionalFluxMiner.MOD_ID);
 
-    /** Output-only transport representation of the Alloy Smelter's stored experience. */
+    /** Output-only transport representation of the Electric Furnace's stored experience. */
     public static final DeferredHolder<FluidType, FluidType> LIQUID_EXPERIENCE_TYPE = FLUID_TYPES.register("liquid_experience",
             () -> new FluidType(FluidType.Properties.create()
                     .descriptionId("fluid_type.dimensionalfluxminer.liquid_experience")

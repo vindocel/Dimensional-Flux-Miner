@@ -13,10 +13,10 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `registry` | Every deferred register: blocks, items, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
 | `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping |
 | `machine.math` | Pure math, covered by JUnit: `RateScale` (Rate 1–10 curve and FE/t), `MinerProductionCurve`, `DynamicEnergyBuffer` (buffer and fractional FE debt), `WorkAccumulator` |
-| `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone), per-machine rules, `NodeInputLanes` (lanes of the network node item inputs on the Smelter Alloy profile) |
+| `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone), per-machine rules, `NodeInputLanes` (lanes of the network node item inputs on the Electric Furnace Alloy profile) |
 | `menu` | `MachineMenu` and the menu sync used by every screen |
 | `crusher` | Mechanical Crusher: block, block entity, `CrusherProcessing` (recipe lookup and products), menu |
-| `smelter` | Alloy Smelter: block entity plus the pieces below |
+| `electric_furnace` | Electric Furnace: block entity plus the pieces below |
 | `miner` | Dimensional Flux Miner: multiblock, controller and the pieces below |
 | `miner.profile` | Resource Profiles: what the Miner can find in each dimension |
 | `miner.survey` | The Basic core's survey of drainable columns |
@@ -34,7 +34,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 
 ## The machines
 
-### Crusher and Smelter
+### Crusher and Electric Furnace
 
 Both extend `AbstractMachineBlockEntity`, which owns the energy buffer, Rate, upgrade slot, the automation of each
 material (Auto Input / Auto Eject of items, Auto Eject of fluids through `autoEjectFluidCycle`),
@@ -42,15 +42,15 @@ Side Configuration, redstone mode, client sync and drops. Each server tick runs 
 of the same game time (tick accelerators) runs one more full cycle. A subclass implements `processCycle`,
 `autoInputCycle`, `autoEjectCycle`, `createItemHandler(route)` and `effectivePowerLimit`.
 
-**Alloy Smelter** (`smelter`):
+**Electric Furnace** (`electric_furnace`):
 
 | Class | Responsibility |
 |---|---|
-| `AlloySmelterBlockEntity` | Slots, modes, lanes, the furnace and alloy processing of each cycle, XP, persistence |
-| `SmelterEnergy` | Energy per profile: furnace FE per item, alloy FE per work unit, work units of a recipe, FE/t of a standard recipe |
-| `SmelterRecipes` | Recipe caches: furnace recipe per item (cleared when the `RecipeManager` changes), last alloy, alloy ingredient set |
-| `SmelterOutputPlanner` | Which of the three outputs a lane or an alloy writes to, and how much room is left |
-| `SmelterMode`, `AutoSplit`, `BulkBonus`, `StoredExperience`, `ExperienceFluidHandler` | Mode rules, even spreading, raw-ore bonus, fixed-point XP and its fluid view |
+| `ElectricFurnaceBlockEntity` | Slots, modes, lanes, the furnace and alloy processing of each cycle, XP, persistence |
+| `ElectricFurnaceEnergy` | Energy per profile: furnace FE per item, alloy FE per work unit, work units of a recipe, FE/t of a standard recipe |
+| `ElectricFurnaceRecipes` | Recipe caches: furnace recipe per item (cleared when the `RecipeManager` changes), last alloy, alloy ingredient set |
+| `ElectricFurnaceOutputPlanner` | Which of the three outputs a lane or an alloy writes to, and how much room is left |
+| `ElectricFurnaceMode`, `AutoSplit`, `BulkBonus`, `StoredExperience`, `ExperienceFluidHandler` | Mode rules, even spreading, raw-ore bonus, fixed-point XP and its fluid view |
 
 **Mechanical Crusher** (`crusher`): `MechanicalCrusherBlockEntity` runs the cycle and `CrusherProcessing` finds the
 products (explicit recipes first, then the common tags).
@@ -107,7 +107,7 @@ caches one per dimension and rebuilds them on reload; it combines the datapack e
 | `data/<ns>/dimensional_miner_resources/*.json` | `ResourceProfiles` (overrides and dimension rules) |
 | `data/<ns>/data_maps/item/matter_value.json` | `MatterValues` |
 | `data/dimensionalfluxminer/tags/block/corrupt*.json` | `CorruptionService` |
-| recipe types | `crusher`, `smelter`, `recipe` |
+| recipe types | `crusher`, `electric_furnace`, `recipe` |
 | `data/dimensionalfluxminer/kubejs/recipe_schema/*.json` | KubeJS only: the script form of each recipe type |
 
 Integrations with other mods use only optional data (`neoforge:conditions` with `mod_loaded`, tag entries with
@@ -136,7 +136,7 @@ are part of the save format; the extracted classes write the same keys as before
 | Suite | Covers |
 |---|---|
 | `MinerGameTests`, `MatterGameTests`, `ProgressionGameTests` | Formation, cycle, DM, filter, profiles, the void, corruption |
-| `CrusherGameTests`, `SmelterGameTests` | Recipes, slots, modes, XP, side configuration |
+| `CrusherGameTests`, `ElectricFurnaceGameTests` | Recipes, slots, modes, XP, side configuration |
 | `EnergyGameTests`, `ThroughputGameTests` | FE per operation, Rate 1–10, buffers, tick acceleration |
 | `ProtectionGameTests` | Config protections and claims (a test claim system, and FTB Chunks when present in `run/mods`) |
 | `OptimizationGameTests` | Every optimisation gives exactly the result of the plain code |

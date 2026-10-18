@@ -11,6 +11,10 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 [![License](https://img.shields.io/badge/License-EPL--2.0-9366DE?style=for-the-badge)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/vindocel/Dimensional-Flux-Miner/ci.yml?style=for-the-badge&label=CI)](https://github.com/vindocel/Dimensional-Flux-Miner/actions/workflows/ci.yml)
 
+[![Visit the showcase](https://img.shields.io/badge/Visit%20the%20showcase-vindocel.github.io%2FShowcase--DFM-8A5CF5?style=for-the-badge)](https://vindocel.github.io/Showcase-DFM/)
+
+**See every machine, the Dimensional Death and the guide in action on the [showcase site](https://vindocel.github.io/Showcase-DFM/).**
+
 </div>
 
 ---
@@ -22,7 +26,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 - [📖 Dimensional Flux Guide](#-dimensional-flux-guide)
 - [⛏️ Dimensional Flux Miner](#%EF%B8%8F-dimensional-flux-miner)
 - [⚙️ Mechanical Crusher](#%EF%B8%8F-mechanical-crusher)
-- [🔥 Alloy Smelter](#-alloy-smelter)
+- [🔥 Electric Furnace](#-electric-furnace)
 - [⚡ Speed and the Efficiency Upgrade](#-speed-and-the-efficiency-upgrade)
 - [☠️ Dimensional Death](#%EF%B8%8F-dimensional-death)
 - [🏆 Advancements](#-advancements)
@@ -40,7 +44,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 |---|---|
 | ⛏️ **Dimensional Flux Miner** | A 3×3×3 multiblock that turns energy (FE) and **Dimensional Matter (DM)** into the ores that really generate in its dimension, without breaking a single block of the world. |
 | ⚙️ **Mechanical Crusher** | Doubles your ores (triples them with the upgrade) and grinds ingots, raw ores and gems into dust. |
-| 🔥 **Alloy Smelter** | A three-lane electric furnace that also makes alloys, with a raw-ore bonus and stored experience. |
+| 🔥 **Electric Furnace** | A three-lane electric furnace that also makes alloys, with a raw-ore bonus and stored experience. |
 | ⚡ **Speed 1–10** | No speed upgrades to craft: every machine has a speed selector, limited only by your power generation. One machine from early game to end game. |
 | ☠️ **Dimensional Death** | The price of the Basic core's drain: the land, the water and the life around it rot forever. |
 | 📖 **Dimensional Flux Guide** | An animated book with the whole mod explained, in game. |
@@ -59,9 +63,9 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 
 ## 🚀 Getting started
 
-1. 🧱 Build a **Mechanical Crusher** and an **Alloy Smelter** (vanilla items only).
+1. 🧱 Build a **Mechanical Crusher** and an **Electric Furnace** (vanilla items only).
 2. ⚙️ In the Crusher, turn iron ingots into **Iron Dust**, coal into **Coal Dust** and calcite into **Calcite Grains**.
-3. 🔥 In the Smelter, combine the three into **Pure Steel** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
+3. 🔥 In the Electric Furnace, combine the three into **Pure Steel** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
 4. 👁️ With Pure Steel, craft the **Reinforced Eye of Ender**, the Miner parts and a **Dimensional Core**.
 5. ⛏️ Build the Miner, insert the core, connect power and press the power button.
 
@@ -75,7 +79,7 @@ Your first **Pure Steel** earns you the guide (through the "Forged in the Flux" 
 - 📄 **Real pages**: the presentation and the clickable **contents** open the book; every chapter starts on a left page and the pages flow one after another, with a page-turn animation and sound. The violet ribbon goes back to the contents.
 - 🧊 **Interactive 3D Miner**: rotate the assembly, look at one layer at a time, switch between loose parts and the formed machine, hover a part to isolate it.
 - 🧾 **Live data**: crafting recipes come from the server, the speed tables and matter values follow the server configuration and datapacks.
-- 🔎 Item tooltips everywhere and buttons that open the machine recipes in EMI / JEI.
+- 🔎 Item tooltips everywhere and buttons that open the machine recipes in EMI / JEI. The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
 
 All text lives in the language files (`guide.dimensionalfluxminer.*`), in English and Brazilian Portuguese.
 
@@ -156,7 +160,7 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 
 ---
 
-## 🔥 Alloy Smelter
+## 🔥 Electric Furnace
 
 | Mode | Behavior |
 |---|---|
@@ -170,7 +174,7 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 - 🔁 **Automation per material** (Side Configuration): items have Auto Input and Auto Eject; Liquid Experience, which only leaves the machine, has its own Auto Eject, switched on and off apart from the items.
 - 🧪 Also runs the alloy recipes of other mods (EnderIO and Oritech by default).
 
-> 💡 **Crusher + Smelter**: 1 ore → **3** ingots without upgrades, **4.5** with the upgrade in the Crusher, **4** with it in the Smelter, **6** with both — against 1 ingot in a common furnace.
+> 💡 **Crusher + Electric Furnace**: 1 ore → **3** ingots without upgrades, **4.5** with the upgrade in the Crusher, **4** with it in the Electric Furnace, **6** with both — against 1 ingot in a common furnace.
 
 <details>
 <summary>🔬 Lane and output details</summary>
@@ -191,17 +195,17 @@ There is **no speed upgrade to craft**. Every machine has a **speed selector fro
 |---|---|---|---|
 | ⛏️ Miner | 200 000 FE per attempt | 2 500 FE/t — 0.25 ores/s | 12 800 000 FE/t — 1 280 ores/s |
 | ⚙️ Crusher | 20 000 FE per item | 100 FE/t — 1 item every 10 s | 1 280 000 FE/t — 1 280 items/s |
-| 🔥 Alloy Smelter (furnace) | 50 000 / 3 FE per item | 250 FE/t (3 lanes) — 0.1 items/s per lane | 3 200 000 FE/t — 1 280 items/s per lane, 3 840 items/s in total |
-| 🔥 Alloy Smelter (alloy) | 30 000 FE per execution | 150 FE/t | 1 920 000 FE/t — 1 280 alloys/s |
+| 🔥 Electric Furnace (furnace) | 50 000 / 3 FE per item | 250 FE/t (3 lanes) — 0.1 items/s per lane | 3 200 000 FE/t — 1 280 items/s per lane, 3 840 items/s in total |
+| 🔥 Electric Furnace (alloy) | 30 000 FE per execution | 150 FE/t | 1 920 000 FE/t — 1 280 alloys/s |
 
-The Smelter values are for a standard recipe (10 s); the Efficiency Upgrade halves the Crusher and Smelter costs. Intermediate levels are geometric. The guide shows the full tables computed from the server configuration.
+The Electric Furnace values are for a standard recipe (10 s); the Efficiency Upgrade halves the Crusher and Electric Furnace costs. Intermediate levels are geometric. The guide shows the full tables computed from the server configuration.
 
 **Dimensional Efficiency Upgrade** (one per machine):
 
 | Machine | Effect |
 |---|---|
 | ⚙️ Crusher | half the energy, 3 products per ore instead of 2 |
-| 🔥 Alloy Smelter | half the energy, raw bonus 1 → 2 instead of 2 → 3 |
+| 🔥 Electric Furnace | half the energy, raw bonus 1 → 2 instead of 2 → 3 |
 | ⛏️ Miner | energy unchanged; up to +0.2 DM per injected item; ores rejected by the filter return DM |
 
 ---
@@ -224,7 +228,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 |---|---|---|
 | 📖 | **Dimensional Flux** | join the world |
 | ⚙️ | Ground and Sifted | build a Mechanical Crusher |
-| 🔥 | Electric Fire | build an Alloy Smelter |
+| 🔥 | Electric Fire | build an Electric Furnace |
 | 🔩 | Forged in the Flux | get your first Pure Steel (rewards the guide) |
 | ♻️ | Nothing Is Lost | turn Slag Aggregate back into steel |
 | 👁️ | Unbreakable Gaze | craft a Reinforced Eye of Ender |
@@ -248,19 +252,19 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 ## 🔌 Compatibility
 
 - 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face.
-- 📘 **EMI / JEI** (optional): Crushing, Alloy Smelter (Furnace) and Alloy Smelter (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
-- 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Smelter's stored XP in mB.
+- 📘 **EMI / JEI** (optional): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
+- 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
-- 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Smelter work through the common tags.
+- 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Electric Furnace work through the common tags.
 
 <details>
 <summary>🔬 More compatibility details</summary>
 
 - **Tick acceleration**: the energy buffer stays 10 × the FE/t of the speed, but the energy input also accepts what the extra cycles of one game time use, so a source that refills once per game time keeps an accelerated machine at full power. A machine whose accelerated cycles worked in the last tick always shows as powered and running. Covered by GameTests and observed in game with Soul Surge.
 - **Claims**: corruption respects **FTB Chunks** and **Open Parties and Claims** when they are installed (optional, no dependency). The Basic Core only corrupts unclaimed land or claims where the Miner's owner may build (team members in FTB Chunks; the claim's own access rules in Open Parties and Claims); a claim of someone else, or a check that fails, is never corrupted and gives no DM. A column is checked as a whole before anything changes, and Corrupted Water never flows or sinks across a claim border. Server config: `corruption.enabled`, `corruption.blockedDimensions`, `corruption.respectSpawnProtection`, `corruption.protectedRegions` and `corruption.claimFailurePolicy` (`deny` by default). Tested with FTB Chunks 2101.1.22; the Open Parties and Claims adapter follows its public API but was not run against the mod.
-- **Recipe viewers**: with both installed, only the EMI plugin runs. The Alloy Smelter categories use the machine's own processing element.
-- **Jade**: every machine answers the no-face (`null` side) capability query with read-only views; text too long for a bar slides from side to side. Taking Smelter results by hand collects the stored XP, as from a vanilla furnace.
-- **Alloys of other mods**: recipe types listed in `smelter.externalAlloyRecipeTypes` (default `enderio:alloy_smelting`, `oritech:foundry`) are read through their own codecs: 1–3 counted item ingredients, item results (a second result becomes the byproduct), experience and time. Recipes with fluids or more ingredients are skipped, and so are plain furnace copies. No other mod is needed to build or run.
+- **Recipe viewers**: with both installed, only the EMI plugin runs. The Electric Furnace categories use the machine's own processing element.
+- **Jade**: every machine answers the no-face (`null` side) capability query with read-only views; text too long for a bar slides from side to side. Taking Electric Furnace results by hand collects the stored XP, as from a vanilla furnace.
+- **Alloys of other mods**: recipe types listed in `electric_furnace.externalAlloyRecipeTypes` (default `enderio:alloy_smelting`, `oritech:foundry`) are read through their own codecs: 1–3 counted item ingredients, item results (a second result becomes the byproduct), experience and time. Recipes with fluids or more ingredients are skipped, and so are plain furnace copies. No other mod is needed to build or run.
 - **Resource Profiles**: vein size defaults to 8 when a mod's ore feature does not declare it; mods that add no ores contribute nothing.
 </details>
 

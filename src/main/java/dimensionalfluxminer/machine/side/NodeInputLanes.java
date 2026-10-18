@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Item input faces that network nodes set on a machine with dedicated input lanes (the Smelter in the Alloy profile).
+ * Item input faces that network nodes set on a machine with dedicated input lanes (the Electric Furnace in the Alloy profile).
  * Works on the ITEM routes of one profile, indexed by {@link RelativeFace} ordinal.
  * <ul>
  * <li>A face keeps the lane it already has (set by hand before the node) when no other node face uses it.</li>

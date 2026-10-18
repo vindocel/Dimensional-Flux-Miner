@@ -9,8 +9,8 @@ import dimensionalfluxminer.miner.MatterValues;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.registry.DfmItems;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
-import dimensionalfluxminer.smelter.SmelterMode;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -225,19 +225,19 @@ public final class EnergyGameTests {
         });
     }
 
-    // ---------------------------------------------------------------- Smelter
+    // ---------------------------------------------------------------- Electric Furnace
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
     public static void furnaceLanesChargeOnlyTheLanesThatWork(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            be.setMode(SmelterMode.NORMAL);
+            be.setMode(ElectricFurnaceMode.NORMAL);
             for (int level : new int[] {1, 5, 8}) {
                 be.setRate(level);
-                double lane = RateScale.smelterOperationsPerTick(level, AlloySmelterBlockEntity.STANDARD_COOKING_TICKS,
-                        AlloySmelterBlockEntity.RATE_TEN_OPERATIONS_PER_LANE);
+                double lane = RateScale.electricFurnaceOperationsPerTick(level, ElectricFurnaceBlockEntity.STANDARD_COOKING_TICKS,
+                        ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE);
                 for (int lanes = 1; lanes <= 3; lanes++) {
-                    for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+                    for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                         be.input(i).clear();
                         be.output(i).clear();
                     }
@@ -263,9 +263,9 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
     public static void furnaceItemCostIsTheSameForEveryDurationAndHalvedByTheUpgrade(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            be.setMode(SmelterMode.NORMAL);
+            be.setMode(ElectricFurnaceMode.NORMAL);
             // Sand smelts in 200 ticks; raw iron blasts in 100 ticks (and runs in pairs of 2 raw -> 3 ingots without the upgrade).
             for (boolean upgrade : new boolean[] {false, true}) {
                 be.upgradeSlot().setStackInSlot(0, upgrade ? new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()) : ItemStack.EMPTY);
@@ -274,9 +274,9 @@ public final class EnergyGameTests {
                     for (int level : new int[] {1, 4, 7, 10}) {
                         be.setRate(level);
                         // Changing the mode clears the progress, so every measure starts with this item alone.
-                        be.setMode(SmelterMode.ALL);
-                        be.setMode(SmelterMode.NORMAL);
-                        for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+                        be.setMode(ElectricFurnaceMode.ALL);
+                        be.setMode(ElectricFurnaceMode.NORMAL);
+                        for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                             be.input(i).clear();
                             be.output(i).clear();
                         }
@@ -307,9 +307,9 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
     public static void alloyChargesPerExecutionByItsUnitsOfWork(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            helper.assertTrue(be.setMode(SmelterMode.ALLOY), "ALLOY mode");
+            helper.assertTrue(be.setMode(ElectricFurnaceMode.ALLOY), "ALLOY mode");
             helper.assertTrue(be.effectivePowerLimit() == 1_920_000, "Rate 10 alloy profile (64 per tick): 1 920 000 FE/t, got " + be.effectivePowerLimit());
             be.setRate(1);
             helper.assertTrue(be.effectivePowerLimit() == 150, "Rate 1 alloy profile: 150 FE/t, got " + be.effectivePowerLimit());
@@ -318,9 +318,9 @@ public final class EnergyGameTests {
                     new ItemStack(Items.IRON_BLOCK), Optional.empty(), 200, 0F);
             AlloyingRecipe twice = new AlloyingRecipe(List.of(new SizedIngredient(Ingredient.of(Items.IRON_INGOT), 2),
                     new SizedIngredient(Ingredient.of(Items.COAL), 1)), new ItemStack(Items.IRON_BLOCK), Optional.empty(), 50, 0F);
-            helper.assertTrue(dimensionalfluxminer.smelter.SmelterEnergy.alloyExecutionEnergy(single, 10, false) == 30_000, "standard execution 30 000 FE");
-            helper.assertTrue(dimensionalfluxminer.smelter.SmelterEnergy.alloyExecutionEnergy(single, 10, true) == 15_000, "upgrade: 15 000 FE");
-            helper.assertTrue(dimensionalfluxminer.smelter.SmelterEnergy.alloyWorkUnits(twice) == 2 && dimensionalfluxminer.smelter.SmelterEnergy.alloyExecutionEnergy(twice, 10, false) == 60_000,
+            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(single, 10, false) == 30_000, "standard execution 30 000 FE");
+            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(single, 10, true) == 15_000, "upgrade: 15 000 FE");
+            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyWorkUnits(twice) == 2 && dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(twice, 10, false) == 60_000,
                     "two units of work: 60 000 FE, whatever the duration");
             // Steel (100 ticks) run for real: 30 000 FE per execution at every Rate, 15 000 with the upgrade.
             for (boolean upgrade : new boolean[] {false, true}) {
@@ -349,8 +349,8 @@ public final class EnergyGameTests {
         });
     }
 
-    private static void refillSteel(AlloySmelterBlockEntity be) {
-        for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+    private static void refillSteel(ElectricFurnaceBlockEntity be) {
+        for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
             be.input(i).clear();
             be.output(i).clear();
         }
@@ -361,13 +361,13 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small")
     public static void hybridModeChargesTheProfileOfTheWorkDone(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            helper.assertTrue(be.mode() == SmelterMode.ALL, "alloy + furnace");
+            helper.assertTrue(be.mode() == ElectricFurnaceMode.ALL, "alloy + furnace");
             be.setRate(4);
             for (int round = 0; round < 2; round++) {
                 // The lanes hold an alloy: only the alloy profile is billed.
-                for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+                for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                     be.input(i).clear();
                     be.output(i).clear();
                 }
@@ -377,18 +377,18 @@ public final class EnergyGameTests {
                 double debt = be.energyBuffer().debt();
                 cycle(helper, be);
                 double alloy = spent(be.energyBuffer(), stored, debt);
-                double expectedAlloy = RateScale.smelterOperationsPerTick(4, 100, AlloySmelterBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 30_000;
+                double expectedAlloy = RateScale.electricFurnaceOperationsPerTick(4, 100, ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 30_000;
                 helper.assertTrue(near(expectedAlloy, alloy), "alloy profile " + expectedAlloy + ", got " + alloy);
                 // The lanes smelt on their own: only the furnace profile is billed.
                 be.input(0).clear();
-                for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+                for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                     be.input(i).insert(new ItemStack(Items.SAND), 64, false);
                 }
                 stored = be.energyBuffer().stored();
                 debt = be.energyBuffer().debt();
                 cycle(helper, be);
                 double furnace = spent(be.energyBuffer(), stored, debt);
-                double expectedFurnace = 3 * RateScale.smelterOperationsPerTick(4, 200, AlloySmelterBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 50_000 / 3.0;
+                double expectedFurnace = 3 * RateScale.electricFurnaceOperationsPerTick(4, 200, ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 50_000 / 3.0;
                 helper.assertTrue(near(expectedFurnace, furnace), "furnace profile " + expectedFurnace + ", got " + furnace);
             }
             helper.succeed();
@@ -396,11 +396,11 @@ public final class EnergyGameTests {
     }
 
     @GameTest(template = "empty_small")
-    public static void smelterBlockedOutputOrNoEnergySpendsNothing(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+    public static void electricFurnaceBlockedOutputOrNoEnergySpendsNothing(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            be.setMode(SmelterMode.NORMAL);
-            for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+            be.setMode(ElectricFurnaceMode.NORMAL);
+            for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                 be.input(i).clear();
                 be.output(i).clear();
                 be.output(i).insert(new ItemStack(Items.STONE), 64, false);
@@ -414,7 +414,7 @@ public final class EnergyGameTests {
             }
             helper.assertTrue(spent(be.energyBuffer(), stored, debt) == 0 && be.input(0).firstCount() == 10, "blocked output: nothing spent");
             helper.assertTrue("output_blocked".equals(be.status()), "status output_blocked, got " + be.status());
-            for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+            for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                 be.output(i).clear();
             }
             be.energyBuffer().setStored(0);
@@ -429,12 +429,12 @@ public final class EnergyGameTests {
     }
 
     @GameTest(template = "empty_small")
-    public static void smelterProgressSurvivesSaveAndLoad(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+    public static void electricFurnaceProgressSurvivesSaveAndLoad(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            be.setMode(SmelterMode.NORMAL);
+            be.setMode(ElectricFurnaceMode.NORMAL);
             be.setRate(1);
-            for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+            for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
                 be.input(i).clear();
                 be.output(i).clear();
                 be.input(i).insert(new ItemStack(Items.SAND), 4, false);

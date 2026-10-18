@@ -1,11 +1,11 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-class SmelterMathTest {
+class ElectricFurnaceMathTest {
     @Test
     void bulkBonusWithoutUpgrade() {
         long[] expected = {0, 1, 3, 4, 6, 7};

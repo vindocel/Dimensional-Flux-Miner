@@ -1,6 +1,31 @@
 # Changelog
 
-## 0.2.2 — unreleased (since 0.2.1-beta.3)
+## 0.2.3 — unreleased (since 0.2.2)
+
+### ✨ Added
+
+- 🔎 **Items named in the guide, shown.** As in the online guide, the first time a chapter names an item that helps to
+  explain it (iron, coal and calcite on the progression path, the Miner parts, the cores...), the word gets a dotted
+  underline; hovering it shows the item's icon and name.
+
+### 🔄 Changed
+
+- 🔥 **The Alloy Smelter is now the Electric Furnace** (*Fornalha Elétrica*): an electric furnace that also has the
+  alloy modes. ⚠️ **Breaks older worlds:** the ID changed to `dimensionalfluxminer:electric_furnace` and the old
+  `alloy_smelter` is gone, so smelters placed or kept in older worlds disappear (with their items); craft them again.
+  Everything else that carried the old name changed too, with no migration:
+  - the crafting recipe (`dimensionalfluxminer:electric_furnace`), the loot table and the advancement
+    (`dimensionalfluxminer:electric_furnace`; the old one is not kept);
+  - the server config section `smelter` is now `electric_furnace` (`electric_furnace.alloyEnergyPerOperation`,
+    `furnaceEnergyPerThreeItems`, `speedByLevel`, `furnacePowerByLevel`, `alloyPowerByLevel`,
+    `externalAlloyRecipeTypes`): custom values under `smelter` are dropped and the defaults return;
+  - KubeJS scripts and datapacks that name the old block, recipe or config keys need the new names; the recipe types
+    (`alloying`, `tag_smelting`, `tag_blasting`) did not change;
+  - translation keys, sounds and textures of the machine moved to `electric_furnace`.
+- 🎨 **New mod logo.** The mod list shows the Dimensional Flux Miner logo (the split teal and violet cube with the
+  name), and Catalogue's list shows the cube alone as the mod's icon.
+
+## 0.2.2 — first release (since 0.2.1-beta.3)
 
 ### ✨ Added
 

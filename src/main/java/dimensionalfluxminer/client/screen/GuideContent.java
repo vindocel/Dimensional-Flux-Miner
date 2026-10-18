@@ -11,7 +11,7 @@ import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmItems;
 import dimensionalfluxminer.registry.DfmTags;
 import net.minecraft.core.registries.BuiltInRegistries;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -28,7 +28,7 @@ import net.minecraft.world.level.material.Fluid;
  * current server configuration.
  */
 final class GuideContent {
-    /** Cooking time of a standard furnace recipe, used for the Alloy Smelter table. */
+    /** Cooking time of a standard furnace recipe, used for the Electric Furnace table. */
     private static final int STANDARD_RECIPE_TICKS = 200;
 
     record Chapter(String id, Supplier<ItemStack> icon, List<GuideElement> elements) {
@@ -39,7 +39,7 @@ final class GuideContent {
 
     static List<Chapter> chapters() {
         return List.of(
-                start(), materials(), crusher(), smelter(),
+                start(), materials(), crusher(), furnace(),
                 assembly(), miner(), automation(), dimensions(), rates(), blight(), trouble());
     }
 
@@ -86,9 +86,9 @@ final class GuideContent {
         return b.chapter(DfmItems.MECHANICAL_CRUSHER);
     }
 
-    private static Chapter smelter() {
-        Builder b = new Builder("smelter");
-        b.item(DfmItems.ALLOY_SMELTER, "about").crafting("alloy_smelter");
+    private static Chapter furnace() {
+        Builder b = new Builder("electric_furnace");
+        b.item(DfmItems.ELECTRIC_FURNACE, "about").crafting("electric_furnace");
         b.heading("modes").text("modes");
         b.heading("bulk").text("bulk");
         b.heading("split").text("split");
@@ -98,7 +98,7 @@ final class GuideContent {
         b.viewer("viewer", RecipeViewers.ALLOYING, RecipeViewers.SMELTING);
         b.tip("multiply");
         b.tip("external");
-        return b.chapter(DfmItems.ALLOY_SMELTER);
+        return b.chapter(DfmItems.ELECTRIC_FURNACE);
     }
 
     private static Chapter assembly() {
@@ -151,7 +151,7 @@ final class GuideContent {
         b.text("intro").text("buffer");
         b.heading("miner").add(minerTable()).text("miner_note");
         b.heading("crusher").add(crusherTable()).text("crusher_note");
-        b.heading("smelter").add(smelterTable()).text("smelter_note");
+        b.heading("electric_furnace").add(electricFurnaceTable()).text("electric_furnace_note");
         b.heading("upgrade").item(DfmItems.EFFICIENCY_UPGRADE, "upgrade_about").text("upgrade");
         return b.chapter(DfmItems.EFFICIENCY_UPGRADE);
     }
@@ -219,15 +219,15 @@ final class GuideContent {
         });
     }
 
-    private static GuideElement smelterTable() {
+    private static GuideElement electricFurnaceTable() {
         return new GuideElements.Table(headers("level", "fe", "fe_upgrade", "lane"), new float[] {0.6F, 1.0F, 1.2F, 1.1F}, () -> {
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
-                double lane = dimensionalfluxminer.smelter.SmelterEnergy.laneOperationsPerTick(level, STANDARD_RECIPE_TICKS) * 20;
+                double lane = dimensionalfluxminer.furnace.ElectricFurnaceEnergy.laneOperationsPerTick(level, STANDARD_RECIPE_TICKS) * 20;
                 // Furnace profile with the three lanes busy, the larger of the two profiles.
                 rows.add(List.of(Integer.toString(level),
-                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.smelter.SmelterEnergy.furnaceStandardPower(level, false))),
-                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.smelter.SmelterEnergy.furnaceStandardPower(level, true))), number(lane)));
+                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.furnaceStandardPower(level, false))),
+                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.furnaceStandardPower(level, true))), number(lane)));
             }
             return rows;
         });
@@ -311,6 +311,7 @@ final class GuideContent {
 
         Builder(String id) {
             this.id = id;
+            GuideReferences.startChapter();
         }
 
         private Component key(String kind, String name) {

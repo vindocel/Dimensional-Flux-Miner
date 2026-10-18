@@ -1,5 +1,5 @@
 {
-  "parent": "dimensionalfluxminer:smelter",
+  "parent": "dimensionalfluxminer:electric_furnace",
   "display": {
     "icon": { "id": "dimensionalfluxminer:ingot_steel" },
     "title": { "translate": "advancements.dimensionalfluxminer.steel.title" },

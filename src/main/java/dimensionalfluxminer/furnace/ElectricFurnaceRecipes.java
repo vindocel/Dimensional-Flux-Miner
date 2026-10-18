@@ -1,4 +1,4 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 import dimensionalfluxminer.recipe.AlloyRecipeInput;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
@@ -22,11 +22,11 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
- * Recipe lookups of one Alloy Smelter, with their caches: the furnace recipe of each lane's item and of every item
+ * Recipe lookups of one Electric Furnace, with their caches: the furnace recipe of each lane's item and of every item
  * offered, the alloy of the three lanes, and the items that are alloy ingredients. Everything is rebuilt when the
  * recipes reload (a new {@link RecipeManager}).
  */
-final class SmelterRecipes {
+final class ElectricFurnaceRecipes {
     private static final int COOKING_CACHE_LIMIT = 256;
 
     private RecipeManager cachedManager;
@@ -40,7 +40,7 @@ final class SmelterRecipes {
             new it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap<>(ItemStackLinkedSet.TYPE_AND_TAG);
 
     @SuppressWarnings("unchecked")
-    SmelterRecipes(int lanes) {
+    ElectricFurnaceRecipes(int lanes) {
         laneKey = new ItemStack[lanes];
         laneRecipe = new Optional[lanes];
         alloyKey = new ItemStack[lanes];

@@ -61,27 +61,27 @@ public final class RateScale {
     }
 
     /**
-     * Alloy Smelter throughput of one lane for a recipe with baseline {@code T} ticks (64 per lane at Rate 10):
+     * Electric Furnace throughput of one lane for a recipe with baseline {@code T} ticks (64 per lane at Rate 10):
      * <pre>R(n,T) = (1/T) * (64*T)^((n-1)/9)</pre>
      */
-    public static double smelterOperationsPerTick(int level, int baselineTicks, double rateTenOperationsPerLane) {
+    public static double electricFurnaceOperationsPerTick(int level, int baselineTicks, double rateTenOperationsPerLane) {
         int t = Math.max(1, baselineTicks);
         int n = clampLevel(level);
         return (1.0 / t) * Math.pow(rateTenOperationsPerLane * t, (n - 1) / 9.0);
     }
 
     /**
-     * Alloy Smelter lane throughput with an optional table of the ten levels for a standard recipe of
+     * Electric Furnace lane throughput with an optional table of the ten levels for a standard recipe of
      * {@code standardTicks}: a recipe of another duration keeps the proportion of the default curve,
      * {@code table(n) * R(n,T) / R(n,standard)}, never above {@code rateTenOperationsPerLane}. Without a table it is R(n,T).
      */
-    public static double smelterOperationsPerTick(int level, int baselineTicks, double rateTenOperationsPerLane, LevelTable standard,
+    public static double electricFurnaceOperationsPerTick(int level, int baselineTicks, double rateTenOperationsPerLane, LevelTable standard,
                                                   int standardTicks) {
-        double curve = smelterOperationsPerTick(level, baselineTicks, rateTenOperationsPerLane);
+        double curve = electricFurnaceOperationsPerTick(level, baselineTicks, rateTenOperationsPerLane);
         if (standard == null) {
             return curve;
         }
-        double reference = smelterOperationsPerTick(level, standardTicks, rateTenOperationsPerLane);
+        double reference = electricFurnaceOperationsPerTick(level, standardTicks, rateTenOperationsPerLane);
         return Math.min(rateTenOperationsPerLane, standard.at(level) * curve / reference);
     }
 }

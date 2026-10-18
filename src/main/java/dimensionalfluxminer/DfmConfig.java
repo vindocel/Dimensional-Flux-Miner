@@ -41,14 +41,14 @@ public final class DfmConfig {
                     "Rate 1 = 1 operation / 200 ticks, Rate 10 = 64 operations per tick. Replaces the old minimumFEPerTick/maximumFEPerTick.")
             .defineInRange("crusher.energyPerOperation", 20_000L, 1L, MAX_ENERGY_PER_OPERATION);
 
-    public static final ModConfigSpec.LongValue SMELTER_ALLOY_ENERGY = BUILDER
-            .comment("Alloy Smelter: FE spent by one standard alloy execution (one unit of each ingredient), at every Rate.",
+    public static final ModConfigSpec.LongValue ELECTRIC_FURNACE_ALLOY_ENERGY = BUILDER
+            .comment("Electric Furnace: FE spent by one standard alloy execution (one unit of each ingredient), at every Rate.",
                     "A recipe asking for N units of an ingredient counts as N units of work. The Efficiency Upgrade halves it.")
-            .defineInRange("smelter.alloyEnergyPerOperation", 30_000L, 1L, MAX_ENERGY_PER_OPERATION);
-    public static final ModConfigSpec.LongValue SMELTER_FURNACE_ENERGY = BUILDER
-            .comment("Alloy Smelter: FE spent by three items smelted in the furnace lanes (one item costs a third of it), at every Rate.",
-                    "The Efficiency Upgrade halves it. Replaces the old smelter.minimumFEPerTick/maximumFEPerTick.")
-            .defineInRange("smelter.furnaceEnergyPerThreeItems", 50_000L, 1L, MAX_ENERGY_PER_OPERATION);
+            .defineInRange("electric_furnace.alloyEnergyPerOperation", 30_000L, 1L, MAX_ENERGY_PER_OPERATION);
+    public static final ModConfigSpec.LongValue ELECTRIC_FURNACE_FURNACE_ENERGY = BUILDER
+            .comment("Electric Furnace: FE spent by three items smelted in the furnace lanes (one item costs a third of it), at every Rate.",
+                    "The Efficiency Upgrade halves it. Replaces the old electric_furnace.minimumFEPerTick/maximumFEPerTick.")
+            .defineInRange("electric_furnace.furnaceEnergyPerThreeItems", 50_000L, 1L, MAX_ENERGY_PER_OPERATION);
 
     // Optional tables of the ten speed levels. Empty (the default) keeps the curves above; a table must list all ten
     // levels, otherwise it is ignored with a warning. A speed table replaces the geometric speed curve, a power table
@@ -69,23 +69,23 @@ public final class DfmConfig {
             .comment("Optional: FE/t of each Rate at full speed without the Efficiency Upgrade (which halves it), all ten levels.",
                     "Empty = operations per tick x energyPerOperation. Each value from 1 to " + MAX_LEVEL_POWER + ".")
             .defineListAllowEmpty("crusher.powerByLevel", List.of(), () -> 1L, o -> inRange(o, 1, MAX_LEVEL_POWER));
-    public static final ModConfigSpec.ConfigValue<List<? extends Number>> SMELTER_SPEED_BY_LEVEL = BUILDER
+    public static final ModConfigSpec.ConfigValue<List<? extends Number>> ELECTRIC_FURNACE_SPEED_BY_LEVEL = BUILDER
             .comment("Optional: operations per lane per tick of each Rate for a standard 10 s (200 tick) recipe, all ten levels.",
                     "Other durations keep the proportion of the default curve. Empty = 1/200 at Rate 1 up to 64 at Rate 10. Each value from 0.0001 to 64.")
-            .defineListAllowEmpty("smelter.speedByLevel", List.of(), () -> 1.0, o -> inRange(o, MIN_LEVEL_SPEED, MAX_LEVEL_SPEED));
-    public static final ModConfigSpec.ConfigValue<List<? extends Number>> SMELTER_FURNACE_POWER_BY_LEVEL = BUILDER
+            .defineListAllowEmpty("electric_furnace.speedByLevel", List.of(), () -> 1.0, o -> inRange(o, MIN_LEVEL_SPEED, MAX_LEVEL_SPEED));
+    public static final ModConfigSpec.ConfigValue<List<? extends Number>> ELECTRIC_FURNACE_FURNACE_POWER_BY_LEVEL = BUILDER
             .comment("Optional: FE/t of each Rate with the three lanes smelting standard recipes, without the upgrade, all ten levels.",
                     "Empty = items per tick x furnaceEnergyPerThreeItems / 3. Each value from 1 to " + MAX_LEVEL_POWER + ".")
-            .defineListAllowEmpty("smelter.furnacePowerByLevel", List.of(), () -> 1L, o -> inRange(o, 1, MAX_LEVEL_POWER));
-    public static final ModConfigSpec.ConfigValue<List<? extends Number>> SMELTER_ALLOY_POWER_BY_LEVEL = BUILDER
+            .defineListAllowEmpty("electric_furnace.furnacePowerByLevel", List.of(), () -> 1L, o -> inRange(o, 1, MAX_LEVEL_POWER));
+    public static final ModConfigSpec.ConfigValue<List<? extends Number>> ELECTRIC_FURNACE_ALLOY_POWER_BY_LEVEL = BUILDER
             .comment("Optional: FE/t of each Rate running a standard alloy (one unit of each ingredient, 200 ticks), without the upgrade, all ten levels.",
                     "Empty = executions per tick x alloyEnergyPerOperation. Each value from 1 to " + MAX_LEVEL_POWER + ".")
-            .defineListAllowEmpty("smelter.alloyPowerByLevel", List.of(), () -> 1L, o -> inRange(o, 1, MAX_LEVEL_POWER));
+            .defineListAllowEmpty("electric_furnace.alloyPowerByLevel", List.of(), () -> 1L, o -> inRange(o, 1, MAX_LEVEL_POWER));
 
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> SMELTER_EXTERNAL_ALLOY_TYPES = BUILDER
-            .comment("Alloy Smelter: recipe types of other mods also run as alloys when their recipes have 1 to 3 counted item",
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> ELECTRIC_FURNACE_EXTERNAL_ALLOY_TYPES = BUILDER
+            .comment("Electric Furnace: recipe types of other mods also run as alloys when their recipes have 1 to 3 counted item",
                     "ingredients and item results (a second result becomes the byproduct). Types of mods that are not installed are ignored.")
-            .defineListAllowEmpty("smelter.externalAlloyRecipeTypes", List.of("enderio:alloy_smelting", "oritech:foundry"),
+            .defineListAllowEmpty("electric_furnace.externalAlloyRecipeTypes", List.of("enderio:alloy_smelting", "oritech:foundry"),
                     () -> "", o -> o instanceof String s && ResourceLocation.tryParse(s) != null);
 
     public static final ModConfigSpec.BooleanValue CORRUPTION_ENABLED = BUILDER
@@ -333,9 +333,9 @@ public final class DfmConfig {
     private DfmConfig() {
     }
 
-    /** Recipe types of other mods run as alloys by the Alloy Smelter. */
+    /** Recipe types of other mods run as alloys by the Electric Furnace. */
     public static List<ResourceLocation> externalAlloyTypes() {
-        List<? extends String> ids = value(SMELTER_EXTERNAL_ALLOY_TYPES);
+        List<? extends String> ids = value(ELECTRIC_FURNACE_EXTERNAL_ALLOY_TYPES);
         return ids.stream().map(ResourceLocation::tryParse).filter(java.util.Objects::nonNull).toList();
     }
 

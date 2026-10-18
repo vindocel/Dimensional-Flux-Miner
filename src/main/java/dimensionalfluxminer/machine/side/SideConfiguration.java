@@ -8,7 +8,7 @@ import net.minecraft.nbt.Tag;
 
 /**
  * Per-transmission side configuration of a single-block machine. ITEM routes are stored per item profile
- * (Smelter NORMAL / ALLOY); ENERGY, REDSTONE and EXPERIENCE are shared between profiles.
+ * (Electric Furnace NORMAL / ALLOY); ENERGY, REDSTONE and EXPERIENCE are shared between profiles.
  * Every face starts as {@link SideRoute#NONE}.
  */
 public final class SideConfiguration {

@@ -12,7 +12,7 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Client side of the machine bars: the machine energy bar, then the Electric Smelter's stored experience as a Liquid
+ * Client side of the machine bars: the machine energy bar, then the Electric Furnace's stored experience as a Liquid
  * Experience bar in millibuckets, the unit pipes extract it in.
  */
 enum MachineBarsComponent implements IBlockComponentProvider {

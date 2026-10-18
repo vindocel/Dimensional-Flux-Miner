@@ -1,7 +1,7 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 /**
- * Raw -> Ingot yield of the Smelter NORMAL mode.
+ * Raw -> Ingot yield of the Electric Furnace NORMAL mode.
  * <pre>
  * without upgrade: floor(N/2)*3 + (N mod 2)   (each pair of Raw -> 3 Ingots, a single Raw -> 1 Ingot)
  * with upgrade:    2*N

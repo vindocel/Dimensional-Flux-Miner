@@ -4,8 +4,9 @@
   "ambientocclusion": true,
   "gui_light": "side",
   "textures": {
-    "particle": "dimensionalfluxminer:block/alloy_smelter/alloy_smelter",
-    "machine": "dimensionalfluxminer:block/alloy_smelter/alloy_smelter"
+    "terminal_idle": "dimensionalfluxminer:block/electric_furnace/electric_furnace_terminal_idle",
+    "particle": "dimensionalfluxminer:block/electric_furnace/electric_furnace",
+    "machine": "dimensionalfluxminer:block/electric_furnace/electric_furnace"
   },
   "display": {
     "gui": {
@@ -1803,12 +1804,12 @@
       "faces": {
         "north": {
           "uv": [
-            0.0,
-            6.0,
-            9.5,
-            7.999999
+            0,
+            0,
+            16,
+            6.73684
           ],
-          "texture": "#machine"
+          "texture": "#terminal_idle"
         }
       }
     },

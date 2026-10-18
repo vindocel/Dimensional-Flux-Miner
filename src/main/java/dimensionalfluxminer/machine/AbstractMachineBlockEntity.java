@@ -39,7 +39,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 /**
- * Shared behaviour of the single-block machines (Crusher and Smelter): dynamic energy buffer, Rate 1..10,
+ * Shared behaviour of the single-block machines (Crusher and Electric Furnace): dynamic energy buffer, Rate 1..10,
  * Efficiency Upgrade slot, Auto-Input/Auto-Eject of items and Auto-Eject of fluids, each on its own (default OFF),
  * per-transmission side configuration,
  * whole-block redstone control (ignored / high / low) and external tick acceleration (each extra ticker call in the same game
@@ -177,7 +177,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         return sides;
     }
 
-    /** Item profile used for ITEM routes (Smelter NORMAL/ALLOY). */
+    /** Item profile used for ITEM routes (Electric Furnace NORMAL/ALLOY). */
     public int itemProfile() {
         return SideRules.PROFILE_NORMAL;
     }
@@ -279,7 +279,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         int profile = itemProfile();
         int[] locks = new int[Transmission.VALUES.length];
         boolean routes = false;
-        // Receiving item faces of a profile with dedicated input lanes (Smelter Alloy) share the lanes between them.
+        // Receiving item faces of a profile with dedicated input lanes (Electric Furnace Alloy) share the lanes between them.
         if (profile != nodeLanesProfile) {
             nodeLanes.reset();
             nodeLanesProfile = profile;

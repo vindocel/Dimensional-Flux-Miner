@@ -8,8 +8,8 @@ import dimensionalfluxminer.machine.side.Transmission;
 import dimensionalfluxminer.registry.DfmBlocks;
 import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmItems;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
-import dimensionalfluxminer.smelter.SmelterMode;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -27,16 +27,16 @@ import net.neoforged.neoforge.items.IItemHandler;
 
 @GameTestHolder(DimensionalFluxMiner.MOD_ID)
 @PrefixGameTestTemplate(false)
-public final class SmelterGameTests {
+public final class ElectricFurnaceGameTests {
     private static final BlockPos MACHINE = new BlockPos(2, 1, 2);
 
-    private SmelterGameTests() {
+    private ElectricFurnaceGameTests() {
     }
 
-    static AlloySmelterBlockEntity place(GameTestHelper helper) {
-        BlockState state = DfmBlocks.ALLOY_SMELTER.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+    static ElectricFurnaceBlockEntity place(GameTestHelper helper) {
+        BlockState state = DfmBlocks.ELECTRIC_FURNACE.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
         helper.setBlock(MACHINE, state);
-        AlloySmelterBlockEntity be = helper.getBlockEntity(MACHINE);
+        ElectricFurnaceBlockEntity be = helper.getBlockEntity(MACHINE);
         be.setRate(10);
         be.energyBuffer().setTarget(be.effectivePowerLimit() * 10);
         be.energyBuffer().setStored(be.effectivePowerLimit() * 10);
@@ -50,7 +50,7 @@ public final class SmelterGameTests {
         for (var h : dimensionalfluxminer.recipe.ExternalAlloying.all(helper.getLevel().getRecipeManager(), helper.getLevel().registryAccess())) {
             helper.assertFalse(h.value().matches(raw, helper.getLevel()), "raw iron is no alloy: " + h.id());
         }
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.input(0).insert(new ItemStack(Items.RAW_IRON), 4, false);
         helper.succeedWhen(() -> {
             helper.assertTrue(be.input(0).isEmpty(), "raw consumed");
@@ -63,7 +63,7 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void upgradeGivesTwoIngotsPerRawAndHalvesPower(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.upgradeSlot().setStackInSlot(0, new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()));
         // Furnace profile, three lanes of 64 items/tick at 25 000 / 3 FE per item.
         helper.assertTrue(be.effectivePowerLimit() == 1_600_000, "Rate 10 with upgrade = 1600000 FE/t, got " + be.effectivePowerLimit());
@@ -73,8 +73,8 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void steelAlloyIsOneCombinedOperation(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
-        helper.assertTrue(be.setMode(SmelterMode.ALLOY), "switch to ALLOY with empty outputs");
+        ElectricFurnaceBlockEntity be = place(helper);
+        helper.assertTrue(be.setMode(ElectricFurnaceMode.ALLOY), "switch to ALLOY with empty outputs");
         be.input(0).insert(new ItemStack(DfmItems.DUSTS.get("coal").get()), 2, false);
         be.input(1).insert(new ItemStack(DfmItems.GRAIN_CALCITE.get()), 2, false);
         be.input(2).insert(new ItemStack(DfmItems.DUSTS.get("iron").get()), 2, false);
@@ -95,8 +95,8 @@ public final class SmelterGameTests {
         var registry = net.minecraft.core.registries.BuiltInRegistries.ITEM;
         var alloy = registry.get(net.minecraft.resources.ResourceLocation.parse("create:andesite_alloy"));
         var zinc = registry.get(net.minecraft.resources.ResourceLocation.parse("create:zinc_nugget"));
-        AlloySmelterBlockEntity be = place(helper);
-        be.setMode(SmelterMode.ALLOY);
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setMode(ElectricFurnaceMode.ALLOY);
         be.input(0).insert(new ItemStack(Items.ANDESITE), 2, false);
         be.input(1).insert(new ItemStack(Items.IRON_NUGGET), 1, false);
         // Once the iron nugget is used, a zinc nugget takes its lane for the second alloy.
@@ -113,23 +113,23 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void slagAggregateRecoversSteel(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
-        be.setMode(SmelterMode.ALLOY);
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setMode(ElectricFurnaceMode.ALLOY);
         be.input(0).insert(new ItemStack(DfmItems.SLAG_AGGREGATE.get()), 5, false);
         helper.succeedWhen(() -> helper.assertTrue(be.alloyMain().countOf(new ItemStack(DfmItems.INGOT_STEEL.get())) == 5, "5 steel"));
     }
 
     @GameTest(template = "empty_small")
     public static void modesCycleAndKeepOutputsReachable(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
-        helper.assertTrue(be.mode() == SmelterMode.ALL, "new smelters start in alloy + furnace");
+        ElectricFurnaceBlockEntity be = place(helper);
+        helper.assertTrue(be.mode() == ElectricFurnaceMode.ALL, "new electric furnaces start in alloy + furnace");
         be.output(0).insert(new ItemStack(Items.IRON_INGOT), 1, false);
-        be.handleButton(null, AlloySmelterBlockEntity.BUTTON_MODE);
-        helper.assertTrue(be.mode() == SmelterMode.ALLOY, "ALL -> ALLOY");
-        be.handleButton(null, AlloySmelterBlockEntity.BUTTON_MODE);
-        helper.assertTrue(be.mode() == SmelterMode.NORMAL, "ALLOY -> furnace only");
-        be.handleButton(null, AlloySmelterBlockEntity.BUTTON_MODE_BACK);
-        helper.assertTrue(be.mode() == SmelterMode.ALLOY, "back to ALLOY");
+        be.handleButton(null, ElectricFurnaceBlockEntity.BUTTON_MODE);
+        helper.assertTrue(be.mode() == ElectricFurnaceMode.ALLOY, "ALL -> ALLOY");
+        be.handleButton(null, ElectricFurnaceBlockEntity.BUTTON_MODE);
+        helper.assertTrue(be.mode() == ElectricFurnaceMode.NORMAL, "ALLOY -> furnace only");
+        be.handleButton(null, ElectricFurnaceBlockEntity.BUTTON_MODE_BACK);
+        helper.assertTrue(be.mode() == ElectricFurnaceMode.ALLOY, "back to ALLOY");
         helper.assertTrue(be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "output face");
         IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(MACHINE),
                 RelativeFace.BACK.toDirection(be.facing()));
@@ -143,8 +143,8 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void lanesUseAnotherOutputHoldingTheirResult(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
-        be.setMode(SmelterMode.NORMAL);
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         // The outputs under the log and the beef hold each other's results (the lanes were swapped).
         be.output(0).insert(new ItemStack(Items.COOKED_BEEF), 3, false);
         be.output(1).insert(new ItemStack(Items.CHARCOAL), 3, false);
@@ -160,8 +160,8 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void freeOutputStaysReservedForTheLaneAboveIt(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
-        be.setMode(SmelterMode.NORMAL);
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         be.output(0).insert(new ItemStack(Items.STONE), 1, false);
         be.input(0).insert(new ItemStack(Items.BEEF), 1, false);
         be.input(1).insert(new ItemStack(Items.RAW_IRON), 64, false);
@@ -174,12 +174,12 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void autoSplitForcesTheDistribution(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setRate(1);
-        be.setMode(SmelterMode.NORMAL);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         // Items placed directly in one lane (as a manual insert would) are spread once Auto-Split is ON.
         be.input(0).insert(new ItemStack(Items.RAW_COPPER), 56, false);
-        be.handleButton(null, AlloySmelterBlockEntity.BUTTON_AUTO_SPLIT);
+        be.handleButton(null, ElectricFurnaceBlockEntity.BUTTON_AUTO_SPLIT);
         helper.runAfterDelay(2, () -> {
             long a = be.input(0).firstCount();
             long b = be.input(1).firstCount();
@@ -194,11 +194,11 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void takingResultsByHandCollectsTheExperience(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         be.output(0).insert(new ItemStack(Items.IRON_INGOT), 3, false);
         be.experience().setMilli(2100);
-        be.handleButton(player, AlloySmelterBlockEntity.BUTTON_TAKE_OUTPUT);
+        be.handleButton(player, ElectricFurnaceBlockEntity.BUTTON_TAKE_OUTPUT);
         helper.assertTrue(be.experience().milli() == 0, "stored XP collected");
         var orbs = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
                 player.getBoundingBox().inflate(2));
@@ -211,20 +211,20 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void rightClickTakesHalfAndInsertsOne(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setRate(1);
-        be.setMode(SmelterMode.NORMAL);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         be.input(0).insert(new ItemStack(Items.RAW_IRON), 9, false);
-        be.handleButton(player, AlloySmelterBlockEntity.BUTTON_TAKE_INPUT_HALF);
+        be.handleButton(player, ElectricFurnaceBlockEntity.BUTTON_TAKE_INPUT_HALF);
         helper.assertTrue(player.containerMenu.getCarried().getCount() == 5 && be.input(0).firstCount() == 4, "took half (rounded up)");
-        be.handleButton(player, AlloySmelterBlockEntity.BUTTON_INSERT_ONE_LANE + 1);
+        be.handleButton(player, ElectricFurnaceBlockEntity.BUTTON_INSERT_ONE_LANE + 1);
         helper.assertTrue(player.containerMenu.getCarried().getCount() == 4 && be.input(1).firstCount() == 1, "inserted one");
         helper.succeed();
     }
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
-    public static void alloysOfOtherModsRunInTheSmelter(GameTestHelper helper) {
+    public static void alloysOfOtherModsRunInTheElectricFurnace(GameTestHelper helper) {
         var level = helper.getLevel();
         var manager = level.getRecipeManager();
         var types = dimensionalfluxminer.DfmConfig.externalAlloyTypes();
@@ -244,8 +244,8 @@ public final class SmelterGameTests {
                 .filter(r -> r.ingredients().stream().allMatch(s -> s.ingredient().getItems().length > 0)
                         && r.ingredients().stream().allMatch(s -> s.count() <= 64))
                 .findFirst().orElseThrow();
-        AlloySmelterBlockEntity be = place(helper);
-        be.setMode(SmelterMode.ALLOY);
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setMode(ElectricFurnaceMode.ALLOY);
         for (int i = 0; i < recipe.ingredients().size(); i++) {
             var sized = recipe.ingredients().get(i);
             ItemStack stack = sized.ingredient().getItems()[0];
@@ -257,9 +257,9 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void allModeSplitsASmeltableAlloyIngredientWithoutPartner(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setRate(1);
-        be.setMode(SmelterMode.ALL);
+        be.setMode(ElectricFurnaceMode.ALL);
         be.setAutoSplit(true);
         ItemStack ironDust = new ItemStack(DfmItems.DUSTS.get("iron").get());
         helper.assertTrue(be.insertAggregate(ironDust.copyWithCount(60), false).isEmpty(), "all iron dust accepted");
@@ -268,7 +268,7 @@ public final class SmelterGameTests {
         long c = be.input(2).firstCount();
         helper.assertTrue(a == 20 && b == 20 && c == 20, "iron dust alone is spread like a furnace item: " + a + "/" + b + "/" + c);
         // With its alloy partner (coal dust) in a lane, iron dust is kept in one lane for the steel alloy.
-        for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+        for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
             be.input(lane).clear();
         }
         be.input(1).insert(new ItemStack(DfmItems.DUSTS.get("coal").get()), 4, false);
@@ -279,15 +279,15 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void creativeMiddleClickPicksAFullStack(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setRate(1);
-        be.setMode(SmelterMode.NORMAL);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         be.input(0).insert(new ItemStack(Items.RAW_IRON), 3, false);
         var survival = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        helper.assertFalse(be.handleButton(survival, AlloySmelterBlockEntity.BUTTON_PICK_INPUT), "survival cannot pick");
+        helper.assertFalse(be.handleButton(survival, ElectricFurnaceBlockEntity.BUTTON_PICK_INPUT), "survival cannot pick");
         var creative = helper.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);
         creative.getAbilities().instabuild = true;
-        be.handleButton(creative, AlloySmelterBlockEntity.BUTTON_PICK_INPUT);
+        be.handleButton(creative, ElectricFurnaceBlockEntity.BUTTON_PICK_INPUT);
         ItemStack carried = creative.containerMenu.getCarried();
         helper.assertTrue(carried.is(Items.RAW_IRON) && carried.getCount() == 64, "full stack to the cursor, got " + carried);
         helper.assertTrue(be.input(0).firstCount() == 3, "the machine keeps its items");
@@ -296,7 +296,7 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void allModeAlloysFirstOtherwiseSmelts(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.input(0).insert(new ItemStack(DfmItems.SLAG_AGGREGATE.get()), 2, false);
         helper.runAfterDelay(3, () -> {
             helper.assertTrue(be.alloyMain().countOf(new ItemStack(DfmItems.INGOT_STEEL.get())) == 2, "alloy recipe runs first");
@@ -311,9 +311,9 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void dedicatedAlloyLaneIsInputOnly(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setRate(1);
-        be.setMode(SmelterMode.ALLOY);
+        be.setMode(ElectricFurnaceMode.ALLOY);
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.ITEM, SideRoute.ITEM_INPUT_2), "dedicated lane 2");
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.ENERGY, SideRoute.ENERGY_INPUT), "energy on same face");
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.EXPERIENCE, SideRoute.XP_OUTPUT), "xp on same face");
@@ -334,7 +334,7 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void liquidExperienceIsAVirtualView(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.configureSide(RelativeFace.BACK, Transmission.EXPERIENCE, SideRoute.XP_OUTPUT);
         be.experience().setMilli(1234);
         Direction back = RelativeFace.BACK.toDirection(be.facing());
@@ -349,7 +349,7 @@ public final class SmelterGameTests {
         helper.succeed();
     }
 
-    private static net.minecraft.nbt.CompoundTag menuData(GameTestHelper helper, AlloySmelterBlockEntity be) {
+    private static net.minecraft.nbt.CompoundTag menuData(GameTestHelper helper, ElectricFurnaceBlockEntity be) {
         net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
         be.writeMenuData(tag, helper.getLevel().registryAccess());
         return tag;
@@ -357,7 +357,7 @@ public final class SmelterGameTests {
 
     @GameTest(template = "empty_small")
     public static void itemAndFluidAutomationAreIndependent(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         // The item mode cycle (OFF -> input -> eject -> both) never touches the fluid Auto Eject.
         for (int i = 0; i < 4; i++) {
             be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT);
@@ -388,7 +388,7 @@ public final class SmelterGameTests {
     @GameTest(template = "empty_small")
     public static void oldSavesKeepTheirFluidAutoEject(GameTestHelper helper) {
         var registries = helper.getLevel().registryAccess();
-        AlloySmelterBlockEntity be = place(helper);
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setAutoEject(true);
         net.minecraft.nbt.CompoundTag old = be.saveWithoutMetadata(registries);
         old.remove("auto_eject_fluid");
@@ -402,8 +402,8 @@ public final class SmelterGameTests {
     }
 
     @GameTest(template = "empty_small")
-    public static void activeSmelterEmitsLight14(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = place(helper);
+    public static void activeElectricFurnaceEmitsLight14(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = place(helper);
         be.setRate(1);
         be.input(0).insert(new ItemStack(Items.RAW_COPPER), 64, false);
         helper.runAfterDelay(3, () -> {

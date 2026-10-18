@@ -1,4 +1,4 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 import dimensionalfluxminer.machine.ItemQueue;
 import net.minecraft.world.item.ItemStack;
@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
  * item. An empty slot stays reserved for the lane above it when that lane makes something else. What a lane reserves
  * counts against the slot for the lanes after it, so inputs are only consumed when their results have room.
  */
-final class SmelterOutputPlanner {
+final class ElectricFurnaceOutputPlanner {
     private final ItemQueue[] outputs;
     private final ItemStack[] laneUnits;
     private final ItemStack[] claimed;
@@ -19,7 +19,7 @@ final class SmelterOutputPlanner {
      * @param outputs   the output slots, one per lane
      * @param laneUnits what each lane would make in one operation (empty for an idle lane)
      */
-    SmelterOutputPlanner(ItemQueue[] outputs, ItemStack[] laneUnits) {
+    ElectricFurnaceOutputPlanner(ItemQueue[] outputs, ItemStack[] laneUnits) {
         this.outputs = outputs;
         this.laneUnits = laneUnits;
         this.claimed = new ItemStack[outputs.length];

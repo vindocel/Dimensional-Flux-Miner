@@ -21,10 +21,10 @@ less FE than the level needs, it works proportionally slower and never for free.
 |---|---|---|
 | Miner | 200 000 FE per attempt (filtered and lost attempts included) | `miner.energyPerAttempt` |
 | Crusher | 20 000 FE per input item | `crusher.energyPerOperation` |
-| Alloy Smelter, furnace | 50 000 / 3 FE per item | `smelter.furnaceEnergyPerThreeItems` |
-| Alloy Smelter, alloy | 30 000 FE per work unit | `smelter.alloyEnergyPerOperation` |
+| Electric Furnace, furnace | 50 000 / 3 FE per item | `electric_furnace.furnaceEnergyPerThreeItems` |
+| Electric Furnace, alloy | 30 000 FE per work unit | `electric_furnace.alloyEnergyPerOperation` |
 
-The Efficiency Upgrade halves the Crusher and Smelter costs and leaves the Miner unchanged.
+The Efficiency Upgrade halves the Crusher and Electric Furnace costs and leaves the Miner unchanged.
 
 These are the mod's defaults. A modpack can replace the speed curve, the FE/t of every level, or both, with tables of
 all ten levels (`speedByLevel`, `powerByLevel`): see the
@@ -32,10 +32,10 @@ all ten levels (`speedByLevel`, `powerByLevel`): see the
 
 ### The ten levels
 
-Operations per tick, operations per second and FE/t without the upgrade. The Smelter columns are for a standard
+Operations per tick, operations per second and FE/t without the upgrade. The Electric Furnace columns are for a standard
 10 s recipe (200 ticks); the furnace column is three working lanes.
 
-| Rate | Miner attempts/s | Miner FE/t | Crusher items/s | Crusher FE/t | Smelter items/s per lane | Furnace FE/t (3 lanes) | Alloy FE/t |
+| Rate | Miner attempts/s | Miner FE/t | Crusher items/s | Crusher FE/t | Electric Furnace items/s per lane | Furnace FE/t (3 lanes) | Alloy FE/t |
 |---|---|---|---|---|---|---|---|
 | 1 | 0.25 | 2 500 | 0.10 | 100 | 0.10 | 250 | 150 |
 | 2 | 0.65 | 6 458 | 0.29 | 286 | 0.29 | 715 | 429 |
@@ -51,7 +51,7 @@ Operations per tick, operations per second and FE/t without the upgrade. The Sme
 - Miner: 0.0125 attempts per tick at Rate 1 (`miner.minimumProductionRate`) up to 64 per logical cycle at Rate 10
   (`miner.maximumProductionRate`, can be lowered, never raised above 64).
 - Crusher: 1 operation every 200 ticks at Rate 1, 64 per tick at Rate 10.
-- Smelter: per lane `R(n,T) = (1/T) * (64*T)^((n-1)/9)` for a recipe of `T` ticks, so Rate 10 is always 64 operations
+- Electric Furnace: per lane `R(n,T) = (1/T) * (64*T)^((n-1)/9)` for a recipe of `T` ticks, so Rate 10 is always 64 operations
   per lane per tick (192 for the three lanes). The duration of a recipe changes the FE/t, not the cost per operation.
   An alloy recipe without a time uses 100 ticks.
 
@@ -64,7 +64,7 @@ buffer = 10 * FE/t of the selected level (with the upgrade applied)
 Lowering the level never deletes stored FE. Tick accelerators do not raise the buffer shown, but the energy input
 also accepts what the extra cycles of one game time use.
 
-## Alloy Smelter
+## Electric Furnace
 
 | Mode | Behaviour |
 |---|---|
@@ -87,9 +87,9 @@ also accepts what the extra cycles of one game time use.
 | Path | Ingots per ore |
 |---|---|
 | Common furnace | 1 |
-| Crusher + Smelter | 3 |
-| Crusher with upgrade + Smelter | 4.5 |
-| Crusher + Smelter with upgrade | 4 |
+| Crusher + Electric Furnace | 3 |
+| Crusher with upgrade + Electric Furnace | 4.5 |
+| Crusher + Electric Furnace with upgrade | 4 |
 | Both with upgrade | 6 |
 
 The Crusher gives 2 products per ore, 3 with the upgrade (Stella Arcanum always gives one Stellarite Piece).
@@ -170,7 +170,7 @@ never flows or sinks across a claim border, into a protected region, or where co
 
 | Key | Default | Effect |
 |---|---|---|
-| `smelter.externalAlloyRecipeTypes` | `enderio:alloy_smelting`, `oritech:foundry` | Recipe types of other mods run as alloys (1–3 counted item ingredients, item results) |
+| `electric_furnace.externalAlloyRecipeTypes` | `enderio:alloy_smelting`, `oritech:foundry` | Recipe types of other mods run as alloys (1–3 counted item ingredients, item results) |
 
 ## Compatibility
 
@@ -179,12 +179,12 @@ never flows or sinks across a claim border, into a protected region, or where co
 | EMI, JEI | Recipe categories, R / U on machine slots |
 | Jade | Item, energy and XP display |
 | FTB Chunks, Open Parties and Claims | Claim protection against Dimensional Death |
-| EnderIO, Oritech | Their alloy recipes in the Alloy Smelter |
-| Create | Andesite Alloy in the Alloy Smelter; asurine corrupts into Corrupted Stone |
+| EnderIO, Oritech | Their alloy recipes in the Electric Furnace |
+| Create | Andesite Alloy in the Electric Furnace; asurine corrupts into Corrupted Stone |
 | AE2 | Sky stone corrupts into Corrupted Stone |
 | Malum, Forbidden Arcanus | Their ores in the Miner and the Crusher |
 | Allthemodium | Matter values for The Other |
 | Ad Astra | Matter values for each planet; no Dimensional Death on the planets and in orbit |
-| Any mod with ore features | Its ores in the Miner (features that declare `targets[].state`); the Crusher and Smelter use the common tags |
+| Any mod with ore features | Its ores in the Miner (features that declare `targets[].state`); the Crusher and Electric Furnace use the common tags |
 
 Every integration is optional; none is needed to build or run the mod.

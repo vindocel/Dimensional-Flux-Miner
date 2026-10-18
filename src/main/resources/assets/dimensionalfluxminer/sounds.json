@@ -1,9 +1,9 @@
 {
-  "machine.alloy_smelter.running": {
-    "subtitle": "subtitles.dimensionalfluxminer.machine.alloy_smelter.running",
+  "machine.electric_furnace.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.electric_furnace.running",
     "sounds": [
       {
-        "name": "dimensionalfluxminer:machine/alloy_smelter_running",
+        "name": "dimensionalfluxminer:machine/electric_furnace_running",
         "volume": 0.85
       }
     ]

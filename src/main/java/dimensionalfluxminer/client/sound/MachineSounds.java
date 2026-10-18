@@ -27,7 +27,7 @@ public final class MachineSounds {
         }
         SoundEvent event = machine instanceof MechanicalCrusherBlockEntity
                 ? DfmSounds.CRUSHER_RUNNING.get()
-                : DfmSounds.ALLOY_SMELTER_RUNNING.get();
+                : DfmSounds.ELECTRIC_FURNACE_RUNNING.get();
         loop(be, event, Vec3.atCenterOf(be.getBlockPos()), () -> !be.isRemoved() && machine.machineState() == MachineState.ACTIVE);
     }
 

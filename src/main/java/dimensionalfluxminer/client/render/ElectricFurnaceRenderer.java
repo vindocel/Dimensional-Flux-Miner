@@ -2,7 +2,7 @@ package dimensionalfluxminer.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,8 +19,8 @@ import net.minecraft.world.phys.Vec3;
  * Renders the ingredients actually being processed inside the chamber: one visual per occupied lane, at the
  * marker positions of the approved model, without any bobbing or extra rotation.
  */
-public class SmelterRenderer implements BlockEntityRenderer<AlloySmelterBlockEntity> {
-    /** Marker centers for a north-facing Smelter, in block units. */
+public class ElectricFurnaceRenderer implements BlockEntityRenderer<ElectricFurnaceBlockEntity> {
+    /** Marker centers for a north-facing Electric Furnace, in block units. */
     private static final Vec3 FRONT = new Vec3(0.390625, 0.5625, 0.28125);
     private static final Vec3 MIDDLE = new Vec3(0.5, 0.5625, 0.46875);
     private static final Vec3 BACK = new Vec3(0.609375, 0.5625, 0.65625);
@@ -34,11 +34,11 @@ public class SmelterRenderer implements BlockEntityRenderer<AlloySmelterBlockEnt
     /** Keeps an extended block's back face just in front of the next item's front face (no z-fighting). */
     private static final float TOUCH_GAP = 0.002F;
 
-    public SmelterRenderer(BlockEntityRendererProvider.Context context) {
+    public ElectricFurnaceRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(AlloySmelterBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    public void render(ElectricFurnaceBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         List<ItemStack> chamber = be.chamber();
         if (chamber.isEmpty()) {
             return;
@@ -72,7 +72,7 @@ public class SmelterRenderer implements BlockEntityRenderer<AlloySmelterBlockEnt
     }
 
     /** Items drawn with a 3D model (blocks); flat item sprites keep the thin depth. */
-    private static boolean isBlockModel(ItemRenderer items, ItemStack stack, AlloySmelterBlockEntity be) {
+    private static boolean isBlockModel(ItemRenderer items, ItemStack stack, ElectricFurnaceBlockEntity be) {
         BakedModel model = items.getModel(stack, be.getLevel(), null, 0);
         return model.isGui3d();
     }

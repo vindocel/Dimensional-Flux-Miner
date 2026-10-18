@@ -31,7 +31,7 @@ the player-facing overview in the [README](../README.md).
 2. [The server configuration file](#2-the-server-configuration-file)
    - [2.1 Dimensional Flux Miner](#21-dimensional-flux-miner)
    - [2.2 Mechanical Crusher](#22-mechanical-crusher)
-   - [2.3 Alloy Smelter](#23-alloy-smelter)
+   - [2.3 Electric Furnace](#23-electric-furnace)
    - [2.4 Dimensional Death](#24-dimensional-death)
    - [2.5 Complete example](#25-complete-example)
 
@@ -102,7 +102,7 @@ A file placed in a world's `serverconfig` folder overrides the main file for tha
   change is used as soon as NeoForge reloads the file. If you edit the file while the game or server is stopped, it is
   read at the next start. On a production server, restarting after editing is the safest way to be sure.
 - Changes never require a new world. Machines already placed use the new values on their next cycle.
-- One exception: `smelter.externalAlloyRecipeTypes` is read when the recipes are loaded, so run `/reload` (or restart)
+- One exception: `electric_furnace.externalAlloyRecipeTypes` is read when the recipes are loaded, so run `/reload` (or restart)
   after changing it.
 
 ### What happens with an invalid value
@@ -119,11 +119,11 @@ wrong type is corrected back to its default and a warning is written to the log.
 | `miner.maximumProductionRate` | decimal | `64.0` | `0.0001` | `64.0` |
 | `miner.energyPerAttempt` | integer (FE) | `200000` | `1` | `1000000000` |
 | `crusher.energyPerOperation` | integer (FE) | `20000` | `1` | `1000000000` |
-| `smelter.alloyEnergyPerOperation` | integer (FE) | `30000` | `1` | `1000000000` |
-| `smelter.furnaceEnergyPerThreeItems` | integer (FE) | `50000` | `1` | `1000000000` |
-| `smelter.externalAlloyRecipeTypes` | list of recipe type IDs | `["enderio:alloy_smelting", "oritech:foundry"]` | empty list | n/a |
-| `miner.speedByLevel`, `crusher.speedByLevel`, `smelter.speedByLevel` | empty, or a list of exactly 10 decimals (operations per tick) | `[]` | `0.0001` each | `64` each |
-| `miner.powerByLevel`, `crusher.powerByLevel`, `smelter.furnacePowerByLevel`, `smelter.alloyPowerByLevel` | empty, or a list of exactly 10 integers (FE/t) | `[]` | `1` each | `64000000000` each |
+| `electric_furnace.alloyEnergyPerOperation` | integer (FE) | `30000` | `1` | `1000000000` |
+| `electric_furnace.furnaceEnergyPerThreeItems` | integer (FE) | `50000` | `1` | `1000000000` |
+| `electric_furnace.externalAlloyRecipeTypes` | list of recipe type IDs | `["enderio:alloy_smelting", "oritech:foundry"]` | empty list | n/a |
+| `miner.speedByLevel`, `crusher.speedByLevel`, `electric_furnace.speedByLevel` | empty, or a list of exactly 10 decimals (operations per tick) | `[]` | `0.0001` each | `64` each |
+| `miner.powerByLevel`, `crusher.powerByLevel`, `electric_furnace.furnacePowerByLevel`, `electric_furnace.alloyPowerByLevel` | empty, or a list of exactly 10 integers (FE/t) | `[]` | `1` each | `64000000000` each |
 | `corruption.enabled` | true / false | `true` | n/a | n/a |
 | `corruption.blockedDimensions` | list of dimension IDs | `[]` | n/a | n/a |
 | `corruption.respectSpawnProtection` | true / false | `true` | n/a | n/a |
@@ -151,8 +151,8 @@ less FE than the level needs it works proportionally slower.
 
 | Table | Replaces | Unit |
 |---|---|---|
-| `<machine>.speedByLevel` | The speed curve | Operations per tick of each level (the Smelter: per lane, for a 10-second recipe) |
-| `<machine>.powerByLevel` (Smelter: `furnacePowerByLevel` and `alloyPowerByLevel`) | The fixed cost per operation | FE/t of each level at full speed, without the Efficiency Upgrade |
+| `<machine>.speedByLevel` | The speed curve | Operations per tick of each level (the Electric Furnace: per lane, for a 10-second recipe) |
+| `<machine>.powerByLevel` (Electric Furnace: `furnacePowerByLevel` and `alloyPowerByLevel`) | The fixed cost per operation | FE/t of each level at full speed, without the Efficiency Upgrade |
 
 - **A table must list all ten levels**, from level 1 to level 10. An empty table (`[]`, the default) keeps the
   default curve. A table with any other number of entries is ignored as a whole, the default curve is used and the log
@@ -169,7 +169,7 @@ less FE than the level needs it works proportionally slower.
 - With a power table, a machine still pays only for the work it really does, at the cost of the level it is running at.
 - The levels do not have to grow: any value in range is accepted for any level, and the order is yours to balance.
 - The energy buffer is still 10 × the FE/t of the selected level, and the Efficiency Upgrade still halves the Crusher
-  and Smelter costs.
+  and Electric Furnace costs.
 - The guide's speed tables and the machines' screens show the configured values.
 
 ### 2.1 Dimensional Flux Miner
@@ -241,14 +241,14 @@ drained column. The cores have no configuration. The Basic core's drain is contr
 	powerByLevel = [200, 600, 2000, 6000, 20000, 40000, 80000, 160000, 320000, 640000]
 ```
 
-### 2.3 Alloy Smelter
+### 2.3 Electric Furnace
 
-The Smelter has two energy profiles, and each job is charged with the profile of the work it really does:
+The Electric Furnace has two energy profiles, and each job is charged with the profile of the work it really does:
 
 | Profile | Used by | Cost | Key |
 |---|---|---|---|
-| **Furnace** | Each lane that smelts an item with a blast furnace or furnace recipe | `furnaceEnergyPerThreeItems / 3` FE per input item, only on the lanes that work | `smelter.furnaceEnergyPerThreeItems` |
-| **Alloy** | One execution of an alloy recipe | `alloyEnergyPerOperation × work units`, where the work units are the largest ingredient count of the recipe | `smelter.alloyEnergyPerOperation` |
+| **Furnace** | Each lane that smelts an item with a blast furnace or furnace recipe | `furnaceEnergyPerThreeItems / 3` FE per input item, only on the lanes that work | `electric_furnace.furnaceEnergyPerThreeItems` |
+| **Alloy** | One execution of an alloy recipe | `alloyEnergyPerOperation × work units`, where the work units are the largest ingredient count of the recipe | `electric_furnace.alloyEnergyPerOperation` |
 
 The three modes use those profiles like this:
 
@@ -264,26 +264,26 @@ The three modes use those profiles like this:
 - The default speed: at speed 10 every lane runs 64 operations per tick, for a recipe of any duration. The duration of
   a recipe changes how fast lower levels are and the FE/t, not the cost of one operation.
 
-**Level tables of the Smelter.**
+**Level tables of the Electric Furnace.**
 
 | Key | What it sets |
 |---|---|
-| `smelter.speedByLevel` | Operations per lane per tick of each level **for a standard 10-second (200-tick) recipe**. A recipe of another duration keeps the proportion of the default curve: `speedByLevel[n] × R(n, T) / R(n, 200)`, never above 64 per lane |
-| `smelter.furnacePowerByLevel` | FE/t of each level with the three lanes smelting standard recipes. The cost of one item is `furnacePowerByLevel[n] / (3 × lane speed)`. Replaces `furnaceEnergyPerThreeItems` |
-| `smelter.alloyPowerByLevel` | FE/t of each level running a standard alloy (one unit of each ingredient, 200 ticks). The cost of one work unit is `alloyPowerByLevel[n] / lane speed`. Replaces `alloyEnergyPerOperation` |
+| `electric_furnace.speedByLevel` | Operations per lane per tick of each level **for a standard 10-second (200-tick) recipe**. A recipe of another duration keeps the proportion of the default curve: `speedByLevel[n] × R(n, T) / R(n, 200)`, never above 64 per lane |
+| `electric_furnace.furnacePowerByLevel` | FE/t of each level with the three lanes smelting standard recipes. The cost of one item is `furnacePowerByLevel[n] / (3 × lane speed)`. Replaces `furnaceEnergyPerThreeItems` |
+| `electric_furnace.alloyPowerByLevel` | FE/t of each level running a standard alloy (one unit of each ingredient, 200 ticks). The cost of one work unit is `alloyPowerByLevel[n] / lane speed`. Replaces `alloyEnergyPerOperation` |
 
 ```toml
-[smelter]
+[electric_furnace]
 	speedByLevel = [0.005, 0.02, 0.06, 0.2, 0.6, 2.0, 6.0, 16.0, 32.0, 64.0]
 	furnacePowerByLevel = [300, 1200, 3600, 12000, 36000, 120000, 360000, 960000, 1920000, 3840000]
 	alloyPowerByLevel = [200, 800, 2400, 8000, 24000, 80000, 240000, 640000, 1280000, 2560000]
 ```
 
-**Alloy recipes of other mods.** `smelter.externalAlloyRecipeTypes` lists recipe **types** whose recipes the Smelter
+**Alloy recipes of other mods.** `electric_furnace.externalAlloyRecipeTypes` lists recipe **types** whose recipes the Electric Furnace
 also runs as alloys:
 
 ```toml
-[smelter]
+[electric_furnace]
 	externalAlloyRecipeTypes = ["enderio:alloy_smelting", "oritech:foundry"]
 ```
 
@@ -363,7 +363,7 @@ The full file with its default values:
 	speedByLevel = []
 	powerByLevel = []
 
-[smelter]
+[electric_furnace]
 	externalAlloyRecipeTypes = ["enderio:alloy_smelting", "oritech:foundry"]
 	alloyEnergyPerOperation = 30000
 	furnaceEnergyPerThreeItems = 50000
@@ -847,9 +847,9 @@ check the dimension's Resource Profile.
 |---|---|---|
 | `dimensionalfluxminer:crushing` | Crusher, fixed result | `ingredient`, `result` |
 | `dimensionalfluxminer:ore_crushing` | Crusher, ore yield (2, or 3 with the upgrade) | `ingredient`, `result` **or** `result_tag`, `base_count`, `efficiency_upgrade_count` |
-| `dimensionalfluxminer:alloying` | Alloy Smelter, alloy profile | `ingredients`, `result`, `byproduct`, `processing_ticks`, `experience` |
-| `dimensionalfluxminer:tag_smelting` | Furnace and the Smelter's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
-| `dimensionalfluxminer:tag_blasting` | Blast furnace and the Smelter's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
+| `dimensionalfluxminer:alloying` | Electric Furnace, alloy profile | `ingredients`, `result`, `byproduct`, `processing_ticks`, `experience` |
+| `dimensionalfluxminer:tag_smelting` | Furnace and the Electric Furnace's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
+| `dimensionalfluxminer:tag_blasting` | Blast furnace and the Electric Furnace's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
 
 The mod's own recipes are in `data/dimensionalfluxminer/recipe/`. Their IDs follow the path:
 `ore_processing/iron.json` is the recipe `dimensionalfluxminer:ore_processing/iron`.
@@ -864,7 +864,7 @@ The mod's own recipes are in `data/dimensionalfluxminer/recipe/`. Their IDs foll
 
 "First item of a tag" means vanilla first, then this mod, then the other mods in alphabetical order of their IDs.
 
-**What a Smelter lane does with an item:** the item's blast furnace recipe, otherwise its furnace recipe (vanilla
+**What an Electric Furnace lane does with an item:** the item's blast furnace recipe, otherwise its furnace recipe (vanilla
 recipes, other mods' recipes and `tag_smelting` / `tag_blasting` alike). The raw ore bonus (2 raw → 3 ingots, 1 → 2
 with the upgrade) applies only when the input is in `c:raw_materials/<m>` and the single result is in `c:ingots/<m>`.
 
@@ -1001,7 +1001,7 @@ The recipe does nothing while the tag is empty. Add the same condition the mod u
 
 - **Replace**: put a file with the **same path** as the original, in the original's namespace. For example
   `data/dimensionalfluxminer/recipe/alloying/steel.json` replaces the Pure Steel recipe. The crafting recipes of the
-  machines (`alloy_smelter`, `mechanical_crusher`, `steel_chassis`, ...) are vanilla shaped recipes and can be
+  machines (`electric_furnace`, `mechanical_crusher`, `steel_chassis`, ...) are vanilla shaped recipes and can be
   replaced the same way.
 - **Add**: use your own namespace, `data/my_modpack/recipe/...`.
 - **Remove**: replace the file with a recipe whose condition never passes. NeoForge then skips it:
@@ -1215,7 +1215,7 @@ Everything below uses standard Minecraft and NeoForge data. KubeJS scripts can d
 | Process another mod's ores | Automatic through `c:ores/<m>` → `c:raw_materials/<m>` / `c:gems/<m>`. For other counts or products, an `ore_crushing` recipe ([6.2](#62-ore-crushing)) |
 | Dust of another mod's material | Automatic when a `c:dusts/<m>` item exists. To smelt a dust back, a `tag_smelting` / `tag_blasting` recipe ([6.4](#64-crushing-tag-smelting-and-tag-blasting)) |
 | Canonical products | When a tag has several items, the mod picks vanilla first, then itself, then the others alphabetically. To force one item, use `result` instead of `result_tag` |
-| Alloys of another mod | Add its recipe type to `smelter.externalAlloyRecipeTypes` ([2.3](#23-alloy-smelter)), or write `alloying` recipes |
+| Alloys of another mod | Add its recipe type to `electric_furnace.externalAlloyRecipeTypes` ([2.3](#23-electric-furnace)), or write `alloying` recipes |
 | A custom dimension | Resource Profile entries with its `dimension` ID, matter values with `dimensions` |
 | Another mod's blocks or creatures in the corruption | The tags of [7](#7-dimensional-death-block-tags) and [8](#8-entity-tags) with `"required": false` |
 | Claims | FTB Chunks and Open Parties and Claims are detected automatically |
@@ -1256,12 +1256,12 @@ formats like any datapack would, but the mod has no direct integration with them
 
 | Feature | TOML | Datapack | Code | Notes |
 |---|---|---|---|---|
-| Energy per operation of each machine | ✅ | ❌ | | One cost per machine (two for the Smelter), or a cost per level through a power table |
+| Energy per operation of each machine | ✅ | ❌ | | One cost per machine (two for the Electric Furnace), or a cost per level through a power table |
 | FE/t of each level | ✅ | ❌ | | `powerByLevel` tables, all ten levels |
 | Speed of each level, every machine | ✅ | ❌ | | `speedByLevel` tables, all ten levels; the Miner also through its two rates. Never above 64 per tick |
 | Speed curve | ✅ | ❌ | | Geometric by default; any shape through a speed table |
 | Number of levels | ❌ | ❌ | 🔧 | Always 10 |
-| Operations per tick | ✅ | 🟡 | | Speed tables; a Smelter recipe's duration changes the lower levels |
+| Operations per tick | ✅ | 🟡 | | Speed tables; an Electric Furnace recipe's duration changes the lower levels |
 | Products per ore | ❌ | 🟡 | 🔧 | `ore_crushing` counts; the tag fallback is fixed at 2 / 3 |
 | Efficiency Upgrade effects | ❌ | 🟡 | 🔧 | Ore counts by recipe. The energy halving, the raw bonus and the DM bonus are fixed |
 | Buffer sizes (energy, DM) | ❌ | ❌ | 🔧 | Energy 10 × FE/t, DM 5 000 |
@@ -1297,12 +1297,12 @@ A KubeJS script reaches everything marked ✅ or 🟡 in the TOML and Datapack c
 | Speed levels | 1 to 10 |
 | Miner attempts per logical cycle | 64 at most (`maximumProductionRate` cannot exceed it) |
 | Crusher speed (default curve) | 1 operation / 200 ticks to 64 operations / tick |
-| Smelter speed (default curve) | 64 operations per lane per tick at speed 10 |
+| Electric Furnace speed (default curve) | 64 operations per lane per tick at speed 10 |
 | Speed tables | exactly 10 values, each from 0.0001 to 64 operations per tick |
 | Power tables | exactly 10 values, each from 1 to 64 000 000 000 FE/t |
 | Energy per operation (config) | 1 to 1 000 000 000 FE |
 | Energy buffer | 10 × the FE/t of the selected speed |
-| Slots | 64 items each. Crusher: 1 input, 4 outputs. Smelter: 3 inputs, 3 outputs. Miner: 27 outputs |
+| Slots | 64 items each. Crusher: 1 input, 4 outputs. Electric Furnace: 3 inputs, 3 outputs. Miner: 27 outputs |
 | DM buffer | 5 000 DM |
 | DM per attempt | 2 DM |
 | DM per drained column | 64 DM |
@@ -1432,7 +1432,7 @@ JSON files cannot hold comments: keep explanations in a separate README of your 
 | Server configuration | Save the file (or restart) | The guide's speed tables and the machines' power show the new FE/t; the log shows corrections |
 | Install a datapack | Copy to `datapacks/`, then `/reload` | `/datapack list` shows it under "enabled" |
 | Resource Profile | `/reload` | Open a Miner's filter window in that dimension: each family's key and weight are in the tooltip. The terminal's details show the void chance |
-| Recipes | `/reload` | EMI or JEI show the Crusher and Alloy Smelter categories. Typing the ID in `/recipe give @s <id>` also helps: the command only suggests and accepts recipes that loaded |
+| Recipes | `/reload` | EMI or JEI show the Crusher and Electric Furnace categories. Typing the ID in `/recipe give @s <id>` also helps: the command only suggests and accepts recipes that loaded |
 | DM values | `/reload` | The guide's matter table lists every non-ore entry with its value with and without the upgrade. The Miner's details show the last injected item and the DM it gave |
 | Tags | `/reload` | Press F3 and look at a block: its tags are listed on the right; or try the corruption in a test world |
 
@@ -1498,7 +1498,7 @@ when both change the same thing.
 DimensionalFluxMinerEvents.config(event => {
   event.set('miner.energyPerAttempt', 100000)
   event.set('crusher.speedByLevel', [0.01, 0.03, 0.1, 0.3, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
-  event.set('smelter.externalAlloyRecipeTypes', ['enderio:alloy_smelting'])
+  event.set('electric_furnace.externalAlloyRecipeTypes', ['enderio:alloy_smelting'])
   event.set('corruption.blockedDimensions', ['minecraft:the_nether'])
   console.info(event.keys) // every key
 })
@@ -1512,7 +1512,7 @@ DimensionalFluxMinerEvents.config(event => {
 - The value is sent to the players, so the guide and the machine screens show it.
 - The interactions of section 2 do not change: `minimumProductionRate` must stay below `maximumProductionRate`, a level
   table must list the ten levels, and so on.
-- `smelter.externalAlloyRecipeTypes` set by a script already applies to the recipes of the same reload.
+- `electric_furnace.externalAlloyRecipeTypes` set by a script already applies to the recipes of the same reload.
 
 ### 15.2 Recipes
 
@@ -1539,7 +1539,7 @@ ServerEvents.recipes(event => {
   event.remove({ id: 'dimensionalfluxminer:ore_processing/diamond' })
   dfm.ore_crushing('minecraft:diamond', '#c:ores/diamond', 1, 2).id('my_modpack:ore_crushing/diamond')
 
-  // Alloy Smelter: three ingredients, a byproduct with a 25% chance.
+  // Electric Furnace: three ingredients, a byproduct with a 25% chance.
   dfm.alloying('minecraft:gilded_blackstone', ['minecraft:blackstone', '4x #c:nuggets/gold', 'minecraft:magma_cream'])
     .byproduct({ id: 'minecraft:gold_nugget', count: 1, chance: 0.25 })
     .processingTicks(200)

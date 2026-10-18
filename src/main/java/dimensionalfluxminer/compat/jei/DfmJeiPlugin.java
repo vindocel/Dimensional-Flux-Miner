@@ -2,7 +2,7 @@ package dimensionalfluxminer.compat.jei;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.screen.CrusherLayout;
-import dimensionalfluxminer.client.screen.SmelterLayout;
+import dimensionalfluxminer.client.screen.ElectricFurnaceLayout;
 import dimensionalfluxminer.compat.RecipeViewerData;
 import dimensionalfluxminer.crusher.CrusherProcessing;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
@@ -36,7 +36,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
- * JEI integration: Crushing, Alloy Smelter furnace mode and Alloying (the Alloy Smelter recipes use the machine's
+ * JEI integration: Crushing, Electric Furnace furnace mode and Alloying (the Electric Furnace recipes use the machine's
  * own processing element). Skipped when EMI is installed, which has its own plugin.
  */
 @JeiPlugin
@@ -49,8 +49,8 @@ public class DfmJeiPlugin implements IModPlugin {
     static final RecipeType<RecipeHolder<AlloyingRecipe>> ALLOYING = RecipeType.create(DimensionalFluxMiner.MOD_ID, "alloying",
             (Class) RecipeHolder.class);
     /** The element plus a 1 px margin (the alloy element is drawn 1 px around the slot area). */
-    private static final int ELEMENT_W = SmelterLayout.WIDTH + 2;
-    private static final int ELEMENT_H = SmelterLayout.HEIGHT + 2;
+    private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
+    private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
 
     private static boolean enabled() {
         return !ModList.get().isLoaded("emi");
@@ -87,7 +87,7 @@ public class DfmJeiPlugin implements IModPlugin {
             return;
         }
         registration.addRecipes(CRUSHING, RecipeViewerData.crushing());
-        registration.addRecipes(SMELTING, RecipeViewerData.smelterFurnace(level.getRecipeManager(), level.registryAccess()));
+        registration.addRecipes(SMELTING, RecipeViewerData.electricFurnaceSmelting(level.getRecipeManager(), level.registryAccess()));
         registration.addRecipes(ALLOYING, RecipeViewerData.alloying(level.getRecipeManager()));
     }
 
@@ -113,7 +113,7 @@ public class DfmJeiPlugin implements IModPlugin {
             return;
         }
         registration.addRecipeCatalyst(DfmBlocks.MECHANICAL_CRUSHER.get(), CRUSHING);
-        registration.addRecipeCatalyst(DfmBlocks.ALLOY_SMELTER.get(), SMELTING, ALLOYING);
+        registration.addRecipeCatalyst(DfmBlocks.ELECTRIC_FURNACE.get(), SMELTING, ALLOYING);
     }
 
     private static final class CrushingCategory implements IRecipeCategory<CrusherProcessing.Display> {
@@ -169,7 +169,7 @@ public class DfmJeiPlugin implements IModPlugin {
         private final IDrawable icon;
 
         FurnaceCategory(IGuiHelper gui) {
-            this.icon = gui.createDrawableItemLike(DfmBlocks.ALLOY_SMELTER.get());
+            this.icon = gui.createDrawableItemLike(DfmBlocks.ELECTRIC_FURNACE.get());
         }
 
         @Override
@@ -199,9 +199,9 @@ public class DfmJeiPlugin implements IModPlugin {
 
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, RecipeViewerData.FurnaceDisplay recipe, IFocusGroup focuses) {
-            builder.addInputSlot(2 + SmelterLayout.INPUT_X[0], 2 + SmelterLayout.INPUT_Y)
+            builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[0], 2 + ElectricFurnaceLayout.INPUT_Y)
                     .addItemStacks(List.of(recipe.input().getItems()).stream().map(s -> s.copyWithCount(recipe.inputCount())).toList());
-            var output = builder.addOutputSlot(2 + SmelterLayout.Variant.FURNACE.outputX[0], 2 + SmelterLayout.OUTPUT_Y)
+            var output = builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.FURNACE.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y)
                     .addItemStack(recipe.output());
             if (recipe.bulk()) {
                 output.addRichTooltipCallback((view, tooltip) -> tooltip.add(RecipeViewerData.bulkLine()));
@@ -210,8 +210,8 @@ public class DfmJeiPlugin implements IModPlugin {
 
         @Override
         public void draw(RecipeViewerData.FurnaceDisplay recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
-            SmelterLayout.drawElement(g, 1, 1, SmelterLayout.Variant.FURNACE);
-            SmelterLayout.previewHeat(g, 1, 1, SmelterLayout.Variant.FURNACE, recipe.cookTicks() * 50L);
+            ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE);
+            ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE, recipe.cookTicks() * 50L);
         }
 
         @Override
@@ -225,7 +225,7 @@ public class DfmJeiPlugin implements IModPlugin {
         private final IDrawable icon;
 
         AlloyingCategory(IGuiHelper gui) {
-            this.icon = gui.createDrawableItemLike(DfmBlocks.ALLOY_SMELTER.get());
+            this.icon = gui.createDrawableItemLike(DfmBlocks.ELECTRIC_FURNACE.get());
         }
 
         @Override
@@ -258,19 +258,19 @@ public class DfmJeiPlugin implements IModPlugin {
             AlloyingRecipe recipe = holder.value();
             List<SizedIngredient> ingredients = recipe.ingredients();
             for (int i = 0; i < ingredients.size() && i < 3; i++) {
-                builder.addInputSlot(2 + SmelterLayout.INPUT_X[i], 2 + SmelterLayout.INPUT_Y)
+                builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[i], 2 + ElectricFurnaceLayout.INPUT_Y)
                         .addItemStacks(List.of(ingredients.get(i).getItems()));
             }
-            builder.addOutputSlot(2 + SmelterLayout.Variant.ALLOY.outputX[0], 2 + SmelterLayout.OUTPUT_Y).addItemStack(recipe.result());
-            recipe.byproduct().ifPresent(b -> builder.addOutputSlot(2 + SmelterLayout.Variant.ALLOY.outputX[1], 2 + SmelterLayout.OUTPUT_Y)
+            builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y).addItemStack(recipe.result());
+            recipe.byproduct().ifPresent(b -> builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[1], 2 + ElectricFurnaceLayout.OUTPUT_Y)
                     .addItemStack(b.stack())
                     .addRichTooltipCallback((view, tooltip) -> tooltip.add(RecipeViewerData.chanceLine(b.chance()))));
         }
 
         @Override
         public void draw(RecipeHolder<AlloyingRecipe> recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
-            SmelterLayout.drawElement(g, 1, 1, SmelterLayout.Variant.ALLOY);
-            SmelterLayout.previewHeat(g, 1, 1, SmelterLayout.Variant.ALLOY, recipe.value().processingTicks() * 50L);
+            ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY);
+            ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY, recipe.value().processingTicks() * 50L);
         }
 
         @Override

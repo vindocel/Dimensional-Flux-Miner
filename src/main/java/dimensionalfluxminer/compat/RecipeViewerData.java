@@ -3,7 +3,7 @@ package dimensionalfluxminer.compat;
 import dimensionalfluxminer.crusher.CrusherProcessing;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.registry.DfmRecipes;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +32,7 @@ public final class RecipeViewerData {
         return level == null ? List.of() : CrusherProcessing.displays(level);
     }
 
-    /** The mod's alloys and the alloys of other mods the Alloy Smelter runs. */
+    /** The mod's alloys and the alloys of other mods the Electric Furnace runs. */
     public static List<RecipeHolder<AlloyingRecipe>> alloying(RecipeManager manager) {
         Level level = Minecraft.getInstance().level;
         return level == null ? List.copyOf(manager.getAllRecipesFor(DfmRecipes.ALLOYING.get()))
@@ -40,13 +40,13 @@ public final class RecipeViewerData {
     }
 
     /**
-     * One Alloy Smelter furnace-mode operation: the blast furnace recipe of an item, or its furnace recipe when it
+     * One Electric Furnace furnace-mode operation: the blast furnace recipe of an item, or its furnace recipe when it
      * has none. Raw -> Ingot shows the bulk yield (2 -> 3; 1 -> 2 with the Efficiency Upgrade).
      */
     public record FurnaceDisplay(ResourceLocation id, Ingredient input, int inputCount, ItemStack output, boolean bulk, int cookTicks) {
     }
 
-    public static List<FurnaceDisplay> smelterFurnace(RecipeManager manager, RegistryAccess registries) {
+    public static List<FurnaceDisplay> electricFurnaceSmelting(RecipeManager manager, RegistryAccess registries) {
         List<FurnaceDisplay> result = new ArrayList<>();
         Set<Item> blastable = new HashSet<>();
         for (RecipeHolder<?> holder : manager.getAllRecipesFor(RecipeType.BLASTING)) {
@@ -78,7 +78,7 @@ public final class RecipeViewerData {
         }
         boolean bulk = false;
         for (ItemStack option : input.getItems()) {
-            bulk |= AlloySmelterBlockEntity.isRawToIngot(option, output);
+            bulk |= ElectricFurnaceBlockEntity.isRawToIngot(option, output);
         }
         out.add(new FurnaceDisplay(id, input, bulk ? 2 : 1, bulk ? output.copyWithCount(3) : output.copy(), bulk, recipe.getCookingTime()));
     }

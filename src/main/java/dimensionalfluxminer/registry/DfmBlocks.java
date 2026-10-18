@@ -7,7 +7,7 @@ import dimensionalfluxminer.miner.block.MinerChassisBlock;
 import dimensionalfluxminer.miner.block.MinerPartBlock;
 import dimensionalfluxminer.miner.block.MinerPortBlock;
 import dimensionalfluxminer.miner.block.MinerTerminalBlock;
-import dimensionalfluxminer.smelter.AlloySmelterBlock;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlock;
 import dimensionalfluxminer.content.CorruptedWaterPlants;
 import net.minecraft.util.ColorRGBA;
 import net.minecraft.world.level.block.Block;
@@ -39,8 +39,8 @@ public final class DfmBlocks {
     // Single-block machines
     public static final DeferredBlock<MechanicalCrusherBlock> MECHANICAL_CRUSHER = BLOCKS.registerBlock("mechanical_crusher", MechanicalCrusherBlock::new,
             machineCasing().noOcclusion());
-    public static final DeferredBlock<AlloySmelterBlock> ALLOY_SMELTER = BLOCKS.registerBlock("alloy_smelter", AlloySmelterBlock::new,
-            machineCasing().noOcclusion().lightLevel(AlloySmelterBlock::lightFromState));
+    public static final DeferredBlock<ElectricFurnaceBlock> ELECTRIC_FURNACE = BLOCKS.registerBlock("electric_furnace", ElectricFurnaceBlock::new,
+            machineCasing().noOcclusion().lightLevel(ElectricFurnaceBlock::lightFromState));
 
     // Materials
     public static final DeferredBlock<Block> SLAG_AGGREGATE = BLOCKS.registerSimpleBlock("slag_aggregate",

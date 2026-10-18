@@ -49,7 +49,7 @@ final class MachineTabs {
     }
 
     /**
-     * Redstone Control tab of Crusher and Smelter: the whole block listens to redstone; left click selects the next
+     * Redstone Control tab of Crusher and Electric Furnace: the whole block listens to redstone; left click selects the next
      * mode (Ignored, Normal, Inverted), right click the previous one. Striped while redstone is halting the machine.
      */
     static void redstone(DfmScreen<?> s, GuiGraphics g, int x, int y, CompoundTag d, int mouseX, int mouseY) {
@@ -70,7 +70,7 @@ final class MachineTabs {
                         Component.translatable("gui.dimensionalfluxminer.redstone_control", Component.translatable(mode.translationKey()))));
     }
 
-    /** Problems tab (bottom left) when something keeps a Crusher or Smelter from running. */
+    /** Problems tab (bottom left) when something keeps a Crusher or Electric Furnace from running. */
     static void problems(DfmScreen<?> s, GuiGraphics g, int x, int y, CompoundTag d) {
         List<Component> problems = new ArrayList<>();
         if (d.getBoolean("redstone_halt")) {

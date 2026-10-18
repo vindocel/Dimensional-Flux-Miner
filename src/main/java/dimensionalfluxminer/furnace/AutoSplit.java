@@ -1,4 +1,4 @@
-package dimensionalfluxminer.smelter;
+package dimensionalfluxminer.furnace;
 
 /**
  * Distribution of an incoming amount across compatible lanes when Auto-Split is ON.

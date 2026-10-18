@@ -1,18 +1,18 @@
 package dimensionalfluxminer.client.screen;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.smelter.SmelterMode;
+import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * The Alloy Smelter processing element (inputs, pipes, heat chamber, outputs), shared by the machine screen and
+ * The Electric Furnace processing element (inputs, pipes, heat chamber, outputs), shared by the machine screen and
  * the recipe viewers. Coordinates are relative to the top-left corner of the first input slot frame.
  */
-public final class SmelterLayout {
-    private static final ResourceLocation HEAT = DimensionalFluxMiner.id("textures/gui/smelter/heat.png");
+public final class ElectricFurnaceLayout {
+    private static final ResourceLocation HEAT = DimensionalFluxMiner.id("textures/gui/electric_furnace/heat.png");
 
     public static final int WIDTH = 68;
     public static final int HEIGHT = 75;
@@ -44,13 +44,13 @@ public final class SmelterLayout {
         public final int heatY;
 
         Variant(String texture, int[] outputX, int[] heatX, int heatY) {
-            this.texture = DimensionalFluxMiner.id("textures/gui/smelter/" + texture + ".png");
+            this.texture = DimensionalFluxMiner.id("textures/gui/electric_furnace/" + texture + ".png");
             this.outputX = outputX;
             this.heatX = heatX;
             this.heatY = heatY;
         }
 
-        public static Variant of(SmelterMode mode) {
+        public static Variant of(ElectricFurnaceMode mode) {
             return switch (mode) {
                 case NORMAL -> FURNACE;
                 case ALLOY -> ALLOY;
@@ -59,7 +59,7 @@ public final class SmelterLayout {
         }
     }
 
-    private SmelterLayout() {
+    private ElectricFurnaceLayout() {
     }
 
     public static void drawElement(GuiGraphics g, int x, int y, Variant variant) {

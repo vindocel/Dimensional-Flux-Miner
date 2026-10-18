@@ -12,7 +12,7 @@ import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.screen.CrusherLayout;
-import dimensionalfluxminer.client.screen.SmelterLayout;
+import dimensionalfluxminer.client.screen.ElectricFurnaceLayout;
 import dimensionalfluxminer.compat.RecipeViewerData;
 import dimensionalfluxminer.crusher.CrusherProcessing;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
@@ -24,19 +24,19 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
- * EMI integration: Crushing, Alloy Smelter furnace mode and Alloying. The Alloy Smelter recipes use the machine's own
+ * EMI integration: Crushing, Electric Furnace furnace mode and Alloying. The Electric Furnace recipes use the machine's own
  * processing element (inputs, pipes, heat chamber, outputs).
  */
 @EmiEntrypoint
 public class DfmEmiPlugin implements EmiPlugin {
     static final EmiStack CRUSHER = EmiStack.of(DfmBlocks.MECHANICAL_CRUSHER.get());
-    static final EmiStack SMELTER = EmiStack.of(DfmBlocks.ALLOY_SMELTER.get());
+    static final EmiStack ELECTRIC_FURNACE = EmiStack.of(DfmBlocks.ELECTRIC_FURNACE.get());
     static final EmiRecipeCategory CRUSHING = new EmiRecipeCategory(DimensionalFluxMiner.id("crushing"), CRUSHER);
-    static final EmiRecipeCategory SMELTING = new EmiRecipeCategory(DimensionalFluxMiner.id("smelting"), SMELTER);
-    static final EmiRecipeCategory ALLOYING = new EmiRecipeCategory(DimensionalFluxMiner.id("alloying"), SMELTER);
+    static final EmiRecipeCategory SMELTING = new EmiRecipeCategory(DimensionalFluxMiner.id("smelting"), ELECTRIC_FURNACE);
+    static final EmiRecipeCategory ALLOYING = new EmiRecipeCategory(DimensionalFluxMiner.id("alloying"), ELECTRIC_FURNACE);
     /** The element plus a 1 px margin (the alloy element is drawn 1 px around the slot area). */
-    private static final int ELEMENT_W = SmelterLayout.WIDTH + 2;
-    private static final int ELEMENT_H = SmelterLayout.HEIGHT + 2;
+    private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
+    private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
     /** Crushing preview: one operation every 4 s. */
     private static final long PREVIEW_MS = 4000;
 
@@ -53,15 +53,15 @@ public class DfmEmiPlugin implements EmiPlugin {
         registry.addCategory(SMELTING);
         registry.addCategory(ALLOYING);
         registry.addWorkstation(CRUSHING, CRUSHER);
-        registry.addWorkstation(SMELTING, SMELTER);
-        registry.addWorkstation(ALLOYING, SMELTER);
+        registry.addWorkstation(SMELTING, ELECTRIC_FURNACE);
+        registry.addWorkstation(ALLOYING, ELECTRIC_FURNACE);
 
         List<CrusherProcessing.Display> crushing = RecipeViewerData.crushing();
         for (int i = 0; i < crushing.size(); i++) {
             registry.addRecipe(new Crushing(DimensionalFluxMiner.id("/crushing/" + i), crushing.get(i)));
         }
         if (Minecraft.getInstance().level != null) {
-            for (RecipeViewerData.FurnaceDisplay display : RecipeViewerData.smelterFurnace(registry.getRecipeManager(),
+            for (RecipeViewerData.FurnaceDisplay display : RecipeViewerData.electricFurnaceSmelting(registry.getRecipeManager(),
                     Minecraft.getInstance().level.registryAccess())) {
                 registry.addRecipe(new Furnace(display));
             }
@@ -111,11 +111,11 @@ public class DfmEmiPlugin implements EmiPlugin {
         @Override
         public void addWidgets(WidgetHolder widgets) {
             widgets.addDrawable(0, 0, ELEMENT_W, ELEMENT_H, (g, mouseX, mouseY, delta) -> {
-                SmelterLayout.drawElement(g, 1, 1, SmelterLayout.Variant.FURNACE);
-                SmelterLayout.previewHeat(g, 1, 1, SmelterLayout.Variant.FURNACE, display.cookTicks() * 50L);
+                ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE);
+                ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE, display.cookTicks() * 50L);
             });
-            widgets.addSlot(inputs.getFirst(), 1 + SmelterLayout.INPUT_X[0], 1 + SmelterLayout.INPUT_Y).drawBack(false);
-            var output = widgets.addSlot(outputs.getFirst(), 1 + SmelterLayout.Variant.FURNACE.outputX[0], 1 + SmelterLayout.OUTPUT_Y)
+            widgets.addSlot(inputs.getFirst(), 1 + ElectricFurnaceLayout.INPUT_X[0], 1 + ElectricFurnaceLayout.INPUT_Y).drawBack(false);
+            var output = widgets.addSlot(outputs.getFirst(), 1 + ElectricFurnaceLayout.Variant.FURNACE.outputX[0], 1 + ElectricFurnaceLayout.OUTPUT_Y)
                     .drawBack(false).recipeContext(this);
             if (display.bulk()) {
                 output.appendTooltip(RecipeViewerData.bulkLine());
@@ -140,16 +140,16 @@ public class DfmEmiPlugin implements EmiPlugin {
         @Override
         public void addWidgets(WidgetHolder widgets) {
             widgets.addDrawable(0, 0, ELEMENT_W, ELEMENT_H, (g, mouseX, mouseY, delta) -> {
-                SmelterLayout.drawElement(g, 1, 1, SmelterLayout.Variant.ALLOY);
-                SmelterLayout.previewHeat(g, 1, 1, SmelterLayout.Variant.ALLOY, cycleMs);
+                ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY);
+                ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY, cycleMs);
             });
             for (int i = 0; i < 3; i++) {
                 EmiIngredient input = i < inputs.size() ? inputs.get(i) : EmiStack.EMPTY;
-                widgets.addSlot(input, 1 + SmelterLayout.INPUT_X[i], 1 + SmelterLayout.INPUT_Y).drawBack(false);
+                widgets.addSlot(input, 1 + ElectricFurnaceLayout.INPUT_X[i], 1 + ElectricFurnaceLayout.INPUT_Y).drawBack(false);
             }
             for (int i = 0; i < outputs.size(); i++) {
                 // The byproduct stack carries its chance; EMI shows it on the slot.
-                widgets.addSlot(outputs.get(i), 1 + SmelterLayout.Variant.ALLOY.outputX[i], 1 + SmelterLayout.OUTPUT_Y)
+                widgets.addSlot(outputs.get(i), 1 + ElectricFurnaceLayout.Variant.ALLOY.outputX[i], 1 + ElectricFurnaceLayout.OUTPUT_Y)
                         .drawBack(false).recipeContext(this);
             }
         }

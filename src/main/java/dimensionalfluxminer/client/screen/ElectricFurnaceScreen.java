@@ -5,9 +5,9 @@ import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
-import dimensionalfluxminer.smelter.SmelterMenu;
-import dimensionalfluxminer.smelter.SmelterMode;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceMenu;
+import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -22,24 +22,24 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Alloy Smelter: the standard panel with the processing element ({@link SmelterLayout}) in the middle: a furnace
+ * Electric Furnace: the standard panel with the processing element ({@link ElectricFurnaceLayout}) in the middle: a furnace
  * layout (three lanes, three outputs) or an alloy layout (three inputs feeding one chamber, main output +
  * byproduct). Three heat openings show the real progress of the running recipe, consumed from the top; the energy
  * bar on the left shimmers while it holds energy. Stored XP is not shown: it
  * drops as orbs when the block is broken and leaves through pipes on the XP faces. Tabs: Side Configuration,
  * Details, Auto Split and problems (left), upgrades, Rate, mode and redstone (right).
  */
-public class SmelterScreen extends DfmScreen<SmelterMenu> {
+public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
     private static final int WIDTH = 176;
-    private static final int HEIGHT = SmelterMenu.INVENTORY_TOP + 82;
+    private static final int HEIGHT = ElectricFurnaceMenu.INVENTORY_TOP + 82;
     /** Top-left corner of the processing element: centered in the panel, right under the title. */
-    private static final int ELEMENT_X = (WIDTH - SmelterLayout.WIDTH) / 2;
+    private static final int ELEMENT_X = (WIDTH - ElectricFurnaceLayout.WIDTH) / 2;
     private static final int ELEMENT_Y = 16;
-    private static final int[] INPUT_X = offset(SmelterLayout.INPUT_X);
-    private static final int INPUT_Y = ELEMENT_Y + SmelterLayout.INPUT_Y;
+    private static final int[] INPUT_X = offset(ElectricFurnaceLayout.INPUT_X);
+    private static final int INPUT_Y = ELEMENT_Y + ElectricFurnaceLayout.INPUT_Y;
     private static final int ENERGY_X = 7;
     /** The energy bar shares its middle with the burners. */
-    private static final int ENERGY_Y = ELEMENT_Y + SmelterLayout.BURNER_CENTER - ENERGY_FRAME_HEIGHT / 2;
+    private static final int ENERGY_Y = ELEMENT_Y + ElectricFurnaceLayout.BURNER_CENTER - ENERGY_FRAME_HEIGHT / 2;
 
     private static int[] offset(int[] xs) {
         int[] out = new int[xs.length];
@@ -53,24 +53,24 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
     private final MachineWindows.UpgradeWindow upgradeWindow;
     private final MachineWindows.InfoWindow detailsWindow;
 
-    public SmelterScreen(SmelterMenu menu, Inventory inventory, Component title) {
+    public ElectricFurnaceScreen(ElectricFurnaceMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         imageWidth = WIDTH;
         imageHeight = HEIGHT;
-        sideWindow = new SideConfigWindow(this, "smelter.side_config", SideRules.SMELTER,
+        sideWindow = new SideConfigWindow(this, "electric_furnace.side_config", SideRules.ELECTRIC_FURNACE,
                 List.of(Transmission.ITEM, Transmission.ENERGY, Transmission.EXPERIENCE), this::data, menu.pos(),
                 Map.of(Transmission.ITEM, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.ITEMS, List.of(
                                 Component.translatable("gui.dimensionalfluxminer.auto_input.help"),
                                 Component.translatable("gui.dimensionalfluxminer.auto_eject.help"))),
                         Transmission.EXPERIENCE, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.FLUID_OUTPUT, List.of(
-                                Component.translatable("gui.dimensionalfluxminer.smelter.auto_eject_fluid.help")))));
-        upgradeWindow = new MachineWindows.UpgradeWindow(this, "smelter.upgrades", menu.upgradeSlot());
-        detailsWindow = new MachineWindows.InfoWindow(this, "smelter.details", Component.translatable("gui.dimensionalfluxminer.details"),
+                                Component.translatable("gui.dimensionalfluxminer.electric_furnace.auto_eject_fluid.help")))));
+        upgradeWindow = new MachineWindows.UpgradeWindow(this, "electric_furnace.upgrades", menu.upgradeSlot());
+        detailsWindow = new MachineWindows.InfoWindow(this, "electric_furnace.details", Component.translatable("gui.dimensionalfluxminer.details"),
                 () -> {
                     CompoundTag d = data();
                     return List.of(
                             MachineText.statusLine(d),
-                            Component.translatable("gui.dimensionalfluxminer.smelter.mode", modeName(d)),
+                            Component.translatable("gui.dimensionalfluxminer.electric_furnace.mode", modeName(d)),
                             Component.translatable("gui.dimensionalfluxminer.rate.tooltip", d.getInt("rate")),
                             Component.translatable("gui.dimensionalfluxminer.power_limit", fe(d.getLong("power")) + "/t"),
                             MachineText.energyLine(d),
@@ -82,11 +82,11 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
                 });
     }
 
-    private static SmelterMode mode(CompoundTag d) {
+    private static ElectricFurnaceMode mode(CompoundTag d) {
         try {
-            return SmelterMode.valueOf(d.getString("mode"));
+            return ElectricFurnaceMode.valueOf(d.getString("mode"));
         } catch (IllegalArgumentException e) {
-            return SmelterMode.ALL;
+            return ElectricFurnaceMode.ALL;
         }
     }
 
@@ -96,13 +96,13 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
 
     @Override
     protected int inventoryTop() {
-        return SmelterMenu.INVENTORY_TOP;
+        return ElectricFurnaceMenu.INVENTORY_TOP;
     }
 
     @Override
     protected void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
         CompoundTag d = data();
-        SmelterLayout.Variant variant = SmelterLayout.Variant.of(mode(d));
+        ElectricFurnaceLayout.Variant variant = ElectricFurnaceLayout.Variant.of(mode(d));
         boolean alloyRunning = d.getBoolean("alloy_running");
         HolderLookup.Provider registries = menu.player().registryAccess();
         Component mode = modeName(d);
@@ -110,13 +110,13 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
         boolean operating = "active".equals(d.getString("state"));
         int ex = x + ELEMENT_X;
         int ey = y + ELEMENT_Y;
-        SmelterLayout.drawElement(g, ex, ey, variant);
+        ElectricFurnaceLayout.drawElement(g, ex, ey, variant);
 
         ListTag lanes = d.getList("lanes", Tag.TAG_COMPOUND);
-        for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+        for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
             CompoundTag laneTag = lane < lanes.size() ? lanes.getCompound(lane) : new CompoundTag();
-            int ix = ex + SmelterLayout.INPUT_X[lane];
-            int iy = ey + SmelterLayout.INPUT_Y;
+            int ix = ex + ElectricFurnaceLayout.INPUT_X[lane];
+            int iy = ey + ElectricFurnaceLayout.INPUT_Y;
             QueueView in = QueueView.read(laneTag.getList("in", Tag.TAG_COMPOUND), registries);
             if (!in.isEmpty()) {
                 queueEntry(g, in.prototype(0), in.count(0), ix + 1, iy + 1);
@@ -124,36 +124,36 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
             slotHover(g, ix, iy, mouseX, mouseY);
             int index = lane;
             hotspot(ix, iy, 18, 18,
-                    () -> menu.getCarried().isEmpty() ? AlloySmelterBlockEntity.BUTTON_TAKE_INPUT + index
-                            : AlloySmelterBlockEntity.BUTTON_INSERT_LANE + index,
-                    () -> menu.getCarried().isEmpty() ? AlloySmelterBlockEntity.BUTTON_TAKE_INPUT_HALF + index
-                            : AlloySmelterBlockEntity.BUTTON_INSERT_ONE_LANE + index,
-                    () -> in.slotTooltip(0, "gui.dimensionalfluxminer.smelter.input", index + 1),
-                    AlloySmelterBlockEntity.BUTTON_SHIFT, creativePick(AlloySmelterBlockEntity.BUTTON_PICK_INPUT + index));
+                    () -> menu.getCarried().isEmpty() ? ElectricFurnaceBlockEntity.BUTTON_TAKE_INPUT + index
+                            : ElectricFurnaceBlockEntity.BUTTON_INSERT_LANE + index,
+                    () -> menu.getCarried().isEmpty() ? ElectricFurnaceBlockEntity.BUTTON_TAKE_INPUT_HALF + index
+                            : ElectricFurnaceBlockEntity.BUTTON_INSERT_ONE_LANE + index,
+                    () -> in.slotTooltip(0, "gui.dimensionalfluxminer.electric_furnace.input", index + 1),
+                    ElectricFurnaceBlockEntity.BUTTON_SHIFT, creativePick(ElectricFurnaceBlockEntity.BUTTON_PICK_INPUT + index));
             // Smelting: each opening shows the progress of its own lane.
             if (operating && !alloyRunning && !in.isEmpty()) {
-                SmelterLayout.heat(g, ex + variant.heatX[lane], ey + variant.heatY, laneTag.getDouble("progress"));
+                ElectricFurnaceLayout.heat(g, ex + variant.heatX[lane], ey + variant.heatY, laneTag.getDouble("progress"));
             }
         }
         // Alloy: one combined operation, the three openings share its progress.
         if (operating && alloyRunning) {
             for (int hx : variant.heatX) {
-                SmelterLayout.heat(g, ex + hx, ey + variant.heatY, d.getDouble("alloy_progress"));
+                ElectricFurnaceLayout.heat(g, ex + hx, ey + variant.heatY, d.getDouble("alloy_progress"));
             }
         }
         for (int i = 0; i < variant.outputX.length; i++) {
             CompoundTag laneTag = i < lanes.size() ? lanes.getCompound(i) : new CompoundTag();
             QueueView out = QueueView.read(laneTag.getList("out", Tag.TAG_COMPOUND), registries);
             int number = i + 1;
-            Supplier<List<Component>> tooltip = variant == SmelterLayout.Variant.ALLOY
-                    ? () -> out.slotTooltip(0, number == 1 ? "gui.dimensionalfluxminer.smelter.main_output"
-                            : "gui.dimensionalfluxminer.smelter.byproduct", 0)
-                    : () -> out.slotTooltip(0, "gui.dimensionalfluxminer.smelter.output", number);
-            outputBox(g, blocked, out, ex + variant.outputX[i], ey + SmelterLayout.OUTPUT_Y,
-                    AlloySmelterBlockEntity.BUTTON_TAKE_OUTPUT + i, tooltip, mouseX, mouseY);
+            Supplier<List<Component>> tooltip = variant == ElectricFurnaceLayout.Variant.ALLOY
+                    ? () -> out.slotTooltip(0, number == 1 ? "gui.dimensionalfluxminer.electric_furnace.main_output"
+                            : "gui.dimensionalfluxminer.electric_furnace.byproduct", 0)
+                    : () -> out.slotTooltip(0, "gui.dimensionalfluxminer.electric_furnace.output", number);
+            outputBox(g, blocked, out, ex + variant.outputX[i], ey + ElectricFurnaceLayout.OUTPUT_Y,
+                    ElectricFurnaceBlockEntity.BUTTON_TAKE_OUTPUT + i, tooltip, mouseX, mouseY);
         }
         // The heat chamber opens this machine's recipes in EMI / JEI.
-        recipeArea(ex + SmelterLayout.CHAMBER_X, ey + SmelterLayout.CHAMBER_Y, SmelterLayout.CHAMBER_W, SmelterLayout.CHAMBER_H,
+        recipeArea(ex + ElectricFurnaceLayout.CHAMBER_X, ey + ElectricFurnaceLayout.CHAMBER_Y, ElectricFurnaceLayout.CHAMBER_W, ElectricFurnaceLayout.CHAMBER_H,
                 () -> switch (variant) {
             case FURNACE -> new ResourceLocation[] {RecipeViewers.SMELTING};
             case ALLOY -> new ResourceLocation[] {RecipeViewers.ALLOYING};
@@ -178,12 +178,12 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
             case ALL -> ICON_SMELTING_ALLOY_FURNACE;
         };
         tab(g, x + imageWidth, y + MachineTabs.ROW_3, false, TAB_DEFAULT, modeIcon, true, mouseX, mouseY,
-                () -> AlloySmelterBlockEntity.BUTTON_MODE, () -> AlloySmelterBlockEntity.BUTTON_MODE_BACK, () -> List.of(
-                        Component.translatable("gui.dimensionalfluxminer.smelter.mode", mode),
-                        Component.translatable("gui.dimensionalfluxminer.smelter.mode.tooltip").withStyle(ChatFormatting.DARK_GRAY)));
+                () -> ElectricFurnaceBlockEntity.BUTTON_MODE, () -> ElectricFurnaceBlockEntity.BUTTON_MODE_BACK, () -> List.of(
+                        Component.translatable("gui.dimensionalfluxminer.electric_furnace.mode", mode),
+                        Component.translatable("gui.dimensionalfluxminer.electric_furnace.mode.tooltip").withStyle(ChatFormatting.DARK_GRAY)));
         boolean split = d.getBoolean("auto_split");
         iconTab(g, x - TAB_SIZE, y + MachineTabs.ROW_3, true, TAB_DEFAULT, ICON_SORTING, TAB_INNER, true, split, mouseX, mouseY,
-                () -> AlloySmelterBlockEntity.BUTTON_AUTO_SPLIT, null, () -> List.of(
+                () -> ElectricFurnaceBlockEntity.BUTTON_AUTO_SPLIT, null, () -> List.of(
                         Component.translatable("gui.dimensionalfluxminer.auto_split", MachineText.onOff(split)),
                         Component.translatable("gui.dimensionalfluxminer.auto_split.help").withStyle(ChatFormatting.GRAY)));
         MachineTabs.redstone(this, g, x, y, d, mouseX, mouseY);
@@ -201,7 +201,7 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
             }
             if (route.extractsItems()) {
                 for (int ox : variant.outputX) {
-                    MachineTabs.outline(g, ex + ox - 1, ey + SmelterLayout.OUTPUT_Y - 1, 20, 20, SideRoute.ITEM_OUTPUT.color());
+                    MachineTabs.outline(g, ex + ox - 1, ey + ElectricFurnaceLayout.OUTPUT_Y - 1, 20, 20, SideRoute.ITEM_OUTPUT.color());
                 }
             }
         }
@@ -216,8 +216,8 @@ public class SmelterScreen extends DfmScreen<SmelterMenu> {
             queueEntry(g, view.prototype(0), view.count(0), bx + 1, by + 1);
         }
         slotHover(g, bx, by, mouseX, mouseY);
-        int index = buttonId - AlloySmelterBlockEntity.BUTTON_TAKE_OUTPUT;
-        hotspot(bx, by, 18, 18, () -> buttonId, () -> AlloySmelterBlockEntity.BUTTON_TAKE_OUTPUT_HALF + index, tooltip,
-                AlloySmelterBlockEntity.BUTTON_SHIFT, creativePick(AlloySmelterBlockEntity.BUTTON_PICK_OUTPUT + index));
+        int index = buttonId - ElectricFurnaceBlockEntity.BUTTON_TAKE_OUTPUT;
+        hotspot(bx, by, 18, 18, () -> buttonId, () -> ElectricFurnaceBlockEntity.BUTTON_TAKE_OUTPUT_HALF + index, tooltip,
+                ElectricFurnaceBlockEntity.BUTTON_SHIFT, creativePick(ElectricFurnaceBlockEntity.BUTTON_PICK_OUTPUT + index));
     }
 }

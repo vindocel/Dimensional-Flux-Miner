@@ -10,7 +10,7 @@
   "ambientocclusion": false,
   "render_type": "minecraft:cutout",
   "textures": {
-    "terminal": "dimensionalfluxminer:block/alloy_smelter/smelter_terminal_idle",
+    "terminal": "dimensionalfluxminer:block/electric_furnace/electric_furnace_terminal_idle",
     "particle": "dimensionalfluxminer:block/mechanical_crusher/mechanical_crusher",
     "machine": "dimensionalfluxminer:block/mechanical_crusher/mechanical_crusher"
   },

@@ -16,7 +16,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Advancement events reported by the machines. Machine events go to the Miner's owner when online, otherwise to
- * the players near the machine; the Crusher and the Smelter (which have no owner) report to the players near them.
+ * the players near the machine; the Crusher and the Electric Furnace (which have no owner) report to the players near them.
  */
 public final class DfmAdvancements {
     public static final DeferredRegister<CriterionTrigger<?>> TRIGGERS = DeferredRegister.create(Registries.TRIGGER_TYPE, DimensionalFluxMiner.MOD_ID);

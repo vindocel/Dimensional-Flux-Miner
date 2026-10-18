@@ -134,15 +134,23 @@ public final class CrusherGameTests {
         MechanicalCrusherBlockEntity be = place(helper);
         BlockPos abs = helper.absolutePos(MACHINE);
         // Fresh machine: every face except front and top accepts energy; the top is a fixed item input; front exposes nothing.
+        // The configurable faces have an item handler for the cables to find, but with no route it moves nothing.
         Direction front = be.facing();
+        be.output().insert(new ItemStack(Items.GRAVEL), 4, false);
         for (Direction dir : Direction.values()) {
             boolean energyExpected = dir != front && dir != Direction.UP;
             helper.assertTrue((helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, dir) != null) == energyExpected,
                     "default energy on " + dir);
-            boolean itemExpected = dir == Direction.UP;
-            helper.assertTrue((helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, dir) != null) == itemExpected,
-                    "default item route on " + dir);
+            IItemHandler items = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, dir);
+            helper.assertTrue((items != null) == (dir != front), "item handler on " + dir);
+            if (items != null && dir != Direction.UP) {
+                for (int slot = 0; slot < items.getSlots(); slot++) {
+                    helper.assertTrue(items.extractItem(slot, 64, false).isEmpty(), "no route: nothing leaves through " + dir);
+                    helper.assertTrue(items.insertItem(slot, new ItemStack(Items.COAL), false).getCount() == 1, "no route: nothing enters through " + dir);
+                }
+            }
         }
+        be.output().clear();
         IItemHandler top = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, Direction.UP);
         helper.assertTrue(top.insertItem(0, new ItemStack(Items.COAL), true).isEmpty(), "top accepts inputs");
         helper.assertFalse(be.configureSide(RelativeFace.UP, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "top never outputs");
@@ -165,6 +173,56 @@ public final class CrusherGameTests {
             helper.assertTrue(handler.extractItem(slot, 64, true).isEmpty() || !handler.getStackInSlot(slot).is(Items.COAL), "input not extractable");
         }
         helper.succeed();
+    }
+
+    @GameTest(template = "empty_small", timeoutTicks = 400)
+    public static void cablesThatPullOrPushTakeTheRoute(GameTestHelper helper) {
+        // As on the Miner ports: a cable that keeps pulling from a face gets the item output, one that pushes the input.
+        MechanicalCrusherBlockEntity be = place(helper);
+        be.output().insert(new ItemStack(Items.GRAVEL), 8, false);
+        var level = helper.getLevel();
+        BlockPos abs = helper.absolutePos(MACHINE);
+        Direction left = RelativeFace.LEFT.toDirection(be.facing());
+        Direction back = RelativeFace.BACK.toDirection(be.facing());
+        helper.assertTrue(pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, left)) == 0, "nothing leaves before the route");
+        helper.assertTrue(push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, back), new ItemStack(Items.COAL)) == 0,
+                "nothing enters before the route");
+        helper.runAfterDelay(20, () -> {
+            helper.assertTrue(be.route(RelativeFace.LEFT, Transmission.ITEM) == SideRoute.ITEM_OUTPUT, "the pulling cable got the output");
+            helper.assertTrue(be.route(RelativeFace.BACK, Transmission.ITEM) == SideRoute.ITEM_INPUT_ALL, "the pushing cable got the input");
+            int both = (1 << RelativeFace.LEFT.ordinal()) | (1 << RelativeFace.BACK.ordinal());
+            helper.assertTrue(be.cableSides() == both && be.sides().locked(RelativeFace.LEFT, Transmission.ITEM)
+                    && be.sides().locked(RelativeFace.BACK, Transmission.ITEM), "locked while the cables are active");
+            helper.assertFalse(be.sides().cycle(RelativeFace.LEFT, Transmission.ITEM, be.itemProfile(), true), "a locked face does not cycle");
+            helper.assertTrue(pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, left)) > 0, "the pulling cable now gets items");
+            helper.assertTrue(push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, back), new ItemStack(Items.COAL)) > 0,
+                    "the pushing cable now feeds the input");
+        });
+        // Quiet cables free the faces; the routes stay.
+        helper.runAfterDelay(20 + dimensionalfluxminer.machine.CableActivity.ACTIVE_TICKS + 20, () -> {
+            helper.assertTrue(be.cableSides() == 0 && !be.sides().locked(RelativeFace.LEFT, Transmission.ITEM), "freed");
+            helper.assertTrue(be.route(RelativeFace.LEFT, Transmission.ITEM) == SideRoute.ITEM_OUTPUT
+                    && be.route(RelativeFace.BACK, Transmission.ITEM) == SideRoute.ITEM_INPUT_ALL, "routes kept");
+            helper.succeed();
+        });
+    }
+
+    /** What a pulling cable takes from every slot of a face. */
+    static int pull(IItemHandler handler) {
+        int taken = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            taken += handler.extractItem(slot, 64, false).getCount();
+        }
+        return taken;
+    }
+
+    /** What a pushing cable puts into a face, trying every slot. */
+    static int push(IItemHandler handler, ItemStack stack) {
+        ItemStack left = stack.copy();
+        for (int slot = 0; slot < handler.getSlots() && !left.isEmpty(); slot++) {
+            left = handler.insertItem(slot, left, false);
+        }
+        return stack.getCount() - left.getCount();
     }
 
     @GameTest(template = "empty_small")

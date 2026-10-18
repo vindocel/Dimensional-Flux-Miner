@@ -225,8 +225,9 @@ final class SideConfigWindow extends DfmScreen.Window {
     private void side(GuiGraphics g, SideConfiguration config, int profile, RelativeFace face, int x, int y, int mouseX, int mouseY) {
         List<SideRoute> allowed = rules.allowed(face, current, profile);
         boolean enabled = !allowed.isEmpty();
-        // A Logistics Networks node uses this face: its route is set by the node and cannot be changed here.
+        // A Logistics Networks node or an active cable uses this face: its route is set from outside and cannot be changed here.
         boolean node = config.locked(face, current);
+        boolean cable = node && current == Transmission.ITEM && (data.get().getInt("cable_sides") & (1 << face.ordinal())) != 0;
         // A node's item input on a machine with dedicated lanes cannot move, but a click picks all / lane 1 / 2 / 3.
         boolean lanes = node && current == Transmission.ITEM && (data.get().getInt("node_lanes") & (1 << face.ordinal())) != 0;
         boolean fixed = allowed.size() < 2 || node && !lanes;
@@ -248,7 +249,10 @@ final class SideConfigWindow extends DfmScreen.Window {
                     if (!neighbor.isEmpty()) {
                         lines.add(neighbor.getHoverName());
                     }
-                    if (node) {
+                    if (cable) {
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.miner.port.cable").withStyle(ChatFormatting.AQUA));
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.miner.port.cable_note").withStyle(ChatFormatting.GRAY));
+                    } else if (node) {
                         lines.add(Component.translatable("gui.dimensionalfluxminer.miner.port.node").withStyle(ChatFormatting.AQUA));
                         lines.add(Component.translatable(lanes ? "gui.dimensionalfluxminer.side_config.node_lanes"
                                 : "gui.dimensionalfluxminer.miner.port.node_note").withStyle(ChatFormatting.GRAY));

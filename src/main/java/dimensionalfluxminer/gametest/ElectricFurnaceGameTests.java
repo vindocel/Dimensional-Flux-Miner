@@ -332,6 +332,31 @@ public final class ElectricFurnaceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty_small", timeoutTicks = 200)
+    public static void cablesSetTheItemRoutesAndKeepWhatTheFaceDid(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setRate(1);
+        be.setMode(ElectricFurnaceMode.NORMAL);
+        be.output(0).insert(new ItemStack(Items.IRON_INGOT), 8, false);
+        helper.assertTrue(be.configureSide(RelativeFace.RIGHT, Transmission.ITEM, SideRoute.ITEM_INPUT_ALL), "input by hand");
+        var level = helper.getLevel();
+        BlockPos abs = helper.absolutePos(MACHINE);
+        // A cable pulling from an empty face and one pulling from the input face; a pipe pushing into another empty face.
+        CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.LEFT.toDirection(be.facing())));
+        CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.RIGHT.toDirection(be.facing())));
+        helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+                new ItemStack(Items.RAW_IRON)) == 0, "nothing enters before the route");
+        helper.runAfterDelay(20, () -> {
+            helper.assertTrue(be.route(RelativeFace.LEFT, Transmission.ITEM) == SideRoute.ITEM_OUTPUT, "pulled face: output");
+            helper.assertTrue(be.route(RelativeFace.RIGHT, Transmission.ITEM) == SideRoute.ITEM_INPUT_OUTPUT_ALL, "input kept, output added");
+            helper.assertTrue(be.route(RelativeFace.BACK, Transmission.ITEM) == SideRoute.ITEM_INPUT_ALL, "pushed face: input");
+            helper.assertTrue(be.route(RelativeFace.UP, Transmission.ITEM) == SideRoute.NONE, "untouched face stays empty");
+            helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+                    new ItemStack(Items.RAW_IRON)) == 1, "the pipe now feeds the furnace");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = "empty_small")
     public static void liquidExperienceIsAVirtualView(GameTestHelper helper) {
         ElectricFurnaceBlockEntity be = place(helper);

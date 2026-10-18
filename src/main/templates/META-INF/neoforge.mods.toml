@@ -7,7 +7,7 @@ issueTrackerURL="https://github.com/vindocel/Dimensional-Flux-Miner/issues"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-displayURL="https://github.com/vindocel/Dimensional-Flux-Miner"
+displayURL="https://vindocel.github.io/Showcase-DFM/"
 logoFile="logo.png"
 description='''
 A miner that never digs: it turns energy into the ores of your dimension. With a crusher, an electric furnace and an animated guide.

@@ -3,6 +3,7 @@ package dimensionalfluxminer.miner;
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmTags;
+import dimensionalfluxminer.machine.CableActivity;
 import dimensionalfluxminer.machine.LogicalTickCounter;
 import dimensionalfluxminer.machine.ThroughputStreak;
 import dimensionalfluxminer.machine.NeighborTransfer;
@@ -192,20 +193,13 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private int energyConnected;
     private int[] nodeColors = new int[MinerPorts.Face.VALUES.length];
     /** A cable that pulled from / pushed into a face this recently still counts as using it. */
-    public static final int CABLE_ACTIVE_TICKS = 100;
+    public static final int CABLE_ACTIVE_TICKS = CableActivity.ACTIVE_TICKS;
     private final PortHandler[] portHandlers = new PortHandler[MinerPorts.Face.VALUES.length];
-    private final long[] pullSeen = never();
-    private final long[] pushSeen = never();
+    private final CableActivity cableActivity = new CableActivity(MinerPorts.Face.VALUES.length);
     private int cableOutput = -1;
     private int cableMatter = -1;
     /** Faces whose role a cable sets (for the Side Configuration). */
     private int cableFaces;
-
-    private static long[] never() {
-        long[] seen = new long[MinerPorts.Face.VALUES.length];
-        java.util.Arrays.fill(seen, Long.MIN_VALUE / 2);
-        return seen;
-    }
     /** The structure was checked against the current layout since loading (a machine of an older layout comes apart). */
     private boolean layoutVerified;
 
@@ -604,13 +598,13 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     private void notePull(MinerPorts.Face face) {
         if (level != null) {
-            pullSeen[face.ordinal()] = level.getGameTime();
+            cableActivity.notePull(face.ordinal(), level.getGameTime());
         }
     }
 
     private void notePush(MinerPorts.Face face) {
         if (level != null) {
-            pushSeen[face.ordinal()] = level.getGameTime();
+            cableActivity.notePush(face.ordinal(), level.getGameTime());
         }
     }
 
@@ -700,8 +694,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         }
         // Cables: the face that keeps being pulled from / pushed into, unless a node already holds that role.
         long now = level.getGameTime();
-        cableOutput = activeFace(pullSeen, cableOutput, now);
-        cableMatter = stabilized ? activeFace(pushSeen, cableMatter, now) : -1;
+        cableOutput = cableActivity.activeFace(true, cableOutput, now);
+        cableMatter = stabilized ? cableActivity.activeFace(false, cableMatter, now) : -1;
         int cables = 0;
         if (out < 0 && cableOutput >= 0) {
             out = cableOutput;
@@ -721,23 +715,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             nodeColors = colors;
             syncToClients();
         }
-    }
-
-    /**
-     * The face a cable is using for one role: the current holder while its cable stays active, otherwise the face
-     * used most recently within {@link #CABLE_ACTIVE_TICKS}, or -1.
-     */
-    private static int activeFace(long[] seen, int holder, long now) {
-        if (holder >= 0 && now - seen[holder] <= CABLE_ACTIVE_TICKS) {
-            return holder;
-        }
-        int best = -1;
-        for (int i = 0; i < seen.length; i++) {
-            if (now - seen[i] <= CABLE_ACTIVE_TICKS && (best < 0 || seen[i] > seen[best])) {
-                best = i;
-            }
-        }
-        return best;
     }
 
     /** Color (ARGB, 0 = none) of the network node frame drawn on each face. */

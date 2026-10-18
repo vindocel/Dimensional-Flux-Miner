@@ -11,7 +11,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 |---|---|
 | (root) | `DimensionalFluxMiner` (mod entry point, event wiring) and `DfmConfig` (server config, parsed corruption rules) |
 | `registry` | Every deferred register: blocks, items, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
-| `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping |
+| `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping, cable detection (`CableActivity`, also used by the Miner ports, and `CablePortItemHandler`) |
 | `machine.math` | Pure math, covered by JUnit: `RateScale` (Rate 1–10 curve and FE/t), `MinerProductionCurve`, `DynamicEnergyBuffer` (buffer and fractional FE debt), `WorkAccumulator` |
 | `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone), per-machine rules, `NodeInputLanes` (lanes of the network node item inputs on the Electric Furnace Alloy profile) |
 | `menu` | `MachineMenu` and the menu sync used by every screen |
@@ -41,6 +41,11 @@ material (Auto Input / Auto Eject of items, Auto Eject of fluids through `autoEj
 Side Configuration, redstone mode, client sync and drops. Each server tick runs `logicalCycle`; every extra ticker call
 of the same game time (tick accelerators) runs one more full cycle. A subclass implements `processCycle`,
 `autoInputCycle`, `autoEjectCycle`, `createItemHandler(route)` and `effectivePowerLimit`.
+
+Every configurable item face exposes a `CablePortItemHandler`: the route's own handler plus probe slots for what the
+route lacks, which never move items but record a cable pulling or pushing (`CableActivity`). Every 10 ticks
+`scanAutomaticSides` applies the Logistics Networks nodes first, then the active cables (pull = output, push = input,
+what the face already did is kept), and locks those faces in the Side Configuration (`cable_sides` in the menu data).
 
 **Electric Furnace** (`electric_furnace`):
 

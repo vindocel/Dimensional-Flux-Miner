@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.2.2 — unreleased (since 0.2.1-beta.3)
+
+### ✨ Added
+
+- 🚀 **Ad Astra planets.** The Basic Core no longer drains the planets or the orbits (new dimension type tag
+  `#dimensionalfluxminer:corruption_blocked`); there the Miner runs on Matter Injection. Each planet takes its own
+  stone like the Overworld stone (0.5 DM, cobblestone 0.3), plus the blocks of other dimensions it generates:
+  soul soil on the Moon; basalt, blackstone and magma blocks on Mercury and Venus; deepslate on Glacio. Also Mars
+  conglomerate (0.3), Venus infernal spire blocks (0.5), Glacio permafrost (0.1, like dirt) and the Moon, Mars and
+  Venus sands (0.3, like sand). Each block counts only on its own planet; obsidian counts everywhere.
+- 👻 **Assembly preview with real blocks.** Holding a Miner Terminal shows the whole machine as see-through blocks
+  where it would be built, facing you. Once the terminal is placed, the missing parts stay visible the same way (the
+  next one pulses, a red outline where a block is in the way) until the machine forms; it no longer fades after 30
+  seconds. Right-clicking the terminal still places the next part from your inventory, and a click with no part to
+  place hides or shows the preview.
+- ⚙️ **The Dimensional Crusher is now the Mechanical Crusher** (*Triturador Mecânico*). Its ID changed to
+  `dimensionalfluxminer:mechanical_crusher`. ⚠️ The old `dimensional_crusher` ID is gone: crushers placed or kept in
+  older worlds disappear, so craft them again. Datapacks and scripts that name the old recipe ID
+  (`dimensionalfluxminer:dimensional_crusher`) need the new one.
+- 🔵 **Energy is always light blue**, the color of the energy bar: the energy faces and tab of the Side Configuration
+  were green.
+- 📖 **A more complete guide.** Two new chapters: **Automation and logistics** (Side Configuration colors, Auto
+  Input/Eject per material, redstone modes, cables on the Miner's ports, Logistics Networks nodes and the Smelter's
+  alloy inputs, tick accelerators) and **Why did my machine stop?** (every Terminal and machine warning with its fix).
+  New pages on breaking a machine, which core to craft first, the Drain needing loaded chunks, the Miner's filter, the
+  Smelter's Inputs 1-3, Liquid Experience with other mods' pipes, alloys from other mods, lifeless worlds and the claim
+  and spawn protections against Dimensional Death. The progression path starts with getting an energy source, and the
+  part list and matter table were corrected. Long tables continue on the next page with their header, and mod
+  integrations show as a short compatibility box that opens its full description.
+- 🟫 **Terracotta and grass blocks** are matter in the Overworld: every terracotta (plain and the 16 colors) 0.5 DM,
+  grass blocks 0.2 DM. On the guide's dimension pages every slot now cycles through a block family (stone and its
+  variants, deepslate and its variants, dirt and grass, sand and red sand, the terracottas, the ores; the same for
+  the Nether and the End), so the reader sees which families count, not a single item.
+- 🏖️ **Sand and red sand** are now matter in the Overworld (0.3 DM). Blocks made from them (sandstone, glass) follow
+  the variant rule.
+- 🔗 **Logistics Networks on the Alloy Smelter in an Alloy mode.** A node side that receives items feeds the three
+  inputs by default. It stays locked, but a click switches it through all lanes, lane 1, lane 2, lane 3 and back. A second node side
+  means single lanes: the first side moves to lane 1 and the new one to lane 2, a third goes to lane 3. Taking
+  another side's lane swaps them, and removing a side moves the others down to close the gap. A lane set by hand
+  before the node is kept.
+
+### 🔄 Changed
+
+- 🧱 **Miner middle layer.** The four corners of the middle layer are now Steel Chassis instead of Ventilation Units
+  (6 Steel Chassis and 5 Ventilation Units in total). ⚠️ Miners built with the previous layout come apart when the
+  world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
+
 ## 0.2.1 — unreleased (since 0.2.0-beta.4)
 
 ### ✨ Added
@@ -21,11 +68,6 @@
   is hidden (its wrench still shows it) and the port gets a thin frame in the network's color. On the Crusher and
   the Alloy Smelter, the side each node channel uses gets the route it needs and is locked in the Side Configuration;
   the node keeps its own look.
-  - On the Alloy Smelter in an Alloy mode, a node side that receives items feeds the three inputs by default. It
-    stays locked, but a click switches it through all lanes, lane 1, lane 2, lane 3 and back. A second node side
-    means single lanes: the first side moves to lane 1 and the new one to lane 2, a third goes to lane 3. Taking
-    another side's lane swaps them, and removing a side moves the others down to close the gap. A lane set by hand
-    before the node is kept.
 - 🔌 Dynamic Miner ports for any cable or pipe: a cable that keeps pulling items from a port face gets the Item
   Output there, one that keeps pushing Matter (Stabilized Core) gets the Matter Input. The face is locked in the Side
   Configuration while the cable stays active and is freed a few seconds after it stops; the role stays.
@@ -44,37 +86,6 @@
   - New server config: `corruption.enabled` (off = the Basic Core gets no matter), `corruption.blockedDimensions`,
     `corruption.respectSpawnProtection` (on), `corruption.protectedRegions` and `corruption.claimFailurePolicy`
     (`deny`: no corruption while an installed claim mod cannot be queried; `ignore`).
-- 🚀 **Ad Astra planets.** The Basic Core no longer drains the planets or the orbits (new dimension type tag
-  `#dimensionalfluxminer:corruption_blocked`); there the Miner runs on Matter Injection. Each planet takes its own
-  stone like the Overworld stone (0.5 DM, cobblestone 0.3), plus the blocks of other dimensions it generates:
-  soul soil on the Moon; basalt, blackstone and magma blocks on Mercury and Venus; deepslate on Glacio. Also Mars
-  conglomerate (0.3), Venus infernal spire blocks (0.5), Glacio permafrost (0.1, like dirt) and the Moon, Mars and
-  Venus sands (0.3, like sand). Each block counts only on its own planet; obsidian counts everywhere.
-- 👻 **Assembly preview with real blocks.** Holding a Miner Terminal shows the whole machine as see-through blocks
-  where it would be built, facing you. Once the terminal is placed, the missing parts stay visible the same way (the
-  next one pulses, a red outline where a block is in the way) until the machine forms; it no longer fades after 30
-  seconds. Right-clicking the terminal still places the next part from your inventory, and a click with no part to
-  place hides or shows the preview.
-- ⚙️ **The Dimensional Crusher is now the Mechanical Crusher** (*Triturador Mecânico*). Its ID changed to
-  `dimensionalfluxminer:mechanical_crusher`; the old `dimensional_crusher` ID is an alias, so crushers in existing
-  worlds and inventories keep working. Datapacks and scripts that name the old recipe ID
-  (`dimensionalfluxminer:dimensional_crusher`) need the new one.
-- 🔵 **Energy is always light blue**, the color of the energy bar: the energy faces and tab of the Side Configuration
-  were green.
-- 📖 **A more complete guide.** Two new chapters: **Automation and logistics** (Side Configuration colors, Auto
-  Input/Eject per material, redstone modes, cables on the Miner's ports, Logistics Networks nodes and the Smelter's
-  alloy inputs, tick accelerators) and **Why did my machine stop?** (every Terminal and machine warning with its fix).
-  New pages on breaking a machine, which core to craft first, the Drain needing loaded chunks, the Miner's filter, the
-  Smelter's Inputs 1-3, Liquid Experience with other mods' pipes, alloys from other mods, lifeless worlds and the claim
-  and spawn protections against Dimensional Death. The progression path starts with getting an energy source, and the
-  part list and matter table were corrected. Long tables continue on the next page with their header, and mod
-  integrations show as a short compatibility box that opens its full description.
-- 🟫 **Terracotta and grass blocks** are matter in the Overworld: every terracotta (plain and the 16 colors) 0.5 DM,
-  grass blocks 0.2 DM. On the guide's dimension pages every slot now cycles through a block family (stone and its
-  variants, deepslate and its variants, dirt and grass, sand and red sand, the terracottas, the ores; the same for
-  the Nether and the End), so the reader sees which families count, not a single item.
-- 🏖️ **Sand and red sand** are now matter in the Overworld (0.3 DM). Blocks made from them (sandstone, glass) follow
-  the variant rule.
 - 🕳️ **The void of the End.** Where few ore families are born (by default only the End), part of the Miner's attempts
   find nothing: they still cost their energy and 2 DM, and the ores share the rest (an End with a single modded ore no
   longer gives 100% of it). The void is 97% with one family and shrinks geometrically: about 93%, 83% and 58% with two,
@@ -113,9 +124,7 @@
 ### 🔄 Changed
 
 - 🧱 **New Miner assembly.** The bottom layer has 7 Dimensional Ports around a Steel Chassis (and the terminal); the
-  middle layer has the Quantum Core, glass in front and on both sides and Steel Chassis in the four corners and at the
-  back; the top keeps glass in the center, front and sides and Ventilation Units in the corners and the back middle
-  (6 Steel Chassis and 5 Ventilation Units in total). ⚠️ Miners built with the old layout come apart
+  middle layer has glass on both sides and a Steel Chassis at the back. ⚠️ Miners built with the old layout come apart
   when the world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
 - ⚡ **Fixed energy cost per operation.** Every operation costs the same FE at every speed, so a faster speed asks
   for more FE/t in exactly the same proportion (no discount, no penalty; the Miner's double cost at speeds 6–9 is gone).

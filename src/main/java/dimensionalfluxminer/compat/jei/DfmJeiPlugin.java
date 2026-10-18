@@ -112,7 +112,7 @@ public class DfmJeiPlugin implements IModPlugin {
         if (!enabled()) {
             return;
         }
-        registration.addRecipeCatalyst(DfmBlocks.DIMENSIONAL_CRUSHER.get(), CRUSHING);
+        registration.addRecipeCatalyst(DfmBlocks.MECHANICAL_CRUSHER.get(), CRUSHING);
         registration.addRecipeCatalyst(DfmBlocks.ALLOY_SMELTER.get(), SMELTING, ALLOYING);
     }
 
@@ -120,7 +120,7 @@ public class DfmJeiPlugin implements IModPlugin {
         private final IDrawable icon;
 
         CrushingCategory(IGuiHelper gui) {
-            this.icon = gui.createDrawableItemLike(DfmBlocks.DIMENSIONAL_CRUSHER.get());
+            this.icon = gui.createDrawableItemLike(DfmBlocks.MECHANICAL_CRUSHER.get());
         }
 
         @Override

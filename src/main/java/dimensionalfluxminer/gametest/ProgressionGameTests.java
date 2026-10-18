@@ -84,7 +84,7 @@ public final class ProgressionGameTests {
      */
     private static Map<Item, Integer> reachable(ServerLevel level, boolean withCrushing, boolean withAlloying) {
         Map<Item, Integer> step = new HashMap<>();
-        Item crusher = DfmItems.DIMENSIONAL_CRUSHER.get();
+        Item crusher = DfmItems.MECHANICAL_CRUSHER.get();
         Item smelter = DfmItems.ALLOY_SMELTER.get();
         List<RecipeHolder<?>> recipes = new ArrayList<>(level.getRecipeManager().getRecipes());
         boolean changed = true;
@@ -131,7 +131,7 @@ public final class ProgressionGameTests {
     public static void progressionIsReachableInOrderAndPureSteelNeedsBothMachines(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Map<Item, Integer> step = reachable(level, true, true);
-        List<Item> chain = List.of(DfmItems.DIMENSIONAL_CRUSHER.get(), DfmItems.ALLOY_SMELTER.get(), DfmItems.INGOT_STEEL.get(),
+        List<Item> chain = List.of(DfmItems.MECHANICAL_CRUSHER.get(), DfmItems.ALLOY_SMELTER.get(), DfmItems.INGOT_STEEL.get(),
                 DfmItems.ENDER_EYE_REINFORCED.get(), DfmItems.REINFORCED_STRUCTURAL_GLASS.get(), DfmItems.STEEL_CHASSIS.get(),
                 DfmItems.VENTILATION_UNIT.get(), DfmItems.DIMENSIONAL_PORT.get(), DfmItems.MINER_TERMINAL.get(), DfmItems.QUANTUM_CORE.get(),
                 DfmItems.BASIC_DIMENSIONAL_CORE.get(), DfmItems.STABILIZED_DIMENSIONAL_CORE.get(), DfmItems.EFFICIENCY_UPGRADE.get());

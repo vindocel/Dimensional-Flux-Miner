@@ -26,11 +26,11 @@
       }
     ]
   },
-  "machine.dimensional_crusher.running": {
-    "subtitle": "subtitles.dimensionalfluxminer.machine.dimensional_crusher.running",
+  "machine.mechanical_crusher.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.mechanical_crusher.running",
     "sounds": [
       {
-        "name": "dimensionalfluxminer:machine/dimensional_crusher_running",
+        "name": "dimensionalfluxminer:machine/mechanical_crusher_running",
         "volume": 0.7
       }
     ]

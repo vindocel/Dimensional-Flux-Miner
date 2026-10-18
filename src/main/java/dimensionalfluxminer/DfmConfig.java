@@ -37,7 +37,7 @@ public final class DfmConfig {
             .defineInRange("miner.maximumProductionRate", 64.0, 0.0001, 64.0);
 
     public static final ModConfigSpec.LongValue CRUSHER_ENERGY_PER_OPERATION = BUILDER
-            .comment("Dimensional Crusher: FE spent by every input item crushed, at every Rate (the Efficiency Upgrade halves it).",
+            .comment("Mechanical Crusher: FE spent by every input item crushed, at every Rate (the Efficiency Upgrade halves it).",
                     "Rate 1 = 1 operation / 200 ticks, Rate 10 = 64 operations per tick. Replaces the old minimumFEPerTick/maximumFEPerTick.")
             .defineInRange("crusher.energyPerOperation", 20_000L, 1L, MAX_ENERGY_PER_OPERATION);
 

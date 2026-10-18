@@ -14,8 +14,8 @@ class MinerLayoutTest {
     @Test
     void partCountsMatchContract() {
         assertEquals(27, MinerLayout.BASE_SLOTS.size());
-        assertEquals(2, MinerLayout.count(Part.STEEL_CHASSIS));
-        assertEquals(9, MinerLayout.count(Part.VENTILATION_UNIT));
+        assertEquals(6, MinerLayout.count(Part.STEEL_CHASSIS));
+        assertEquals(5, MinerLayout.count(Part.VENTILATION_UNIT));
         assertEquals(7, MinerLayout.count(Part.REINFORCED_STRUCTURAL_GLASS));
         assertEquals(7, MinerLayout.count(Part.DIMENSIONAL_PORT));
         assertEquals(1, MinerLayout.count(Part.QUANTUM_CORE));
@@ -38,6 +38,10 @@ class MinerLayoutTest {
         assertEquals(Part.STEEL_CHASSIS, center.part());
         Slot back = MinerLayout.BASE_SLOTS.stream().filter(s -> s.dx() == 0 && s.dy() == 0 && s.dz() == -1).findFirst().orElseThrow();
         assertEquals(Part.STEEL_CHASSIS, back.part());
+        MinerLayout.BASE_SLOTS.stream().filter(s -> s.dy() == 0 && s.dx() != 0 && s.dz() != 0)
+                .forEach(s -> assertEquals(Part.STEEL_CHASSIS, s.part(), "steel in the middle corners"));
+        MinerLayout.BASE_SLOTS.stream().filter(s -> s.part() == Part.VENTILATION_UNIT)
+                .forEach(s -> assertEquals(1, s.dy(), "vents only on top"));
     }
 
     @Test

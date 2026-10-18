@@ -97,6 +97,10 @@ final class GuideBook {
             addLines(text.lines(screen, width));
             return;
         }
+        if (element instanceof GuideElements.Table table) {
+            addTable(table);
+            return;
+        }
         int h = element.height(screen, width);
         if (h <= 0) {
             return;
@@ -141,6 +145,29 @@ final class GuideBook {
                 y += GAP;
             }
         }
+    }
+
+    /** A table that does not fit continues on the next pages, with its header on each part. */
+    private void addTable(GuideElements.Table table) {
+        int total = table.rowCount();
+        int from = 0;
+        do {
+            int room = (height - y - 3) / GuideElements.Table.ROW - 1;
+            // Never start a table with fewer than three rows at the foot of a page.
+            if (y > 0 && room < Math.min(3, total - from)) {
+                closePage();
+                continue;
+            }
+            int take = Math.min(Math.max(1, room), total - from);
+            GuideElement part = take == total ? table : table.slice(from, from + take);
+            int h = part.height(screen, width);
+            current.add(new Placed(part, y, h));
+            y += h + GAP;
+            from += take;
+            if (from < total) {
+                closePage();
+            }
+        } while (from < total);
     }
 
     private void closePage() {
@@ -196,41 +223,51 @@ final class GuideBook {
     /** The contents: one line per chapter with its page number; clicking a line turns the book to it. */
     static final class Index implements GuideElement {
         private static final int ROW = 14;
+        private static final int MIN_ROW = 11;
+        /** The index title above the list, with its gap. */
+        private static final int TITLE_ROOM = 20;
         private final GuideBook book;
 
         Index(GuideBook book) {
             this.book = book;
         }
 
+        /** Row height: 14 px, tighter when that would not fit every chapter on the page under the title. */
+        private int row() {
+            return Math.max(MIN_ROW, Math.min(ROW, (book.height - TITLE_ROOM) / book.chapters.size()));
+        }
+
         @Override
         public int height(GuideScreen screen, int width) {
-            return book.chapters.size() * ROW;
+            return book.chapters.size() * row();
         }
 
         @Override
         public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+            int row = row();
             for (int c = 0; c < book.chapters.size(); c++) {
-                int ry = y + c * ROW;
-                boolean over = mouseX >= x && mouseX < x + width && mouseY >= ry && mouseY < ry + ROW;
+                int ry = y + c * row;
+                boolean over = mouseX >= x && mouseX < x + width && mouseY >= ry && mouseY < ry + row;
                 if (over) {
-                    g.fill(x - 2, ry, x + width + 2, ry + ROW, GuideElements.TINT);
+                    g.fill(x - 2, ry, x + width + 2, ry + row, GuideElements.TINT);
                 }
                 g.pose().pushPose();
-                g.pose().translate(x, ry + 1, 0);
+                g.pose().translate(x, ry + (row - 13) / 2.0F, 0);
                 g.pose().scale(0.8125F, 0.8125F, 1.0F);
                 g.renderItem(book.chapters.get(c).icon().get(), 0, 0);
                 g.pose().popPose();
                 String page = Integer.toString(book.chapterStart[c] + 1);
                 int pageW = screen.font().width(page);
+                int ty = ry + (row - 8) / 2;
                 screen.fittedText(g, Component.translatable("guide.dimensionalfluxminer.chapter." + book.chapters.get(c).id()), x + 18,
-                        ry + 3, width - 24 - pageW, over ? GuideElements.HEADING : GuideElements.BODY);
-                g.drawString(screen.font(), page, x + width - pageW, ry + 3, GuideElements.MUTED, false);
+                        ty, width - 24 - pageW, over ? GuideElements.HEADING : GuideElements.BODY);
+                g.drawString(screen.font(), page, x + width - pageW, ty, GuideElements.MUTED, false);
             }
         }
 
         @Override
         public boolean click(GuideScreen screen, double mouseX, double mouseY, int x, int y, int width, int button) {
-            int c = (int) ((mouseY - y) / ROW);
+            int c = (int) ((mouseY - y) / row());
             if (c < 0 || c >= book.chapters.size() || mouseX < x || mouseX >= x + width) {
                 return false;
             }

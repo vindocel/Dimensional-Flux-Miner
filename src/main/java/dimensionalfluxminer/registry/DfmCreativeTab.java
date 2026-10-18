@@ -27,7 +27,7 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.BASIC_DIMENSIONAL_CORE.get());
                 output.accept(DfmItems.STABILIZED_DIMENSIONAL_CORE.get());
                 output.accept(DfmItems.EFFICIENCY_UPGRADE.get());
-                output.accept(DfmItems.DIMENSIONAL_CRUSHER.get());
+                output.accept(DfmItems.MECHANICAL_CRUSHER.get());
                 output.accept(DfmItems.ALLOY_SMELTER.get());
                 output.accept(DfmItems.ENDER_EYE_REINFORCED.get());
                 output.accept(DfmItems.INGOT_STEEL.get());

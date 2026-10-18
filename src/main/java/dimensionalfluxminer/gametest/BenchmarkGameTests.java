@@ -1,7 +1,7 @@
 package dimensionalfluxminer.gametest;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideRoute;
@@ -217,7 +217,7 @@ public final class BenchmarkGameTests {
         }, () -> "adapters=" + ProtectionService.adaptersPresent());
 
         // ---- Crusher and Smelter at Rate 10
-        DimensionalCrusherBlockEntity crusher = CrusherGameTests.place(helper);
+        MechanicalCrusherBlockEntity crusher = CrusherGameTests.place(helper);
         long[] crushed = new long[2];
         bench("crusher.rate10.cycle", 20_000, () -> {
         }, () -> {

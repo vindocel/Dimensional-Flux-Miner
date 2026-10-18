@@ -13,9 +13,9 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `registry` | Every deferred register: blocks, items, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
 | `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping |
 | `machine.math` | Pure math, covered by JUnit: `RateScale` (Rate 1–10 curve and FE/t), `MinerProductionCurve`, `DynamicEnergyBuffer` (buffer and fractional FE debt), `WorkAccumulator` |
-| `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone), per-machine rules |
+| `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone), per-machine rules, `NodeInputLanes` (lanes of the network node item inputs on the Smelter Alloy profile) |
 | `menu` | `MachineMenu` and the menu sync used by every screen |
-| `crusher` | Dimensional Crusher: block, block entity, `CrusherProcessing` (recipe lookup and products), menu |
+| `crusher` | Mechanical Crusher: block, block entity, `CrusherProcessing` (recipe lookup and products), menu |
 | `smelter` | Alloy Smelter: block entity plus the pieces below |
 | `miner` | Dimensional Flux Miner: multiblock, controller and the pieces below |
 | `miner.profile` | Resource Profiles: what the Miner can find in each dimension |
@@ -52,7 +52,7 @@ of the same game time (tick accelerators) runs one more full cycle. A subclass i
 | `SmelterOutputPlanner` | Which of the three outputs a lane or an alloy writes to, and how much room is left |
 | `SmelterMode`, `AutoSplit`, `BulkBonus`, `StoredExperience`, `ExperienceFluidHandler` | Mode rules, even spreading, raw-ore bonus, fixed-point XP and its fluid view |
 
-**Dimensional Crusher** (`crusher`): `DimensionalCrusherBlockEntity` runs the cycle and `CrusherProcessing` finds the
+**Mechanical Crusher** (`crusher`): `MechanicalCrusherBlockEntity` runs the cycle and `CrusherProcessing` finds the
 products (explicit recipes first, then the common tags).
 
 ### Miner

@@ -1,7 +1,7 @@
 package dimensionalfluxminer.compat.jade;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlock;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlock;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.miner.MinerLinkBlockEntity;
@@ -44,7 +44,7 @@ public class DfmJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        registration.registerBlockComponent(MachineBarsComponent.INSTANCE, DimensionalCrusherBlock.class);
+        registration.registerBlockComponent(MachineBarsComponent.INSTANCE, MechanicalCrusherBlock.class);
         registration.registerBlockComponent(MachineBarsComponent.INSTANCE, AlloySmelterBlock.class);
         registration.registerBlockComponent(MachineBarsComponent.INSTANCE, MinerPartBlock.class);
     }

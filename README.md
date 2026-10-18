@@ -21,7 +21,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 - [🚀 Getting started](#-getting-started)
 - [📖 Dimensional Flux Guide](#-dimensional-flux-guide)
 - [⛏️ Dimensional Flux Miner](#%EF%B8%8F-dimensional-flux-miner)
-- [⚙️ Dimensional Crusher](#%EF%B8%8F-dimensional-crusher)
+- [⚙️ Mechanical Crusher](#%EF%B8%8F-mechanical-crusher)
 - [🔥 Alloy Smelter](#-alloy-smelter)
 - [⚡ Speed and the Efficiency Upgrade](#-speed-and-the-efficiency-upgrade)
 - [☠️ Dimensional Death](#%EF%B8%8F-dimensional-death)
@@ -39,7 +39,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 | | |
 |---|---|
 | ⛏️ **Dimensional Flux Miner** | A 3×3×3 multiblock that turns energy (FE) and **Dimensional Matter (DM)** into the ores that really generate in its dimension, without breaking a single block of the world. |
-| ⚙️ **Dimensional Crusher** | Doubles your ores (triples them with the upgrade) and grinds ingots, raw ores and gems into dust. |
+| ⚙️ **Mechanical Crusher** | Doubles your ores (triples them with the upgrade) and grinds ingots, raw ores and gems into dust. |
 | 🔥 **Alloy Smelter** | A three-lane electric furnace that also makes alloys, with a raw-ore bonus and stored experience. |
 | ⚡ **Speed 1–10** | No speed upgrades to craft: every machine has a speed selector, limited only by your power generation. One machine from early game to end game. |
 | ☠️ **Dimensional Death** | The price of the Basic core's drain: the land, the water and the life around it rot forever. |
@@ -59,7 +59,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 
 ## 🚀 Getting started
 
-1. 🧱 Build a **Dimensional Crusher** and an **Alloy Smelter** (vanilla items only).
+1. 🧱 Build a **Mechanical Crusher** and an **Alloy Smelter** (vanilla items only).
 2. ⚙️ In the Crusher, turn iron ingots into **Iron Dust**, coal into **Coal Dust** and calcite into **Calcite Grains**.
 3. 🔥 In the Smelter, combine the three into **Pure Steel** (each one also leaves a **Slag**; nine slag make a Slag Aggregate that turns back into steel).
 4. 👁️ With Pure Steel, craft the **Reinforced Eye of Ender**, the Miner parts and a **Dimensional Core**.
@@ -90,12 +90,12 @@ All text lives in the language files (`guide.dimensionalfluxminer.*`), in Englis
 | Layer | Parts |
 |---|---|
 | 1 — bottom | 7 **Dimensional Ports** around, a **Steel Chassis** in the center, the **Miner Terminal** in the front middle |
-| 2 — middle | **Quantum Core** in the center, **Reinforced Structural Glass** in front and on both sides, a **Steel Chassis** at the back, **Ventilation Units** in the corners |
+| 2 — middle | **Quantum Core** in the center, **Reinforced Structural Glass** in front and on both sides, **Steel Chassis** in the corners and at the back |
 | 3 — top | **Reinforced Structural Glass** in the center, front and sides, **Ventilation Units** in the corners and the back middle |
 
 The ports of the bottom layer have **nine configurable faces**: three on each side and three at the back. In the **Side Configuration** you pick one face for the **Item Output** and, with the Stabilized core, one for the **Matter Input** (both may share a face). **Energy** enters through any face by default, and a port appears where a cable touches it; pick the energy faces by hand and they stay visible. Until a core is inserted, only the Core slot can be used.
 
-> 💡 Place the terminal first and right-click it: every click places the next missing part from your inventory (bottom layer first) and outlines where the others go, colored by part, red where a block is in the way. The structure forms with the last part.
+> 💡 Hold the terminal and the whole machine shows as see-through blocks where it would be built. Once the terminal is down, the missing parts stay visible as see-through blocks (red outline where a block is in the way) until the machine forms. Right-click the terminal: every click places the next missing part from your inventory (bottom layer first); with no part to place, the click hides or shows the preview. The structure forms with the last part.
 
 ### 💎 Cores: where the matter comes from
 
@@ -108,7 +108,7 @@ Matter Injection only takes matter of the Miner's own dimension. All values are 
 
 | Dimension | Accepted matter |
 |---|---|
-| 🌍 Overworld | dirt **0.1 DM**, cobblestone and cobbled deepslate **0.3**, stone, deepslate, granite, diorite and andesite **0.5** |
+| 🌍 Overworld | dirt **0.1 DM**, grass block **0.2**, cobblestone, cobbled deepslate, sand and red sand **0.3**, stone, deepslate, granite, diorite, andesite and every terracotta **0.5** |
 | 🔥 Nether | netherrack, basalt, blackstone, nylium and magma block **0.5**, glowstone, soul sand and soul soil **1**, nether bricks **1.5** |
 | 🌌 The End | end stone and purpur block **0.5**, dragon egg **10** |
 | 🧩 The Other (Allthemodium) | ancient dirt **0.1**, ancient stone **0.5** |
@@ -146,7 +146,7 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 
 ---
 
-## ⚙️ Dimensional Crusher
+## ⚙️ Mechanical Crusher
 
 - 🪨 **Ores**: 2 products per ore (**3** with the Efficiency Upgrade, which also halves FE). Works with ores of any mod (`c:ores/<m>` → `c:raw_materials/<m>` → `c:gems/<m>`).
 - 🧂 **Dust**: ingots, raw materials and gems of any mod become one dust of the same material whenever a `c:dusts/<m>` item exists. Metal dusts smelt back into ingots (furnace or blast furnace).
@@ -223,7 +223,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 | | Advancement | How |
 |---|---|---|
 | 📖 | **Dimensional Flux** | join the world |
-| ⚙️ | Ground and Sifted | build a Dimensional Crusher |
+| ⚙️ | Ground and Sifted | build a Mechanical Crusher |
 | 🔥 | Electric Fire | build an Alloy Smelter |
 | 🔩 | Forged in the Flux | get your first Pure Steel (rewards the guide) |
 | ♻️ | Nothing Is Lost | turn Slag Aggregate back into steel |

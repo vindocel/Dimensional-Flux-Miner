@@ -1,0 +1,15 @@
+{
+  "values": [
+    { "id": "ad_astra:moon", "required": false },
+    { "id": "ad_astra:moon_orbit", "required": false },
+    { "id": "ad_astra:mars", "required": false },
+    { "id": "ad_astra:mars_orbit", "required": false },
+    { "id": "ad_astra:venus", "required": false },
+    { "id": "ad_astra:venus_orbit", "required": false },
+    { "id": "ad_astra:mercury", "required": false },
+    { "id": "ad_astra:mercury_orbit", "required": false },
+    { "id": "ad_astra:glacio", "required": false },
+    { "id": "ad_astra:glacio_orbit", "required": false },
+    { "id": "ad_astra:earth_orbit", "required": false }
+  ]
+}

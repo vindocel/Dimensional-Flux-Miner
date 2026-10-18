@@ -1,7 +1,7 @@
 package dimensionalfluxminer.gametest;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
 import dimensionalfluxminer.machine.math.RateScale;
@@ -59,7 +59,7 @@ public final class EnergyGameTests {
      */
     @GameTest(template = "empty_small")
     public static void levelTablesReplaceTheDefaultCurves(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity crusher = CrusherGameTests.place(helper);
+        MechanicalCrusherBlockEntity crusher = CrusherGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
             List<Double> speed = List.of(0.01, 0.02, 0.05, 0.1, 0.5, 1.0, 2.0, 8.0, 16.0, 32.0);
             List<Long> power = List.of(500L, 900L, 2_000L, 3_000L, 10_000L, 15_000L, 25_000L, 80_000L, 120_000L, 200_000L);
@@ -70,7 +70,7 @@ public final class EnergyGameTests {
                 dimensionalfluxminer.DfmConfig.invalidateCaches();
                 for (int level = 1; level <= 10; level++) {
                     crusher.setRate(level);
-                    helper.assertTrue(DimensionalCrusherBlockEntity.operationsPerTick(level) == speed.get(level - 1), "speed of level " + level);
+                    helper.assertTrue(MechanicalCrusherBlockEntity.operationsPerTick(level) == speed.get(level - 1), "speed of level " + level);
                     helper.assertTrue(crusher.effectivePowerLimit() == power.get(level - 1),
                             "FE/t of level " + level + " = " + power.get(level - 1) + ", got " + crusher.effectivePowerLimit());
                 }
@@ -97,7 +97,7 @@ public final class EnergyGameTests {
                 dimensionalfluxminer.DfmConfig.MINER_POWER_BY_LEVEL.set(List.of());
                 dimensionalfluxminer.DfmConfig.invalidateCaches();
             }
-            helper.assertTrue(DimensionalCrusherBlockEntity.operationsPerTick(10) == 64.0, "defaults restored");
+            helper.assertTrue(MechanicalCrusherBlockEntity.operationsPerTick(10) == 64.0, "defaults restored");
             helper.succeed();
         });
     }
@@ -106,7 +106,7 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
     public static void crusherChargesTheSameFePerOperationAtEveryRate(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = CrusherGameTests.place(helper);
+        MechanicalCrusherBlockEntity be = CrusherGameTests.place(helper);
         ItemStack dust = new ItemStack(DfmItems.DUSTS.get("iron").get());
         helper.runAfterDelay(1, () -> {
             for (boolean upgrade : new boolean[] {false, true}) {
@@ -114,7 +114,7 @@ public final class EnergyGameTests {
                 double cost = upgrade ? 10_000 : 20_000;
                 for (int level = 1; level <= 10; level++) {
                     be.setRate(level);
-                    double ops = DimensionalCrusherBlockEntity.operationsPerTick(level);
+                    double ops = MechanicalCrusherBlockEntity.operationsPerTick(level);
                     helper.assertTrue(be.effectivePowerLimit() == RateScale.powerLimit(ops * cost),
                             "Rate " + level + " FE/t = ops x " + cost + ", got " + be.effectivePowerLimit());
                     be.energyBuffer().setStored(PLENTY);
@@ -148,7 +148,7 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small")
     public static void crusherWithoutEnoughEnergyKeepsFractionalProgressAndNeverWorksForFree(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = CrusherGameTests.place(helper);
+        MechanicalCrusherBlockEntity be = CrusherGameTests.place(helper);
         ItemStack dust = new ItemStack(DfmItems.DUSTS.get("iron").get());
         helper.runAfterDelay(1, () -> {
             be.output().clear();
@@ -174,7 +174,7 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small")
     public static void crusherAcceleratedCyclesPayEachOneAndNeverDuplicate(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = CrusherGameTests.place(helper);
+        MechanicalCrusherBlockEntity be = CrusherGameTests.place(helper);
         ItemStack dust = new ItemStack(DfmItems.DUSTS.get("iron").get());
         helper.runAfterDelay(1, () -> {
             be.output().clear();
@@ -199,7 +199,7 @@ public final class EnergyGameTests {
 
     @GameTest(template = "empty_small")
     public static void crusherProgressAndFractionSurviveSaveAndLoad(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = CrusherGameTests.place(helper);
+        MechanicalCrusherBlockEntity be = CrusherGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
             be.setRate(1);
             be.output().clear();

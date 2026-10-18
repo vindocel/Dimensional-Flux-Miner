@@ -2,7 +2,7 @@ package dimensionalfluxminer.client.screen;
 
 import dimensionalfluxminer.compat.RecipeViewers;
 import dimensionalfluxminer.crusher.CrusherMenu;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
@@ -89,16 +89,16 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
             queueEntry(g, input.prototype(0), input.count(0), ix + 1, iy + 1);
         }
         slotHover(g, ix, iy, mouseX, mouseY);
-        hotspot(ix, iy, 18, 18, () -> menu.getCarried().isEmpty() ? DimensionalCrusherBlockEntity.BUTTON_TAKE_INPUT
-                        : DimensionalCrusherBlockEntity.BUTTON_INSERT_CARRIED,
-                () -> menu.getCarried().isEmpty() ? DimensionalCrusherBlockEntity.BUTTON_TAKE_INPUT_HALF
-                        : DimensionalCrusherBlockEntity.BUTTON_INSERT_ONE,
+        hotspot(ix, iy, 18, 18, () -> menu.getCarried().isEmpty() ? MechanicalCrusherBlockEntity.BUTTON_TAKE_INPUT
+                        : MechanicalCrusherBlockEntity.BUTTON_INSERT_CARRIED,
+                () -> menu.getCarried().isEmpty() ? MechanicalCrusherBlockEntity.BUTTON_TAKE_INPUT_HALF
+                        : MechanicalCrusherBlockEntity.BUTTON_INSERT_ONE,
                 () -> input.slotTooltip(0, "gui.dimensionalfluxminer.crusher.input"),
-                DimensionalCrusherBlockEntity.BUTTON_SHIFT, creativePick(DimensionalCrusherBlockEntity.BUTTON_PICK_INPUT));
+                MechanicalCrusherBlockEntity.BUTTON_SHIFT, creativePick(MechanicalCrusherBlockEntity.BUTTON_PICK_INPUT));
 
         boolean blocked = "output_blocked".equals(d.getString("status"));
         QueueView output = QueueView.read(d.getList("output", Tag.TAG_COMPOUND), registries);
-        for (int i = 0; i < DimensionalCrusherBlockEntity.OUTPUT_KINDS; i++) {
+        for (int i = 0; i < MechanicalCrusherBlockEntity.OUTPUT_KINDS; i++) {
             int ox = mx + OUT_X + (i % 2) * 18;
             int oy = my + OUT_Y + (i / 2) * 18;
             slot(g, blocked ? SlotKind.OUTPUT_WARNING : SlotKind.NORMAL, ox, oy);
@@ -107,10 +107,10 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
             }
             slotHover(g, ox, oy, mouseX, mouseY);
             int kind = i;
-            hotspot(ox, oy, 18, 18, () -> DimensionalCrusherBlockEntity.BUTTON_TAKE_OUTPUT + kind,
-                    () -> DimensionalCrusherBlockEntity.BUTTON_TAKE_OUTPUT_HALF + kind,
+            hotspot(ox, oy, 18, 18, () -> MechanicalCrusherBlockEntity.BUTTON_TAKE_OUTPUT + kind,
+                    () -> MechanicalCrusherBlockEntity.BUTTON_TAKE_OUTPUT_HALF + kind,
                     () -> output.slotTooltip(kind, "gui.dimensionalfluxminer.crusher.output"),
-                    DimensionalCrusherBlockEntity.BUTTON_SHIFT, creativePick(DimensionalCrusherBlockEntity.BUTTON_PICK_OUTPUT + kind));
+                    MechanicalCrusherBlockEntity.BUTTON_SHIFT, creativePick(MechanicalCrusherBlockEntity.BUTTON_PICK_OUTPUT + kind));
         }
 
         long cap = Math.max(1, d.getLong("fe_capacity"));

@@ -106,10 +106,15 @@ one drained column (Basic core) = 64 DM
 
 | Dimension | Matter (DM) |
 |---|---|
-| Overworld | dirt 0.1; cobblestone, cobbled deepslate 0.3; stone, deepslate, granite, diorite, andesite 0.5 |
+| Overworld | dirt 0.1; grass block 0.2; cobblestone, cobbled deepslate, sand, red sand 0.3; stone, deepslate, granite, diorite, andesite, terracotta (plain and the 16 colors) 0.5 |
 | Nether | netherrack, basalt, blackstone, nylium, magma block 0.5; glowstone, soul sand, soul soil 1; nether bricks 1.5 |
 | The End | end stone, purpur block 0.5; dragon egg 10 |
 | The Other (Allthemodium) | ancient dirt 0.1; ancient stone 0.5 |
+| Moon (Ad Astra) | moon cobblestone, moon sand 0.3; moon stone 0.5; soul soil 1 |
+| Mars (Ad Astra) | mars cobblestone, mars sand, conglomerate 0.3; mars stone 0.5 |
+| Venus (Ad Astra) | venus cobblestone, venus sand 0.3; venus stone, infernal spire block, basalt, blackstone, magma block 0.5 |
+| Mercury (Ad Astra) | mercury cobblestone 0.3; mercury stone, basalt, blackstone, magma block 0.5 |
+| Glacio (Ad Astra) | permafrost 0.1; glacio cobblestone, cobbled deepslate 0.3; glacio stone, deepslate 0.5 |
 | Any dimension | obsidian 1 |
 | Ores, only where they generate | 0.5; diamond and uranium 1; emerald, platinum, ancient debris 2 |
 
@@ -152,6 +157,7 @@ Reinjecting the output can never create matter.
 |---|---|---|
 | `corruption.enabled` | `true` | When false nothing is corrupted and the Basic core finds no matter |
 | `corruption.blockedDimensions` | empty | Dimensions where nothing is corrupted |
+| tag `#dimensionalfluxminer:corruption_blocked` (dimension types) | the Ad Astra planets and orbits | Same, by dimension type; the Basic core finds no matter there |
 | `corruption.respectSpawnProtection` | `true` | The spawn-protection square of the Overworld is never corrupted |
 | `corruption.protectedRegions` | empty | `"<dimension>,<x1>,<z1>,<x2>,<z2>"` rectangles never corrupted |
 | `corruption.claimFailurePolicy` | `deny` | When an installed claim mod cannot be queried: `deny` corrupts nothing, `ignore` treats it as absent |
@@ -178,6 +184,7 @@ never flows or sinks across a claim border, into a protected region, or where co
 | AE2 | Sky stone corrupts into Corrupted Stone |
 | Malum, Forbidden Arcanus | Their ores in the Miner and the Crusher |
 | Allthemodium | Matter values for The Other |
+| Ad Astra | Matter values for each planet; no Dimensional Death on the planets and in orbit |
 | Any mod with ore features | Its ores in the Miner (features that declare `targets[].state`); the Crusher and Smelter use the common tags |
 
 Every integration is optional; none is needed to build or run the mod.

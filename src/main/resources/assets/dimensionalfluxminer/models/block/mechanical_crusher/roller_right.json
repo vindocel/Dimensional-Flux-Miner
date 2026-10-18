@@ -1,8 +1,8 @@
 {
   "parent": "minecraft:block/block",
   "loader": "neoforge:obj",
-  "model": "dimensionalfluxminer:models/block/dimensional_crusher/geometry/body_active.obj",
-  "mtl_override": "dimensionalfluxminer:models/block/dimensional_crusher/geometry/materials.mtl",
+  "model": "dimensionalfluxminer:models/block/mechanical_crusher/geometry/roller_right.obj",
+  "mtl_override": "dimensionalfluxminer:models/block/mechanical_crusher/geometry/materials.mtl",
   "automatic_culling": false,
   "shade_quads": true,
   "flip_v": true,
@@ -10,9 +10,8 @@
   "ambientocclusion": false,
   "render_type": "minecraft:cutout",
   "textures": {
-    "terminal": "dimensionalfluxminer:block/alloy_smelter/smelter_terminal_active",
-    "particle": "dimensionalfluxminer:block/dimensional_crusher/dimensional_crusher",
-    "machine": "dimensionalfluxminer:block/dimensional_crusher/dimensional_crusher"
+    "particle": "dimensionalfluxminer:block/mechanical_crusher/mechanical_crusher",
+    "machine": "dimensionalfluxminer:block/mechanical_crusher/mechanical_crusher"
   },
   "display": {
     "gui": {

@@ -36,7 +36,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.items.IItemHandler;
 
-public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
+public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity {
     /** Throughput endpoints: Rate 1 = 1 operation / 200 ticks, Rate 10 = 64 operations per logical tick. */
     public static final double MIN_OPERATIONS_PER_TICK = 0.005;
     public static final double MAX_OPERATIONS_PER_TICK = 64.0;
@@ -73,8 +73,8 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
     /** Item currently being ground; synced to clients only for the grinding particles. */
     private ItemStack visualItem = ItemStack.EMPTY;
 
-    public DimensionalCrusherBlockEntity(BlockPos pos, BlockState state) {
-        super(DfmBlockEntities.DIMENSIONAL_CRUSHER.get(), pos, state, SideRules.CRUSHER);
+    public MechanicalCrusherBlockEntity(BlockPos pos, BlockState state) {
+        super(DfmBlockEntities.MECHANICAL_CRUSHER.get(), pos, state, SideRules.CRUSHER);
         input.setOnChange(this::setChanged);
         output.setOnChange(this::setChanged);
     }
@@ -329,7 +329,7 @@ public class DimensionalCrusherBlockEntity extends AbstractMachineBlockEntity {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.dimensionalfluxminer.dimensional_crusher");
+        return Component.translatable("block.dimensionalfluxminer.mechanical_crusher");
     }
 
     @Override

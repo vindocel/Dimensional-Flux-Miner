@@ -49,11 +49,11 @@ public final class MinerLayout {
                 }
             }
         }
-        // Middle layer: 4 vents in the corners, glass in front and on both sides, steel chassis at the back, core.
-        s.add(new Slot(-1, 0, -1, Part.VENTILATION_UNIT, false, false));
-        s.add(new Slot(-1, 0, 1, Part.VENTILATION_UNIT, false, false));
-        s.add(new Slot(1, 0, -1, Part.VENTILATION_UNIT, false, false));
-        s.add(new Slot(1, 0, 1, Part.VENTILATION_UNIT, false, false));
+        // Middle layer: steel chassis in the corners and at the back, glass in front and on both sides, core.
+        s.add(new Slot(-1, 0, -1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(-1, 0, 1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(1, 0, -1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(1, 0, 1, Part.STEEL_CHASSIS, false, false));
         s.add(new Slot(0, 0, 1, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
         s.add(new Slot(-1, 0, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
         s.add(new Slot(1, 0, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));

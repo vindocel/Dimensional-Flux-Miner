@@ -3,7 +3,7 @@ package dimensionalfluxminer.gametest;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.RedstoneMode;
 import dimensionalfluxminer.machine.side.RelativeFace;
@@ -34,10 +34,10 @@ public final class CrusherGameTests {
     private CrusherGameTests() {
     }
 
-    static DimensionalCrusherBlockEntity place(GameTestHelper helper) {
-        BlockState state = DfmBlocks.DIMENSIONAL_CRUSHER.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+    static MechanicalCrusherBlockEntity place(GameTestHelper helper) {
+        BlockState state = DfmBlocks.MECHANICAL_CRUSHER.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
         helper.setBlock(MACHINE, state);
-        DimensionalCrusherBlockEntity be = helper.getBlockEntity(MACHINE);
+        MechanicalCrusherBlockEntity be = helper.getBlockEntity(MACHINE);
         be.setRate(10);
         be.energyBuffer().setTarget(be.effectivePowerLimit() * 10);
         be.energyBuffer().setStored(be.effectivePowerLimit() * 10);
@@ -46,7 +46,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void crushesIronIngotIntoDust(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         be.input().insert(new ItemStack(Items.IRON_INGOT), 10, false);
         helper.succeedWhen(() -> {
             helper.assertTrue(be.output().countOf(new ItemStack(DfmItems.DUSTS.get("iron").get())) == 10, "expected 10 iron dust");
@@ -56,7 +56,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void oreYieldsTwoOrThreeWithUpgrade(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         be.input().insert(new ItemStack(Items.IRON_ORE), 4, false);
         helper.runAfterDelay(3, () -> {
             helper.assertTrue(be.output().countOf(new ItemStack(Items.RAW_IRON)) == 8, "4 ores -> 8 raw iron");
@@ -73,7 +73,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void sneakClickInstallsTheUpgrade(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         ItemStack upgrades = new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get(), 2);
         BlockPos pos = helper.absolutePos(MACHINE);
@@ -112,7 +112,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void outputBlockedConsumesNothing(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         // Fill all output kinds so nothing new fits.
         be.output().insert(new ItemStack(Items.STONE), 96, false);
         be.output().insert(new ItemStack(Items.DIRT), 96, false);
@@ -131,7 +131,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void sideRoutesExposeOnlyConfiguredCapabilities(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         BlockPos abs = helper.absolutePos(MACHINE);
         // Fresh machine: every face except front and top accepts energy; the top is a fixed item input; front exposes nothing.
         Direction front = be.facing();
@@ -169,7 +169,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void extraTickerCallsRunExtraLogicalCycles(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         helper.runAfterDelay(2, () -> {
             be.output().clear();
             be.input().clear();
@@ -192,7 +192,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void redstoneModeGatesOperation(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_REDSTONE_NEXT);
         helper.assertTrue(be.redstoneMode() == RedstoneMode.HIGH, "IGNORED -> HIGH");
         be.input().insert(new ItemStack(Items.COAL), 5, false);
@@ -208,7 +208,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void invertedRedstoneHaltsWhilePowered(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_REDSTONE_PREVIOUS);
         helper.assertTrue(be.redstoneMode() == RedstoneMode.LOW, "IGNORED -> LOW going back");
         helper.setBlock(MACHINE.relative(be.facing().getOpposite()), net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK);
@@ -222,7 +222,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void ingotsAndGemsCrushIntoTheirDust(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         var level = helper.getLevel();
         helper.assertTrue(dimensionalfluxminer.crusher.CrusherProcessing.resolve(level, new ItemStack(Items.GOLD_INGOT), false)
                 .map(r -> r.result().is(DfmItems.DUSTS.get("gold").get()) && r.result().getCount() == 1).orElse(false), "gold ingot -> gold dust");
@@ -264,7 +264,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void slotsHoldSixtyFourAndFullOutputSpillsThenStops(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         ItemStack dust = new ItemStack(DfmItems.DUSTS.get("iron").get());
         helper.assertTrue(be.input().insert(new ItemStack(Items.IRON_INGOT), 100, false) == 64, "input slot holds 64");
         be.input().clear();
@@ -284,7 +284,7 @@ public final class CrusherGameTests {
     @GameTest(template = "empty_small")
     public static void sidesUsedByANetworkNodeAreLocked(GameTestHelper helper) {
         // What a Logistics Networks node on the machine sets (read from its channels when the mod is installed).
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         be.sides().set(RelativeFace.LEFT, Transmission.ITEM, 0, SideRoute.ITEM_OUTPUT);
         be.sides().setLocks(Transmission.ITEM, 1 << RelativeFace.LEFT.ordinal());
         int left = AbstractMachineBlockEntity.BUTTON_SIDE_BASE + RelativeFace.LEFT.ordinal() * 16 + Transmission.ITEM.ordinal() * 2;
@@ -300,7 +300,7 @@ public final class CrusherGameTests {
 
     @GameTest(template = "empty_small")
     public static void rateCycleAndSideBatchButtons(GameTestHelper helper) {
-        DimensionalCrusherBlockEntity be = place(helper);
+        MechanicalCrusherBlockEntity be = place(helper);
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE);
         helper.assertTrue(be.rate() == 1, "x10 wraps to x1");
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE_BACK);

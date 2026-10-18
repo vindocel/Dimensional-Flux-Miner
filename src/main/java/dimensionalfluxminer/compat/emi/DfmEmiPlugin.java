@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  */
 @EmiEntrypoint
 public class DfmEmiPlugin implements EmiPlugin {
-    static final EmiStack CRUSHER = EmiStack.of(DfmBlocks.DIMENSIONAL_CRUSHER.get());
+    static final EmiStack CRUSHER = EmiStack.of(DfmBlocks.MECHANICAL_CRUSHER.get());
     static final EmiStack SMELTER = EmiStack.of(DfmBlocks.ALLOY_SMELTER.get());
     static final EmiRecipeCategory CRUSHING = new EmiRecipeCategory(DimensionalFluxMiner.id("crushing"), CRUSHER);
     static final EmiRecipeCategory SMELTING = new EmiRecipeCategory(DimensionalFluxMiner.id("smelting"), SMELTER);

@@ -10,10 +10,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class DimensionalCrusherBlock extends HorizontalMachineBlock {
-    public static final MapCodec<DimensionalCrusherBlock> CODEC = simpleCodec(DimensionalCrusherBlock::new);
+public class MechanicalCrusherBlock extends HorizontalMachineBlock {
+    public static final MapCodec<MechanicalCrusherBlock> CODEC = simpleCodec(MechanicalCrusherBlock::new);
 
-    public DimensionalCrusherBlock(Properties properties) {
+    public MechanicalCrusherBlock(Properties properties) {
         super(properties);
     }
 
@@ -24,11 +24,11 @@ public class DimensionalCrusherBlock extends HorizontalMachineBlock {
 
     @Override
     protected BlockEntityType<? extends AbstractMachineBlockEntity> blockEntityType() {
-        return DfmBlockEntities.DIMENSIONAL_CRUSHER.get();
+        return DfmBlockEntities.MECHANICAL_CRUSHER.get();
     }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new DimensionalCrusherBlockEntity(pos, state);
+        return new MechanicalCrusherBlockEntity(pos, state);
     }
 }

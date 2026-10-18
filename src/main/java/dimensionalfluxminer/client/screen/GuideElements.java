@@ -158,6 +158,57 @@ final class GuideElements {
         }
     }
 
+    /**
+     * A short box (a mod integration, for example) with a button that opens its full text below it, on this page and
+     * the next ones; clicking again closes it. The full text is added by the chapter while the box is open.
+     */
+    static final class Expandable implements GuideElement {
+        private static final int BUTTON_H = 13;
+        private final String key;
+        private final Component title;
+        private final Text summary;
+
+        Expandable(String key, Component title, Component summary) {
+            this.key = key;
+            this.title = title;
+            this.summary = new Text(summary);
+        }
+
+        private Component label() {
+            return Component.translatable(GuideScreen.expanded(key) ? "guide.dimensionalfluxminer.expand.less"
+                    : "guide.dimensionalfluxminer.expand.more");
+        }
+
+        private int buttonWidth(GuideScreen screen, int width) {
+            return Math.min(width - 10, screen.font().width(label()) + 12);
+        }
+
+        @Override
+        public int height(GuideScreen screen, int width) {
+            return 15 + summary.height(screen, width - 10) + 3 + BUTTON_H + 4;
+        }
+
+        @Override
+        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+            int h = height(screen, width);
+            g.fill(x, y, x + width, y + h, TINT);
+            g.fill(x, y, x + 2, y + h, HEADING);
+            g.drawString(screen.font(), title, x + 6, y + 4, HEADING, false);
+            summary.render(screen, g, x + 6, y + 15, width - 10, mouseX, mouseY);
+            screen.textButton(g, x + 6, y + h - BUTTON_H - 4, buttonWidth(screen, width), BUTTON_H, label(), mouseX, mouseY);
+        }
+
+        @Override
+        public boolean click(GuideScreen screen, double mouseX, double mouseY, int x, int y, int width, int button) {
+            int by = y + height(screen, width) - BUTTON_H - 4;
+            if (mouseX < x + 6 || mouseX >= x + 6 + buttonWidth(screen, width) || mouseY < by || mouseY >= by + BUTTON_H) {
+                return false;
+            }
+            screen.toggleExpanded(key);
+            return true;
+        }
+    }
+
     /** An item with its name and a description beside it. */
     static final class ItemNote implements GuideElement {
         private final Supplier<ItemStack> stack;
@@ -308,9 +359,12 @@ final class GuideElements {
         }
     }
 
-    /** Table with a header row; the cells are recomputed every frame (they follow the server configuration). */
+    /**
+     * Table with a header row; the cells are recomputed every frame (they follow the server configuration). A table
+     * longer than the page continues on the next pages, the header repeated on each.
+     */
     static final class Table implements GuideElement {
-        private static final int ROW = 11;
+        static final int ROW = 11;
         private final List<Component> headers;
         private final Supplier<List<List<String>>> rows;
         private final float[] columns;
@@ -320,6 +374,18 @@ final class GuideElements {
             this.headers = headers;
             this.columns = columns;
             this.rows = rows;
+        }
+
+        int rowCount() {
+            return rows.get().size();
+        }
+
+        /** Rows {@code from} (inclusive) to {@code to} (exclusive) under the same header. */
+        Table slice(int from, int to) {
+            return new Table(headers, columns, () -> {
+                List<List<String>> all = rows.get();
+                return all.subList(Math.min(from, all.size()), Math.min(to, all.size()));
+            });
         }
 
         @Override

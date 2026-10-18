@@ -17,7 +17,7 @@
     "dimensionalfluxminer:dimensional_port",
     "dimensionalfluxminer:quantum_core",
     "dimensionalfluxminer:miner_terminal",
-    "dimensionalfluxminer:dimensional_crusher",
+    "dimensionalfluxminer:mechanical_crusher",
     "dimensionalfluxminer:alloy_smelter"
   ]
 }

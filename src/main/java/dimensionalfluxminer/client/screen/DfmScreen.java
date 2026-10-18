@@ -43,7 +43,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     public static final int BUTTON_TEXT = 0xFFFFFFFF;
     public static final int BUTTON_TEXT_INACTIVE = 0xFFA0A0A0;
     public static final int TAB_DEFAULT = 0xFFFFFFFF;
-    public static final int TAB_ENERGY = 0xFF59C15F;
+    public static final int TAB_ENERGY = dimensionalfluxminer.machine.side.SideRoute.ENERGY_INPUT.color();
     public static final int TAB_ITEM = 0xFFCFCFCF;
     public static final int TAB_FLUID = 0xFF366BD0;
     public static final int TAB_REDSTONE = 0xFFC9071F;

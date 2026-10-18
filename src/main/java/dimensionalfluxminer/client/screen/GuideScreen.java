@@ -125,6 +125,23 @@ public class GuideScreen extends Screen {
         turnFrom = -1;
     }
 
+    /** Boxes opened to show their full text (see {@link GuideElements.Expandable}), kept while the game runs. */
+    private static final java.util.Set<String> EXPANDED = new java.util.HashSet<>();
+
+    static boolean expanded(String key) {
+        return EXPANDED.contains(key);
+    }
+
+    /** Opens or closes a box and lays the book out again on the same spread (the change only adds or removes text). */
+    void toggleExpanded(String key) {
+        if (!EXPANDED.remove(key)) {
+            EXPANDED.add(key);
+        }
+        playClick();
+        book = GuideBook.build(this, GuideContent.chapters(), contentW, contentH);
+        spread = Mth.clamp(spread, 0, book.spreads() - 1);
+    }
+
     private int leftPageX() {
         return bookX + COVER;
     }

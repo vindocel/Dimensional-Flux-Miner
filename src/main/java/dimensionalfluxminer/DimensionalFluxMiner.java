@@ -31,6 +31,13 @@ public final class DimensionalFluxMiner {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public DimensionalFluxMiner(IEventBus modBus, ModContainer container) {
+        // The Crusher was the "dimensional_crusher": the old IDs still load as the Mechanical Crusher in older worlds.
+        ResourceLocation oldCrusher = id("dimensional_crusher");
+        ResourceLocation crusher = id("mechanical_crusher");
+        DfmBlocks.BLOCKS.addAlias(oldCrusher, crusher);
+        DfmItems.ITEMS.addAlias(oldCrusher, crusher);
+        DfmBlockEntities.BLOCK_ENTITIES.addAlias(oldCrusher, crusher);
+        DfmMenus.MENUS.addAlias(oldCrusher, crusher);
         DfmBlocks.BLOCKS.register(modBus);
         DfmItems.ITEMS.register(modBus);
         DfmFluids.FLUID_TYPES.register(modBus);

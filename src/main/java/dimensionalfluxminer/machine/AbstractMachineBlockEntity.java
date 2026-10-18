@@ -6,6 +6,7 @@ import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
 import dimensionalfluxminer.machine.math.RateScale;
+import dimensionalfluxminer.machine.side.NodeInputLanes;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideConfiguration;
 import dimensionalfluxminer.machine.side.SideRoute;
@@ -108,6 +109,9 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected String status = "idle";
 
     private final Map<Direction, IItemHandler> itemHandlers = new EnumMap<>(Direction.class);
+    /** Network node item inputs sharing the dedicated lanes; rebuilt from the nodes, not saved. */
+    private final NodeInputLanes nodeLanes = new NodeInputLanes();
+    private int nodeLanesProfile = -1;
 
     protected AbstractMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, SideRules rules) {
         super(type, pos, state);
@@ -275,9 +279,26 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         int profile = itemProfile();
         int[] locks = new int[Transmission.VALUES.length];
         boolean routes = false;
+        // Receiving item faces of a profile with dedicated input lanes (Smelter Alloy) share the lanes between them.
+        if (profile != nodeLanesProfile) {
+            nodeLanes.reset();
+            nodeLanesProfile = profile;
+        }
+        int laneFaces = 0;
         for (RelativeFace face : RelativeFace.VALUES) {
             int i = face.ordinal();
-            if (pull[i] || push[i]) {
+            if (push[i] && !pull[i] && sides.rules().allowed(face, Transmission.ITEM, profile).contains(SideRoute.ITEM_INPUT_1)) {
+                laneFaces |= 1 << i;
+            }
+        }
+        SideRoute[] laneRoutes = itemRoutes(profile);
+        if (nodeLanes.update(laneRoutes, laneFaces)) {
+            routes |= applyItemRoutes(laneRoutes, profile);
+        }
+        locks[Transmission.ITEM.ordinal()] |= laneFaces;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            int i = face.ordinal();
+            if ((laneFaces & (1 << i)) == 0 && (pull[i] || push[i])) {
                 SideRoute now = sides.get(face, Transmission.ITEM, profile);
                 boolean ok = (!pull[i] || now.extractsItems()) && (!push[i] || now.insertsItems());
                 if (!ok) {
@@ -303,6 +324,31 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         } else if (locksChanged) {
             setChanged();
         }
+    }
+
+    /** ITEM route of every face in {@code profile}, indexed by face ordinal. */
+    private SideRoute[] itemRoutes(int profile) {
+        SideRoute[] result = new SideRoute[RelativeFace.VALUES.length];
+        for (RelativeFace face : RelativeFace.VALUES) {
+            result[face.ordinal()] = sides.get(face, Transmission.ITEM, profile);
+        }
+        return result;
+    }
+
+    /** Writes the ITEM routes back; returns whether any face changed. */
+    private boolean applyItemRoutes(SideRoute[] routes, int profile) {
+        boolean changed = false;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            if (sides.get(face, Transmission.ITEM, profile) != routes[face.ordinal()]) {
+                changed |= sides.set(face, Transmission.ITEM, profile, routes[face.ordinal()]);
+            }
+        }
+        return changed;
+    }
+
+    /** Receiving item faces of network nodes that share the dedicated input lanes. */
+    public NodeInputLanes nodeLanes() {
+        return nodeLanes;
     }
 
     /** Gives {@code face} the {@code route} a node needs (when the machine allows it) and locks it; true if it changed. */
@@ -505,6 +551,15 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             if (transmission >= Transmission.VALUES.length) {
                 return false;
             }
+            // A node's lane face stays locked but a click moves it through all, lane 1, lane 2 and lane 3.
+            if (Transmission.VALUES[transmission] == Transmission.ITEM && nodeLanes.contains(face)
+                    && sides.locked(RelativeFace.VALUES[face], Transmission.ITEM)) {
+                SideRoute[] routes = itemRoutes(itemProfile());
+                nodeLanes.cycle(routes, face, forward);
+                applyItemRoutes(routes, itemProfile());
+                onSidesChanged();
+                return true;
+            }
             if (sides.cycle(RelativeFace.VALUES[face], Transmission.VALUES[transmission], itemProfile(), forward)) {
                 onSidesChanged();
                 return true;
@@ -564,6 +619,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             locks[transmission.ordinal()] = sides.locks(transmission);
         }
         tag.putIntArray("node_sides", locks);
+        tag.putInt("node_lanes", nodeLanes.mask());
     }
 
     // ---------------------------------------------------------------- persistence

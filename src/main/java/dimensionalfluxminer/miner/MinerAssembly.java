@@ -5,6 +5,9 @@ import dimensionalfluxminer.network.MinerAssemblyPayload;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -25,7 +28,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /**
  * Assisted assembly from an unformed terminal: each click places the next missing part (bottom layer first) from the
  * player's inventory, through the normal block placement (so protections, sounds and item use apply), and shows the
- * player where the remaining parts go.
+ * player where the remaining parts go. Placing the terminal shows the highlight; a click that places nothing switches
+ * it off and on.
  */
 public final class MinerAssembly {
     private MinerAssembly() {
@@ -94,13 +98,27 @@ public final class MinerAssembly {
     }
 
     /** Sends the positions still missing to the player's highlight (an empty list clears it). */
-    public static void highlight(ServerPlayer player, List<Member> missing) {
+    public static void highlight(ServerPlayer player, BlockPos terminal, List<Member> missing) {
         List<MinerAssemblyPayload.Entry> entries = new ArrayList<>(missing.size());
         for (Member member : missing) {
             entries.add(new MinerAssemblyPayload.Entry(member.pos(), member.slot().part().ordinal()));
         }
-        PacketDistributor.sendToPlayer(player, new MinerAssemblyPayload(entries));
+        if (entries.isEmpty()) {
+            SHOWN.remove(player.getUUID());
+        } else {
+            SHOWN.put(player.getUUID(), terminal.immutable());
+        }
+        PacketDistributor.sendToPlayer(player, new MinerAssemblyPayload(terminal, entries));
     }
+
+    /** Shows the highlight of {@code terminal}, or hides it when it is the one the player already sees. */
+    public static void toggleHighlight(ServerPlayer player, BlockPos terminal) {
+        boolean shown = terminal.equals(SHOWN.get(player.getUUID()));
+        highlight(player, terminal, shown ? List.of() : missing(player.serverLevel(), terminal));
+    }
+
+    /** Terminal whose highlight each player sees (server side, to switch it with a click; one entry per player). */
+    private static final Map<UUID, BlockPos> SHOWN = new ConcurrentHashMap<>();
 
     private static Component partName(Member member) {
         return Component.translatable(MinerStructure.blockFor(member.slot().part()).getDescriptionId());

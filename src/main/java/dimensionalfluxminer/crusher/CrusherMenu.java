@@ -12,7 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
-public class CrusherMenu extends MachineMenu<DimensionalCrusherBlockEntity> {
+public class CrusherMenu extends MachineMenu<MechanicalCrusherBlockEntity> {
     /** Player inventory under the processing mechanism (181 px panel). */
     public static final int INVENTORY_TOP = 99;
 
@@ -22,11 +22,11 @@ public class CrusherMenu extends MachineMenu<DimensionalCrusherBlockEntity> {
     }
 
     /** Server constructor. */
-    public CrusherMenu(int containerId, Inventory inventory, DimensionalCrusherBlockEntity be) {
+    public CrusherMenu(int containerId, Inventory inventory, MechanicalCrusherBlockEntity be) {
         this(containerId, inventory, be.getBlockPos(), be);
     }
 
-    private CrusherMenu(int containerId, Inventory inventory, BlockPos pos, DimensionalCrusherBlockEntity be) {
+    private CrusherMenu(int containerId, Inventory inventory, BlockPos pos, MechanicalCrusherBlockEntity be) {
         super(DfmMenus.CRUSHER.get(), containerId, inventory, pos, be);
         addSlot(new WindowSlot(be != null ? be.upgradeSlot() : new ItemStackHandler(1), 0,
                 stack -> stack.is(DfmItems.EFFICIENCY_UPGRADE.get()), 1));

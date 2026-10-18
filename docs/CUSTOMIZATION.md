@@ -30,7 +30,7 @@ the player-facing overview in the [README](../README.md).
 1. [Four ways to change the mod](#1-four-ways-to-change-the-mod)
 2. [The server configuration file](#2-the-server-configuration-file)
    - [2.1 Dimensional Flux Miner](#21-dimensional-flux-miner)
-   - [2.2 Dimensional Crusher](#22-dimensional-crusher)
+   - [2.2 Mechanical Crusher](#22-mechanical-crusher)
    - [2.3 Alloy Smelter](#23-alloy-smelter)
    - [2.4 Dimensional Death](#24-dimensional-death)
    - [2.5 Complete example](#25-complete-example)
@@ -215,7 +215,7 @@ buffer of 10 × FE/t, the 27 output slots, the 5 000 DM buffer, the cost of 2 DM
 drained column. The cores have no configuration. The Basic core's drain is controlled by the Dimensional Death options
 ([2.4](#24-dimensional-death)).
 
-### 2.2 Dimensional Crusher
+### 2.2 Mechanical Crusher
 
 | Key | What it does | Effect of raising it |
 |---|---|---|
@@ -320,6 +320,11 @@ anything and is not affected by them.
 	protectedRegions = ["minecraft:overworld,-500,-500,500,500", "minecraft:overworld,2000,1000,2400,1300"]
 	claimFailurePolicy = "deny"
 ```
+
+**Dimension type tag** `#dimensionalfluxminer:corruption_blocked` (`data/dimensionalfluxminer/tags/dimension_type/`):
+dimensions of these types act as if they were in `blockedDimensions`, so the Basic core gets no matter there. By
+default it holds the Ad Astra planets and orbits (optional entries, ignored without Ad Astra). Add or remove dimension
+types with a datapack or KubeJS `ServerEvents.tags('dimension_type', ...)`.
 
 **Claims** (no option needed). When FTB Chunks or Open Parties and Claims is installed, the Basic core only corrupts
 unclaimed land or claims where the Miner's owner may build. A claim of someone else, or a claim check that fails, is
@@ -996,7 +1001,7 @@ The recipe does nothing while the tag is empty. Add the same condition the mod u
 
 - **Replace**: put a file with the **same path** as the original, in the original's namespace. For example
   `data/dimensionalfluxminer/recipe/alloying/steel.json` replaces the Pure Steel recipe. The crafting recipes of the
-  machines (`alloy_smelter`, `dimensional_crusher`, `steel_chassis`, ...) are vanilla shaped recipes and can be
+  machines (`alloy_smelter`, `mechanical_crusher`, `steel_chassis`, ...) are vanilla shaped recipes and can be
   replaced the same way.
 - **Add**: use your own namespace, `data/my_modpack/recipe/...`.
 - **Remove**: replace the file with a recipe whose condition never passes. NeoForge then skips it:

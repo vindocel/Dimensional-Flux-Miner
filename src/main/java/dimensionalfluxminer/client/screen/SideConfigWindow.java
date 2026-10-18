@@ -227,7 +227,9 @@ final class SideConfigWindow extends DfmScreen.Window {
         boolean enabled = !allowed.isEmpty();
         // A Logistics Networks node uses this face: its route is set by the node and cannot be changed here.
         boolean node = config.locked(face, current);
-        boolean fixed = allowed.size() < 2 || node;
+        // A node's item input on a machine with dedicated lanes cannot move, but a click picks all / lane 1 / 2 / 3.
+        boolean lanes = node && current == Transmission.ITEM && (data.get().getInt("node_lanes") & (1 << face.ordinal())) != 0;
+        boolean fixed = allowed.size() < 2 || node && !lanes;
         SideRoute route = enabled ? config.get(face, current, profile) : SideRoute.NONE;
         if (screen.hovered(x, y, SIDE, SIDE, mouseX, mouseY)) {
             focused = face;
@@ -248,7 +250,8 @@ final class SideConfigWindow extends DfmScreen.Window {
                     }
                     if (node) {
                         lines.add(Component.translatable("gui.dimensionalfluxminer.miner.port.node").withStyle(ChatFormatting.AQUA));
-                        lines.add(Component.translatable("gui.dimensionalfluxminer.miner.port.node_note").withStyle(ChatFormatting.GRAY));
+                        lines.add(Component.translatable(lanes ? "gui.dimensionalfluxminer.side_config.node_lanes"
+                                : "gui.dimensionalfluxminer.miner.port.node_note").withStyle(ChatFormatting.GRAY));
                     } else if (enabled) {
                         lines.add(Component.translatable(fixed ? "gui.dimensionalfluxminer.side_fixed" : "gui.dimensionalfluxminer.side_click")
                                 .withStyle(ChatFormatting.DARK_GRAY));

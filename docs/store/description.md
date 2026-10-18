@@ -13,7 +13,7 @@
 
 The **Dimensional Flux Miner** tunes into the frequency of the dimension it stands in and makes that dimension's ores **appear out of nothing** — without opening a single hole in your world. Feed it energy and Dimensional Matter, choose how fast it runs, and watch the ores pour out.
 
-Two support machines get you there: the **Dimensional Crusher** and the **Alloy Smelter**. And an animated **Dimensional Flux Guide** explains everything, in game.
+Two support machines get you there: the **Mechanical Crusher** and the **Alloy Smelter**. And an animated **Dimensional Flux Guide** explains everything, in game.
 
 ---
 
@@ -36,7 +36,7 @@ Two support machines get you there: the **Dimensional Crusher** and the **Alloy 
 
 ![The Miner built and running](https://cdn.modrinth.com/data/vTLvFHBt/images/d99728b2a1e59419478654ceaff15ab756908bdd.png)
 
-Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-click it, and it places every missing part from your inventory for you, outlining where each one goes.
+Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-click it, and it places every missing part from your inventory for you, showing each one as a see-through block where it goes. Just hold the Terminal to preview the whole machine before you place it.
 
 ![Assembly outlines](https://cdn.modrinth.com/data/vTLvFHBt/images/afa92fe1ff35853ba3bff1ceabe6e772a7131a4a.png)
 
@@ -60,7 +60,7 @@ Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-clic
 
 ---
 
-## ⚙️ Dimensional Crusher
+## ⚙️ Mechanical Crusher
 
 Steel jaws that grind any precious stone into grains.
 

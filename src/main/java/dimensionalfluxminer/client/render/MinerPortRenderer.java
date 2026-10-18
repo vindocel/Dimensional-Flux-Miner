@@ -34,7 +34,7 @@ public final class MinerPortRenderer {
             "BDEFFEDB",
             "BCDDDDCB",
             "ABBBBBBA"};
-    private static final int ENERGY = 0x36CFEE;
+    private static final int ENERGY = dimensionalfluxminer.machine.side.SideRoute.ENERGY_INPUT.color() & 0xFFFFFF;
     private static final int OUTPUT = 0xF08A24;
     private static final int MATTER = 0xA05CF0;
     /** The socket sits 1/64 of a block outside the casing so it never fights with it. */

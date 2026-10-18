@@ -34,7 +34,7 @@ import net.minecraft.world.phys.BlockHitResult;
 final class MinerSideWindow extends DfmScreen.Window {
     static final int OUTPUT_COLOR = 0xF08A24;
     static final int MATTER_COLOR = 0xA05CF0;
-    static final int ENERGY_COLOR = 0x36CFEE;
+    static final int ENERGY_COLOR = dimensionalfluxminer.machine.side.SideRoute.ENERGY_INPUT.color() & 0xFFFFFF;
     private static final int SIDE = 20;
     private static final int STEP = 21;
     /** Positions of the faces: back row, left column (back to front), right column (back to front). */

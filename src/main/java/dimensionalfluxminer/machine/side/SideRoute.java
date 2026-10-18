@@ -11,7 +11,8 @@ public enum SideRoute {
     ITEM_INPUT_3(Transmission.ITEM, 0xFFD55ECB),
     ITEM_OUTPUT(Transmission.ITEM, 0xFF366BD0),
     ITEM_INPUT_OUTPUT_ALL(Transmission.ITEM, 0xFFA460D9),
-    ENERGY_INPUT(Transmission.ENERGY, 0xFF59C15F),
+    /** Energy is always the light blue of the energy bar, on every screen, port and text. */
+    ENERGY_INPUT(Transmission.ENERGY, 0xFF36CFEE),
     REDSTONE_INPUT(Transmission.REDSTONE, 0xFFFF383C),
     XP_OUTPUT(Transmission.EXPERIENCE, 0xFF75FF89);
 

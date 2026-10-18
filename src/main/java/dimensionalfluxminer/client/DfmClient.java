@@ -85,7 +85,7 @@ public final class DfmClient {
 
     @SubscribeEvent
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(DfmBlockEntities.DIMENSIONAL_CRUSHER.get(), CrusherRenderer::new);
+        event.registerBlockEntityRenderer(DfmBlockEntities.MECHANICAL_CRUSHER.get(), CrusherRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.ALLOY_SMELTER.get(), SmelterRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.MINER_CONTROLLER.get(), dimensionalfluxminer.client.render.MinerRenderer::new);
     }

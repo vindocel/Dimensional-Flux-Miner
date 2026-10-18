@@ -2,7 +2,7 @@ package dimensionalfluxminer.registry;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.CorruptedGrassPlantBlock;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlock;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlock;
 import dimensionalfluxminer.miner.block.MinerChassisBlock;
 import dimensionalfluxminer.miner.block.MinerPartBlock;
 import dimensionalfluxminer.miner.block.MinerPortBlock;
@@ -37,7 +37,7 @@ public final class DfmBlocks {
     public static final DeferredBlock<MinerTerminalBlock> MINER_TERMINAL = BLOCKS.registerBlock("miner_terminal", MinerTerminalBlock::new, assemblyPart());
 
     // Single-block machines
-    public static final DeferredBlock<DimensionalCrusherBlock> DIMENSIONAL_CRUSHER = BLOCKS.registerBlock("dimensional_crusher", DimensionalCrusherBlock::new,
+    public static final DeferredBlock<MechanicalCrusherBlock> MECHANICAL_CRUSHER = BLOCKS.registerBlock("mechanical_crusher", MechanicalCrusherBlock::new,
             machineCasing().noOcclusion());
     public static final DeferredBlock<AlloySmelterBlock> ALLOY_SMELTER = BLOCKS.registerBlock("alloy_smelter", AlloySmelterBlock::new,
             machineCasing().noOcclusion().lightLevel(AlloySmelterBlock::lightFromState));

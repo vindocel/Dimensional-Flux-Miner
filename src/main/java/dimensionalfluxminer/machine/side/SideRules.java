@@ -53,8 +53,8 @@ public interface SideRules {
         }
     };
 
-    /** Smelter: FRONT locked; UP/DOWN/LEFT/RIGHT/BACK configurable; every configurable face starts accepting energy. */
-    SideRules SMELTER = new SideRules() {
+    /** Electric Furnace: FRONT locked; UP/DOWN/LEFT/RIGHT/BACK configurable; every configurable face starts accepting energy. */
+    SideRules ELECTRIC_FURNACE = new SideRules() {
         @Override
         public List<SideRoute> allowed(RelativeFace face, Transmission transmission, int profile) {
             if (face == RelativeFace.FRONT) {

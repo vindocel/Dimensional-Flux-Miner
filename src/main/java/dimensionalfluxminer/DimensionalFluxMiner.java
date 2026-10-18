@@ -62,6 +62,9 @@ public final class DimensionalFluxMiner {
         NeoForge.EVENT_BUS.addListener(BlightSpawnManager::onLevelTick);
         NeoForge.EVENT_BUS.addListener(CorruptedWaterEffects::onEntityTick);
         NeoForge.EVENT_BUS.addListener(dimensionalfluxminer.machine.QuickInstall::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, dimensionalfluxminer.compat.CarryOnCompat::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(dimensionalfluxminer.network.ConfigOverridesPayload::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent event) -> DfmConfig.setOverrides(java.util.Map.of()));
     }
 
     public static ResourceLocation id(String path) {

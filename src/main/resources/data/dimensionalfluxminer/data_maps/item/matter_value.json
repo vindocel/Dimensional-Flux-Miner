@@ -15,13 +15,15 @@
     "minecraft:deepslate": {
       "dm": 0.5,
       "dimensions": [
-        "minecraft:overworld"
+        "minecraft:overworld",
+        "ad_astra:glacio"
       ]
     },
     "minecraft:cobbled_deepslate": {
       "dm": 0.3,
       "dimensions": [
-        "minecraft:overworld"
+        "minecraft:overworld",
+        "ad_astra:glacio"
       ]
     },
     "minecraft:granite": {
@@ -48,6 +50,126 @@
         "minecraft:overworld"
       ]
     },
+    "minecraft:sand": {
+      "dm": 0.3,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:red_sand": {
+      "dm": 0.3,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:grass_block": {
+      "dm": 0.2,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:white_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:orange_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:magenta_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:light_blue_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:yellow_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:lime_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:pink_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:gray_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:light_gray_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:cyan_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:purple_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:blue_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:brown_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:green_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:red_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
+    "minecraft:black_terracotta": {
+      "dm": 0.5,
+      "dimensions": [
+        "minecraft:overworld"
+      ]
+    },
     "minecraft:netherrack": {
       "dm": 0.5,
       "dimensions": [
@@ -57,13 +179,17 @@
     "minecraft:basalt": {
       "dm": 0.5,
       "dimensions": [
-        "minecraft:the_nether"
+        "minecraft:the_nether",
+        "ad_astra:mercury",
+        "ad_astra:venus"
       ]
     },
     "minecraft:blackstone": {
       "dm": 0.5,
       "dimensions": [
-        "minecraft:the_nether"
+        "minecraft:the_nether",
+        "ad_astra:mercury",
+        "ad_astra:venus"
       ]
     },
     "minecraft:crimson_nylium": {
@@ -81,7 +207,9 @@
     "minecraft:magma_block": {
       "dm": 0.5,
       "dimensions": [
-        "minecraft:the_nether"
+        "minecraft:the_nether",
+        "ad_astra:mercury",
+        "ad_astra:venus"
       ]
     },
     "minecraft:glowstone": {
@@ -99,7 +227,8 @@
     "minecraft:soul_soil": {
       "dm": 1.0,
       "dimensions": [
-        "minecraft:the_nether"
+        "minecraft:the_nether",
+        "ad_astra:moon"
       ]
     },
     "minecraft:nether_bricks": {
@@ -146,7 +275,152 @@
       "dimensions": [
         "allthemodium:the_other"
       ]
-    },    "#c:ores/copper": {
+    },
+    "ad_astra:moon_stone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "ad_astra:moon"
+      ]
+    },
+    "ad_astra:moon_cobblestone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:moon"
+      ]
+    },
+    "ad_astra:moon_sand": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:moon"
+      ]
+    },
+    "ad_astra:mars_stone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "ad_astra:mars"
+      ]
+    },
+    "ad_astra:mars_cobblestone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:mars"
+      ]
+    },
+    "ad_astra:conglomerate": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:mars"
+      ]
+    },
+    "ad_astra:mars_sand": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:mars"
+      ]
+    },
+    "ad_astra:venus_stone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "ad_astra:venus"
+      ]
+    },
+    "ad_astra:venus_cobblestone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:venus"
+      ]
+    },
+    "ad_astra:infernal_spire_block": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "ad_astra:venus"
+      ]
+    },
+    "ad_astra:venus_sand": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:venus"
+      ]
+    },
+    "ad_astra:mercury_stone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "ad_astra:mercury"
+      ]
+    },
+    "ad_astra:mercury_cobblestone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:mercury"
+      ]
+    },
+    "ad_astra:glacio_stone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.5,
+      "dimensions": [
+        "ad_astra:glacio"
+      ]
+    },
+    "ad_astra:glacio_cobblestone": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.3,
+      "dimensions": [
+        "ad_astra:glacio"
+      ]
+    },
+    "ad_astra:permafrost": {
+      "neoforge:conditions": [
+        { "type": "neoforge:mod_loaded", "modid": "ad_astra" }
+      ],
+      "dm": 0.1,
+      "dimensions": [
+        "ad_astra:glacio"
+      ]
+    },
+    "#c:ores/copper": {
       "dm": 0.5
     },
     "#c:ores/iron": {

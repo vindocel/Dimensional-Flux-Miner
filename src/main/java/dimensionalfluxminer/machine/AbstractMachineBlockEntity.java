@@ -1,10 +1,12 @@
 package dimensionalfluxminer.machine;
 
 import dimensionalfluxminer.advancement.DfmAdvancements;
+import dimensionalfluxminer.compat.LogisticsNetworksCompat;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
 import dimensionalfluxminer.machine.math.RateScale;
+import dimensionalfluxminer.machine.side.NodeInputLanes;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideConfiguration;
 import dimensionalfluxminer.machine.side.SideRoute;
@@ -37,7 +39,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 /**
- * Shared behaviour of the single-block machines (Crusher and Smelter): dynamic energy buffer, Rate 1..10,
+ * Shared behaviour of the single-block machines (Crusher and Electric Furnace): dynamic energy buffer, Rate 1..10,
  * Efficiency Upgrade slot, Auto-Input/Auto-Eject of items and Auto-Eject of fluids, each on its own (default OFF),
  * per-transmission side configuration,
  * whole-block redstone control (ignored / high / low) and external tick acceleration (each extra ticker call in the same game
@@ -107,6 +109,9 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected String status = "idle";
 
     private final Map<Direction, IItemHandler> itemHandlers = new EnumMap<>(Direction.class);
+    /** Network node item inputs sharing the dedicated lanes; rebuilt from the nodes, not saved. */
+    private final NodeInputLanes nodeLanes = new NodeInputLanes();
+    private int nodeLanesProfile = -1;
 
     protected AbstractMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, SideRules rules) {
         super(type, pos, state);
@@ -172,7 +177,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         return sides;
     }
 
-    /** Item profile used for ITEM routes (Smelter NORMAL/ALLOY). */
+    /** Item profile used for ITEM routes (Electric Furnace NORMAL/ALLOY). */
     public int itemProfile() {
         return SideRules.PROFILE_NORMAL;
     }
@@ -232,7 +237,134 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         if (autoEjectFluid) {
             autoEjectFluidCycle();
         }
+        if (normalCall && gameTime % 10 == 0) {
+            scanNetworkNodes();
+        }
         updateMachineState();
+    }
+
+    /**
+     * Logistics Networks nodes on this block: the side each enabled channel uses gets the route it needs (a sending
+     * item channel an item output, a receiving one an item input, both an input/output, a receiving energy channel
+     * energy, a sending fluid channel the experience output) and is locked in the Side Configuration while the node
+     * is there. The node keeps its own look.
+     */
+    private void scanNetworkNodes() {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel) || !LogisticsNetworksCompat.loaded()) {
+            return;
+        }
+        int faces = RelativeFace.VALUES.length;
+        boolean[] pull = new boolean[faces];
+        boolean[] push = new boolean[faces];
+        boolean[] power = new boolean[faces];
+        boolean[] fluidOut = new boolean[faces];
+        for (LogisticsNetworksCompat.Node node : LogisticsNetworksCompat.nodesAt(serverLevel, worldPosition)) {
+            for (LogisticsNetworksCompat.Channel channel : node.channels()) {
+                if (channel.side() == null) {
+                    continue;
+                }
+                int face = RelativeFace.of(facing(), channel.side()).ordinal();
+                switch (channel.type()) {
+                    case "ITEM" -> {
+                        pull[face] |= channel.sends();
+                        push[face] |= !channel.sends();
+                    }
+                    case "ENERGY" -> power[face] |= !channel.sends();
+                    case "FLUID" -> fluidOut[face] |= channel.sends();
+                    default -> {
+                    }
+                }
+            }
+        }
+        int profile = itemProfile();
+        int[] locks = new int[Transmission.VALUES.length];
+        boolean routes = false;
+        // Receiving item faces of a profile with dedicated input lanes (Electric Furnace Alloy) share the lanes between them.
+        if (profile != nodeLanesProfile) {
+            nodeLanes.reset();
+            nodeLanesProfile = profile;
+        }
+        int laneFaces = 0;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            int i = face.ordinal();
+            if (push[i] && !pull[i] && sides.rules().allowed(face, Transmission.ITEM, profile).contains(SideRoute.ITEM_INPUT_1)) {
+                laneFaces |= 1 << i;
+            }
+        }
+        SideRoute[] laneRoutes = itemRoutes(profile);
+        if (nodeLanes.update(laneRoutes, laneFaces)) {
+            routes |= applyItemRoutes(laneRoutes, profile);
+        }
+        locks[Transmission.ITEM.ordinal()] |= laneFaces;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            int i = face.ordinal();
+            if ((laneFaces & (1 << i)) == 0 && (pull[i] || push[i])) {
+                SideRoute now = sides.get(face, Transmission.ITEM, profile);
+                boolean ok = (!pull[i] || now.extractsItems()) && (!push[i] || now.insertsItems());
+                if (!ok) {
+                    SideRoute wanted = pull[i] && push[i] ? SideRoute.ITEM_INPUT_OUTPUT_ALL
+                            : pull[i] ? SideRoute.ITEM_OUTPUT : SideRoute.ITEM_INPUT_ALL;
+                    ok = sides.set(face, Transmission.ITEM, profile, wanted)
+                            || sides.set(face, Transmission.ITEM, profile, SideRoute.ITEM_INPUT_OUTPUT_ALL);
+                    routes |= ok;
+                }
+                if (ok) {
+                    locks[Transmission.ITEM.ordinal()] |= 1 << i;
+                }
+            }
+            routes |= nodeRoute(face, power[i], Transmission.ENERGY, SideRoute.ENERGY_INPUT, locks);
+            routes |= nodeRoute(face, fluidOut[i], Transmission.EXPERIENCE, SideRoute.XP_OUTPUT, locks);
+        }
+        boolean locksChanged = false;
+        for (Transmission transmission : Transmission.VALUES) {
+            locksChanged |= sides.setLocks(transmission, locks[transmission.ordinal()]);
+        }
+        if (routes) {
+            onSidesChanged();
+        } else if (locksChanged) {
+            setChanged();
+        }
+    }
+
+    /** ITEM route of every face in {@code profile}, indexed by face ordinal. */
+    private SideRoute[] itemRoutes(int profile) {
+        SideRoute[] result = new SideRoute[RelativeFace.VALUES.length];
+        for (RelativeFace face : RelativeFace.VALUES) {
+            result[face.ordinal()] = sides.get(face, Transmission.ITEM, profile);
+        }
+        return result;
+    }
+
+    /** Writes the ITEM routes back; returns whether any face changed. */
+    private boolean applyItemRoutes(SideRoute[] routes, int profile) {
+        boolean changed = false;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            if (sides.get(face, Transmission.ITEM, profile) != routes[face.ordinal()]) {
+                changed |= sides.set(face, Transmission.ITEM, profile, routes[face.ordinal()]);
+            }
+        }
+        return changed;
+    }
+
+    /** Receiving item faces of network nodes that share the dedicated input lanes. */
+    public NodeInputLanes nodeLanes() {
+        return nodeLanes;
+    }
+
+    /** Gives {@code face} the {@code route} a node needs (when the machine allows it) and locks it; true if it changed. */
+    private boolean nodeRoute(RelativeFace face, boolean needed, Transmission transmission, SideRoute route, int[] locks) {
+        if (!needed) {
+            return false;
+        }
+        boolean changed = false;
+        if (sides.get(face, transmission, itemProfile()) != route) {
+            if (!sides.set(face, transmission, itemProfile(), route)) {
+                return false;
+            }
+            changed = true;
+        }
+        locks[transmission.ordinal()] |= 1 << face.ordinal();
+        return changed;
     }
 
     /** Machine work for one logical cycle; returns true if progress advanced. */
@@ -419,6 +551,15 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             if (transmission >= Transmission.VALUES.length) {
                 return false;
             }
+            // A node's lane face stays locked but a click moves it through all, lane 1, lane 2 and lane 3.
+            if (Transmission.VALUES[transmission] == Transmission.ITEM && nodeLanes.contains(face)
+                    && sides.locked(RelativeFace.VALUES[face], Transmission.ITEM)) {
+                SideRoute[] routes = itemRoutes(itemProfile());
+                nodeLanes.cycle(routes, face, forward);
+                applyItemRoutes(routes, itemProfile());
+                onSidesChanged();
+                return true;
+            }
             if (sides.cycle(RelativeFace.VALUES[face], Transmission.VALUES[transmission], itemProfile(), forward)) {
                 onSidesChanged();
                 return true;
@@ -473,6 +614,12 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         tag.putString("state", machineState().getSerializedName());
         tag.putInt("profile", itemProfile());
         tag.put("sides", sides.save());
+        int[] locks = new int[Transmission.VALUES.length];
+        for (Transmission transmission : Transmission.VALUES) {
+            locks[transmission.ordinal()] = sides.locks(transmission);
+        }
+        tag.putIntArray("node_sides", locks);
+        tag.putInt("node_lanes", nodeLanes.mask());
     }
 
     // ---------------------------------------------------------------- persistence

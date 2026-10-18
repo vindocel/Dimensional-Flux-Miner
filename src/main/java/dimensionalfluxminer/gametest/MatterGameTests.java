@@ -45,6 +45,11 @@ public final class MatterGameTests {
         List<Case> cases = List.of(
                 new Case(Items.DIRT, overworld, 1, 2),
                 new Case(Items.COBBLESTONE, overworld, 3, 5),
+                new Case(Items.SAND, overworld, 3, 5),
+                new Case(Items.RED_SAND, overworld, 3, 5),
+                new Case(Items.GRASS_BLOCK, overworld, 2, 4),
+                new Case(Items.TERRACOTTA, overworld, 5, 7),
+                new Case(Items.CYAN_TERRACOTTA, overworld, 5, 7),
                 new Case(Items.STONE, overworld, 5, 7),
                 new Case(Items.OBSIDIAN, overworld, 10, 12),
                 new Case(Items.OBSIDIAN, nether, 10, 12),
@@ -229,6 +234,59 @@ public final class MatterGameTests {
         helper.assertTrue(units(stone, other, false) == 5 && units(stone, other, true) == 7, "ancient stone 0.5 -> 0.7 DM");
         helper.assertTrue(units(dirt, other, false) == 1 && units(dirt, other, true) == 2, "ancient dirt 0.1 -> 0.2 DM");
         helper.assertTrue(units(stone, helper.getLevel(), true) < 0, "only in The Other");
+        helper.succeed();
+    }
+
+    /**
+     * Every block the guide shows as matter of a vanilla dimension (with its variants) is accepted there. The ores
+     * depend on the worldgen (the GameTest world is flat, without emerald), so they are left out here.
+     */
+    @GameTest(template = "empty_small")
+    public static void guideMatterExamplesAreAccepted(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        for (var dimension : List.of(Level.OVERWORLD, Level.NETHER, Level.END)) {
+            ServerLevel level = server.getLevel(dimension);
+            for (List<Item> slot : dimensionalfluxminer.miner.MatterExamples.of(dimension)) {
+                for (Item item : slot) {
+                    if (MatterValues.isOre(new ItemStack(item))) {
+                        continue;
+                    }
+                    helper.assertTrue(units(item, level, false) > 0, item + " is not matter in " + dimension.location());
+                }
+            }
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Ad Astra planets (when installed): each planet's own stone, and the blocks of other dimensions it generates, are
+     * matter only there, and Dimensional Death never acts on a planet or in orbit.
+     */
+    @GameTest(template = "empty_small")
+    public static void adAstraPlanetsTakeTheirOwnMatterOnly(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        ServerLevel moon = server.getLevel(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.ResourceLocation.parse("ad_astra:moon")));
+        ServerLevel mercury = server.getLevel(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.ResourceLocation.parse("ad_astra:mercury")));
+        if (!net.neoforged.fml.ModList.get().isLoaded("ad_astra") || moon == null || mercury == null) {
+            helper.succeed();
+            return;
+        }
+        Item moonStone = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("ad_astra:moon_stone"));
+        Item moonCobblestone = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("ad_astra:moon_cobblestone"));
+        Item moonSand = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("ad_astra:moon_sand"));
+        helper.assertTrue(units(moonStone, moon, false) == 5 && units(moonCobblestone, moon, false) == 3
+                && units(moonSand, moon, false) == 3, "moon stone 0.5, cobblestone and sand 0.3 DM");
+        helper.assertTrue(units(moonStone, mercury, false) < 0 && units(moonStone, helper.getLevel(), false) < 0, "moon stone only on the Moon");
+        helper.assertTrue(units(Items.BASALT, mercury, false) == 5 && units(Items.SOUL_SOIL, moon, false) == 10,
+                "blocks of other dimensions that generate on a planet keep their value there");
+        helper.assertTrue(units(Items.BASALT, moon, false) < 0 && units(Items.STONE, moon, false) < 0, "and nowhere else");
+        helper.assertTrue(units(Items.OBSIDIAN, moon, false) == 10, "obsidian everywhere");
+        helper.assertTrue(!dimensionalfluxminer.miner.corruption.ProtectionService.corruptionAllowed(moon)
+                && !dimensionalfluxminer.miner.corruption.ProtectionService.corruptionAllowed(mercury)
+                && dimensionalfluxminer.miner.corruption.ProtectionService.corruptionAllowed(helper.getLevel()),
+                "no Dimensional Death on the planets");
         helper.succeed();
     }
 }

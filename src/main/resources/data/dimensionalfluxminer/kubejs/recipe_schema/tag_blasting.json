@@ -1,0 +1,32 @@
+{
+  "keys": [
+    {
+      "name": "result_tag",
+      "role": "output",
+      "type": "item_tag"
+    },
+    {
+      "name": "ingredient",
+      "role": "input",
+      "type": "ingredient"
+    },
+    {
+      "name": "experience",
+      "role": "output",
+      "type": {
+        "type": "float",
+        "min": 0.0
+      },
+      "function_names": ["experience", "xp"],
+      "optional": 0.0
+    },
+    {
+      "name": "cookingtime",
+      "role": "input",
+      "type": "ticks",
+      "function_names": ["cookingTime", "time"],
+      "optional": 100
+    }
+  ],
+  "unique": ["ingredient"]
+}

@@ -9,8 +9,8 @@ import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.Transmission;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.registry.DfmItems;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
-import dimensionalfluxminer.smelter.SmelterMode;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -29,7 +29,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * Rate-10 throughput of the Alloy Smelter: 64 operations per lane and 192 in total, really reached and sustained when
+ * Rate-10 throughput of the Electric Furnace: 64 operations per lane and 192 in total, really reached and sustained when
  * the inputs are fed and the outputs drained. Every slot holds 64 items at most.
  */
 @GameTestHolder(DimensionalFluxMiner.MOD_ID)
@@ -49,18 +49,18 @@ public final class ThroughputGameTests {
         return (storedBefore - buffer.stored()) + (buffer.debt() - debtBefore);
     }
 
-    private static void clearAll(AlloySmelterBlockEntity be) {
-        for (int i = 0; i < AlloySmelterBlockEntity.LANES; i++) {
+    private static void clearAll(ElectricFurnaceBlockEntity be) {
+        for (int i = 0; i < ElectricFurnaceBlockEntity.LANES; i++) {
             be.input(i).clear();
             be.output(i).clear();
         }
     }
 
     /** Furnace mode, Rate 10, plenty of energy, empty lanes and progress cleared. */
-    private static AlloySmelterBlockEntity furnace(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
-        be.setMode(SmelterMode.ALLOY);
-        be.setMode(SmelterMode.NORMAL);
+    private static ElectricFurnaceBlockEntity furnace(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
+        be.setMode(ElectricFurnaceMode.ALLOY);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         be.setRate(10);
         clearAll(be);
         be.energyBuffer().setStored(PLENTY);
@@ -69,10 +69,10 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void eachLaneAloneRuns64PerTick(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
-                AlloySmelterBlockEntity m = furnace(helper);
+            for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
+                ElectricFurnaceBlockEntity m = furnace(helper);
                 long made = 0;
                 for (int tick = 0; tick < 20; tick++) {
                     m.input(lane).clear();
@@ -91,21 +91,21 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void threeLanesSustain192PerTickAt3200000Fe(GameTestHelper helper) {
-        SmelterGameTests.place(helper);
+        ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            AlloySmelterBlockEntity be = furnace(helper);
+            ElectricFurnaceBlockEntity be = furnace(helper);
             long stored = be.energyBuffer().stored();
             double debt = be.energyBuffer().debt();
             long made = 0;
             int ticks = 200;
             for (int tick = 0; tick < ticks; tick++) {
-                for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+                for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                     be.input(lane).clear();
                     be.input(lane).insert(new ItemStack(Items.SAND), 64, false);
                     be.output(lane).clear();
                 }
                 cycle(helper, be);
-                for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+                for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                     made += be.output(lane).countOf(new ItemStack(Items.GLASS));
                 }
             }
@@ -118,8 +118,8 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
     public static void autoInputAndAutoEjectSustain192PerTick(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
-        be.setMode(SmelterMode.NORMAL);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
+        be.setMode(ElectricFurnaceMode.NORMAL);
         clearAll(be);
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.ITEM, SideRoute.ITEM_INPUT_ALL), "left input");
         helper.assertTrue(be.configureSide(RelativeFace.RIGHT, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "right output");
@@ -158,20 +158,20 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void rawBonusesStopAtTheSixtyFourItemOutputWithoutLosingItems(GameTestHelper helper) {
-        SmelterGameTests.place(helper);
+        ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
             for (boolean upgrade : new boolean[] {false, true}) {
-                AlloySmelterBlockEntity be = furnace(helper);
+                ElectricFurnaceBlockEntity be = furnace(helper);
                 be.upgradeSlot().setStackInSlot(0, upgrade ? new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()) : ItemStack.EMPTY);
                 long raw = 0;
                 long ingots = 0;
                 for (int tick = 0; tick < 20; tick++) {
                     clearAll(be);
-                    for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+                    for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                         be.input(lane).insert(new ItemStack(Items.RAW_IRON), 64, false);
                     }
                     cycle(helper, be);
-                    for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+                    for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                         raw += 64 - be.input(lane).firstCount();
                         long out = be.output(lane).countOf(new ItemStack(Items.IRON_INGOT));
                         helper.assertTrue(out <= 64, "no output slot ever holds more than 64, got " + out);
@@ -192,9 +192,9 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void alloyRuns64ExecutionsWithItsByproduct(GameTestHelper helper) {
-        AlloySmelterBlockEntity be = SmelterGameTests.place(helper);
+        ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            be.setMode(SmelterMode.ALLOY);
+            be.setMode(ElectricFurnaceMode.ALLOY);
             be.setRate(10);
             be.energyBuffer().setStored(PLENTY);
             long stored = be.energyBuffer().stored();
@@ -217,8 +217,8 @@ public final class ThroughputGameTests {
             // A recipe asking for two units of an ingredient runs half the executions (and costs twice per execution).
             AlloyingRecipe twice = new AlloyingRecipe(List.of(new SizedIngredient(Ingredient.of(Items.IRON_INGOT), 2),
                     new SizedIngredient(Ingredient.of(Items.COAL), 1)), new ItemStack(Items.IRON_BLOCK), Optional.empty(), 200, 0F);
-            helper.assertTrue(Math.abs(dimensionalfluxminer.smelter.SmelterEnergy.alloyExecutionsPerTick(10, twice) - 32) < 1e-9, "two units: 32 executions per tick");
-            helper.assertTrue(Math.abs(dimensionalfluxminer.smelter.SmelterEnergy.alloyExecutionsPerTick(10, twice) * dimensionalfluxminer.smelter.SmelterEnergy.alloyExecutionEnergy(twice, 10, false)
+            helper.assertTrue(Math.abs(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionsPerTick(10, twice) - 32) < 1e-9, "two units: 32 executions per tick");
+            helper.assertTrue(Math.abs(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionsPerTick(10, twice) * dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(twice, 10, false)
                     - 1_920_000) < 1e-3, "same FE/t: 32 x 60 000");
             helper.succeed();
         });
@@ -226,9 +226,9 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void emptyPartialAndFullOutputSlots(GameTestHelper helper) {
-        SmelterGameTests.place(helper);
+        ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            AlloySmelterBlockEntity be = furnace(helper);
+            ElectricFurnaceBlockEntity be = furnace(helper);
             ItemStack glass = new ItemStack(Items.GLASS);
             // The other two outputs are full of something else, so lane 1 can only use its own output.
             be.output(1).insert(new ItemStack(Items.STONE), 64, false);
@@ -255,7 +255,7 @@ public final class ThroughputGameTests {
             be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT);
             IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(MACHINE),
                     RelativeFace.BACK.toDirection(be.facing()));
-            helper.assertTrue(handler.getSlots() == AlloySmelterBlockEntity.LANES, "one slot per output");
+            helper.assertTrue(handler.getSlots() == ElectricFurnaceBlockEntity.LANES, "one slot per output");
             int taken = 0;
             for (int slot = 0; slot < handler.getSlots(); slot++) {
                 helper.assertTrue(handler.getSlotLimit(slot) == 64 && handler.getStackInSlot(slot).getCount() <= 64, "slot " + slot + " holds 64 at most");
@@ -272,21 +272,21 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void acceleratedCyclesEachRunAFull192(GameTestHelper helper) {
-        SmelterGameTests.place(helper);
+        ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            AlloySmelterBlockEntity be = furnace(helper);
+            ElectricFurnaceBlockEntity be = furnace(helper);
             long stored = be.energyBuffer().stored();
             double debt = be.energyBuffer().debt();
             long made = 0;
             // Four calls in the same game time: the normal one and three accelerated ones.
             for (int call = 0; call < 4; call++) {
-                for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+                for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                     be.input(lane).clear();
                     be.input(lane).insert(new ItemStack(Items.SAND), 64, false);
                     be.output(lane).clear();
                 }
                 cycle(helper, be);
-                for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+                for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                     made += be.output(lane).countOf(new ItemStack(Items.GLASS));
                 }
             }
@@ -298,19 +298,19 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void insufficientEnergySlowsDownWithoutLosingItems(GameTestHelper helper) {
-        SmelterGameTests.place(helper);
+        ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            AlloySmelterBlockEntity be = furnace(helper);
+            ElectricFurnaceBlockEntity be = furnace(helper);
             be.energyBuffer().setDebt(0);
             // A third of the FE of a Rate-10 tick: about 21 of the 64 items of each lane.
             be.energyBuffer().setStored(3_200_000 / 3);
-            for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+            for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                 be.input(lane).insert(new ItemStack(Items.SAND), 64, false);
             }
             cycle(helper, be);
             long glass = 0;
             long sand = 0;
-            for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+            for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                 glass += be.output(lane).countOf(new ItemStack(Items.GLASS));
                 sand += be.input(lane).firstCount();
             }
@@ -319,7 +319,7 @@ public final class ThroughputGameTests {
             helper.assertTrue(be.energyBuffer().available() < 1, "all the FE used");
             cycle(helper, be);
             long after = 0;
-            for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
+            for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                 after += be.output(lane).countOf(new ItemStack(Items.GLASS));
             }
             helper.assertTrue(after == glass, "nothing more without FE, status " + be.status());
@@ -329,9 +329,9 @@ public final class ThroughputGameTests {
 
     @GameTest(template = "empty_small")
     public static void partlyFilledSlotsSurviveSaveAndLoad(GameTestHelper helper) {
-        SmelterGameTests.place(helper);
+        ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
-            AlloySmelterBlockEntity be = furnace(helper);
+            ElectricFurnaceBlockEntity be = furnace(helper);
             be.output(0).insert(new ItemStack(Items.GLASS), 50, false);
             be.output(2).insert(new ItemStack(Items.IRON_INGOT), 13, false);
             be.input(1).insert(new ItemStack(Items.SAND), 37, false);

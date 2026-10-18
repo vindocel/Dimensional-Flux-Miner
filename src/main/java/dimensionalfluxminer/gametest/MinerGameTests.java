@@ -5,8 +5,9 @@ import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.miner.MatterValues;
 import dimensionalfluxminer.miner.MinerAssembly;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
+import dimensionalfluxminer.miner.MinerLayout;
 import dimensionalfluxminer.miner.MinerLayout.Part;
-import dimensionalfluxminer.miner.MinerLayout.PortRole;
+import dimensionalfluxminer.miner.MinerPorts;
 import dimensionalfluxminer.miner.MinerLinkBlockEntity;
 import dimensionalfluxminer.miner.MinerStatus;
 import dimensionalfluxminer.miner.MinerStructure;
@@ -67,33 +68,98 @@ public final class MinerGameTests {
         c.energyBuffer().setStored(c.powerLimit() * 10);
     }
 
-    static BlockPos port(GameTestHelper helper, MinerControllerBlockEntity c, PortRole role) {
-        return c.structure().port(role).orElseThrow().pos();
+    /** Port block of a face of a south-facing machine (the face points away from it). */
+    static BlockPos portPos(MinerControllerBlockEntity c, MinerPorts.Face face) {
+        return face.owner(c.structure().core(), MinerLayout.Front.SOUTH);
+    }
+
+    /** Gives a face its item roles, as the Side Configuration does (matter allowed), and returns its port block. */
+    static BlockPos setRoles(MinerControllerBlockEntity c, MinerPorts.Face face, boolean output, boolean matter) {
+        for (int i = 0; i < 4 && (c.ports().isOutput(face) != output || c.ports().isMatter(face) != matter); i++) {
+            c.ports().cycleItems(face, true, true);
+        }
+        return portPos(c, face);
+    }
+
+    /** Matter Input on the back middle face (it points north for a south-facing machine). */
+    static BlockPos useMatterPort(MinerControllerBlockEntity c) {
+        return setRoles(c, MinerPorts.Face.REAR_CENTER, false, true);
+    }
+
+    /** Item Output on the right middle face (it points east for a south-facing machine). */
+    static BlockPos useOutputPort(MinerControllerBlockEntity c) {
+        return setRoles(c, MinerPorts.Face.EAST_CENTER, true, false);
     }
 
     @GameTest(template = "empty_large")
     public static void formsAndExposesPortsOnOutwardFacesOnly(GameTestHelper helper) {
         MinerControllerBlockEntity c = build(helper);
-        for (MinerStructure.Member m : c.structure().members()) {
-            helper.assertTrue(helper.getLevel().getBlockState(m.pos()).getValue(DfmStateProperties.FORMED), "participant formed at " + m.pos());
-        }
-        MinerStructure.Member energy = c.structure().port(PortRole.ENERGY_INPUT).orElseThrow();
-        helper.assertTrue(energy.outward() == Direction.WEST, "south front -> energy faces west");
-        helper.assertTrue(c.structure().port(PortRole.ITEM_OUTPUT).orElseThrow().outward() == Direction.EAST, "output faces east");
-        helper.assertTrue(c.structure().port(PortRole.MATTER_INPUT).orElseThrow().outward() == Direction.NORTH, "matter faces north");
         var level = helper.getLevel();
-        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, energy.pos(), Direction.WEST) != null, "energy on outward face");
-        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, energy.pos(), Direction.UP) == null, "no energy on other faces");
-        BlockPos out = port(helper, c, PortRole.ITEM_OUTPUT);
-        IItemHandler outHandler = level.getCapability(Capabilities.ItemHandler.BLOCK, out, Direction.EAST);
-        helper.assertTrue(outHandler != null && outHandler.getSlots() == 27, "27-slot extraction view");
-        helper.assertTrue(!outHandler.insertItem(0, new ItemStack(Items.STONE), false).isEmpty(), "output never accepts insertion");
-        // No Core: the matter input capability is unavailable, the core slot is never exposed.
-        helper.assertTrue(level.getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH) == null, "matter input needs Stabilized");
+        for (MinerStructure.Member m : c.structure().members()) {
+            helper.assertTrue(level.getBlockState(m.pos()).getValue(DfmStateProperties.FORMED), "participant formed at " + m.pos());
+        }
+        // Energy by default: every one of the nine faces accepts it, no other face of the port blocks does.
+        for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
+            Direction out = face.outward(MinerLayout.Front.SOUTH);
+            helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), out) != null, "energy on " + face);
+            helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), Direction.UP) == null, "no energy up " + face);
+            // Every outward face has an item handler (so a cable can be noticed), none of the inward faces.
+            IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, face), out);
+            helper.assertTrue(items != null && items.getSlots() == 28, "item handler on " + face);
+            helper.assertTrue(level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, face), Direction.UP) == null, "no items up " + face);
+        }
+        helper.assertTrue(MinerPorts.Face.WEST_CENTER.outward(MinerLayout.Front.SOUTH) == Direction.WEST
+                && MinerPorts.Face.EAST_CENTER.outward(MinerLayout.Front.SOUTH) == Direction.EAST
+                && MinerPorts.Face.REAR_CENTER.outward(MinerLayout.Front.SOUTH) == Direction.NORTH, "south front: left west, right east, back north");
+        int itemsEast = MinerControllerBlockEntity.BUTTON_PORT_ITEMS + MinerPorts.Face.EAST_CENTER.ordinal() * 2;
+        // Locked without a Core: no setting can change.
+        helper.assertFalse(c.handleButton(null, itemsEast), "locked without a Core");
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
-        helper.assertTrue(level.getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH) == null, "Basic keeps matter input disabled");
+        helper.assertTrue(c.handleButton(null, itemsEast), "Item Output on the right middle face");
+        IItemHandler outHandler = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
+        helper.assertTrue(outHandler != null && outHandler.getSlots() == 28, "27 output slots and the matter slot");
+        helper.assertTrue(!outHandler.insertItem(0, new ItemStack(Items.STONE), false).isEmpty(), "output never accepts insertion");
+        // With the Basic Core the cycle is only none / Item Output.
+        c.handleButton(null, itemsEast);
+        helper.assertTrue(c.ports().outputFace() < 0 && c.ports().matterFace() < 0, "Basic: no Matter Input in the cycle");
+        // Stabilized: none -> output -> matter -> both on the same face.
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
-        helper.assertTrue(level.getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH) != null, "Stabilized enables matter input");
+        for (int i = 0; i < 3; i++) {
+            c.handleButton(null, itemsEast);
+        }
+        IItemHandler both = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
+        helper.assertTrue(both != null && both.getSlots() == 28, "output slots and one matter slot");
+        helper.assertTrue(both.insertItem(27, new ItemStack(Items.STONE, 2), false).isEmpty() && c.dmUnits() == 10, "matter accepted on the shared face");
+        // Free roles first: with the Item Output on the right, the left face cycles Matter Input, both, then Item Output.
+        c.handleButton(null, MinerControllerBlockEntity.BUTTON_PORTS_CLEAR_ITEMS);
+        c.handleButton(null, itemsEast);
+        int itemsWest = MinerControllerBlockEntity.BUTTON_PORT_ITEMS + MinerPorts.Face.WEST_CENTER.ordinal() * 2;
+        c.handleButton(null, itemsWest);
+        helper.assertTrue(c.ports().isMatter(MinerPorts.Face.WEST_CENTER) && c.ports().isOutput(MinerPorts.Face.EAST_CENTER), "free Matter Input first");
+        c.handleButton(null, itemsWest);
+        helper.assertTrue(c.ports().isMatter(MinerPorts.Face.WEST_CENTER) && c.ports().isOutput(MinerPorts.Face.WEST_CENTER), "then both, output moved");
+        c.handleButton(null, itemsWest);
+        helper.assertTrue(c.ports().isOutput(MinerPorts.Face.WEST_CENTER) && c.ports().matterFace() < 0
+                && !c.ports().isOutput(MinerPorts.Face.EAST_CENTER), "then Item Output only, one face per role");
+        c.handleButton(null, itemsWest);
+        helper.assertTrue(c.ports().outputFace() < 0 && c.ports().matterFace() < 0, "then none");
+        // Previous with Item Output on another face: none -> Item Output (last in the order).
+        c.handleButton(null, itemsEast);
+        c.handleButton(null, itemsWest + 1);
+        helper.assertTrue(c.ports().isOutput(MinerPorts.Face.WEST_CENTER), "right click goes back to Item Output");
+        // Energy by hand: only the chosen faces; reset goes back to every face.
+        c.handleButton(null, MinerControllerBlockEntity.BUTTON_PORT_ENERGY + MinerPorts.Face.REAR_CENTER.ordinal());
+        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.NORTH) != null
+                && level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.WEST_REAR), Direction.WEST) == null, "chosen energy face only");
+        c.handleButton(null, MinerControllerBlockEntity.BUTTON_PORTS_RESET_ENERGY);
+        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.WEST_REAR), Direction.WEST) != null, "back to every face");
+        // The corner block carries two independent faces.
+        helper.assertTrue(portPos(c, MinerPorts.Face.WEST_REAR).equals(portPos(c, MinerPorts.Face.REAR_WEST)), "two faces on one corner");
+        // Taking the Stabilized Core out drops the Matter Input.
+        useMatterPort(c);
+        helper.assertTrue(c.ports().isMatter(MinerPorts.Face.REAR_CENTER), "Matter Input on the back");
+        c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
+        helper.assertTrue(c.ports().matterFace() < 0, "Matter Input cleared without the Stabilized Core");
         helper.succeed();
     }
 
@@ -168,8 +234,7 @@ public final class MinerGameTests {
         MinerControllerBlockEntity c = build(helper);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
         c.setAutoInput(true);
-        MinerStructure.Member port = c.structure().port(PortRole.MATTER_INPUT).orElseThrow();
-        BlockPos chestPos = port.pos().relative(port.outward());
+        BlockPos chestPos = useMatterPort(c).relative(Direction.NORTH);
         helper.getLevel().setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
         var chest = (net.minecraft.world.level.block.entity.ChestBlockEntity) helper.getLevel().getBlockEntity(chestPos);
         for (int i = 0; i < 4; i++) {
@@ -190,8 +255,7 @@ public final class MinerGameTests {
         c.setRunRequested(true);
         // One kept family: the other rolls still spend DM but never need the output, so only matter can limit.
         c.filter().add(ResourceProfiles.get(helper.getLevel()).families().getFirst().key());
-        MinerStructure.Member port = c.structure().port(PortRole.MATTER_INPUT).orElseThrow();
-        BlockPos chestPos = port.pos().relative(port.outward());
+        BlockPos chestPos = useMatterPort(c).relative(Direction.NORTH);
         helper.getLevel().setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
         var chest = (net.minecraft.world.level.block.entity.ChestBlockEntity) helper.getLevel().getBlockEntity(chestPos);
         // Each tick: an endless stone source, an emptied output, full energy and ten accelerated cycles. With no item
@@ -233,8 +297,7 @@ public final class MinerGameTests {
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
         c.setAutoInput(true);
         c.setRedstoneControl(true);
-        MinerStructure.Member port = c.structure().port(PortRole.MATTER_INPUT).orElseThrow();
-        BlockPos chestPos = port.pos().relative(port.outward());
+        BlockPos chestPos = useMatterPort(c).relative(Direction.NORTH);
         helper.getLevel().setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
         var chest = (net.minecraft.world.level.block.entity.ChestBlockEntity) helper.getLevel().getBlockEntity(chestPos);
         chest.setItem(0, new ItemStack(Items.STONE, 64));
@@ -271,7 +334,7 @@ public final class MinerGameTests {
     public static void matterInputConvertsSubstrateImmediately(GameTestHelper helper) {
         MinerControllerBlockEntity c = build(helper);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
-        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH);
+        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, useMatterPort(c), Direction.NORTH);
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.STONE, 10), false).isEmpty(), "stone accepted");
         helper.assertTrue(c.dmUnits() == 50, "10 stone = 5.0 DM, got " + c.dmUnits());
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.DIRT, 10), false).isEmpty(), "dirt accepted");
@@ -295,7 +358,7 @@ public final class MinerGameTests {
     public static void matterInputOnlyTakesMatterOfItsOwnDimension(GameTestHelper helper) {
         MinerControllerBlockEntity c = build(helper);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
-        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH);
+        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, useMatterPort(c), Direction.NORTH);
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.DIAMOND_ORE, 2), false).isEmpty(), "Overworld diamond ore accepted");
         helper.assertTrue(c.dmUnits() == 20, "2 diamond ore = 2 DM, got " + c.dmUnits());
         for (var foreign : List.of(Items.NETHER_QUARTZ_ORE, Items.NETHER_GOLD_ORE, Items.ANCIENT_DEBRIS, Items.NETHERRACK,
@@ -552,8 +615,7 @@ public final class MinerGameTests {
         for (int i = 0; i < 20; i++) {
             c.acceleratedCycle();
         }
-        MinerStructure.Member port = c.structure().port(PortRole.ENERGY_INPUT).orElseThrow();
-        IEnergyStorage input = helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, port.pos(), port.outward());
+        IEnergyStorage input = helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.WEST_CENTER), Direction.WEST);
         long cycle = c.powerLimit();
         long accepted = input.receiveEnergy(Integer.MAX_VALUE, false);
         helper.assertTrue(accepted == 10 * cycle + 20 * cycle,
@@ -586,7 +648,7 @@ public final class MinerGameTests {
         for (int i = 0; i < MinerControllerBlockEntity.OUTPUT_SLOTS; i++) {
             c.output().setStackInSlot(i, new ItemStack(Items.COBBLESTONE, 64));
         }
-        IItemHandler out = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, port(helper, c, PortRole.ITEM_OUTPUT), Direction.EAST);
+        IItemHandler out = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, useOutputPort(c), Direction.EAST);
         int taken = 0;
         for (int slot = 0; slot < out.getSlots(); slot++) {
             taken += out.extractItem(slot, 64, false).getCount();
@@ -629,6 +691,99 @@ public final class MinerGameTests {
             n += c.output().getStackInSlot(i).getCount();
         }
         return n;
+    }
+
+    @GameTest(template = "empty_large", timeoutTicks = 400)
+    public static void cablesThatPullOrPushTakeTheRole(GameTestHelper helper) {
+        // Any cable: one that keeps pulling from a face gets the Item Output there, one that pushes Matter the input.
+        MinerControllerBlockEntity c = build(helper);
+        c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
+        c.output().setStackInSlot(0, new ItemStack(Items.IRON_ORE, 8));
+        var level = helper.getLevel();
+        MinerPorts.Face west = MinerPorts.Face.WEST_CENTER;
+        MinerPorts.Face rear = MinerPorts.Face.REAR_CENTER;
+        IItemHandler pulled = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, west), Direction.WEST);
+        IItemHandler pushed = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, rear), Direction.NORTH);
+        helper.assertTrue(pulled.extractItem(0, 1, false).isEmpty(), "nothing leaves before the face has the role");
+        helper.assertTrue(pushed.insertItem(27, new ItemStack(Items.STONE, 2), false).getCount() == 2, "nothing enters before the role");
+        helper.runAfterDelay(20, () -> {
+            helper.assertTrue(c.ports().isOutput(west) && c.ports().isMatter(rear), "roles moved to the active cables");
+            helper.assertTrue(c.ports().nodeItemFaces() == (west.bit() | rear.bit()), "locked while the cables are active");
+            helper.assertTrue(pulled.extractItem(0, 1, false).getCount() == 1, "the pulling cable now gets items");
+            helper.assertTrue(pushed.insertItem(27, new ItemStack(Items.STONE, 2), false).isEmpty(), "the pushing cable now feeds Matter");
+            // A second cable pulling elsewhere does not steal the role while the first keeps pulling.
+            IItemHandler other = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
+            other.extractItem(0, 1, true);
+            pulled.extractItem(0, 1, true);
+        });
+        helper.runAfterDelay(40, () -> helper.assertTrue(c.ports().isOutput(west), "the active holder keeps the Item Output"));
+        // Quiet cables free the faces; the roles stay where they are.
+        helper.runAfterDelay(40 + MinerControllerBlockEntity.CABLE_ACTIVE_TICKS + 20, () -> {
+            helper.assertTrue(c.ports().nodeItemFaces() == 0 && c.ports().isOutput(west) && c.ports().isMatter(rear), "freed, roles kept");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty_large")
+    public static void networkNodeRolesLockTheirFace(GameTestHelper helper) {
+        // What a Logistics Networks node asks (read from its channels when the mod is installed).
+        MinerControllerBlockEntity c = build(helper);
+        c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
+        MinerPorts ports = c.ports();
+        setRoles(c, MinerPorts.Face.WEST_CENTER, true, false);
+        MinerPorts.Face east = MinerPorts.Face.EAST_CENTER;
+        MinerPorts.Face west = MinerPorts.Face.WEST_CENTER;
+        helper.assertTrue(ports.applyNodes(east.ordinal(), -1, MinerPorts.Face.REAR_CENTER.bit()), "node roles applied");
+        helper.assertTrue(ports.isOutput(east) && !ports.isOutput(west), "the node takes the Item Output");
+        // The node reaches its face from any side of the block.
+        var level = helper.getLevel();
+        IItemHandler up = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, east), Direction.UP);
+        helper.assertTrue(up != null && up.getSlots() == 28, "output from the node's side");
+        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.DOWN) != null,
+                "energy from the node's side");
+        // Locked: the face does not cycle, the role is not offered elsewhere, clearing keeps it.
+        ports.cycleItems(east, true, true);
+        helper.assertTrue(ports.isOutput(east) && !ports.isMatter(east), "locked face");
+        for (int i = 0; i < 4; i++) {
+            ports.cycleItems(west, true, true);
+            helper.assertFalse(ports.isOutput(west), "Item Output never offered on another face");
+        }
+        ports.clearItems();
+        helper.assertTrue(ports.isOutput(east), "clearing keeps the node's role");
+        // Node removed: unlocked, the role stays where it was.
+        ports.applyNodes(-1, -1, 0);
+        helper.assertTrue(ports.nodeFaces() == 0 && ports.isOutput(east), "unlocked, role kept");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_large")
+    public static void pastedFormedBlocksComeBackLooseAndReform(GameTestHelper helper) {
+        // A copy tool (Building Gadgets) places the blocks with the formed state of the copied machine.
+        MinerControllerBlockEntity c = build(helper);
+        var level = helper.getLevel();
+        List<MinerStructure.Member> members = c.structure().members();
+        java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> copy = new java.util.LinkedHashMap<>();
+        for (MinerStructure.Member m : members) {
+            copy.put(m.pos(), level.getBlockState(m.pos()));
+        }
+        helper.assertTrue(copy.values().stream().allMatch(s -> s.getValue(DfmStateProperties.FORMED)), "copied while formed");
+        for (BlockPos pos : copy.keySet()) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        }
+        BlockPos terminal = helper.absolutePos(TERMINAL);
+        copy.forEach((pos, state) -> {
+            if (!pos.equals(terminal)) {
+                level.setBlock(pos, state, 3);
+                helper.assertFalse(level.getBlockState(pos).getValue(DfmStateProperties.FORMED), "pasted part is loose (visible) at " + pos);
+            }
+        });
+        level.setBlock(terminal, copy.get(terminal), 3);
+        MinerControllerBlockEntity pasted = (MinerControllerBlockEntity) level.getBlockEntity(terminal);
+        helper.assertTrue(pasted != null && pasted.formed(), "the complete paste forms again");
+        for (MinerStructure.Member m : members) {
+            helper.assertTrue(level.getBlockState(m.pos()).getValue(DfmStateProperties.FORMED), "formed again at " + m.pos());
+        }
+        helper.succeed();
     }
 
     @GameTest(template = "empty_large")
@@ -820,8 +975,9 @@ public final class MinerGameTests {
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
         powerUp(c, 10);
         c.setRunRequested(true);
-        helper.assertFalse(helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK,
-                port(helper, c, PortRole.MATTER_INPUT), Direction.NORTH) != null, "Basic never exposes matter input");
+        IItemHandler rear = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.NORTH);
+        helper.assertTrue(rear.insertItem(rear.getSlots() - 1, new ItemStack(Items.STONE, 4), false).getCount() == 4,
+                "Basic never takes matter");
         helper.succeedWhen(() -> {
             helper.assertTrue(countOutput(c) > 0, "Basic produced from drained matter (status " + c.status() + ")");
             // Every produced roll was paid with DM from corrupted columns (64 DM each), never from free matter.

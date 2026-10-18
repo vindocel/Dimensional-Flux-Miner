@@ -1,7 +1,8 @@
 # 🧩 Customization Guide
 
-How to change Dimensional Flux Miner with a server configuration file and datapacks: what each option does, where
-its limits are, what cannot be changed without editing the code, and how to check that a change really took effect.
+How to change Dimensional Flux Miner with a server configuration file, datapacks or KubeJS scripts: what each option
+does, where its limits are, what cannot be changed without editing the code, and how to check that a change really took
+effect.
 
 This guide is for modpack creators, server administrators and modders. You do not need to know the mod's code to use
 it, but you should know how to edit a text file and how to put a folder inside a world save.
@@ -29,8 +30,8 @@ the player-facing overview in the [README](../README.md).
 1. [Four ways to change the mod](#1-four-ways-to-change-the-mod)
 2. [The server configuration file](#2-the-server-configuration-file)
    - [2.1 Dimensional Flux Miner](#21-dimensional-flux-miner)
-   - [2.2 Dimensional Crusher](#22-dimensional-crusher)
-   - [2.3 Alloy Smelter](#23-alloy-smelter)
+   - [2.2 Mechanical Crusher](#22-mechanical-crusher)
+   - [2.3 Electric Furnace](#23-electric-furnace)
    - [2.4 Dimensional Death](#24-dimensional-death)
    - [2.5 Complete example](#25-complete-example)
 
@@ -55,16 +56,21 @@ the player-facing overview in the [README](../README.md).
 13. [Applying and checking changes](#13-applying-and-checking-changes)
 14. [Troubleshooting](#14-troubleshooting)
 
+**Part V: KubeJS**
+
+15. [KubeJS scripts](#15-kubejs-scripts)
+
 ---
 
 # Part I: Server configuration
 
-## 1. Four ways to change the mod
+## 1. Five ways to change the mod
 
 | Mechanism | What it is | What it changes in this mod | Needs a restart? |
 |---|---|---|---|
 | **Server configuration** | The file `dimensionalfluxminer-server.toml` | Energy costs, speed and FE/t of every level, alloy recipe types of other mods, Dimensional Death switches and protections | No, in most cases (see [2](#when-a-change-is-applied)) |
 | **Datapack** | A folder or zip of JSON files loaded with the world | Ores the Miner makes, Dimensional Matter values, recipes, block and entity tags | No: `/reload` |
+| **KubeJS** (optional mod) | Server scripts in `kubejs/server_scripts/` | Everything of the two rows above, from one script ([15](#15-kubejs-scripts)) | No: `/reload` |
 | **Resource pack** | A folder or zip of client assets | Textures, models, sounds and translations only. No gameplay value can be changed with it | No: `F3 + T` |
 | **Java code** | Editing and rebuilding the mod | Everything else: the number of levels, buffers, slots, Dimensional Matter rules, corruption depth and radius, effects | Rebuild the mod |
 
@@ -96,7 +102,7 @@ A file placed in a world's `serverconfig` folder overrides the main file for tha
   change is used as soon as NeoForge reloads the file. If you edit the file while the game or server is stopped, it is
   read at the next start. On a production server, restarting after editing is the safest way to be sure.
 - Changes never require a new world. Machines already placed use the new values on their next cycle.
-- One exception: `smelter.externalAlloyRecipeTypes` is read when the recipes are loaded, so run `/reload` (or restart)
+- One exception: `electric_furnace.externalAlloyRecipeTypes` is read when the recipes are loaded, so run `/reload` (or restart)
   after changing it.
 
 ### What happens with an invalid value
@@ -113,11 +119,11 @@ wrong type is corrected back to its default and a warning is written to the log.
 | `miner.maximumProductionRate` | decimal | `64.0` | `0.0001` | `64.0` |
 | `miner.energyPerAttempt` | integer (FE) | `200000` | `1` | `1000000000` |
 | `crusher.energyPerOperation` | integer (FE) | `20000` | `1` | `1000000000` |
-| `smelter.alloyEnergyPerOperation` | integer (FE) | `30000` | `1` | `1000000000` |
-| `smelter.furnaceEnergyPerThreeItems` | integer (FE) | `50000` | `1` | `1000000000` |
-| `smelter.externalAlloyRecipeTypes` | list of recipe type IDs | `["enderio:alloy_smelting", "oritech:foundry"]` | empty list | n/a |
-| `miner.speedByLevel`, `crusher.speedByLevel`, `smelter.speedByLevel` | empty, or a list of exactly 10 decimals (operations per tick) | `[]` | `0.0001` each | `64` each |
-| `miner.powerByLevel`, `crusher.powerByLevel`, `smelter.furnacePowerByLevel`, `smelter.alloyPowerByLevel` | empty, or a list of exactly 10 integers (FE/t) | `[]` | `1` each | `64000000000` each |
+| `electric_furnace.alloyEnergyPerOperation` | integer (FE) | `30000` | `1` | `1000000000` |
+| `electric_furnace.furnaceEnergyPerThreeItems` | integer (FE) | `50000` | `1` | `1000000000` |
+| `electric_furnace.externalAlloyRecipeTypes` | list of recipe type IDs | `["enderio:alloy_smelting", "oritech:foundry"]` | empty list | n/a |
+| `miner.speedByLevel`, `crusher.speedByLevel`, `electric_furnace.speedByLevel` | empty, or a list of exactly 10 decimals (operations per tick) | `[]` | `0.0001` each | `64` each |
+| `miner.powerByLevel`, `crusher.powerByLevel`, `electric_furnace.furnacePowerByLevel`, `electric_furnace.alloyPowerByLevel` | empty, or a list of exactly 10 integers (FE/t) | `[]` | `1` each | `64000000000` each |
 | `corruption.enabled` | true / false | `true` | n/a | n/a |
 | `corruption.blockedDimensions` | list of dimension IDs | `[]` | n/a | n/a |
 | `corruption.respectSpawnProtection` | true / false | `true` | n/a | n/a |
@@ -145,8 +151,8 @@ less FE than the level needs it works proportionally slower.
 
 | Table | Replaces | Unit |
 |---|---|---|
-| `<machine>.speedByLevel` | The speed curve | Operations per tick of each level (the Smelter: per lane, for a 10-second recipe) |
-| `<machine>.powerByLevel` (Smelter: `furnacePowerByLevel` and `alloyPowerByLevel`) | The fixed cost per operation | FE/t of each level at full speed, without the Efficiency Upgrade |
+| `<machine>.speedByLevel` | The speed curve | Operations per tick of each level (the Electric Furnace: per lane, for a 10-second recipe) |
+| `<machine>.powerByLevel` (Electric Furnace: `furnacePowerByLevel` and `alloyPowerByLevel`) | The fixed cost per operation | FE/t of each level at full speed, without the Efficiency Upgrade |
 
 - **A table must list all ten levels**, from level 1 to level 10. An empty table (`[]`, the default) keeps the
   default curve. A table with any other number of entries is ignored as a whole, the default curve is used and the log
@@ -163,7 +169,7 @@ less FE than the level needs it works proportionally slower.
 - With a power table, a machine still pays only for the work it really does, at the cost of the level it is running at.
 - The levels do not have to grow: any value in range is accepted for any level, and the order is yours to balance.
 - The energy buffer is still 10 × the FE/t of the selected level, and the Efficiency Upgrade still halves the Crusher
-  and Smelter costs.
+  and Electric Furnace costs.
 - The guide's speed tables and the machines' screens show the configured values.
 
 ### 2.1 Dimensional Flux Miner
@@ -209,7 +215,7 @@ buffer of 10 × FE/t, the 27 output slots, the 5 000 DM buffer, the cost of 2 DM
 drained column. The cores have no configuration. The Basic core's drain is controlled by the Dimensional Death options
 ([2.4](#24-dimensional-death)).
 
-### 2.2 Dimensional Crusher
+### 2.2 Mechanical Crusher
 
 | Key | What it does | Effect of raising it |
 |---|---|---|
@@ -235,14 +241,14 @@ drained column. The cores have no configuration. The Basic core's drain is contr
 	powerByLevel = [200, 600, 2000, 6000, 20000, 40000, 80000, 160000, 320000, 640000]
 ```
 
-### 2.3 Alloy Smelter
+### 2.3 Electric Furnace
 
-The Smelter has two energy profiles, and each job is charged with the profile of the work it really does:
+The Electric Furnace has two energy profiles, and each job is charged with the profile of the work it really does:
 
 | Profile | Used by | Cost | Key |
 |---|---|---|---|
-| **Furnace** | Each lane that smelts an item with a blast furnace or furnace recipe | `furnaceEnergyPerThreeItems / 3` FE per input item, only on the lanes that work | `smelter.furnaceEnergyPerThreeItems` |
-| **Alloy** | One execution of an alloy recipe | `alloyEnergyPerOperation × work units`, where the work units are the largest ingredient count of the recipe | `smelter.alloyEnergyPerOperation` |
+| **Furnace** | Each lane that smelts an item with a blast furnace or furnace recipe | `furnaceEnergyPerThreeItems / 3` FE per input item, only on the lanes that work | `electric_furnace.furnaceEnergyPerThreeItems` |
+| **Alloy** | One execution of an alloy recipe | `alloyEnergyPerOperation × work units`, where the work units are the largest ingredient count of the recipe | `electric_furnace.alloyEnergyPerOperation` |
 
 The three modes use those profiles like this:
 
@@ -258,26 +264,26 @@ The three modes use those profiles like this:
 - The default speed: at speed 10 every lane runs 64 operations per tick, for a recipe of any duration. The duration of
   a recipe changes how fast lower levels are and the FE/t, not the cost of one operation.
 
-**Level tables of the Smelter.**
+**Level tables of the Electric Furnace.**
 
 | Key | What it sets |
 |---|---|
-| `smelter.speedByLevel` | Operations per lane per tick of each level **for a standard 10-second (200-tick) recipe**. A recipe of another duration keeps the proportion of the default curve: `speedByLevel[n] × R(n, T) / R(n, 200)`, never above 64 per lane |
-| `smelter.furnacePowerByLevel` | FE/t of each level with the three lanes smelting standard recipes. The cost of one item is `furnacePowerByLevel[n] / (3 × lane speed)`. Replaces `furnaceEnergyPerThreeItems` |
-| `smelter.alloyPowerByLevel` | FE/t of each level running a standard alloy (one unit of each ingredient, 200 ticks). The cost of one work unit is `alloyPowerByLevel[n] / lane speed`. Replaces `alloyEnergyPerOperation` |
+| `electric_furnace.speedByLevel` | Operations per lane per tick of each level **for a standard 10-second (200-tick) recipe**. A recipe of another duration keeps the proportion of the default curve: `speedByLevel[n] × R(n, T) / R(n, 200)`, never above 64 per lane |
+| `electric_furnace.furnacePowerByLevel` | FE/t of each level with the three lanes smelting standard recipes. The cost of one item is `furnacePowerByLevel[n] / (3 × lane speed)`. Replaces `furnaceEnergyPerThreeItems` |
+| `electric_furnace.alloyPowerByLevel` | FE/t of each level running a standard alloy (one unit of each ingredient, 200 ticks). The cost of one work unit is `alloyPowerByLevel[n] / lane speed`. Replaces `alloyEnergyPerOperation` |
 
 ```toml
-[smelter]
+[electric_furnace]
 	speedByLevel = [0.005, 0.02, 0.06, 0.2, 0.6, 2.0, 6.0, 16.0, 32.0, 64.0]
 	furnacePowerByLevel = [300, 1200, 3600, 12000, 36000, 120000, 360000, 960000, 1920000, 3840000]
 	alloyPowerByLevel = [200, 800, 2400, 8000, 24000, 80000, 240000, 640000, 1280000, 2560000]
 ```
 
-**Alloy recipes of other mods.** `smelter.externalAlloyRecipeTypes` lists recipe **types** whose recipes the Smelter
+**Alloy recipes of other mods.** `electric_furnace.externalAlloyRecipeTypes` lists recipe **types** whose recipes the Electric Furnace
 also runs as alloys:
 
 ```toml
-[smelter]
+[electric_furnace]
 	externalAlloyRecipeTypes = ["enderio:alloy_smelting", "oritech:foundry"]
 ```
 
@@ -314,6 +320,11 @@ anything and is not affected by them.
 	protectedRegions = ["minecraft:overworld,-500,-500,500,500", "minecraft:overworld,2000,1000,2400,1300"]
 	claimFailurePolicy = "deny"
 ```
+
+**Dimension type tag** `#dimensionalfluxminer:corruption_blocked` (`data/dimensionalfluxminer/tags/dimension_type/`):
+dimensions of these types act as if they were in `blockedDimensions`, so the Basic core gets no matter there. By
+default it holds the Ad Astra planets and orbits (optional entries, ignored without Ad Astra). Add or remove dimension
+types with a datapack or KubeJS `ServerEvents.tags('dimension_type', ...)`.
 
 **Claims** (no option needed). When FTB Chunks or Open Parties and Claims is installed, the Basic core only corrupts
 unclaimed land or claims where the Miner's owner may build. A claim of someone else, or a claim check that fails, is
@@ -352,7 +363,7 @@ The full file with its default values:
 	speedByLevel = []
 	powerByLevel = []
 
-[smelter]
+[electric_furnace]
 	externalAlloyRecipeTypes = ["enderio:alloy_smelting", "oritech:foundry"]
 	alloyEnergyPerOperation = 30000
 	furnaceEnergyPerThreeItems = 50000
@@ -526,8 +537,9 @@ Rules worth knowing:
 - The same ore listed by several entries: the result depends on loading order, which is not guaranteed. Keep one
   entry per ore and dimension.
 - An unknown `resource` item logs a warning and the entry is skipped. An unknown `crusher_output` item is ignored.
-- These files do **not** support `neoforge:conditions`. An entry for an ore of a mod that is not installed is simply
-  skipped with a warning, which is harmless.
+- A file may have `neoforge:conditions` at its root (for example `{"type": "neoforge:mod_loaded", "modid": "..."}`):
+  the whole file is skipped when they do not hold. Without conditions, an entry for an ore of a mod that is not
+  installed is skipped with a warning, which is harmless.
 
 **Dimension rule (the void)**: an entry that has `empty_share`.
 
@@ -835,9 +847,9 @@ check the dimension's Resource Profile.
 |---|---|---|
 | `dimensionalfluxminer:crushing` | Crusher, fixed result | `ingredient`, `result` |
 | `dimensionalfluxminer:ore_crushing` | Crusher, ore yield (2, or 3 with the upgrade) | `ingredient`, `result` **or** `result_tag`, `base_count`, `efficiency_upgrade_count` |
-| `dimensionalfluxminer:alloying` | Alloy Smelter, alloy profile | `ingredients`, `result`, `byproduct`, `processing_ticks`, `experience` |
-| `dimensionalfluxminer:tag_smelting` | Furnace and the Smelter's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
-| `dimensionalfluxminer:tag_blasting` | Blast furnace and the Smelter's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
+| `dimensionalfluxminer:alloying` | Electric Furnace, alloy profile | `ingredients`, `result`, `byproduct`, `processing_ticks`, `experience` |
+| `dimensionalfluxminer:tag_smelting` | Furnace and the Electric Furnace's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
+| `dimensionalfluxminer:tag_blasting` | Blast furnace and the Electric Furnace's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
 
 The mod's own recipes are in `data/dimensionalfluxminer/recipe/`. Their IDs follow the path:
 `ore_processing/iron.json` is the recipe `dimensionalfluxminer:ore_processing/iron`.
@@ -852,7 +864,7 @@ The mod's own recipes are in `data/dimensionalfluxminer/recipe/`. Their IDs foll
 
 "First item of a tag" means vanilla first, then this mod, then the other mods in alphabetical order of their IDs.
 
-**What a Smelter lane does with an item:** the item's blast furnace recipe, otherwise its furnace recipe (vanilla
+**What an Electric Furnace lane does with an item:** the item's blast furnace recipe, otherwise its furnace recipe (vanilla
 recipes, other mods' recipes and `tag_smelting` / `tag_blasting` alike). The raw ore bonus (2 raw → 3 ingots, 1 → 2
 with the upgrade) applies only when the input is in `c:raw_materials/<m>` and the single result is in `c:ingots/<m>`.
 
@@ -989,7 +1001,7 @@ The recipe does nothing while the tag is empty. Add the same condition the mod u
 
 - **Replace**: put a file with the **same path** as the original, in the original's namespace. For example
   `data/dimensionalfluxminer/recipe/alloying/steel.json` replaces the Pure Steel recipe. The crafting recipes of the
-  machines (`alloy_smelter`, `dimensional_crusher`, `steel_chassis`, ...) are vanilla shaped recipes and can be
+  machines (`electric_furnace`, `mechanical_crusher`, `steel_chassis`, ...) are vanilla shaped recipes and can be
   replaced the same way.
 - **Add**: use your own namespace, `data/my_modpack/recipe/...`.
 - **Remove**: replace the file with a recipe whose condition never passes. NeoForge then skips it:
@@ -1195,7 +1207,7 @@ the code.
 
 ## 9. Compatibility with other mods
 
-The mod has no scripting integration of its own. Everything below uses standard Minecraft and NeoForge data.
+Everything below uses standard Minecraft and NeoForge data. KubeJS scripts can do all of it too ([15](#15-kubejs-scripts)).
 
 | Goal | How |
 |---|---|
@@ -1203,7 +1215,7 @@ The mod has no scripting integration of its own. Everything below uses standard 
 | Process another mod's ores | Automatic through `c:ores/<m>` → `c:raw_materials/<m>` / `c:gems/<m>`. For other counts or products, an `ore_crushing` recipe ([6.2](#62-ore-crushing)) |
 | Dust of another mod's material | Automatic when a `c:dusts/<m>` item exists. To smelt a dust back, a `tag_smelting` / `tag_blasting` recipe ([6.4](#64-crushing-tag-smelting-and-tag-blasting)) |
 | Canonical products | When a tag has several items, the mod picks vanilla first, then itself, then the others alphabetically. To force one item, use `result` instead of `result_tag` |
-| Alloys of another mod | Add its recipe type to `smelter.externalAlloyRecipeTypes` ([2.3](#23-alloy-smelter)), or write `alloying` recipes |
+| Alloys of another mod | Add its recipe type to `electric_furnace.externalAlloyRecipeTypes` ([2.3](#23-electric-furnace)), or write `alloying` recipes |
 | A custom dimension | Resource Profile entries with its `dimension` ID, matter values with `dimensions` |
 | Another mod's blocks or creatures in the corruption | The tags of [7](#7-dimensional-death-block-tags) and [8](#8-entity-tags) with `"required": false` |
 | Claims | FTB Chunks and Open Parties and Claims are detected automatically |
@@ -1222,11 +1234,12 @@ The mod has no scripting integration of its own. Everything below uses standard 
 | Recipes | `"neoforge:conditions": [{ "type": "neoforge:mod_loaded", "modid": "<mod>" }]` at the top of the recipe |
 | Data map entries | The same `neoforge:conditions` inside the entry |
 | Tags | `{ "id": "<id>", "required": false }` |
-| Resource Profile entries | No conditions. An entry with an unknown item is skipped with a warning |
+| Resource Profile entries | `neoforge:conditions` at the root of the file. Without it, an entry with an unknown item is skipped with a warning |
 | Server configuration | Types and dimensions of missing mods are ignored |
+| KubeJS scripts | `if (Platform.isLoaded('<mod>')) { ... }` around the lines of that mod |
 
-Tools that write recipes, tags or data maps in the standard formats (KubeJS, CraftTweaker and similar) work with
-these formats like any datapack would, but the mod has no direct integration with them and they are not tested.
+Other tools that write recipes, tags or data maps in the standard formats (CraftTweaker and similar) work with these
+formats like any datapack would, but the mod has no direct integration with them and they are not tested.
 
 ---
 
@@ -1243,12 +1256,12 @@ these formats like any datapack would, but the mod has no direct integration wit
 
 | Feature | TOML | Datapack | Code | Notes |
 |---|---|---|---|---|
-| Energy per operation of each machine | ✅ | ❌ | | One cost per machine (two for the Smelter), or a cost per level through a power table |
+| Energy per operation of each machine | ✅ | ❌ | | One cost per machine (two for the Electric Furnace), or a cost per level through a power table |
 | FE/t of each level | ✅ | ❌ | | `powerByLevel` tables, all ten levels |
 | Speed of each level, every machine | ✅ | ❌ | | `speedByLevel` tables, all ten levels; the Miner also through its two rates. Never above 64 per tick |
 | Speed curve | ✅ | ❌ | | Geometric by default; any shape through a speed table |
 | Number of levels | ❌ | ❌ | 🔧 | Always 10 |
-| Operations per tick | ✅ | 🟡 | | Speed tables; a Smelter recipe's duration changes the lower levels |
+| Operations per tick | ✅ | 🟡 | | Speed tables; an Electric Furnace recipe's duration changes the lower levels |
 | Products per ore | ❌ | 🟡 | 🔧 | `ore_crushing` counts; the tag fallback is fixed at 2 / 3 |
 | Efficiency Upgrade effects | ❌ | 🟡 | 🔧 | Ore counts by recipe. The energy halving, the raw bonus and the DM bonus are fixed |
 | Buffer sizes (energy, DM) | ❌ | ❌ | 🔧 | Energy 10 × FE/t, DM 5 000 |
@@ -1269,8 +1282,11 @@ these formats like any datapack would, but the mod has no direct integration wit
 | Corrupted Water | 🟡 | ❌ | 🔧 | Stopped by the corruption switches; its behaviour is fixed |
 | Models, textures, sounds, translations | ❌ | ❌ | | Resource pack |
 | Animations | ❌ | ❌ | 🔧 | |
-| Ports, slots and automation | ❌ | ❌ | 🔧 | Side Configuration in game; slot counts fixed |
+| Ports, slots and automation | ❌ | ❌ | 🔧 | Side Configuration in game, including the Miner's nine port faces; slot counts and port positions fixed |
 | Other mods' compatibility | 🟡 | ✅ | 🔧 | Data and tags; new claim systems or recipe formats need code |
+
+A KubeJS script reaches everything marked ✅ or 🟡 in the TOML and Datapack columns, with the same limits
+([15](#15-kubejs-scripts)). It cannot change anything marked 🔧.
 
 ## 11. Internal limits and invalid values
 
@@ -1281,12 +1297,12 @@ these formats like any datapack would, but the mod has no direct integration wit
 | Speed levels | 1 to 10 |
 | Miner attempts per logical cycle | 64 at most (`maximumProductionRate` cannot exceed it) |
 | Crusher speed (default curve) | 1 operation / 200 ticks to 64 operations / tick |
-| Smelter speed (default curve) | 64 operations per lane per tick at speed 10 |
+| Electric Furnace speed (default curve) | 64 operations per lane per tick at speed 10 |
 | Speed tables | exactly 10 values, each from 0.0001 to 64 operations per tick |
 | Power tables | exactly 10 values, each from 1 to 64 000 000 000 FE/t |
 | Energy per operation (config) | 1 to 1 000 000 000 FE |
 | Energy buffer | 10 × the FE/t of the selected speed |
-| Slots | 64 items each. Crusher: 1 input, 4 outputs. Smelter: 3 inputs, 3 outputs. Miner: 27 outputs |
+| Slots | 64 items each. Crusher: 1 input, 4 outputs. Electric Furnace: 3 inputs, 3 outputs. Miner: 27 outputs |
 | DM buffer | 5 000 DM |
 | DM per attempt | 2 DM |
 | DM per drained column | 64 DM |
@@ -1416,7 +1432,7 @@ JSON files cannot hold comments: keep explanations in a separate README of your 
 | Server configuration | Save the file (or restart) | The guide's speed tables and the machines' power show the new FE/t; the log shows corrections |
 | Install a datapack | Copy to `datapacks/`, then `/reload` | `/datapack list` shows it under "enabled" |
 | Resource Profile | `/reload` | Open a Miner's filter window in that dimension: each family's key and weight are in the tooltip. The terminal's details show the void chance |
-| Recipes | `/reload` | EMI or JEI show the Crusher and Alloy Smelter categories. Typing the ID in `/recipe give @s <id>` also helps: the command only suggests and accepts recipes that loaded |
+| Recipes | `/reload` | EMI or JEI show the Crusher and Electric Furnace categories. Typing the ID in `/recipe give @s <id>` also helps: the command only suggests and accepts recipes that loaded |
 | DM values | `/reload` | The guide's matter table lists every non-ore entry with its value with and without the upgrade. The Miner's details show the last injected item and the DM it gave |
 | Tags | `/reload` | Press F3 and look at a block: its tags are listed on the right; or try the corruption in a test world |
 
@@ -1447,3 +1463,181 @@ JSON files cannot hold comments: keep explanations in a separate README of your 
 | A datapack has invalid JSON | Missing comma or quote, comments in the file | The log names the file; validate it with any JSON validator |
 | Two datapacks conflict | Same recipe path in both (the higher one wins); different files for the same input or ore (undefined) | `/datapack list` order; keep one definition per ID |
 | Errors when an optional mod is missing | Recipe without `neoforge:mod_loaded`; tag entry without `"required": false`; data map entry without a condition | The log line names the missing ID |
+
+
+---
+
+# Part V: KubeJS
+
+## 15. KubeJS scripts
+
+[KubeJS](https://kubejs.com) is an optional mod. With it installed, one server script can do everything the
+configuration file and the datapacks of this guide do. Without it, nothing changes: the mod never needs it.
+
+| | |
+|---|---|
+| KubeJS | 2101.7 or newer (NeoForge 1.21.1) |
+| Where | `kubejs/server_scripts/<any name>.js` in the instance or server folder |
+| Apply | `/reload`, or restart |
+| Errors | `logs/kubejs/server.log`, with the file and line |
+
+| Change | In a script | Same rules as |
+|---|---|---|
+| Server options | `DimensionalFluxMinerEvents.config` ([15.1](#151-server-options)) | [2](#2-the-server-configuration-file) |
+| Recipes of the five types | `ServerEvents.recipes` with `event.recipes.dimensionalfluxminer.*` ([15.2](#152-recipes)) | [6](#6-recipes) |
+| Dimensional Matter values | `DimensionalFluxMinerEvents.matterValues` ([15.3](#153-dimensional-matter-values)) | [5](#5-dimensional-matter-values) |
+| Resource Profiles | `DimensionalFluxMinerEvents.resourceProfiles` ([15.4](#154-resource-profiles)) | [4](#4-resource-profiles-the-ores-the-miner-makes) |
+| Block and entity tags | `ServerEvents.tags` ([15.5](#155-tags)) | [7](#7-dimensional-death-block-tags), [8](#8-entity-tags) |
+
+Scripts and datapacks can be used together. A script's change is applied on top of the datapacks: its value wins
+when both change the same thing.
+
+### 15.1 Server options
+
+```js
+DimensionalFluxMinerEvents.config(event => {
+  event.set('miner.energyPerAttempt', 100000)
+  event.set('crusher.speedByLevel', [0.01, 0.03, 0.1, 0.3, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
+  event.set('electric_furnace.externalAlloyRecipeTypes', ['enderio:alloy_smelting'])
+  event.set('corruption.blockedDimensions', ['minecraft:the_nether'])
+  console.info(event.keys) // every key
+})
+```
+
+- The keys, types and limits are the ones of the [option table](#all-options). A list is a JavaScript array.
+- An unknown key or a value the file would not accept is an error in the script log, with the allowed range, and that
+  value is not used. The other options keep their values.
+- A value set by a script **wins over the file** (the main file and a world's `serverconfig` alike) while the script
+  sets it. It is never written to the file: delete the line and `/reload`, and the file's value is back.
+- The value is sent to the players, so the guide and the machine screens show it.
+- The interactions of section 2 do not change: `minimumProductionRate` must stay below `maximumProductionRate`, a level
+  table must list the ten levels, and so on.
+- `electric_furnace.externalAlloyRecipeTypes` set by a script already applies to the recipes of the same reload.
+
+### 15.2 Recipes
+
+KubeJS knows the five recipe types of the mod. The arguments come in the order below; every other field has a
+function of its own.
+
+| Type | Script | Functions |
+|---|---|---|
+| `crushing` | `crushing(result, ingredient)` | |
+| `ore_crushing` | `ore_crushing(ingredient)`, `ore_crushing(result, ingredient)` or `ore_crushing(result, ingredient, base, upgrade)` | `.result(item)`, `.resultTag(tag)`, `.baseCount(n)`, `.efficiencyUpgradeCount(n)` |
+| `alloying` | `alloying(result, [ingredients])`, one to three ingredients, `'4x #c:nuggets/gold'` for a count | `.byproduct({id, count, chance})`, `.processingTicks(n)` (or `.time(n)`), `.xp(n)` |
+| `tag_smelting` | `tag_smelting(resultTag, ingredient)` | `.xp(n)`, `.cookingTime(n)` |
+| `tag_blasting` | `tag_blasting(resultTag, ingredient)` | `.xp(n)`, `.cookingTime(n)` |
+
+```js
+ServerEvents.recipes(event => {
+  const dfm = event.recipes.dimensionalfluxminer
+
+  // Crusher: a fixed result.
+  dfm.crushing('3x minecraft:blaze_powder', 'minecraft:blaze_rod').id('my_modpack:crushing/blaze_rod')
+
+  // Crusher: ore yield from a tag (2, 3 with the upgrade), and diamonds 1 / 2 replacing the mod's recipe.
+  dfm.ore_crushing('#c:ores/copper').resultTag('c:raw_materials/copper').id('my_modpack:ore_crushing/copper')
+  event.remove({ id: 'dimensionalfluxminer:ore_processing/diamond' })
+  dfm.ore_crushing('minecraft:diamond', '#c:ores/diamond', 1, 2).id('my_modpack:ore_crushing/diamond')
+
+  // Electric Furnace: three ingredients, a byproduct with a 25% chance.
+  dfm.alloying('minecraft:gilded_blackstone', ['minecraft:blackstone', '4x #c:nuggets/gold', 'minecraft:magma_cream'])
+    .byproduct({ id: 'minecraft:gold_nugget', count: 1, chance: 0.25 })
+    .processingTicks(200)
+    .xp(0.5)
+    .id('my_modpack:alloying/gilded_blackstone')
+
+  // Only when the mod that adds zinc is installed.
+  if (Platform.isLoaded('create')) {
+    dfm.tag_blasting('c:ingots/zinc', 'dimensionalfluxminer:dust_zinc').xp(0.7).id('my_modpack:blasting/dust_zinc')
+  }
+
+  // Remove every alloy of the mod.
+  // event.remove({ type: 'dimensionalfluxminer:alloying' })
+})
+```
+
+- Every rule of section 6 applies: a recipe needs `result` **or** `resultTag` (ore crushing), one to three alloy
+  ingredients, `chance` from 0 to 1, and so on. A broken recipe is an error in the script log.
+- KubeJS refuses an empty ingredient, so a tag that no installed mod fills (`#c:ores/zinc` without a zinc mod) is an
+  error. Put the recipes of optional mods inside `if (Platform.isLoaded('<mod>'))`.
+- `event.custom({ type: 'dimensionalfluxminer:...', ... })` with the JSON of section 6 also works.
+- `.id(...)` is optional, but a fixed ID keeps the recipe the same after every reload. Use your own namespace.
+- Removing the recipe of an item the progression needs can make the Miner impossible to build
+  ([6.5](#65-replacing-and-removing-recipes)).
+
+### 15.3 Dimensional Matter values
+
+```js
+DimensionalFluxMinerEvents.matterValues(event => {
+  event.set('minecraft:cobblestone', 0.4, ['minecraft:overworld']) // only in the Overworld
+  event.set('minecraft:tuff', 0.5)                                  // every dimension
+  event.set('#c:ores/tin', 1.0)                                     // a tag
+  event.remove('minecraft:dragon_egg')
+  // event.replaceAll()  // drop the values of the mod and of every datapack first
+})
+```
+
+| Function | Meaning |
+|---|---|
+| `set(item, dm)` | Value of an item or a tag (`'#namespace:path'`), accepted in every dimension |
+| `set(item, dm, dimensions)` | Accepted only in the listed dimensions (an empty list means every dimension) |
+| `remove(item)` | Removes the value of an item or tag |
+| `replaceAll()` | Drops every value of the mod and of the datapacks before the script's |
+
+- The script writes the same `matter_value` data map, above every datapack, so a script value wins and replaces the
+  whole earlier value of that item: keep `dimensions` when you change only the DM.
+- `dm` goes from 0 to 5 000 and is rounded to 0.1 DM ([5.2](#52-precision)). An unknown item is an error in the script
+  log. The fixed rules of [5.3](#53-rules-the-data-map-cannot-change) still apply (ores only where they generate, at
+  most 2 DM for ores the Miner makes, variants).
+
+### 15.4 Resource Profiles
+
+```js
+DimensionalFluxMinerEvents.resourceProfiles(event => {
+  event.add({ resource: 'minecraft:diamond_ore', dimension: 'minecraft:overworld', weight: 0.03 })
+  // examplemod: a placeholder, use the real IDs of the mod.
+  event.add({ resource: 'examplemod:tin_ore', dimension: 'minecraft:overworld', family: 'c:tin', weight: 0.05,
+              crusher_output: 'examplemod:raw_tin' })
+  event.add({ dimension: 'minecraft:the_end', empty_share: 0.8, min_families: 3, curve: 'linear' })
+  event.remove('minecraft:emerald_ore', 'minecraft:overworld')
+  event.remove('minecraft:deepslate_emerald_ore') // every dimension
+})
+```
+
+| Function | Meaning |
+|---|---|
+| `add(entry)` | One entry with the fields of [4.3](#43-entry-fields): a resource entry, or a void rule when it has `empty_share` |
+| `remove(resource)` | `enabled: false` in every dimension |
+| `remove(resource, dimension)` | `enabled: false` in one dimension |
+
+- The entries are applied after every datapack entry, so a script entry wins for the same ore, and a void rule of a
+  script replaces the datapack rule of its dimension (the End's rule of the mod included).
+- Every rule of section 4 applies: `weight` is a share, an ore added where it does not generate needs `weight`, a
+  family disappears only when all its ores are removed, every family needs a Crusher product.
+- An invalid field or an unknown item is an error in the script log; the entry is not used.
+
+### 15.5 Tags
+
+The tags of sections 7 and 8 are ordinary tags, changed with KubeJS's own tag event:
+
+```js
+ServerEvents.tags('block', event => {
+  event.add('dimensionalfluxminer:corruptible_stone', 'create:limestone')
+  event.add('dimensionalfluxminer:corruption_blacklist', 'minecraft:calcite')
+  event.remove('dimensionalfluxminer:corruptible_sediment', 'minecraft:red_sand')
+})
+
+ServerEvents.tags('entity_type', event => {
+  event.add('dimensionalfluxminer:corrupted_water_heal_blacklist', 'minecraft:elder_guardian')
+})
+```
+
+The rules of sections 7 and 8 do not change: a block in one conversion tag only, the blacklist always wins, blocks with
+a block entity are never converted.
+
+### 15.6 Checking a script
+
+- After `/reload`, `logs/kubejs/server.log` says how many scripts loaded and lists every error with its file and line.
+- The checks of [13](#13-applying-and-checking-changes) are the same: the guide and the screens for server options,
+  EMI or JEI for recipes, the filter tooltips for Resource Profiles, the guide's matter table for DM values.
+- Changing a script never rewrites the configuration file or blocks already in the world.

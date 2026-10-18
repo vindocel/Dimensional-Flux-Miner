@@ -10,6 +10,7 @@ import dimensionalfluxminer.crusher.CrusherProcessing;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,6 +32,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.levelgen.SurfaceRules;
+import net.minecraft.world.level.levelgen.structure.templatesystem.AlwaysTrueTest;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RandomBlockMatchTest;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RandomBlockStateMatchTest;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
@@ -156,7 +165,8 @@ public final class ProfileBuilder {
     }
 
     private static void analyzeWorldgen(ServerLevel level, Map<ResourceLocation, Accumulator> families) {
-        analyzeBiomes(level.getChunkSource().getGenerator().getBiomeSource().possibleBiomes(), level.registryAccess(), families);
+        analyzeBiomes(level.getChunkSource().getGenerator().getBiomeSource().possibleBiomes(), level.registryAccess(),
+                terrainBlocks(level), families);
     }
 
     /**
@@ -164,15 +174,97 @@ public final class ProfileBuilder {
      * {@code biomes}, before the weight transform. Used to study the distribution of any set of biomes.
      */
     public static Map<ResourceLocation, Double> rawScores(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries) {
+        return rawScores(biomes, registries, null);
+    }
+
+    /** Same, counting only the ore blocks that can replace one of {@code terrain} (null = every ore block). */
+    public static Map<ResourceLocation, Double> rawScores(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries,
+                                                         Set<BlockState> terrain) {
         Map<ResourceLocation, Accumulator> families = new LinkedHashMap<>();
-        analyzeBiomes(biomes, registries, families);
+        analyzeBiomes(biomes, registries, terrain, families);
         Map<ResourceLocation, Double> scores = new LinkedHashMap<>();
         families.forEach((key, acc) -> scores.put(key, acc.rawScore));
         return scores;
     }
 
+    /**
+     * Blocks the terrain of a dimension is made of: the default block and every block of the surface rule of its noise
+     * settings (stone and deepslate in the Overworld, netherrack in the Nether, end stone in the End, the mod's own
+     * stone in a modded dimension). Null when the generator is not noise based: then every ore block counts.
+     */
+    public static Set<BlockState> terrainBlocks(ServerLevel level) {
+        if (!(level.getChunkSource().getGenerator() instanceof NoiseBasedChunkGenerator noise)) {
+            return null;
+        }
+        NoiseGeneratorSettings settings = noise.generatorSettings().value();
+        Set<BlockState> blocks = new HashSet<>();
+        blocks.add(settings.defaultBlock());
+        RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, level.registryAccess());
+        SurfaceRules.RuleSource.CODEC.encodeStart(ops, settings.surfaceRule()).result()
+                .ifPresent(json -> collectStates(json, ops, blocks));
+        blocks.removeIf(BlockState::isAir);
+        return blocks;
+    }
+
+    private static void collectStates(JsonElement json, RegistryOps<JsonElement> ops, Set<BlockState> blocks) {
+        if (json instanceof JsonObject obj) {
+            for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
+                if (e.getKey().equals("result_state")) {
+                    BlockState.CODEC.parse(ops, e.getValue()).result().ifPresent(blocks::add);
+                } else {
+                    collectStates(e.getValue(), ops, blocks);
+                }
+            }
+        } else if (json instanceof JsonArray array) {
+            array.forEach(element -> collectStates(element, ops, blocks));
+        }
+    }
+
+    /**
+     * Whether an ore target can replace one of the terrain blocks. Random matches ({@code random_block_match}) are
+     * read by their block, not rolled.
+     */
+    static boolean replacesTerrain(RuleTest rule, Set<BlockState> terrain) {
+        if (rule instanceof RandomBlockMatchTest || rule instanceof RandomBlockStateMatchTest) {
+            JsonElement json = RuleTest.CODEC.encodeStart(JsonOps.INSTANCE, rule).result().orElse(null);
+            if (!(json instanceof JsonObject obj)) {
+                return true;
+            }
+            if (obj.has("block")) {
+                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.tryParse(obj.get("block").getAsString()));
+                return terrain.stream().anyMatch(s -> s.is(block));
+            }
+            BlockState state = BlockState.CODEC.parse(JsonOps.INSTANCE, obj.get("block_state")).result().orElse(null);
+            return state == null || terrain.contains(state);
+        }
+        RandomSource random = RandomSource.create(0);
+        return terrain.stream().anyMatch(s -> rule.test(s, random));
+    }
+
+    /**
+     * Terrain plus the rock blobs ore features add to it (granite, tuff, blackstone...): a non-ore target that replaces
+     * the terrain becomes terrain too, so ores inside it still count.
+     */
+    private static Set<BlockState> withRockBlobs(Set<BlockState> terrain, List<OreShape> shapes) {
+        Set<BlockState> blocks = new HashSet<>(terrain);
+        boolean grew = true;
+        for (int round = 0; grew && round < 4; round++) {
+            grew = false;
+            for (OreShape shape : shapes) {
+                for (int i = 0; i < shape.targets().size(); i++) {
+                    BlockState state = shape.targets().get(i);
+                    if (!blocks.contains(state) && familyOf(state.getBlock().asItem()).isEmpty()
+                            && replacesTerrain(shape.rules().get(i), blocks)) {
+                        grew |= blocks.add(state);
+                    }
+                }
+            }
+        }
+        return blocks;
+    }
+
     private static void analyzeBiomes(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries,
-                                      Map<ResourceLocation, Accumulator> families) {
+                                      Set<BlockState> terrain, Map<ResourceLocation, Accumulator> families) {
         if (biomes.isEmpty()) {
             return;
         }
@@ -190,14 +282,17 @@ public final class ProfileBuilder {
             }
         }
         RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, registries);
-        for (Map.Entry<PlacedFeature, Integer> e : biomeCount.entrySet()) {
-            PlacedFeature placed = e.getKey();
-            Optional<OreShape> shape = oreShape(placed.feature().value(), ops);
-            if (shape.isEmpty()) {
-                continue;
-            }
-            OreShape ore = shape.get();
-            double coverage = e.getValue() / (double) biomes.size();
+        Map<PlacedFeature, OreShape> shapes = new LinkedHashMap<>();
+        for (PlacedFeature placed : biomeCount.keySet()) {
+            oreShape(placed.feature().value(), ops).ifPresent(shape -> shapes.put(placed, shape));
+        }
+        // One feature often lists a variant for every stone (stone, deepslate, netherrack, end stone, a mod's stone):
+        // only the variants that can replace this dimension's terrain are generated here.
+        Set<BlockState> hosts = terrain == null ? null : withRockBlobs(terrain, List.copyOf(shapes.values()));
+        for (Map.Entry<PlacedFeature, OreShape> s : shapes.entrySet()) {
+            PlacedFeature placed = s.getKey();
+            OreShape ore = hosts == null ? s.getValue() : s.getValue().replacing(hosts);
+            double coverage = biomeCount.get(placed) / (double) biomes.size();
             double placements = 1.0;
             double probability = 1.0;
             for (PlacementModifier modifier : placed.placement()) {
@@ -228,8 +323,20 @@ public final class ProfileBuilder {
         }
     }
 
-    /** Ore blocks a feature places and its vein size. */
-    public record OreShape(List<BlockState> targets, double size) {
+    /** Ore blocks a feature places, the block each one replaces ({@code rules}, same order) and its vein size. */
+    public record OreShape(List<BlockState> targets, List<RuleTest> rules, double size) {
+        /** Only the targets that can replace one of {@code terrain}. */
+        public OreShape replacing(Set<BlockState> terrain) {
+            List<BlockState> states = new ArrayList<>();
+            List<RuleTest> kept = new ArrayList<>();
+            for (int i = 0; i < targets.size(); i++) {
+                if (replacesTerrain(rules.get(i), terrain)) {
+                    states.add(targets.get(i));
+                    kept.add(rules.get(i));
+                }
+            }
+            return new OreShape(List.copyOf(states), List.copyOf(kept), size);
+        }
     }
 
     /**
@@ -240,7 +347,8 @@ public final class ProfileBuilder {
      */
     public static Optional<OreShape> oreShape(ConfiguredFeature<?, ?> feature, RegistryOps<JsonElement> ops) {
         if (feature.config() instanceof OreConfiguration ore) {
-            return Optional.of(new OreShape(ore.targetStates.stream().map(t -> t.state).toList(), ore.size));
+            return Optional.of(new OreShape(ore.targetStates.stream().map(t -> t.state).toList(),
+                    ore.targetStates.stream().map(t -> t.target).toList(), ore.size));
         }
         JsonElement json;
         try {
@@ -253,16 +361,23 @@ public final class ProfileBuilder {
             return Optional.empty();
         }
         List<BlockState> states = new ArrayList<>();
+        List<RuleTest> rules = new ArrayList<>();
         for (JsonElement target : targets) {
             if (target instanceof JsonObject obj && obj.has("state")) {
-                BlockState.CODEC.parse(ops, obj.get("state")).result().ifPresent(states::add);
+                Optional<BlockState> state = BlockState.CODEC.parse(ops, obj.get("state")).result();
+                if (state.isPresent()) {
+                    states.add(state.get());
+                    // A replaced block that cannot be read never hides the ore.
+                    rules.add(obj.has("target") ? RuleTest.CODEC.parse(ops, obj.get("target")).result()
+                            .orElse(AlwaysTrueTest.INSTANCE) : AlwaysTrueTest.INSTANCE);
+                }
             }
         }
         if (states.isEmpty()) {
             return Optional.empty();
         }
         double size = config.get("size") instanceof JsonPrimitive p && p.isNumber() ? p.getAsDouble() : DEFAULT_VEIN_SIZE;
-        return Optional.of(new OreShape(states, size));
+        return Optional.of(new OreShape(List.copyOf(states), List.copyOf(rules), size));
     }
 
     private static double averageCount(PlacementModifier modifier) {

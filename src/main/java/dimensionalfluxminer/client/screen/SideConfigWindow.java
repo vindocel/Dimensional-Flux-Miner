@@ -109,6 +109,10 @@ final class SideConfigWindow extends DfmScreen.Window {
     private SideConfiguration config() {
         SideConfiguration config = new SideConfiguration(rules);
         config.load(data.get().getCompound("sides"));
+        int[] locks = data.get().getIntArray("node_sides");
+        for (Transmission t : Transmission.VALUES) {
+            config.setLocks(t, t.ordinal() < locks.length ? locks[t.ordinal()] : 0);
+        }
         return config;
     }
 
@@ -221,7 +225,11 @@ final class SideConfigWindow extends DfmScreen.Window {
     private void side(GuiGraphics g, SideConfiguration config, int profile, RelativeFace face, int x, int y, int mouseX, int mouseY) {
         List<SideRoute> allowed = rules.allowed(face, current, profile);
         boolean enabled = !allowed.isEmpty();
-        boolean fixed = allowed.size() < 2;
+        // A Logistics Networks node uses this face: its route is set by the node and cannot be changed here.
+        boolean node = config.locked(face, current);
+        // A node's item input on a machine with dedicated lanes cannot move, but a click picks all / lane 1 / 2 / 3.
+        boolean lanes = node && current == Transmission.ITEM && (data.get().getInt("node_lanes") & (1 << face.ordinal())) != 0;
+        boolean fixed = allowed.size() < 2 || node && !lanes;
         SideRoute route = enabled ? config.get(face, current, profile) : SideRoute.NONE;
         if (screen.hovered(x, y, SIDE, SIDE, mouseX, mouseY)) {
             focused = face;
@@ -240,7 +248,11 @@ final class SideConfigWindow extends DfmScreen.Window {
                     if (!neighbor.isEmpty()) {
                         lines.add(neighbor.getHoverName());
                     }
-                    if (enabled) {
+                    if (node) {
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.miner.port.node").withStyle(ChatFormatting.AQUA));
+                        lines.add(Component.translatable(lanes ? "gui.dimensionalfluxminer.side_config.node_lanes"
+                                : "gui.dimensionalfluxminer.miner.port.node_note").withStyle(ChatFormatting.GRAY));
+                    } else if (enabled) {
                         lines.add(Component.translatable(fixed ? "gui.dimensionalfluxminer.side_fixed" : "gui.dimensionalfluxminer.side_click")
                                 .withStyle(ChatFormatting.DARK_GRAY));
                     }
@@ -248,6 +260,13 @@ final class SideConfigWindow extends DfmScreen.Window {
                 });
         if (!neighbor.isEmpty()) {
             g.renderItem(neighbor, x + 3, y + 3);
+        }
+        if (node) {
+            // Same frame as on the Miner's side window.
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 200);
+            g.renderOutline(x, y, SIDE, SIDE, 0xFF52D9DB);
+            g.pose().popPose();
         }
     }
 

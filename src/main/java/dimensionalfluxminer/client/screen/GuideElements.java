@@ -28,33 +28,11 @@ final class GuideElements {
     static final int WARNING = 0xFFB0402A;
     static final int RULE = 0x606B44B5;
     static final int TINT = 0x226B44B5;
+    /** Dotted underline of an item reference. */
+    static final int REFERENCE = 0xA06B44B5;
     static final int LINE = 10;
 
     private GuideElements() {
-    }
-
-    /**
-     * The translations color their highlights for dark screens (aqua, yellow, green, red); on paper they are
-     * printed in the darker inks of the same families (dark purple, dark aqua, dark green, dark red).
-     */
-    static Component ink(Component text) {
-        String raw = text.getString();
-        StringBuilder out = new StringBuilder(raw.length());
-        for (int i = 0; i < raw.length(); i++) {
-            char c = raw.charAt(i);
-            out.append(c);
-            if (c == '§' && i + 1 < raw.length()) {
-                char code = Character.toLowerCase(raw.charAt(++i));
-                out.append(switch (code) {
-                    case 'b' -> '5';
-                    case 'e' -> '3';
-                    case 'a' -> '2';
-                    case 'c' -> '4';
-                    default -> code;
-                });
-            }
-        }
-        return Component.literal(out.toString());
     }
 
     /** Section title with a thin rule under it. */
@@ -87,22 +65,25 @@ final class GuideElements {
         }
     }
 
-    /** Wrapped paragraph; the pagination may split it into {@link Lines} across pages. */
+    /**
+     * Wrapped paragraph; the pagination may split it into {@link Lines} across pages. It is inked (and its item
+     * references marked) when created, so the chapter's first mentions follow the reading order.
+     */
     static final class Text implements GuideElement {
         private final Component text;
         private int cachedWidth = -1;
-        private List<FormattedCharSequence> lines = List.of();
+        private Lines lines = new Lines(List.of());
 
         Text(Component text) {
-            this.text = text;
+            this.text = GuideReferences.ink(text);
         }
 
         List<FormattedCharSequence> lines(GuideScreen screen, int width) {
             if (width != cachedWidth) {
                 cachedWidth = width;
-                lines = screen.font().split(ink(text), width);
+                lines = new Lines(screen.font().split(text, width));
             }
-            return lines;
+            return lines.lines();
         }
 
         @Override
@@ -112,12 +93,27 @@ final class GuideElements {
 
         @Override
         public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
-            new Lines(lines(screen, width)).render(screen, g, x, y, width, mouseX, mouseY);
+            lines(screen, width);
+            lines.render(screen, g, x, y, width, mouseX, mouseY);
         }
     }
 
-    /** Some lines of a paragraph (a paragraph split between two pages). */
-    record Lines(List<FormattedCharSequence> lines) implements GuideElement {
+    /**
+     * Some lines of a paragraph (a paragraph split between two pages). Item references are underlined with dots;
+     * hovering one tints it and shows the item.
+     */
+    static final class Lines implements GuideElement {
+        private final List<FormattedCharSequence> lines;
+        private List<List<GuideReferences.Span>> spans;
+
+        Lines(List<FormattedCharSequence> lines) {
+            this.lines = lines;
+        }
+
+        List<FormattedCharSequence> lines() {
+            return lines;
+        }
+
         @Override
         public int height(GuideScreen screen, int width) {
             return lines.size() * LINE;
@@ -125,8 +121,26 @@ final class GuideElements {
 
         @Override
         public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+            if (spans == null) {
+                spans = new ArrayList<>(lines.size());
+                for (FormattedCharSequence line : lines) {
+                    spans.add(GuideReferences.spans(screen.font(), line));
+                }
+            }
             for (int i = 0; i < lines.size(); i++) {
-                g.drawString(screen.font(), lines.get(i), x, y + i * LINE, BODY, false);
+                int ly = y + i * LINE;
+                for (GuideReferences.Span span : spans.get(i)) {
+                    if (mouseX >= x + span.start() && mouseX < x + span.end() && mouseY >= ly - 1 && mouseY < ly + 10) {
+                        g.fill(x + span.start() - 1, ly - 1, x + span.end() + 1, ly + 10, TINT);
+                        screen.hoverReference(span.id());
+                    }
+                }
+                g.drawString(screen.font(), lines.get(i), x, ly, BODY, false);
+                for (GuideReferences.Span span : spans.get(i)) {
+                    for (int px = span.start(); px < span.end() - 1; px += 2) {
+                        g.fill(x + px, ly + 9, x + px + 1, ly + 10, REFERENCE);
+                    }
+                }
             }
         }
     }
@@ -155,6 +169,57 @@ final class GuideElements {
             g.fill(x, y, x + 2, y + h, accent);
             g.drawString(screen.font(), title, x + 6, y + 4, accent, false);
             body.render(screen, g, x + 6, y + 15, width - 10, mouseX, mouseY);
+        }
+    }
+
+    /**
+     * A short box (a mod integration, for example) with a button that opens its full text below it, on this page and
+     * the next ones; clicking again closes it. The full text is added by the chapter while the box is open.
+     */
+    static final class Expandable implements GuideElement {
+        private static final int BUTTON_H = 13;
+        private final String key;
+        private final Component title;
+        private final Text summary;
+
+        Expandable(String key, Component title, Component summary) {
+            this.key = key;
+            this.title = title;
+            this.summary = new Text(summary);
+        }
+
+        private Component label() {
+            return Component.translatable(GuideScreen.expanded(key) ? "guide.dimensionalfluxminer.expand.less"
+                    : "guide.dimensionalfluxminer.expand.more");
+        }
+
+        private int buttonWidth(GuideScreen screen, int width) {
+            return Math.min(width - 10, screen.font().width(label()) + 12);
+        }
+
+        @Override
+        public int height(GuideScreen screen, int width) {
+            return 15 + summary.height(screen, width - 10) + 3 + BUTTON_H + 4;
+        }
+
+        @Override
+        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+            int h = height(screen, width);
+            g.fill(x, y, x + width, y + h, TINT);
+            g.fill(x, y, x + 2, y + h, HEADING);
+            g.drawString(screen.font(), title, x + 6, y + 4, HEADING, false);
+            summary.render(screen, g, x + 6, y + 15, width - 10, mouseX, mouseY);
+            screen.textButton(g, x + 6, y + h - BUTTON_H - 4, buttonWidth(screen, width), BUTTON_H, label(), mouseX, mouseY);
+        }
+
+        @Override
+        public boolean click(GuideScreen screen, double mouseX, double mouseY, int x, int y, int width, int button) {
+            int by = y + height(screen, width) - BUTTON_H - 4;
+            if (mouseX < x + 6 || mouseX >= x + 6 + buttonWidth(screen, width) || mouseY < by || mouseY >= by + BUTTON_H) {
+                return false;
+            }
+            screen.toggleExpanded(key);
+            return true;
         }
     }
 
@@ -308,9 +373,12 @@ final class GuideElements {
         }
     }
 
-    /** Table with a header row; the cells are recomputed every frame (they follow the server configuration). */
+    /**
+     * Table with a header row; the cells are recomputed every frame (they follow the server configuration). A table
+     * longer than the page continues on the next pages, the header repeated on each.
+     */
     static final class Table implements GuideElement {
-        private static final int ROW = 11;
+        static final int ROW = 11;
         private final List<Component> headers;
         private final Supplier<List<List<String>>> rows;
         private final float[] columns;
@@ -320,6 +388,18 @@ final class GuideElements {
             this.headers = headers;
             this.columns = columns;
             this.rows = rows;
+        }
+
+        int rowCount() {
+            return rows.get().size();
+        }
+
+        /** Rows {@code from} (inclusive) to {@code to} (exclusive) under the same header. */
+        Table slice(int from, int to) {
+            return new Table(headers, columns, () -> {
+                List<List<String>> all = rows.get();
+                return all.subList(Math.min(from, all.size()), Math.min(to, all.size()));
+            });
         }
 
         @Override

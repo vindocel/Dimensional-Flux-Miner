@@ -118,7 +118,7 @@ public final class ContentGameTests {
     /** Every advancement of the mod loads (its criteria, including the mod's own event trigger, parse). */
     @GameTest(template = "empty_small")
     public static void allAdvancementsLoad(GameTestHelper helper) {
-        List<String> ids = List.of("root", "crusher", "smelter", "steel", "slag_recovered", "reinforced_eye", "stronghold",
+        List<String> ids = List.of("root", "crusher", "electric_furnace", "steel", "slag_recovered", "reinforced_eye", "stronghold",
                 "miner_formed", "first_ore", "ore_filtered", "max_speed", "thousand_per_second", "efficiency_upgrade",
                 "matter_injected", "trash_to_treasure", "column_drained", "scorched_earth", "purple_dive", "warden_friend",
                 "world_drained");

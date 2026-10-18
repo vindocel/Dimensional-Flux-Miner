@@ -32,8 +32,8 @@ public final class DfmItems {
     public static final DeferredItem<?> MINER_TERMINAL = ITEMS.registerSimpleBlockItem(DfmBlocks.MINER_TERMINAL);
 
     // Machines
-    public static final DeferredItem<?> DIMENSIONAL_CRUSHER = ITEMS.registerSimpleBlockItem(DfmBlocks.DIMENSIONAL_CRUSHER);
-    public static final DeferredItem<?> ALLOY_SMELTER = ITEMS.registerSimpleBlockItem(DfmBlocks.ALLOY_SMELTER);
+    public static final DeferredItem<?> MECHANICAL_CRUSHER = ITEMS.registerSimpleBlockItem(DfmBlocks.MECHANICAL_CRUSHER);
+    public static final DeferredItem<?> ELECTRIC_FURNACE = ITEMS.registerSimpleBlockItem(DfmBlocks.ELECTRIC_FURNACE);
 
     // Cores and upgrade
     public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", new Item.Properties().rarity(Rarity.RARE));

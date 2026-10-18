@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -19,13 +20,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Dimensional Flux Miner terminal: the terminal screen (status, core, limit and Dimensional Matter) with the energy bar
- * under it, the power, filter and settings buttons on its left, the Core slot on its right and the 27 output slots
- * (9 x 3). Filter, Settings (a small terminal with the Auto Eject / Auto Input switches) and Details open as windows.
- * Tabs: Details (left),
- * upgrades, Flux Rate and Redstone Control (right).
+ * under it, the power, filter and side configuration buttons on its left, the Core slot on its right and the 27 output
+ * slots (9 x 3). Filter, Side Configuration (the nine ports, with Auto Input / Auto Eject) and Details open as windows.
+ * Tabs: Details (left), upgrades, Flux Rate and Redstone Control (right). Until a Core is inserted only the Core slot
+ * and the Details work.
  */
 public class MinerScreen extends DfmScreen<MinerMenu> {
     private static final int TERMINAL_X = 38;
@@ -35,15 +37,14 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
     private static final int ENERGY_Y = TERMINAL_Y + TERMINAL_H + 2;
     private static final int BUTTONS_X = 12;
     private static final int BUTTON_SIZE = 18;
-    /** Power, Filter and Settings stacked left of the terminal. */
+    /** Power and Filter stacked left of the terminal. */
     private static final int BUTTON_STEP = BUTTON_SIZE + 2;
     private static final ResourceLocation POWER_ON = sprite("power_controls/power_on");
     private static final ResourceLocation POWER_OFF = sprite("power_controls/power_off");
-    private static final ResourceLocation SETTINGS = sprite("power_controls/settings");
     private static final ResourceLocation FILTER = sprite("power_controls/filter");
 
     private final FilterWindow filterWindow = new FilterWindow();
-    private final SettingsWindow settingsWindow = new SettingsWindow();
+    private final MinerSideWindow sideWindow;
     private final MachineWindows.InfoWindow detailsWindow;
     private final MachineWindows.UpgradeWindow upgradeWindow;
 
@@ -54,6 +55,7 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
         detailsWindow = new MachineWindows.InfoWindow(this, "miner.details", Component.translatable("gui.dimensionalfluxminer.miner.details"),
                 this::details);
         upgradeWindow = new MachineWindows.UpgradeWindow(this, "miner.upgrades", menu.upgradeSlot());
+        sideWindow = new MinerSideWindow(this, this::data, menu.pos());
     }
 
     @Override
@@ -75,25 +77,29 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
         energyBarHorizontal(g, x + TERMINAL_X, y + ENERGY_Y, TERMINAL_W, (double) d.getLong("fe") / cap);
         hotspot(x + TERMINAL_X, y + ENERGY_Y, TERMINAL_W, 14, null, null, () -> MachineText.energyTooltip(d), 0);
 
-        // Power (a push switch: sunk while the machine is on) and Settings, left of the terminal.
+        // Until a Core is inserted only its slot can be used: buttons, settings, upgrades and output stay locked.
+        boolean locked = menu.locked();
+        if (locked) {
+            closeLockedWindows();
+        }
+
+        // Power (a push switch: sunk while the machine is on) and Filter, left of the terminal.
         boolean run = d.getBoolean("run");
         // The icon shows the action of the next click: the gray symbol to turn off while on, the cyan one to turn on while off.
         iconButton(g, x + BUTTONS_X, y + TERMINAL_Y, BUTTON_SIZE, run ? POWER_OFF : POWER_ON, 18, 18, run,
-                mouseX, mouseY, () -> MinerControllerBlockEntity.BUTTON_RUN, () -> List.of(
+                mouseX, mouseY, locked ? () -> -1 : () -> MinerControllerBlockEntity.BUTTON_RUN, () -> locked ? lockedTooltip() : List.of(
                         Component.translatable(run ? "gui.dimensionalfluxminer.miner.power.on" : "gui.dimensionalfluxminer.miner.power.off"),
                         Component.translatable("gui.dimensionalfluxminer.miner.run.tooltip").withStyle(ChatFormatting.GRAY)));
-        // Filter (sunk while some families are selected), then Settings.
+        // Filter (sunk while some families are selected).
         int selected = selectedCount(d);
         iconButton(g, x + BUTTONS_X, y + TERMINAL_Y + BUTTON_STEP, BUTTON_SIZE, FILTER, 11, 10, selected > 0, mouseX, mouseY, () -> {
-            openWindow(filterWindow);
+            if (!locked) {
+                openWindow(filterWindow);
+            }
             return -1;
-        }, () -> List.of(Component.translatable(selected == 0 ? "gui.dimensionalfluxminer.miner.filter.off"
+        }, () -> locked ? lockedTooltip() : List.of(Component.translatable(selected == 0 ? "gui.dimensionalfluxminer.miner.filter.off"
                 : "gui.dimensionalfluxminer.miner.filter.on", selected),
                 Component.translatable("gui.dimensionalfluxminer.miner.filter.tooltip").withStyle(ChatFormatting.GRAY)));
-        iconButton(g, x + BUTTONS_X, y + TERMINAL_Y + 2 * BUTTON_STEP, BUTTON_SIZE, SETTINGS, 18, 18, false, mouseX, mouseY, () -> {
-            openWindow(settingsWindow);
-            return -1;
-        }, () -> List.of(Component.translatable("gui.dimensionalfluxminer.miner.settings")));
 
         // Core slot right of the terminal.
         slot(g, SlotKind.EXTRA, x + MinerMenu.CORE_X - 1, y + MinerMenu.CORE_Y - 1);
@@ -108,8 +114,22 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
                 slot(g, SlotKind.NORMAL, x + MinerMenu.OUTPUT_X + col * 18 - 1, y + MinerMenu.OUTPUT_Y + row * 18 - 1);
             }
         }
+        if (locked) {
+            // The output grid is shaded and does nothing until a Core is inserted.
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 250);
+            g.fill(x + MinerMenu.OUTPUT_X - 1, y + MinerMenu.OUTPUT_Y - 1, x + MinerMenu.OUTPUT_X + 9 * 18 - 1, y + MinerMenu.OUTPUT_Y + 3 * 18 - 1,
+                    0xA0101418);
+            g.pose().popPose();
+            hotspot(x + MinerMenu.OUTPUT_X - 1, y + MinerMenu.OUTPUT_Y - 1, 9 * 18, 3 * 18, null, null, this::lockedTooltip, 0);
+        }
 
-        MachineTabs.details(this, g, x, y, true, MachineTabs.TOP_Y, detailsWindow, mouseX, mouseY);
+        // Left tabs like the other machines: Side Configuration on top (locked without a Core), Details under it.
+        MachineTabs.details(this, g, x, y, true, MachineTabs.ROW_2, detailsWindow, mouseX, mouseY);
+        if (locked) {
+            return;
+        }
+        MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
         MachineTabs.upgrades(this, g, x, y, upgradeWindow, mouseX, mouseY);
         MachineTabs.rate(this, g, x, y, d, MinerControllerBlockEntity.BUTTON_RATE_CYCLE, MinerControllerBlockEntity.BUTTON_RATE_CYCLE_BACK,
                 List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLong("power"))),
@@ -129,6 +149,19 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
             }
         }
         MachineTabs.warnings(this, g, x, y, problems);
+    }
+
+    private List<Component> lockedTooltip() {
+        return List.of(Component.translatable("gui.dimensionalfluxminer.miner.locked").withStyle(ChatFormatting.YELLOW));
+    }
+
+    /** The windows a locked machine cannot use are closed when the Core is taken out. */
+    private void closeLockedWindows() {
+        for (Window window : List.of(filterWindow, sideWindow, upgradeWindow)) {
+            if (isWindowOpen(window)) {
+                closeWindow(window);
+            }
+        }
     }
 
     private List<Component> screenText(CompoundTag d) {
@@ -162,54 +195,19 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
         return factor == MinerStatus.LimitingFactor.NONE ? line : line.copy().withColor(SCREEN_WARN & 0xFFFFFF);
     }
 
-    /** Settings window: a small terminal showing the automation state, with its Auto Eject / Auto Input switches inside. */
-    private final class SettingsWindow extends Window {
-        private static final int WIDTH = 100;
-        /** Two text lines, then the switches (31 px tall), all inside the terminal. */
-        private static final int SCREEN_H = 58;
-        private static final int SWITCHES_TOP = 25;
-        private static final int SWITCH_W = 15;
-        private static final int SWITCH_GAP = 8;
-
-        SettingsWindow() {
-            super(MinerScreen.this, "miner.settings", WIDTH);
-        }
-
-        @Override
-        public Component title() {
-            return Component.translatable("gui.dimensionalfluxminer.miner.settings");
-        }
-
-        @Override
-        public int height() {
-            return 18 + SCREEN_H + 6;
-        }
-
-        @Override
-        protected void render(GuiGraphics g, int px, int py, int mouseX, int mouseY) {
-            CompoundTag d = data();
-            boolean eject = d.getBoolean("auto_eject");
-            boolean pull = d.getBoolean("auto_input");
-            innerScreen(g, px + 6, py + 18, WIDTH - 12, SCREEN_H);
-            screenLines(g, List.of(Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)),
-                    Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(pull))),
-                    px + 10, py + 21, WIDTH - 20, 10);
-            int switchesX = px + (WIDTH - 2 * SWITCH_W - SWITCH_GAP) / 2;
-            int switchesY = py + 18 + SWITCHES_TOP;
-            digitalSwitch(g, switchesX, switchesY, sprite("switch/eject"), eject, mouseX, mouseY,
-                    () -> MinerControllerBlockEntity.BUTTON_AUTO_EJECT, () -> List.of(
-                            Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)),
-                            Component.translatable("gui.dimensionalfluxminer.miner.auto_eject.note").withStyle(ChatFormatting.GRAY)));
-            digitalSwitch(g, switchesX + SWITCH_W + SWITCH_GAP, switchesY, sprite("switch/input"), pull, mouseX, mouseY,
-                    () -> MinerControllerBlockEntity.BUTTON_AUTO_INPUT, () -> List.of(
-                            Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(pull)),
-                            Component.translatable("gui.dimensionalfluxminer.miner.auto_input.note").withStyle(ChatFormatting.GRAY)));
-        }
-    }
-
-    /** FILTER window: family icon grid of the dimension's Resource Profile; empty selection = FILTER OFF. */
+    /**
+     * FILTER window: family icon grid of the dimension's Resource Profile; empty selection = FILTER OFF. A search box
+     * narrows the grid by ore name (in the player's language) or family key; the marks stay, and closing the window or
+     * clearing the box shows every family again.
+     */
     private final class FilterWindow extends Window {
         private static final int COLUMNS = 7;
+        private static final int GRID_TOP = 50;
+        private static final int MAX_QUERY = 32;
+        private String query = "";
+        private boolean focused;
+        private int boxX;
+        private int boxY;
 
         FilterWindow() {
             super(MinerScreen.this, "miner.filter", 156);
@@ -222,9 +220,58 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
 
         @Override
         public int height() {
-            int families = data().getList("families", Tag.TAG_COMPOUND).size();
-            int rows = Math.max(1, (families + COLUMNS - 1) / COLUMNS);
-            return 34 + rows * 20 + 26;
+            int shown = visible(data().getList("families", Tag.TAG_COMPOUND)).size();
+            int rows = Math.max(1, (shown + COLUMNS - 1) / COLUMNS);
+            return GRID_TOP + rows * 20 + 26;
+        }
+
+        @Override
+        protected void onClose() {
+            query = "";
+            focused = false;
+        }
+
+        @Override
+        protected void mousePressed(double mouseX, double mouseY, boolean onThis) {
+            focused = onThis && mouseX >= boxX && mouseY >= boxY && mouseX < boxX + width - 12 && mouseY < boxY + 12;
+        }
+
+        @Override
+        protected boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            if (!focused) {
+                return false;
+            }
+            if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !query.isEmpty()) {
+                query = Screen.hasControlDown() ? "" : query.substring(0, query.length() - 1);
+            } else if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                focused = false;
+            }
+            // Every other key is swallowed while typing (the inventory key must not close the screen).
+            return true;
+        }
+
+        @Override
+        protected boolean charTyped(char c, int modifiers) {
+            if (!focused || !net.minecraft.util.StringUtil.isAllowedChatCharacter(c)) {
+                return false;
+            }
+            if (query.length() < MAX_QUERY) {
+                query += c;
+            }
+            return true;
+        }
+
+        /** Indexes (in the synced list) of the families matching the search. */
+        private List<Integer> visible(ListTag families) {
+            String q = fold(query.trim());
+            List<Integer> shown = new ArrayList<>();
+            for (int i = 0; i < families.size(); i++) {
+                CompoundTag f = families.getCompound(i);
+                if (q.isEmpty() || fold(f.getString("key")).contains(q) || fold(name(f).getString()).contains(q)) {
+                    shown.add(i);
+                }
+            }
+            return shown;
         }
 
         @Override
@@ -234,17 +281,32 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
             innerScreen(g, px + 6, py + 18, width - 12, 12);
             fitted(g, Component.translatable(selectedCount(d) == 0 ? "gui.dimensionalfluxminer.miner.filter.state_off"
                     : "gui.dimensionalfluxminer.miner.filter.state_on"), px + 9, py + 21, width - 18, SCREEN_TEXT, 0.8F, false);
+            // Search box.
+            boxX = px + 6;
+            boxY = py + 34;
+            innerScreen(g, boxX, boxY, width - 12, 12);
+            if (query.isEmpty() && !focused) {
+                fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.search"), boxX + 3, boxY + 3, width - 18,
+                        SUBHEADING, 0.8F, false);
+            } else {
+                boolean caret = focused && (net.minecraft.Util.getMillis() / 500) % 2 == 0;
+                fitted(g, Component.literal(query + (caret ? "_" : "")), boxX + 3, boxY + 3, width - 18, SCREEN_TEXT, 0.8F, false);
+            }
+            hotspot(boxX, boxY, width - 12, 12, () -> -1, () -> {
+                query = "";
+                return -1;
+            }, () -> List.of(Component.translatable("gui.dimensionalfluxminer.miner.filter.search_tooltip")
+                    .withStyle(ChatFormatting.GRAY)), 0);
+            List<Integer> shown = visible(families);
             int gridX = px + (width - COLUMNS * 20) / 2;
-            for (int i = 0; i < families.size(); i++) {
+            for (int n = 0; n < shown.size(); n++) {
+                int i = shown.get(n);
                 CompoundTag f = families.getCompound(i);
-                int fx = gridX + (i % COLUMNS) * 20;
-                int fy = py + 34 + (i / COLUMNS) * 20;
+                int fx = gridX + (n % COLUMNS) * 20;
+                int fy = py + GRID_TOP + (n / COLUMNS) * 20;
                 boolean selected = f.getBoolean("selected");
                 slot(g, selected ? SlotKind.OUTPUT : SlotKind.NORMAL, fx, fy);
-                ResourceLocation icon = ResourceLocation.tryParse(f.getString("icon"));
-                if (icon != null) {
-                    g.renderItem(new ItemStack(BuiltInRegistries.ITEM.get(icon)), fx + 1, fy + 1);
-                }
+                g.renderItem(icon(f), fx + 1, fy + 1);
                 if (selected) {
                     g.pose().pushPose();
                     g.pose().translate(0, 0, 200);
@@ -258,20 +320,41 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
                     g.pose().popPose();
                 }
                 int index = i;
+                Component name = name(f);
                 String key = f.getString("key");
                 int weight = f.getInt("weight");
                 hotspot(fx, fy, 18, 18, () -> MinerControllerBlockEntity.BUTTON_FILTER_TOGGLE + index, null,
-                        () -> List.of(Component.literal(key), Component.translatable("gui.dimensionalfluxminer.miner.filter.weight", weight),
+                        () -> List.of(name, Component.literal(key).withStyle(ChatFormatting.GRAY),
+                                Component.translatable("gui.dimensionalfluxminer.miner.filter.weight", weight),
                                 Component.translatable(selected ? "gui.dimensionalfluxminer.miner.filter.kept"
                                         : "gui.dimensionalfluxminer.miner.filter.not_selected")), 0);
             }
             if (families.isEmpty()) {
-                fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.empty_profile"), px + 6, py + 39, width - 12,
-                        SUBHEADING, 1.0F, true);
+                fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.empty_profile"), px + 6, py + GRID_TOP + 5,
+                        width - 12, SUBHEADING, 1.0F, true);
+            } else if (shown.isEmpty()) {
+                fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.no_match"), px + 6, py + GRID_TOP + 5,
+                        width - 12, SUBHEADING, 1.0F, true);
             }
             button(g, px + 6, py + height() - 22, width - 12, 16, Component.translatable("gui.dimensionalfluxminer.miner.filter.clear"),
                     selectedCount(d) > 0, mouseX, mouseY, () -> MinerControllerBlockEntity.BUTTON_FILTER_CLEAR, null, null);
         }
+    }
+
+    private static ItemStack icon(CompoundTag family) {
+        ResourceLocation icon = ResourceLocation.tryParse(family.getString("icon"));
+        return icon == null ? ItemStack.EMPTY : new ItemStack(BuiltInRegistries.ITEM.get(icon));
+    }
+
+    /** Ore name in the player's language (what the ore's mod translates), or the family key without one. */
+    private static Component name(CompoundTag family) {
+        ItemStack icon = icon(family);
+        return icon.isEmpty() ? Component.literal(family.getString("key")) : icon.getHoverName();
+    }
+
+    /** Lower case without accents, so "minerio" finds "Minério". */
+    private static String fold(String text) {
+        return java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
     }
 
     private List<Component> details() {

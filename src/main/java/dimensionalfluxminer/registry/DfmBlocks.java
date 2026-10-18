@@ -2,12 +2,12 @@ package dimensionalfluxminer.registry;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.CorruptedGrassPlantBlock;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlock;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlock;
 import dimensionalfluxminer.miner.block.MinerChassisBlock;
 import dimensionalfluxminer.miner.block.MinerPartBlock;
 import dimensionalfluxminer.miner.block.MinerPortBlock;
 import dimensionalfluxminer.miner.block.MinerTerminalBlock;
-import dimensionalfluxminer.smelter.AlloySmelterBlock;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlock;
 import dimensionalfluxminer.content.CorruptedWaterPlants;
 import net.minecraft.util.ColorRGBA;
 import net.minecraft.world.level.block.Block;
@@ -37,10 +37,10 @@ public final class DfmBlocks {
     public static final DeferredBlock<MinerTerminalBlock> MINER_TERMINAL = BLOCKS.registerBlock("miner_terminal", MinerTerminalBlock::new, assemblyPart());
 
     // Single-block machines
-    public static final DeferredBlock<DimensionalCrusherBlock> DIMENSIONAL_CRUSHER = BLOCKS.registerBlock("dimensional_crusher", DimensionalCrusherBlock::new,
+    public static final DeferredBlock<MechanicalCrusherBlock> MECHANICAL_CRUSHER = BLOCKS.registerBlock("mechanical_crusher", MechanicalCrusherBlock::new,
             machineCasing().noOcclusion());
-    public static final DeferredBlock<AlloySmelterBlock> ALLOY_SMELTER = BLOCKS.registerBlock("alloy_smelter", AlloySmelterBlock::new,
-            machineCasing().noOcclusion().lightLevel(AlloySmelterBlock::lightFromState));
+    public static final DeferredBlock<ElectricFurnaceBlock> ELECTRIC_FURNACE = BLOCKS.registerBlock("electric_furnace", ElectricFurnaceBlock::new,
+            machineCasing().noOcclusion().lightLevel(ElectricFurnaceBlock::lightFromState));
 
     // Materials
     public static final DeferredBlock<Block> SLAG_AGGREGATE = BLOCKS.registerSimpleBlock("slag_aggregate",

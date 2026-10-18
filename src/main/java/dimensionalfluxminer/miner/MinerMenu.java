@@ -47,7 +47,18 @@ public class MinerMenu extends MachineMenu<MinerControllerBlockEntity> {
                 return 1;
             }
         });
-        addSlot(new WindowSlot(upgrade, 0, stack -> stack.is(DfmItems.EFFICIENCY_UPGRADE.get()), 1));
+        // Until a Core is inserted only the Core slot can be used: the upgrade and output slots are locked.
+        addSlot(new WindowSlot(upgrade, 0, stack -> stack.is(DfmItems.EFFICIENCY_UPGRADE.get()), 1) {
+            @Override
+            public boolean mayPickup(Player player) {
+                return !locked() && super.mayPickup(player);
+            }
+
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return !locked() && super.mayPlace(stack);
+            }
+        });
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new SlotItemHandler(output, col + row * 9, OUTPUT_X + col * 18, OUTPUT_Y + row * 18) {
@@ -55,10 +66,20 @@ public class MinerMenu extends MachineMenu<MinerControllerBlockEntity> {
                     public boolean mayPlace(ItemStack stack) {
                         return false;
                     }
+
+                    @Override
+                    public boolean mayPickup(Player player) {
+                        return !locked() && super.mayPickup(player);
+                    }
                 });
             }
         }
         addPlayerInventory(inventory, 8, INVENTORY_TOP);
+    }
+
+    /** No Core in the Core slot: everything but that slot is locked (both sides read the synced slot). */
+    public boolean locked() {
+        return !slots.get(0).hasItem();
     }
 
     public WindowSlot upgradeSlot() {
@@ -73,6 +94,9 @@ public class MinerMenu extends MachineMenu<MinerControllerBlockEntity> {
     @Override
     protected ItemStack moveIntoMachine(ItemStack stack) {
         if (blockEntity == null) {
+            return stack;
+        }
+        if (blockEntity.locked() && !DfmItems.isCore(stack.getItem())) {
             return stack;
         }
         if (DfmItems.isCore(stack.getItem()) && blockEntity.coreSlot().getStackInSlot(0).isEmpty()) {

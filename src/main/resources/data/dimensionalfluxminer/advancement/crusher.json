@@ -1,7 +1,7 @@
 {
   "parent": "dimensionalfluxminer:root",
   "display": {
-    "icon": { "id": "dimensionalfluxminer:dimensional_crusher" },
+    "icon": { "id": "dimensionalfluxminer:mechanical_crusher" },
     "title": { "translate": "advancements.dimensionalfluxminer.crusher.title" },
     "description": { "translate": "advancements.dimensionalfluxminer.crusher.description" },
     "frame": "task",
@@ -10,6 +10,6 @@
     "hidden": false
   },
   "criteria": {
-    "built": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:dimensional_crusher" } ] } }
+    "built": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:mechanical_crusher" } ] } }
   }
 }

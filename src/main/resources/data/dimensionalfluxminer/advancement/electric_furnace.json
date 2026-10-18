@@ -1,0 +1,15 @@
+{
+  "parent": "dimensionalfluxminer:root",
+  "display": {
+    "icon": { "id": "dimensionalfluxminer:electric_furnace" },
+    "title": { "translate": "advancements.dimensionalfluxminer.electric_furnace.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.electric_furnace.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "built": { "trigger": "minecraft:inventory_changed", "conditions": { "items": [ { "items": "dimensionalfluxminer:electric_furnace" } ] } }
+  }
+}

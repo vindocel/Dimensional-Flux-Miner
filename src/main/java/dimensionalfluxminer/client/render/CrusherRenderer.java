@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.MachineState;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -15,16 +15,16 @@ import net.minecraft.resources.ResourceLocation;
  * no rollers; OFF/IDLE body models contain them in their rest pose. Speed follows the approved 2-second clip
  * (180 degrees per second) independently of Rate.
  */
-public class CrusherRenderer implements BlockEntityRenderer<DimensionalCrusherBlockEntity> {
-    public static final ResourceLocation ROLLER_LEFT = DimensionalFluxMiner.id("block/dimensional_crusher/roller_left");
-    public static final ResourceLocation ROLLER_RIGHT = DimensionalFluxMiner.id("block/dimensional_crusher/roller_right");
+public class CrusherRenderer implements BlockEntityRenderer<MechanicalCrusherBlockEntity> {
+    public static final ResourceLocation ROLLER_LEFT = DimensionalFluxMiner.id("block/mechanical_crusher/roller_left");
+    public static final ResourceLocation ROLLER_RIGHT = DimensionalFluxMiner.id("block/mechanical_crusher/roller_right");
     private static final float DEGREES_PER_TICK = 180.0F / 20.0F;
 
     public CrusherRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(DimensionalCrusherBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    public void render(MechanicalCrusherBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         if (be.getLevel() == null || be.machineState() != MachineState.ACTIVE) {
             return;
         }

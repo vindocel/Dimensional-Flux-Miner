@@ -16,8 +16,6 @@
     "terminal_face_glow": "dimensionalfluxminer:block/dimensional_flux_miner/terminal_face_yellow_active_glow_no_core",
     "containment_side_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_yellow_static_glow",
     "containment_cap_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_cap_yellow_static_glow",
-    "output_port_outer": "dimensionalfluxminer:block/dimensional_flux_miner/output_port_outer_powered",
-    "matter_port_outer": "dimensionalfluxminer:block/dimensional_flux_miner/matter_port_outer_powered",
     "machine": "dimensionalfluxminer:block/dimensional_flux_miner/dimensional_flux_miner"
   }
 }

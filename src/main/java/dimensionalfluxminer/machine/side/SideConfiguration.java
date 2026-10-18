@@ -8,7 +8,7 @@ import net.minecraft.nbt.Tag;
 
 /**
  * Per-transmission side configuration of a single-block machine. ITEM routes are stored per item profile
- * (Smelter NORMAL / ALLOY); ENERGY, REDSTONE and EXPERIENCE are shared between profiles.
+ * (Electric Furnace NORMAL / ALLOY); ENERGY, REDSTONE and EXPERIENCE are shared between profiles.
  * Every face starts as {@link SideRoute#NONE}.
  */
 public final class SideConfiguration {
@@ -20,6 +20,11 @@ public final class SideConfiguration {
     private final SideRoute[] energy = new SideRoute[FACES];
     private final SideRoute[] redstone = new SideRoute[FACES];
     private final SideRoute[] experience = new SideRoute[FACES];
+    /**
+     * Faces (bit per {@link RelativeFace}) whose route an external network node sets, per transmission: they do not
+     * change by hand, batch or clear while the node is there. Not saved: read again from the nodes.
+     */
+    private final int[] locks = new int[Transmission.VALUES.length];
 
     public SideConfiguration(SideRules rules) {
         this.rules = rules;
@@ -69,10 +74,25 @@ public final class SideConfiguration {
         return true;
     }
 
+    public boolean locked(RelativeFace face, Transmission transmission) {
+        return (locks[transmission.ordinal()] & (1 << face.ordinal())) != 0;
+    }
+
+    public int locks(Transmission transmission) {
+        return locks[transmission.ordinal()];
+    }
+
+    /** Replaces the faces locked by network nodes for a transmission; returns whether they changed. */
+    public boolean setLocks(Transmission transmission, int mask) {
+        boolean changed = locks[transmission.ordinal()] != mask;
+        locks[transmission.ordinal()] = mask;
+        return changed;
+    }
+
     /** Moves to the next (or previous) supported route of that face/transmission. */
     public boolean cycle(RelativeFace face, Transmission transmission, int profile, boolean forward) {
         List<SideRoute> allowed = rules.allowed(face, transmission, profile);
-        if (allowed.size() < 2) {
+        if (allowed.size() < 2 || locked(face, transmission)) {
             return false;
         }
         int index = allowed.indexOf(get(face, transmission, profile));
@@ -83,7 +103,7 @@ public final class SideConfiguration {
     /** Sets every configurable face of the transmission back to NONE (fixed routes are kept). */
     public void clear(Transmission transmission, int profile) {
         for (RelativeFace face : RelativeFace.VALUES) {
-            if (rules.allowed(face, transmission, profile).contains(SideRoute.NONE)) {
+            if (rules.allowed(face, transmission, profile).contains(SideRoute.NONE) && !locked(face, transmission)) {
                 array(transmission, profile)[face.ordinal()] = SideRoute.NONE;
             }
         }
@@ -129,7 +149,8 @@ public final class SideConfiguration {
         boolean changed = false;
         for (RelativeFace face : RelativeFace.VALUES) {
             List<SideRoute> allowed = rules.allowed(face, transmission, profile);
-            if (allowed.size() >= 2 && allowed.contains(route) && get(face, transmission, profile) != route) {
+            if (allowed.size() >= 2 && allowed.contains(route) && get(face, transmission, profile) != route
+                    && !locked(face, transmission)) {
                 array(transmission, profile)[face.ordinal()] = route;
                 changed = true;
             }

@@ -7,6 +7,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.dimension.DimensionType;
 
 public final class DfmTags {
     private DfmTags() {
@@ -49,6 +50,15 @@ public final class DfmTags {
         }
 
         private Items() {
+        }
+    }
+
+    public static final class DimensionTypes {
+        /** Dimension types where Dimensional Death never acts: the Basic Core finds nothing to drain there. */
+        public static final TagKey<DimensionType> CORRUPTION_BLOCKED = TagKey.create(Registries.DIMENSION_TYPE,
+                DimensionalFluxMiner.id("corruption_blocked"));
+
+        private DimensionTypes() {
         }
     }
 

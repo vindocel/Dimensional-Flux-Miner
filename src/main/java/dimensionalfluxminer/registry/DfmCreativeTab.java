@@ -27,8 +27,8 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.BASIC_DIMENSIONAL_CORE.get());
                 output.accept(DfmItems.STABILIZED_DIMENSIONAL_CORE.get());
                 output.accept(DfmItems.EFFICIENCY_UPGRADE.get());
-                output.accept(DfmItems.DIMENSIONAL_CRUSHER.get());
-                output.accept(DfmItems.ALLOY_SMELTER.get());
+                output.accept(DfmItems.MECHANICAL_CRUSHER.get());
+                output.accept(DfmItems.ELECTRIC_FURNACE.get());
                 output.accept(DfmItems.ENDER_EYE_REINFORCED.get());
                 output.accept(DfmItems.INGOT_STEEL.get());
                 output.accept(DfmItems.GRAIN_CALCITE.get());
@@ -48,11 +48,11 @@ public final class DfmCreativeTab {
             .build());
 
     /**
-     * Tab icon: the Alloy Smelter shown processing (lit). Custom model data 1 selects the active model in the item
+     * Tab icon: the Electric Furnace shown processing (lit). Custom model data 1 selects the active model in the item
      * model's overrides; the item itself keeps its normal model everywhere else.
      */
     private static ItemStack icon() {
-        ItemStack stack = new ItemStack(DfmItems.ALLOY_SMELTER.get());
+        ItemStack stack = new ItemStack(DfmItems.ELECTRIC_FURNACE.get());
         stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(1));
         return stack;
     }

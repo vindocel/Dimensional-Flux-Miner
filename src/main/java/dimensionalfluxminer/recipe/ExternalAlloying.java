@@ -29,7 +29,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
- * Alloy recipes of other mods run by the Alloy Smelter. The recipe types are configured
+ * Alloy recipes of other mods run by the Electric Furnace. The recipe types are configured
  * ({@link DfmConfig#externalAlloyTypes()}); each recipe is encoded with its own codec and read from that data: the
  * input list ({@code inputs} / {@code ingredients} / {@code input0..2}, each entry with an optional {@code count}),
  * the results ({@code output} / {@code result}, or the lists {@code results} / {@code outputs}: the second becomes the
@@ -99,7 +99,7 @@ public final class ExternalAlloying {
 
     /**
      * Some alloy machines copy every furnace recipe into their own type. Such a copy (one ingredient, count 1, the
-     * result of a furnace or blast furnace recipe of that item) is left out: the Alloy Smelter already smelts it, with
+     * result of a furnace or blast furnace recipe of that item) is left out: the Electric Furnace already smelts it, with
      * its raw ore bonus.
      */
     private static boolean isFurnaceCopy(AlloyingRecipe recipe, List<AbstractCookingRecipe> cooking, HolderLookup.Provider registries) {

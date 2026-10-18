@@ -7,8 +7,8 @@
     "dimensionalfluxminer:dimensional_port",
     "dimensionalfluxminer:quantum_core",
     "dimensionalfluxminer:miner_terminal",
-    "dimensionalfluxminer:dimensional_crusher",
-    "dimensionalfluxminer:alloy_smelter",
+    "dimensionalfluxminer:mechanical_crusher",
+    "dimensionalfluxminer:electric_furnace",
     "dimensionalfluxminer:slag_aggregate",
     "dimensionalfluxminer:corrupted_stone",
     "dimensionalfluxminer:corrupted_terracotta"

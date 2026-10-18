@@ -14,8 +14,9 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * Link from a steel chassis or dimensional port to its formed controller. Ports expose their role-specific
- * capability on their outward face only; the lower chassis act as lightweight tick-acceleration receivers.
+ * Link from a steel chassis or dimensional port to its formed controller. The controller answers the capability of
+ * each configurable face ({@code MinerPorts}); the lower-layer ports and chassis act as lightweight tick-acceleration
+ * receivers.
  */
 public class MinerLinkBlockEntity extends BlockEntity {
     private BlockPos controller;
@@ -45,7 +46,7 @@ public class MinerLinkBlockEntity extends BlockEntity {
     /**
      * The first ticker call of a game time is the receiver's normal tick and adds no work; every additional
      * call in the same game time (external acceleration) asks the controller for one extra logical cycle.
-     * Only the eight lower-layer chassis are receivers.
+     * Only the eight lower-layer blocks around the terminal (seven ports and the center chassis) are receivers.
      */
     public static void serverTick(Level level, BlockPos pos, BlockState state, MinerLinkBlockEntity be) {
         if (be.tickCounter.register(level.getGameTime())) {

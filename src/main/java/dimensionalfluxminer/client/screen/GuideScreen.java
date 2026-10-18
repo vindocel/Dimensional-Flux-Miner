@@ -6,6 +6,7 @@ import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -78,6 +79,7 @@ public class GuideScreen extends Screen {
     private GuideElement dragTarget;
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private List<Component> hoveredText = List.of();
+    private ResourceLocation hoveredReference;
 
     public GuideScreen() {
         super(Component.translatable("item.dimensionalfluxminer.guide_book"));
@@ -125,6 +127,23 @@ public class GuideScreen extends Screen {
         turnFrom = -1;
     }
 
+    /** Boxes opened to show their full text (see {@link GuideElements.Expandable}), kept while the game runs. */
+    private static final java.util.Set<String> EXPANDED = new java.util.HashSet<>();
+
+    static boolean expanded(String key) {
+        return EXPANDED.contains(key);
+    }
+
+    /** Opens or closes a box and lays the book out again on the same spread (the change only adds or removes text). */
+    void toggleExpanded(String key) {
+        if (!EXPANDED.remove(key)) {
+            EXPANDED.add(key);
+        }
+        playClick();
+        book = GuideBook.build(this, GuideContent.chapters(), contentW, contentH);
+        spread = Mth.clamp(spread, 0, book.spreads() - 1);
+    }
+
     private int leftPageX() {
         return bookX + COVER;
     }
@@ -166,6 +185,7 @@ public class GuideScreen extends Screen {
         super.render(g, mouseX, mouseY, partialTick);
         hoveredStack = ItemStack.EMPTY;
         hoveredText = List.of();
+        hoveredReference = null;
         float progress = 1.0F;
         if (turning()) {
             progress = Math.min(1.0F, (Util.getMillis() - turnStart) / (float) TURN_MS);
@@ -183,7 +203,10 @@ public class GuideScreen extends Screen {
         GuideMultiblock.endFrame();
         renderRibbon(g, mouseX, mouseY);
         renderArrows(g, mouseX, mouseY);
-        if (!hoveredStack.isEmpty()) {
+        GuideReferences.Target reference = hoveredReference == null ? null : GuideReferences.target(hoveredReference);
+        if (reference != null) {
+            renderReference(g, reference, mouseX, mouseY);
+        } else if (!hoveredStack.isEmpty()) {
             g.renderTooltip(font, hoveredStack, mouseX, mouseY);
         } else if (!hoveredText.isEmpty()) {
             g.renderComponentTooltip(font, hoveredText, mouseX, mouseY);
@@ -369,16 +392,54 @@ public class GuideScreen extends Screen {
         }
     }
 
-    /** Slot frame with the still texture of a fluid; hovering it shows the fluid's name. */
-    void fluidSlot(GuiGraphics g, Fluid fluid, int x, int y, int mouseX, int mouseY) {
-        g.blitSprite(DfmScreen.SlotKind.NORMAL.sprite, x, y, 18, 18);
+    /** An item reference in the text is under the mouse: its icon and name are shown this frame. */
+    void hoverReference(ResourceLocation id) {
+        hoveredReference = id;
+    }
+
+    /** Tooltip of an item reference: the item (or fluid) drawn large, with its name beside it. */
+    private void renderReference(GuiGraphics g, GuideReferences.Target reference, int mouseX, int mouseY) {
+        Component name = reference.stack().isEmpty() ? reference.name()
+                : reference.name().copy().withStyle(reference.stack().getRarity().getStyleModifier());
+        int w = 32 + 6 + font.width(name);
+        int h = 32;
+        int x = mouseX + 12;
+        if (x + w + 4 > width) {
+            x = Math.max(4, mouseX - 12 - w);
+        }
+        int y = Mth.clamp(mouseY - 12, 4, height - h - 4);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 400);
+        TooltipRenderUtil.renderTooltipBackground(g, x, y, w, h, 0);
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0);
+        g.pose().scale(2.0F, 2.0F, 1.0F);
+        if (!reference.stack().isEmpty()) {
+            g.renderItem(reference.stack(), 0, 0);
+        } else {
+            fluidIcon(g, reference.fluid(), 0, 0);
+        }
+        g.pose().popPose();
+        g.pose().translate(0, 0, 200);
+        g.drawString(font, name, x + 38, y + 12, 0xFFFFFFFF, true);
+        g.pose().popPose();
+    }
+
+    /** The still texture of a fluid, 16 × 16, tinted. */
+    private void fluidIcon(GuiGraphics g, Fluid fluid, int x, int y) {
         IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
         TextureAtlasSprite sprite = minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(ext.getStillTexture());
         int tint = ext.getTintColor();
         RenderSystem.enableBlend();
         g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, ((tint >>> 24) & 0xFF) / 255.0F);
-        g.blit(x + 1, y + 1, 0, 16, 16, sprite);
+        g.blit(x, y, 0, 16, 16, sprite);
         g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    /** Slot frame with the still texture of a fluid; hovering it shows the fluid's name. */
+    void fluidSlot(GuiGraphics g, Fluid fluid, int x, int y, int mouseX, int mouseY) {
+        g.blitSprite(DfmScreen.SlotKind.NORMAL.sprite, x, y, 18, 18);
+        fluidIcon(g, fluid, x + 1, y + 1);
         if (mouseX >= x + 1 && mouseX < x + 17 && mouseY >= y + 1 && mouseY < y + 17) {
             g.fill(x + 1, y + 1, x + 17, y + 17, 0x80FFFFFF);
             hoveredText = List.of(fluid.getFluidType().getDescription());

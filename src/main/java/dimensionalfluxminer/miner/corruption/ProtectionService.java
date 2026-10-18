@@ -2,6 +2,7 @@ package dimensionalfluxminer.miner.corruption;
 
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.DimensionalFluxMiner;
+import dimensionalfluxminer.registry.DfmTags;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -77,9 +78,13 @@ public final class ProtectionService {
         return !ADAPTERS.isEmpty();
     }
 
-    /** True when the server lets the corruption happen in this dimension at all. */
+    /**
+     * True when the server lets the corruption happen in this dimension at all: not turned off, not in the blocked
+     * dimensions of the configuration and not of a dimension type in {@code #dimensionalfluxminer:corruption_blocked}.
+     */
     public static boolean corruptionAllowed(Level level) {
-        return DfmConfig.corruptionEnabled() && !DfmConfig.corruptionBlockedDimensions().contains(level.dimension().location());
+        return DfmConfig.corruptionEnabled() && !DfmConfig.corruptionBlockedDimensions().contains(level.dimension().location())
+                && !level.dimensionTypeRegistration().is(DfmTags.DimensionTypes.CORRUPTION_BLOCKED);
     }
 
     /** Spawn protection and the administrative regions of the configuration. */

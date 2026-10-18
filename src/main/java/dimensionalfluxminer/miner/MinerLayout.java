@@ -14,10 +14,6 @@ public final class MinerLayout {
         STEEL_CHASSIS, VENTILATION_UNIT, REINFORCED_STRUCTURAL_GLASS, DIMENSIONAL_PORT, QUANTUM_CORE, MINER_TERMINAL
     }
 
-    public enum PortRole {
-        ENERGY_INPUT, ITEM_OUTPUT, MATTER_INPUT
-    }
-
     public enum Front {
         SOUTH(0), WEST(1), NORTH(2), EAST(3);
 
@@ -33,45 +29,46 @@ public final class MinerLayout {
         }
     }
 
-    /** Horizontal outward direction of a port in the base orientation, as a unit vector. */
-    public record Slot(int dx, int dy, int dz, Part part, PortRole role, int outX, int outZ,
-                       boolean redstoneReceiver, boolean accelerationReceiver) {
+    public record Slot(int dx, int dy, int dz, Part part, boolean redstoneReceiver, boolean accelerationReceiver) {
     }
 
     public static final List<Slot> BASE_SLOTS;
 
     static {
         List<Slot> s = new ArrayList<>();
-        // Lower layer: 8 steel chassis + terminal; all nine receive redstone, only the chassis receive tick acceleration.
+        // Lower layer: 7 dimensional ports around (the nine configurable faces, see MinerPorts), a steel chassis in the
+        // center and the terminal in front; all nine receive redstone, all but the terminal receive tick acceleration.
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
                 if (x == 0 && z == 1) {
-                    s.add(new Slot(0, -1, 1, Part.MINER_TERMINAL, null, 0, 0, true, false));
+                    s.add(new Slot(0, -1, 1, Part.MINER_TERMINAL, true, false));
+                } else if (x == 0 && z == 0) {
+                    s.add(new Slot(0, -1, 0, Part.STEEL_CHASSIS, true, true));
                 } else {
-                    s.add(new Slot(x, -1, z, Part.STEEL_CHASSIS, null, 0, 0, true, true));
+                    s.add(new Slot(x, -1, z, Part.DIMENSIONAL_PORT, true, true));
                 }
             }
         }
-        // Middle layer: 4 vents in the corners, 3 ports, front glass, core.
-        s.add(new Slot(-1, 0, -1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(-1, 0, 1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(1, 0, -1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(1, 0, 1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(0, 0, 1, Part.REINFORCED_STRUCTURAL_GLASS, null, 0, 0, false, false));
-        s.add(new Slot(-1, 0, 0, Part.DIMENSIONAL_PORT, PortRole.ENERGY_INPUT, -1, 0, false, false));
-        s.add(new Slot(1, 0, 0, Part.DIMENSIONAL_PORT, PortRole.ITEM_OUTPUT, 1, 0, false, false));
-        s.add(new Slot(0, 0, -1, Part.DIMENSIONAL_PORT, PortRole.MATTER_INPUT, 0, -1, false, false));
-        s.add(new Slot(0, 0, 0, Part.QUANTUM_CORE, null, 0, 0, false, false));
+        // Middle layer: steel chassis in the corners and at the back, glass in front and on both sides, core.
+        s.add(new Slot(-1, 0, -1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(-1, 0, 1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(1, 0, -1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(1, 0, 1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(0, 0, 1, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
+        s.add(new Slot(-1, 0, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
+        s.add(new Slot(1, 0, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
+        s.add(new Slot(0, 0, -1, Part.STEEL_CHASSIS, false, false));
+        s.add(new Slot(0, 0, 0, Part.QUANTUM_CORE, false, false));
         // Upper layer: 5 vents (corners + back middle) and 4 glass.
-        s.add(new Slot(1, 1, 1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(1, 1, -1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(-1, 1, -1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(-1, 1, 1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(0, 1, -1, Part.VENTILATION_UNIT, null, 0, 0, false, false));
-        s.add(new Slot(0, 1, 1, Part.REINFORCED_STRUCTURAL_GLASS, null, 0, 0, false, false));
-        s.add(new Slot(0, 1, 0, Part.REINFORCED_STRUCTURAL_GLASS, null, 0, 0, false, false));
-        s.add(new Slot(-1, 1, 0, Part.REINFORCED_STRUCTURAL_GLASS, null, 0, 0, false, false));
-        s.add(new Slot(1, 1, 0, Part.REINFORCED_STRUCTURAL_GLASS, null, 0, 0, false, false));
+        s.add(new Slot(1, 1, 1, Part.VENTILATION_UNIT, false, false));
+        s.add(new Slot(1, 1, -1, Part.VENTILATION_UNIT, false, false));
+        s.add(new Slot(-1, 1, -1, Part.VENTILATION_UNIT, false, false));
+        s.add(new Slot(-1, 1, 1, Part.VENTILATION_UNIT, false, false));
+        s.add(new Slot(0, 1, -1, Part.VENTILATION_UNIT, false, false));
+        s.add(new Slot(0, 1, 1, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
+        s.add(new Slot(0, 1, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
+        s.add(new Slot(-1, 1, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
+        s.add(new Slot(1, 1, 0, Part.REINFORCED_STRUCTURAL_GLASS, false, false));
         BASE_SLOTS = Collections.unmodifiableList(s);
     }
 

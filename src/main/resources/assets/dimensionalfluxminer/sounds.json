@@ -1,9 +1,9 @@
 {
-  "machine.alloy_smelter.running": {
-    "subtitle": "subtitles.dimensionalfluxminer.machine.alloy_smelter.running",
+  "machine.electric_furnace.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.electric_furnace.running",
     "sounds": [
       {
-        "name": "dimensionalfluxminer:machine/alloy_smelter_running",
+        "name": "dimensionalfluxminer:machine/electric_furnace_running",
         "volume": 0.85
       }
     ]
@@ -26,11 +26,11 @@
       }
     ]
   },
-  "machine.dimensional_crusher.running": {
-    "subtitle": "subtitles.dimensionalfluxminer.machine.dimensional_crusher.running",
+  "machine.mechanical_crusher.running": {
+    "subtitle": "subtitles.dimensionalfluxminer.machine.mechanical_crusher.running",
     "sounds": [
       {
-        "name": "dimensionalfluxminer:machine/dimensional_crusher_running",
+        "name": "dimensionalfluxminer:machine/mechanical_crusher_running",
         "volume": 0.7
       }
     ]

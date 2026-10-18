@@ -20,12 +20,12 @@ class RateScaleTest {
     }
 
     @Test
-    void smelterProfilesFollowTheWorkOfAStandardRecipe() {
+    void electricFurnaceProfilesFollowTheWorkOfAStandardRecipe() {
         // Standard recipe (200 ticks). Alloy: 30 000 FE per execution; furnace: 50 000 / 3 FE per item, three lanes.
         long[] alloy = {150, 429, 1_227, 3_509, 10_035, 28_700, 82_079, 234_740, 671_343, 1_920_000};
         long[] furnace = {250, 715, 2_045, 5_848, 16_725, 47_833, 136_798, 391_234, 1_118_905, 3_200_000};
         for (int n = 1; n <= 10; n++) {
-            double lane = RateScale.smelterOperationsPerTick(n, 200, 64);
+            double lane = RateScale.electricFurnaceOperationsPerTick(n, 200, 64);
             assertEquals(alloy[n - 1], RateScale.powerLimit(RateScale.power(lane, 30_000)), "alloy " + n);
             assertEquals(furnace[n - 1], RateScale.powerLimit(3 * RateScale.power(lane, 50_000 / 3.0)), "furnace " + n);
         }
@@ -34,19 +34,19 @@ class RateScaleTest {
     @Test
     void recipeDurationChangesTheDemandButNotTheCostPerItem() {
         for (int n = 1; n <= 10; n++) {
-            double fast = RateScale.smelterOperationsPerTick(n, 100, 64);
-            double standard = RateScale.smelterOperationsPerTick(n, 200, 64);
+            double fast = RateScale.electricFurnaceOperationsPerTick(n, 100, 64);
+            double standard = RateScale.electricFurnaceOperationsPerTick(n, 200, 64);
             assertEquals(30_000, RateScale.power(fast, 30_000) / fast, 1e-6);
             assertEquals(30_000, RateScale.power(standard, 30_000) / standard, 1e-6);
         }
-        assertEquals(2 * RateScale.smelterOperationsPerTick(1, 200, 64), RateScale.smelterOperationsPerTick(1, 100, 64), 1e-12);
+        assertEquals(2 * RateScale.electricFurnaceOperationsPerTick(1, 200, 64), RateScale.electricFurnaceOperationsPerTick(1, 100, 64), 1e-12);
     }
 
     @Test
     void laneThroughputMatchesContract() {
         double[] lane = {0.01, 0.026479445, 0.070116103, 0.185663553, 0.491626794, 1.301800488, 3.447095504, 9.127717745, 24.169690434, 64.0};
         for (int n = 1; n <= 10; n++) {
-            assertEquals(lane[n - 1], RateScale.smelterOperationsPerTick(n, 100, 64), 1e-6, "lane " + n);
+            assertEquals(lane[n - 1], RateScale.electricFurnaceOperationsPerTick(n, 100, 64), 1e-6, "lane " + n);
         }
     }
 
@@ -55,14 +55,14 @@ class RateScaleTest {
         double[] values = {0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 32};
         LevelTable table = new LevelTable(values);
         for (int n = 1; n <= 10; n++) {
-            assertEquals(values[n - 1], RateScale.smelterOperationsPerTick(n, 200, 64, table, 200), 1e-12, "standard recipe, level " + n);
-            double ratio = RateScale.smelterOperationsPerTick(n, 100, 64) / RateScale.smelterOperationsPerTick(n, 200, 64);
-            assertEquals(Math.min(64, values[n - 1] * ratio), RateScale.smelterOperationsPerTick(n, 100, 64, table, 200), 1e-9, "100 ticks, level " + n);
-            assertEquals(RateScale.smelterOperationsPerTick(n, 100, 64), RateScale.smelterOperationsPerTick(n, 100, 64, null, 200), 1e-12,
+            assertEquals(values[n - 1], RateScale.electricFurnaceOperationsPerTick(n, 200, 64, table, 200), 1e-12, "standard recipe, level " + n);
+            double ratio = RateScale.electricFurnaceOperationsPerTick(n, 100, 64) / RateScale.electricFurnaceOperationsPerTick(n, 200, 64);
+            assertEquals(Math.min(64, values[n - 1] * ratio), RateScale.electricFurnaceOperationsPerTick(n, 100, 64, table, 200), 1e-9, "100 ticks, level " + n);
+            assertEquals(RateScale.electricFurnaceOperationsPerTick(n, 100, 64), RateScale.electricFurnaceOperationsPerTick(n, 100, 64, null, 200), 1e-12,
                     "no table: the default curve");
         }
         LevelTable fast = new LevelTable(new double[] {64, 64, 64, 64, 64, 64, 64, 64, 64, 64});
-        assertEquals(64, RateScale.smelterOperationsPerTick(1, 100, 64, fast, 200), 1e-12, "never above 64 per lane");
+        assertEquals(64, RateScale.electricFurnaceOperationsPerTick(1, 100, 64, fast, 200), 1e-12, "never above 64 per lane");
     }
 
     @Test

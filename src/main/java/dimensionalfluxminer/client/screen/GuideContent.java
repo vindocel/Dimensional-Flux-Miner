@@ -2,7 +2,7 @@ package dimensionalfluxminer.client.screen;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.compat.RecipeViewers;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.math.MinerProductionCurve;
 import dimensionalfluxminer.machine.math.RateScale;
 import dimensionalfluxminer.miner.MatterValues;
@@ -11,7 +11,7 @@ import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmItems;
 import dimensionalfluxminer.registry.DfmTags;
 import net.minecraft.core.registries.BuiltInRegistries;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -28,7 +28,7 @@ import net.minecraft.world.level.material.Fluid;
  * current server configuration.
  */
 final class GuideContent {
-    /** Cooking time of a standard furnace recipe, used for the Alloy Smelter table. */
+    /** Cooking time of a standard furnace recipe, used for the Electric Furnace table. */
     private static final int STANDARD_RECIPE_TICKS = 200;
 
     record Chapter(String id, Supplier<ItemStack> icon, List<GuideElement> elements) {
@@ -39,8 +39,8 @@ final class GuideContent {
 
     static List<Chapter> chapters() {
         return List.of(
-                start(), materials(), crusher(), smelter(),
-                assembly(), miner(), dimensions(), rates(), blight());
+                start(), materials(), crusher(), furnace(),
+                assembly(), miner(), automation(), dimensions(), rates(), blight(), trouble());
     }
 
     // ------------------------------------------------------------------ chapters
@@ -52,6 +52,7 @@ final class GuideContent {
         b.heading("path").text("path");
         b.heading("interface").text("interface").text("slots");
         b.tip("viewer");
+        b.heading("breaking").text("breaking");
         b.heading("guide").text("guide");
         b.crafting("guide_book");
         return b.chapter(DfmItems.GUIDE_BOOK);
@@ -75,27 +76,29 @@ final class GuideContent {
 
     private static Chapter crusher() {
         Builder b = new Builder("crusher");
-        b.item(DfmItems.DIMENSIONAL_CRUSHER, "about").crafting("dimensional_crusher");
+        b.item(DfmItems.MECHANICAL_CRUSHER, "about").crafting("mechanical_crusher");
         b.heading("ores").text("ores");
         b.heading("dusts").text("dusts");
         b.heading("slots").text("slots");
         b.heading("sides").text("sides");
         b.tip("speed");
         b.viewer("viewer", RecipeViewers.CRUSHING);
-        return b.chapter(DfmItems.DIMENSIONAL_CRUSHER);
+        return b.chapter(DfmItems.MECHANICAL_CRUSHER);
     }
 
-    private static Chapter smelter() {
-        Builder b = new Builder("smelter");
-        b.item(DfmItems.ALLOY_SMELTER, "about").crafting("alloy_smelter");
+    private static Chapter furnace() {
+        Builder b = new Builder("electric_furnace");
+        b.item(DfmItems.ELECTRIC_FURNACE, "about").crafting("electric_furnace");
         b.heading("modes").text("modes");
         b.heading("bulk").text("bulk");
         b.heading("split").text("split");
         b.heading("outputs").text("outputs");
-        b.heading("xp").text("xp");
+        b.heading("lanes").text("lanes");
+        b.heading("xp").text("xp").text("xp_pipes");
         b.viewer("viewer", RecipeViewers.ALLOYING, RecipeViewers.SMELTING);
         b.tip("multiply");
-        return b.chapter(DfmItems.ALLOY_SMELTER);
+        b.tip("external");
+        return b.chapter(DfmItems.ELECTRIC_FURNACE);
     }
 
     private static Chapter assembly() {
@@ -115,9 +118,12 @@ final class GuideContent {
         Builder b = new Builder("miner");
         b.heading("how").text("how");
         b.heading("cores").item(DfmItems.BASIC_DIMENSIONAL_CORE, "basic").item(DfmItems.STABILIZED_DIMENSIONAL_CORE, "stabilized");
+        b.text("compare");
+        b.tip("loaded");
         b.heading("matter").text("matter").add(matterTable()).text("matter_ores").text("matter_upgrade");
         b.heading("terminal").text("terminal");
         b.heading("buttons").text("buttons");
+        b.heading("filter").text("filter");
         b.heading("redstone").text("redstone");
         b.heading("output").text("output");
         return b.chapter(DfmItems.BASIC_DIMENSIONAL_CORE);
@@ -126,11 +132,12 @@ final class GuideContent {
     private static Chapter dimensions() {
         Builder b = new Builder("dimensions");
         b.text("intro");
-        b.heading("overworld").items(Items.STONE, Items.DEEPSLATE, Items.DIRT, Items.DIAMOND_ORE).text("overworld");
-        b.heading("nether").items(Items.NETHERRACK, Items.GLOWSTONE, Items.SOUL_SAND, Items.NETHER_BRICKS, Items.NETHER_QUARTZ_ORE)
-                .text("nether");
-        b.heading("end").items(Items.END_STONE, Items.PURPUR_BLOCK).text("end");
+        // Each slot cycles through a block and its variants, so the reader sees a family, not a single item.
+        b.heading("overworld").cycling(dimensionalfluxminer.miner.MatterExamples.OVERWORLD).text("overworld");
+        b.heading("nether").cycling(dimensionalfluxminer.miner.MatterExamples.NETHER).text("nether");
+        b.heading("end").cycling(dimensionalfluxminer.miner.MatterExamples.END).text("end");
         b.item(Items.DRAGON_EGG, "egg");
+        b.heading("barren").text("barren");
         b.tip("discover");
         b.heading("ores").text("ores");
         b.item(Items.OBSIDIAN, "obsidian");
@@ -144,7 +151,7 @@ final class GuideContent {
         b.text("intro").text("buffer");
         b.heading("miner").add(minerTable()).text("miner_note");
         b.heading("crusher").add(crusherTable()).text("crusher_note");
-        b.heading("smelter").add(smelterTable()).text("smelter_note");
+        b.heading("electric_furnace").add(electricFurnaceTable()).text("electric_furnace_note");
         b.heading("upgrade").item(DfmItems.EFFICIENCY_UPGRADE, "upgrade_about").text("upgrade");
         return b.chapter(DfmItems.EFFICIENCY_UPGRADE);
     }
@@ -157,8 +164,30 @@ final class GuideContent {
         b.heading("terrain").text("terrain");
         b.heading("water").text("water");
         b.heading("creatures").text("creatures");
+        b.heading("protection").text("protection");
         b.tip("avoid");
         return b.chapter(DfmItems.CORRUPTED_GRASS);
+    }
+
+    private static Chapter automation() {
+        Builder b = new Builder("automation");
+        b.text("intro");
+        b.heading("sides").text("sides").text("colors");
+        b.heading("auto").text("auto");
+        b.heading("redstone").text("redstone");
+        b.heading("cables").text("cables");
+        b.heading("network").compat("network", "network", "lanes");
+        b.heading("accel").text("accel");
+        return b.chapter(DfmItems.DIMENSIONAL_PORT);
+    }
+
+    private static Chapter trouble() {
+        Builder b = new Builder("trouble");
+        b.text("intro");
+        b.heading("miner").text("miner");
+        b.heading("machines").text("machines");
+        b.tip("energy");
+        return b.chapter(Items.REDSTONE_TORCH);
     }
 
     // ------------------------------------------------------------------ Rate tables
@@ -180,25 +209,25 @@ final class GuideContent {
         return new GuideElements.Table(headers("level", "fe", "fe_upgrade", "operations"), new float[] {0.6F, 1.1F, 1.3F, 1.2F}, () -> {
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
-                double ops = DimensionalCrusherBlockEntity.operationsPerTick(level);
+                double ops = MechanicalCrusherBlockEntity.operationsPerTick(level);
                 rows.add(List.of(Integer.toString(level),
-                        DfmScreen.compact(RateScale.powerLimit(RateScale.power(ops, DimensionalCrusherBlockEntity.energyPerOperation(level, false)))),
-                        DfmScreen.compact(RateScale.powerLimit(RateScale.power(ops, DimensionalCrusherBlockEntity.energyPerOperation(level, true)))),
+                        DfmScreen.compact(RateScale.powerLimit(RateScale.power(ops, MechanicalCrusherBlockEntity.energyPerOperation(level, false)))),
+                        DfmScreen.compact(RateScale.powerLimit(RateScale.power(ops, MechanicalCrusherBlockEntity.energyPerOperation(level, true)))),
                         number(ops * 20)));
             }
             return rows;
         });
     }
 
-    private static GuideElement smelterTable() {
+    private static GuideElement electricFurnaceTable() {
         return new GuideElements.Table(headers("level", "fe", "fe_upgrade", "lane"), new float[] {0.6F, 1.0F, 1.2F, 1.1F}, () -> {
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
-                double lane = dimensionalfluxminer.smelter.SmelterEnergy.laneOperationsPerTick(level, STANDARD_RECIPE_TICKS) * 20;
+                double lane = dimensionalfluxminer.furnace.ElectricFurnaceEnergy.laneOperationsPerTick(level, STANDARD_RECIPE_TICKS) * 20;
                 // Furnace profile with the three lanes busy, the larger of the two profiles.
                 rows.add(List.of(Integer.toString(level),
-                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.smelter.SmelterEnergy.furnaceStandardPower(level, false))),
-                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.smelter.SmelterEnergy.furnaceStandardPower(level, true))), number(lane)));
+                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.furnaceStandardPower(level, false))),
+                        DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.furnaceStandardPower(level, true))), number(lane)));
             }
             return rows;
         });
@@ -216,6 +245,10 @@ final class GuideContent {
             for (var entry : BuiltInRegistries.ITEM.getDataMap(DfmDataMaps.MATTER_VALUE).entrySet()) {
                 ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.getKey()));
                 if (stack.isEmpty() || stack.is(DfmTags.Items.common("ores"))) {
+                    continue;
+                }
+                // The 16 dyed terracottas share the plain terracotta's row.
+                if (stack.is(net.minecraft.tags.ItemTags.TERRACOTTA) && !stack.is(Items.TERRACOTTA)) {
                     continue;
                 }
                 DfmDataMaps.MatterValue value = entry.getValue();
@@ -278,6 +311,7 @@ final class GuideContent {
 
         Builder(String id) {
             this.id = id;
+            GuideReferences.startChapter();
         }
 
         private Component key(String kind, String name) {
@@ -305,6 +339,22 @@ final class GuideContent {
             return this;
         }
 
+        /**
+         * Compatibility box: the summary {@code <name>_summary} and a button that shows the {@code details} paragraphs
+         * under it while open.
+         */
+        Builder compat(String name, String... details) {
+            String box = id + "." + name;
+            elements.add(new GuideElements.Expandable(box, Component.translatable("guide.dimensionalfluxminer.compat"),
+                    key("", name + "_summary")));
+            if (GuideScreen.expanded(box)) {
+                for (String detail : details) {
+                    text(detail);
+                }
+            }
+            return this;
+        }
+
         Builder item(ItemLike item, String name) {
             elements.add(new GuideElements.ItemNote(() -> new ItemStack(item), key("", name)));
             return this;
@@ -312,6 +362,19 @@ final class GuideContent {
 
         Builder items(ItemLike... items) {
             return itemsAndFluids(List.of(items), List.of());
+        }
+
+        /** A row of slots, each cycling once a second through its items (a block and its variants, the ores...). */
+        Builder cycling(List<? extends List<? extends ItemLike>> slots) {
+            elements.add(new GuideElements.ItemRow(() -> {
+                long tick = net.minecraft.Util.getMillis() / 1000;
+                List<ItemStack> list = new ArrayList<>();
+                for (List<? extends ItemLike> slot : slots) {
+                    list.add(new ItemStack(slot.get((int) (tick % slot.size()))));
+                }
+                return list;
+            }, List.of()));
+            return this;
         }
 
         Builder itemsAndFluids(List<? extends ItemLike> items, List<Supplier<? extends Fluid>> fluids) {

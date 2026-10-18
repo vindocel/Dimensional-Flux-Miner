@@ -86,6 +86,10 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
         if (!level.isClientSide && placer instanceof Player player && level.getBlockEntity(pos) instanceof MinerControllerBlockEntity controller) {
             controller.setOwner(player.getUUID());
             controller.tryForm();
+            // The highlight of the parts still missing shows as soon as the terminal is down.
+            if (!controller.formed() && player instanceof ServerPlayer serverPlayer) {
+                MinerAssembly.highlight(serverPlayer, pos, MinerAssembly.missing(serverPlayer.serverLevel(), pos));
+            }
         }
     }
 
@@ -99,15 +103,22 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
                 }
                 Component problem = controller.tryForm();
                 if (problem != null) {
-                    // Assisted assembly: one missing part per click from the inventory, and a highlight of the rest.
+                    // Assisted assembly: one missing part per click from the inventory, and a highlight of the rest; a
+                    // click that places nothing switches the highlight off and on.
+                    int before = MinerAssembly.missing(serverPlayer.serverLevel(), pos).size();
                     Component assembly = MinerAssembly.placeNext(serverPlayer.serverLevel(), pos, serverPlayer);
                     if (!controller.formed()) {
-                        MinerAssembly.highlight(serverPlayer, MinerAssembly.missing(serverPlayer.serverLevel(), pos));
+                        var left = MinerAssembly.missing(serverPlayer.serverLevel(), pos);
+                        if (left.size() < before) {
+                            MinerAssembly.highlight(serverPlayer, pos, left);
+                        } else {
+                            MinerAssembly.toggleHighlight(serverPlayer, pos);
+                        }
                         serverPlayer.displayClientMessage(assembly != null ? assembly : problem, true);
                         return InteractionResult.CONSUME;
                     }
                 }
-                MinerAssembly.highlight(serverPlayer, java.util.List.of());
+                MinerAssembly.highlight(serverPlayer, pos, java.util.List.of());
                 serverPlayer.displayClientMessage(Component.translatable("message.dimensionalfluxminer.structure_formed"), true);
                 return InteractionResult.CONSUME;
             }

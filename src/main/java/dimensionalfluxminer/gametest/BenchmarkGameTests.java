@@ -1,7 +1,7 @@
 package dimensionalfluxminer.gametest;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideRoute;
@@ -17,8 +17,8 @@ import dimensionalfluxminer.miner.MinerLayout.Part;
 import dimensionalfluxminer.miner.survey.MinerSurvey;
 import dimensionalfluxminer.registry.DfmBlocks;
 import dimensionalfluxminer.registry.DfmItems;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
-import dimensionalfluxminer.smelter.SmelterMode;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -216,8 +216,8 @@ public final class BenchmarkGameTests {
             }
         }, () -> "adapters=" + ProtectionService.adaptersPresent());
 
-        // ---- Crusher and Smelter at Rate 10
-        DimensionalCrusherBlockEntity crusher = CrusherGameTests.place(helper);
+        // ---- Crusher and Electric Furnace at Rate 10
+        MechanicalCrusherBlockEntity crusher = CrusherGameTests.place(helper);
         long[] crushed = new long[2];
         bench("crusher.rate10.cycle", 20_000, () -> {
         }, () -> {
@@ -230,38 +230,38 @@ public final class BenchmarkGameTests {
                 crushed[0] += 64 - crusher.input().firstCount();
             }
         }, () -> "items=" + crushed[0]);
-        AlloySmelterBlockEntity smelter = SmelterGameTests.place(helper);
-        smelter.setMode(SmelterMode.NORMAL);
+        ElectricFurnaceBlockEntity furnace = ElectricFurnaceGameTests.place(helper);
+        furnace.setMode(ElectricFurnaceMode.NORMAL);
         long[] smelted = new long[1];
-        bench("smelter.rate10.3lanes.cycle", 20_000, () -> {
+        bench("electric_furnace.rate10.3lanes.cycle", 20_000, () -> {
         }, () -> {
             for (int i = 0; i < 20_000; i++) {
-                for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
-                    smelter.input(lane).clear();
-                    smelter.output(lane).clear();
-                    smelter.input(lane).insert(new ItemStack(Items.SAND), 64, false);
+                for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
+                    furnace.input(lane).clear();
+                    furnace.output(lane).clear();
+                    furnace.input(lane).insert(new ItemStack(Items.SAND), 64, false);
                 }
-                smelter.energyBuffer().setStored(PLENTY);
-                AbstractMachineBlockEntity.serverTick(level, smelter.getBlockPos(), smelter.getBlockState(), smelter);
-                for (int lane = 0; lane < AlloySmelterBlockEntity.LANES; lane++) {
-                    smelted[0] += smelter.output(lane).countOf(new ItemStack(Items.GLASS));
+                furnace.energyBuffer().setStored(PLENTY);
+                AbstractMachineBlockEntity.serverTick(level, furnace.getBlockPos(), furnace.getBlockState(), furnace);
+                for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
+                    smelted[0] += furnace.output(lane).countOf(new ItemStack(Items.GLASS));
                 }
             }
         }, () -> "items=" + smelted[0]);
 
         // ---- automation: Auto Input and Auto Eject with chests, Rate 10
-        helper.assertTrue(smelter.configureSide(RelativeFace.LEFT, Transmission.ITEM, SideRoute.ITEM_INPUT_ALL)
-                && smelter.configureSide(RelativeFace.RIGHT, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "automation sides");
-        BlockPos source = smelter.getBlockPos().relative(RelativeFace.LEFT.toDirection(smelter.facing()));
-        BlockPos sink = smelter.getBlockPos().relative(RelativeFace.RIGHT.toDirection(smelter.facing()));
+        helper.assertTrue(furnace.configureSide(RelativeFace.LEFT, Transmission.ITEM, SideRoute.ITEM_INPUT_ALL)
+                && furnace.configureSide(RelativeFace.RIGHT, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "automation sides");
+        BlockPos source = furnace.getBlockPos().relative(RelativeFace.LEFT.toDirection(furnace.facing()));
+        BlockPos sink = furnace.getBlockPos().relative(RelativeFace.RIGHT.toDirection(furnace.facing()));
         level.setBlockAndUpdate(source, Blocks.CHEST.defaultBlockState());
         level.setBlockAndUpdate(sink, Blocks.CHEST.defaultBlockState());
         Container in = (Container) level.getBlockEntity(source);
         Container out = (Container) level.getBlockEntity(sink);
-        smelter.setAutoInput(true);
-        smelter.setAutoEject(true);
+        furnace.setAutoInput(true);
+        furnace.setAutoEject(true);
         long[] moved = new long[1];
-        bench("smelter.automation.cycle", 5_000, () -> {
+        bench("electric_furnace.automation.cycle", 5_000, () -> {
         }, () -> {
             for (int i = 0; i < 5_000; i++) {
                 for (int s = 0; s < in.getContainerSize(); s++) {
@@ -271,8 +271,8 @@ public final class BenchmarkGameTests {
                     moved[0] += out.getItem(s).getCount();
                     out.setItem(s, ItemStack.EMPTY);
                 }
-                smelter.energyBuffer().setStored(PLENTY);
-                AbstractMachineBlockEntity.serverTick(level, smelter.getBlockPos(), smelter.getBlockState(), smelter);
+                furnace.energyBuffer().setStored(PLENTY);
+                AbstractMachineBlockEntity.serverTick(level, furnace.getBlockPos(), furnace.getBlockState(), furnace);
             }
         }, () -> "glass_out=" + moved[0]);
         helper.succeed();

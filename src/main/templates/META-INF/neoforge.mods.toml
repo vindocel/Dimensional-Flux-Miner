@@ -10,12 +10,12 @@ displayName="${mod_name}"
 displayURL="https://github.com/vindocel/Dimensional-Flux-Miner"
 logoFile="logo.png"
 description='''
-A miner that never digs: it turns energy into the ores of your dimension. With a crusher, an alloy smelter and an animated guide.
+A miner that never digs: it turns energy into the ores of your dimension. With a crusher, an electric furnace and an animated guide.
 '''
 
 # Icon in the mod list of the Catalogue mod.
 [modproperties.${mod_id}]
-    catalogueImageIcon="logo.png"
+    catalogueImageIcon="icon.png"
 
 [[mixins]]
 config="${mod_id}.mixins.json"

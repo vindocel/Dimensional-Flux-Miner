@@ -1,7 +1,7 @@
 package dimensionalfluxminer.client.sound;
 
 import dimensionalfluxminer.content.MachineState;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlockEntity;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.registry.DfmSounds;
 import java.util.Map;
@@ -25,9 +25,9 @@ public final class MachineSounds {
         if (!(be instanceof AbstractMachineBlockEntity machine)) {
             return;
         }
-        SoundEvent event = machine instanceof DimensionalCrusherBlockEntity
+        SoundEvent event = machine instanceof MechanicalCrusherBlockEntity
                 ? DfmSounds.CRUSHER_RUNNING.get()
-                : DfmSounds.ALLOY_SMELTER_RUNNING.get();
+                : DfmSounds.ELECTRIC_FURNACE_RUNNING.get();
         loop(be, event, Vec3.atCenterOf(be.getBlockPos()), () -> !be.isRemoved() && machine.machineState() == MachineState.ACTIVE);
     }
 

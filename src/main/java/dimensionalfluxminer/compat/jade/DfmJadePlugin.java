@@ -1,13 +1,13 @@
 package dimensionalfluxminer.compat.jade;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.crusher.DimensionalCrusherBlock;
+import dimensionalfluxminer.crusher.MechanicalCrusherBlock;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.miner.MinerLinkBlockEntity;
 import dimensionalfluxminer.miner.block.MinerPartBlock;
-import dimensionalfluxminer.smelter.AlloySmelterBlock;
-import dimensionalfluxminer.smelter.AlloySmelterBlockEntity;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlock;
+import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -21,7 +21,7 @@ import snownee.jade.api.view.HideThingsExtensionProvider;
 
 /**
  * Jade integration. Items come from the machines' read-only {@code null}-side capabilities; this plugin replaces
- * Jade's energy line with the machines' own energy bar and adds the Electric Smelter's stored experience as a
+ * Jade's energy line with the machines' own energy bar and adds the Electric Furnace's stored experience as a
  * Liquid Experience fluid bar under it.
  */
 @WailaPlugin
@@ -44,8 +44,8 @@ public class DfmJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        registration.registerBlockComponent(MachineBarsComponent.INSTANCE, DimensionalCrusherBlock.class);
-        registration.registerBlockComponent(MachineBarsComponent.INSTANCE, AlloySmelterBlock.class);
+        registration.registerBlockComponent(MachineBarsComponent.INSTANCE, MechanicalCrusherBlock.class);
+        registration.registerBlockComponent(MachineBarsComponent.INSTANCE, ElectricFurnaceBlock.class);
         registration.registerBlockComponent(MachineBarsComponent.INSTANCE, MinerPartBlock.class);
     }
 
@@ -65,8 +65,8 @@ public class DfmJadePlugin implements IWailaPlugin {
                 data.putLong(ENERGY, miner.energyBuffer().stored());
                 data.putLong(CAPACITY, miner.energyBuffer().capacity());
             }
-            if (be instanceof AlloySmelterBlockEntity smelter) {
-                data.putDouble(XP, smelter.experience().xp());
+            if (be instanceof ElectricFurnaceBlockEntity furnace) {
+                data.putDouble(XP, furnace.experience().xp());
             }
         }
 

@@ -43,7 +43,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     public static final int BUTTON_TEXT = 0xFFFFFFFF;
     public static final int BUTTON_TEXT_INACTIVE = 0xFFA0A0A0;
     public static final int TAB_DEFAULT = 0xFFFFFFFF;
-    public static final int TAB_ENERGY = 0xFF59C15F;
+    public static final int TAB_ENERGY = dimensionalfluxminer.machine.side.SideRoute.ENERGY_INPUT.color();
     public static final int TAB_ITEM = 0xFFCFCFCF;
     public static final int TAB_FLUID = 0xFF366BD0;
     public static final int TAB_REDSTONE = 0xFFC9071F;
@@ -76,8 +76,6 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     static final int ENERGY_FILL_HEIGHT = 66;
     static final int ENERGY_FRAMES = 42;
     static final long ENERGY_FRAME_MS = 100;
-    static final ResourceLocation SWITCH_ON = sprite("switch/on");
-    static final ResourceLocation SWITCH_OFF = sprite("switch/off");
     static final ResourceLocation CHECK = sprite("slot/overlay_check");
 
     static final ResourceLocation ICON_SIDE_CONFIG = sprite("icon/side_config");
@@ -274,6 +272,20 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         protected void onClose() {
         }
 
+        /** A key pressed while this is the top window (Escape excepted); true consumes it. */
+        protected boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            return false;
+        }
+
+        /** A character typed while this is the top window; true consumes it. */
+        protected boolean charTyped(char c, int modifiers) {
+            return false;
+        }
+
+        /** Any mouse press on the screen, before it is handled; {@code onThis} = the press lands on this window. */
+        protected void mousePressed(double mouseX, double mouseY, boolean onThis) {
+        }
+
         int x() {
             return screen.left() + relX;
         }
@@ -378,6 +390,9 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         Window top = windowAt(mouseX, mouseY);
+        for (Window w : List.copyOf(windows)) {
+            w.mousePressed(mouseX, mouseY, w == top);
+        }
         if (top != null) {
             windows.remove(top);
             windows.add(top);
@@ -426,7 +441,18 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             closeWindow(windows.getLast());
             return true;
         }
+        if (!windows.isEmpty() && windows.getLast().keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char c, int modifiers) {
+        if (!windows.isEmpty() && windows.getLast().charTyped(c, modifiers)) {
+            return true;
+        }
+        return super.charTyped(c, modifiers);
     }
 
     @Override
@@ -872,17 +898,6 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             lines.add(Component.translatable("gui.dimensionalfluxminer.show_recipes").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
             return lines;
         }, 0);
-    }
-
-    /** Two-position digital switch (15 x 31) with a 5 x 5 icon under it. */
-    protected void digitalSwitch(GuiGraphics g, int x, int y, ResourceLocation icon, boolean state, int mouseX, int mouseY,
-                                 IntSupplier action, Supplier<List<Component>> tooltip) {
-        buttonHotspot(x, y, 15, 31, action, null, tooltip);
-        g.blitSprite(state ? SWITCH_ON : SWITCH_OFF, x, y, 15, 8);
-        g.blitSprite(state ? SWITCH_OFF : SWITCH_ON, x, y + 9, 15, 8);
-        g.blitSprite(icon, x + 5, y + 21, 5, 5);
-        fitted(g, Component.translatable("gui.dimensionalfluxminer.on"), x, y + 2, 15, 0xFF101010, 0.5F, true);
-        fitted(g, Component.translatable("gui.dimensionalfluxminer.off"), x, y + 11, 15, 0xFF101010, 0.5F, true);
     }
 
     /**

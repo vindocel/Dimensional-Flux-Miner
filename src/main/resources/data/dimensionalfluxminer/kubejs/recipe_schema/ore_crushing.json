@@ -1,0 +1,39 @@
+{
+  "keys": [
+    {
+      "name": "ingredient",
+      "role": "input",
+      "type": "ingredient"
+    },
+    {
+      "name": "result",
+      "role": "output",
+      "type": "item_stack",
+      "default_optional": true
+    },
+    {
+      "name": "result_tag",
+      "role": "output",
+      "type": "item_tag",
+      "default_optional": true
+    },
+    {
+      "name": "base_count",
+      "role": "output",
+      "type": "positive_int",
+      "optional": 2
+    },
+    {
+      "name": "efficiency_upgrade_count",
+      "role": "output",
+      "type": "positive_int",
+      "optional": 3
+    }
+  ],
+  "constructors": [
+    { "keys": ["ingredient"] },
+    { "keys": ["result", "ingredient"] },
+    { "keys": ["result", "ingredient", "base_count", "efficiency_upgrade_count"] }
+  ],
+  "unique": ["ingredient"]
+}

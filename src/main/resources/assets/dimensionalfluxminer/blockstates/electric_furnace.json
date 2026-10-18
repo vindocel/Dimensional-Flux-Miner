@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "machine_state=off,facing=north": {
+      "model": "dimensionalfluxminer:block/electric_furnace/off"
+    },
+    "machine_state=off,facing=east": {
+      "model": "dimensionalfluxminer:block/electric_furnace/off",
+      "y": 90
+    },
+    "machine_state=off,facing=south": {
+      "model": "dimensionalfluxminer:block/electric_furnace/off",
+      "y": 180
+    },
+    "machine_state=off,facing=west": {
+      "model": "dimensionalfluxminer:block/electric_furnace/off",
+      "y": 270
+    },
+    "machine_state=idle,facing=north": {
+      "model": "dimensionalfluxminer:block/electric_furnace/idle"
+    },
+    "machine_state=idle,facing=east": {
+      "model": "dimensionalfluxminer:block/electric_furnace/idle",
+      "y": 90
+    },
+    "machine_state=idle,facing=south": {
+      "model": "dimensionalfluxminer:block/electric_furnace/idle",
+      "y": 180
+    },
+    "machine_state=idle,facing=west": {
+      "model": "dimensionalfluxminer:block/electric_furnace/idle",
+      "y": 270
+    },
+    "machine_state=active,facing=north": {
+      "model": "dimensionalfluxminer:block/electric_furnace/active"
+    },
+    "machine_state=active,facing=east": {
+      "model": "dimensionalfluxminer:block/electric_furnace/active",
+      "y": 90
+    },
+    "machine_state=active,facing=south": {
+      "model": "dimensionalfluxminer:block/electric_furnace/active",
+      "y": 180
+    },
+    "machine_state=active,facing=west": {
+      "model": "dimensionalfluxminer:block/electric_furnace/active",
+      "y": 270
+    }
+  }
+}

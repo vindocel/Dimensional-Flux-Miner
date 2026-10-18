@@ -14,7 +14,7 @@ public final class ClientHooks {
     /** Short particle burst when a Miner assembly forms. */
     public static Consumer<java.util.List<net.minecraft.core.BlockPos>> formationEffect = positions -> { };
     /** Highlight of the parts still missing in a Miner assembly (an empty list clears it). */
-    public static Consumer<java.util.List<dimensionalfluxminer.network.MinerAssemblyPayload.Entry>> assemblyHighlight = entries -> { };
+    public static Consumer<dimensionalfluxminer.network.MinerAssemblyPayload> assemblyHighlight = payload -> { };
     /** Opens the Dimensional Flux Guide screen. */
     public static Runnable openGuide = () -> { };
 

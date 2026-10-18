@@ -3,7 +3,7 @@ package dimensionalfluxminer.recipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
-/** The three Alloy Smelter input lanes, each represented by one stack of its current item. */
+/** The three Electric Furnace input lanes, each represented by one stack of its current item. */
 public record AlloyRecipeInput(ItemStack lane1, ItemStack lane2, ItemStack lane3) implements RecipeInput {
     public static final int LANES = 3;
 

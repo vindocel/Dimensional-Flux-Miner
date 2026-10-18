@@ -8,9 +8,9 @@ import dimensionalfluxminer.registry.DfmItems;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import dimensionalfluxminer.client.render.ModelRendering;
-import dimensionalfluxminer.client.render.SmelterRenderer;
+import dimensionalfluxminer.client.render.ElectricFurnaceRenderer;
 import dimensionalfluxminer.client.screen.CrusherScreen;
-import dimensionalfluxminer.client.screen.SmelterScreen;
+import dimensionalfluxminer.client.screen.ElectricFurnaceScreen;
 import dimensionalfluxminer.client.sound.MachineSounds;
 import dimensionalfluxminer.machine.ClientHooks;
 import dimensionalfluxminer.registry.DfmBlockEntities;
@@ -61,6 +61,9 @@ public final class DfmClient {
         // Using the guide opens the book in the hand first; the screen follows once it is open.
         ClientHooks.openGuide = GuideBookAnimation::requestOpen;
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GuideBookAnimation::onClientTick);
+        // Script values of the configuration belong to the server just left.
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut loggingOut) -> dimensionalfluxminer.DfmConfig.setOverrides(java.util.Map.of()));
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.CORRUPTED_WATER.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.FLOWING_CORRUPTED_WATER.get(), RenderType.translucent());
@@ -76,14 +79,14 @@ public final class DfmClient {
     @SubscribeEvent
     static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(DfmMenus.CRUSHER.get(), CrusherScreen::new);
-        event.register(DfmMenus.SMELTER.get(), SmelterScreen::new);
+        event.register(DfmMenus.ELECTRIC_FURNACE.get(), ElectricFurnaceScreen::new);
         event.register(DfmMenus.MINER.get(), dimensionalfluxminer.client.screen.MinerScreen::new);
     }
 
     @SubscribeEvent
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(DfmBlockEntities.DIMENSIONAL_CRUSHER.get(), CrusherRenderer::new);
-        event.registerBlockEntityRenderer(DfmBlockEntities.ALLOY_SMELTER.get(), SmelterRenderer::new);
+        event.registerBlockEntityRenderer(DfmBlockEntities.MECHANICAL_CRUSHER.get(), CrusherRenderer::new);
+        event.registerBlockEntityRenderer(DfmBlockEntities.ELECTRIC_FURNACE.get(), ElectricFurnaceRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.MINER_CONTROLLER.get(), dimensionalfluxminer.client.render.MinerRenderer::new);
     }
 

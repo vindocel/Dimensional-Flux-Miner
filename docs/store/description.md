@@ -6,7 +6,7 @@
 
 The **Dimensional Flux Miner** tunes into the frequency of the dimension it stands in and makes that dimension's ores **appear out of nothing** — without opening a single hole in your world. Feed it energy and Dimensional Matter, choose how fast it runs, and watch the ores pour out.
 
-Two support machines get you there: the **Mechanical Crusher** and the **Electric Furnace**. And an animated **Dimensional Flux Guide** explains everything, in game.
+Two support machines get you there: the **Mechanical Crusher** and the **Electric Furnace**. The **Dimensional Tanks** carry your liquids between dimensions. And an animated **Dimensional Flux Guide** explains everything, in game.
 
 > ## 🌐 Showcase
 > See every machine, the Dimensional Death and the guide in action on the **[Dimensional Flux Miner showcase](https://vindocel.github.io/Showcase-DFM/)**.
@@ -36,6 +36,7 @@ Two support machines get you there: the **Mechanical Crusher** and the **Electri
 | ⚡ **No speed upgrades to craft** | Every machine has a **speed selector from 1 to 10**. Your power generation is the only limit: the same machine follows you from the first ingot to the last dragon. |
 | ⚙️ **Double your ores** | The Crusher turns every ore into 2 raw ores (3 with the upgrade). Ores from any mod. |
 | 🔥 **Electric smelting and alloys** | Three lanes, a raw ore bonus, alloys like steel, and your XP stored as Liquid Experience. |
+| 🛢️ **Liquids across dimensions** | Two tanks with the same three-color code hold the same liquid, wherever they are. |
 | ☠️ **Dimensional Death** | Mining has a price. Drain the land and it rots forever… or choose the clean way. |
 | 📖 **An animated guide** | A real 3D book that opens in your hand and turns its pages as you read. |
 
@@ -109,6 +110,26 @@ A furnace without flame: three lanes of electric heat that smelt and join metals
 
 ---
 
+## 🛢️ Dimensional Tanks
+
+Fill a tank at home, drain it in the Nether. Every tank with the same **three-color code** is the same tank, in any dimension — even when the others are not loaded.
+
+<!-- TODO: replace IMAGE_LINK_HERE with the link of the tank image -->
+![Dimensional Tanks](https://cdn.modrinth.com/data/vTLvFHBt/images/d5d195b620b8977cfdd212247133484c44c1e163.png)
+
+| Tank | |
+|---|---|
+| **Dimensional Tank** | one chamber of **128 000 mB** |
+| **Dual Dimensional Tank** | two separate chambers of **128 000 mB** each, for two liquids at once |
+
+- 🎨 Pick the code on the screen out of **16 colors** — no dyes needed. The order counts, and single and dual tanks never share.
+- 💎 A **diamond** makes the code personal: a channel only you reach.
+- 🪣 Buckets and fluid containers on the block (on the dual tank, the side you click picks the chamber), or on the screen.
+- 🔧 Pipes on every side but the front, with their own **Auto Input / Auto Eject**. No energy needed.
+- 👀 See the liquid through the glass, its color on the gauge and the code on the front and on the lid. Lava still glows inside.
+
+---
+
 ## ⚡ Speed 1–10: your power, your pace
 
 There is no speed upgrade to craft. Pick a speed on any machine; each level up asks for more energy and works faster in the same proportion. Idle machines spend nothing.
@@ -174,7 +195,7 @@ Forge your first **Pure Steel** and it is yours. Use it and the book **opens in 
 
 - 🔧 Any pipe or cable mod (standard NeoForge item, energy and fluid capabilities on every face).
 - 📘 **EMI** and **JEI**: recipe categories for every machine; click a machine's chamber to see its recipes, R / U work on items inside machines.
-- 🔍 **Jade**: machine energy bars, items and stored XP.
+- 🔍 **Jade**: machine energy bars, items, stored XP and the liquids in the tanks.
 - 🔗 **Logistics Networks**: nodes set the Miner's ports and the machines' sides by themselves.
 - ⏩ Tick accelerators: the machines run every extra cycle they are given — at full energy cost.
 - 🌍 Ores and dusts of other mods through the common tags.

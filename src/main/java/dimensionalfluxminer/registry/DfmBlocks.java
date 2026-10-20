@@ -9,6 +9,8 @@ import dimensionalfluxminer.miner.block.MinerPortBlock;
 import dimensionalfluxminer.miner.block.MinerTerminalBlock;
 import dimensionalfluxminer.furnace.ElectricFurnaceBlock;
 import dimensionalfluxminer.content.CorruptedWaterPlants;
+import dimensionalfluxminer.tank.DimensionalTankBlock;
+import dimensionalfluxminer.tank.TankKind;
 import net.minecraft.util.ColorRGBA;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -41,6 +43,12 @@ public final class DfmBlocks {
             machineCasing().noOcclusion());
     public static final DeferredBlock<ElectricFurnaceBlock> ELECTRIC_FURNACE = BLOCKS.registerBlock("electric_furnace", ElectricFurnaceBlock::new,
             machineCasing().noOcclusion().lightLevel(ElectricFurnaceBlock::lightFromState));
+
+    // Dimensional Tanks
+    public static final DeferredBlock<DimensionalTankBlock> DIMENSIONAL_TANK = BLOCKS.registerBlock("dimensional_tank",
+            props -> new DimensionalTankBlock(TankKind.SINGLE, props), machineCasing().noOcclusion());
+    public static final DeferredBlock<DimensionalTankBlock> DIMENSIONAL_DUAL_TANK = BLOCKS.registerBlock("dimensional_dual_tank",
+            props -> new DimensionalTankBlock(TankKind.DUAL, props), machineCasing().noOcclusion());
 
     // Materials
     public static final DeferredBlock<Block> SLAG_AGGREGATE = BLOCKS.registerSimpleBlock("slag_aggregate",

@@ -5,6 +5,7 @@ import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.miner.MinerLinkBlockEntity;
 import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
+import dimensionalfluxminer.tank.DimensionalTankBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -32,7 +33,13 @@ public final class DfmBlockEntities {
             BLOCK_ENTITIES.register("miner_link", () -> BlockEntityType.Builder.of(MinerLinkBlockEntity::new,
                     DfmBlocks.STEEL_CHASSIS.get(), DfmBlocks.DIMENSIONAL_PORT.get()).build(null));
 
+    @SuppressWarnings("DataFlowIssue")
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DimensionalTankBlockEntity>> DIMENSIONAL_TANK =
+            BLOCK_ENTITIES.register("dimensional_tank", () -> BlockEntityType.Builder.of(DimensionalTankBlockEntity::new,
+                    DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get()).build(null));
+
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, DIMENSIONAL_TANK.get(), DimensionalTankBlockEntity::fluidFor);
         // The terminal has no port of its own: only its null side (read-only views for information tools) answers.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, MINER_CONTROLLER.get(), (be, side) -> be.itemPort(be.getBlockPos(), side));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MINER_CONTROLLER.get(), (be, side) -> be.energyPort(be.getBlockPos(), side));

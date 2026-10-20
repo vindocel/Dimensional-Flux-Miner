@@ -12,6 +12,34 @@
   fixed input. Every configurable face now offers an item handler even with no route, so cables find it; it gives and
   takes nothing until the face gets its route. The cable timing is now shared code with the Miner, which works as
   before.
+- 🛢️ **Dimensional Tanks** (*Tanque Dimensional* and *Tanque Dimensional Duplo*), with no energy.
+  - Recipes: the tank takes 4 Dimensional Steel Chassis, 2 Dimensional Ports, 2 Reinforced Eyes of Ender and 1
+    Reinforced Structural Glass; the dual tank 2 Dimensional Tanks, 4 Reinforced Eyes of Ender, 2 Pure Steel and 1
+    Dimensional Steel Chassis.
+  - The **Dimensional Tank** holds **128 000 mB** of one liquid; the **Dual Dimensional Tank** has two separate
+    chambers of 128 000 mB, **A** (right side of the front) and **B** (left side), each with its own liquid.
+  - **Paired by code:** three of 16 colors (no dye needed) on the front panel, read left to right (the order counts), chosen in
+    the code window (click the code on the screen). Every tank with the same kind and code shares one channel in the whole save, across
+    dimensions and without the other tanks loaded. A single and a dual tank never share; dual tanks share A with A and B
+    with B. New tanks start public, on white, white, white.
+  - **Personal codes:** a diamond on the tank (or on the cursor, with the code window's button) makes its code personal, a
+    channel of its own for that player apart from the public one with the same colors; sneaking with an empty hand (or
+    the same button) makes it public again and gives the diamond back. New server options `tank.personalItem`
+    (default `minecraft:diamond`) and `tank.anarchyMode` (default `false`: a broken personal tank drops as a public one
+    plus the diamond), also settable by KubeJS.
+  - The liquid lives in the channel, not in the tank: changing the code moves, copies and deletes nothing, and a broken
+    tank keeps its code on the item (shown in its tooltip), so placing it again reconnects it.
+  - Buckets and fluid containers on the block: a filled one empties into the tank, an empty one takes the liquid out;
+    on the dual tank the right side (right face or the right half of the front) is A and the left is B. Also on the
+    screen's reservoir. Pipes: every face except the front, one chamber per face, a new **Liquids** tab in the Side
+    Configuration with its own Auto Input / Auto Eject (default OFF). A full chamber never spills into the other one.
+    While Auto Eject is on, an input + output face only gives (pipe networks no longer bounce the last mB back in).
+    Buckets work while sneaking too.
+  - The block shows the liquid of each chamber and, in the liquid's own color, its gauge and (on the dual tank) the
+    two lid stripes of A and B. The code is shown twice: on the front panel and on a matching panel on the lid.
+    Glowing liquids such as lava light the area from inside the tank (the brightest chamber counts).
+  - New guide chapter **Dimensional Tanks** (after "Automation and logistics"): recipes, the code, personal codes,
+    buckets, pipes and how to read the block.
 
 ### 🔄 Changed
 

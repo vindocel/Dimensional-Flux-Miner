@@ -9,6 +9,8 @@
     "dimensionalfluxminer:miner_terminal",
     "dimensionalfluxminer:mechanical_crusher",
     "dimensionalfluxminer:electric_furnace",
+    "dimensionalfluxminer:dimensional_tank",
+    "dimensionalfluxminer:dimensional_dual_tank",
     "dimensionalfluxminer:slag_aggregate",
     "dimensionalfluxminer:corrupted_stone",
     "dimensionalfluxminer:corrupted_terracotta"

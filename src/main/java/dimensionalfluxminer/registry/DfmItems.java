@@ -3,6 +3,7 @@ package dimensionalfluxminer.registry;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.GuideBookItem;
 import dimensionalfluxminer.content.ReinforcedEnderEyeItem;
+import dimensionalfluxminer.tank.DimensionalTankItem;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,12 @@ public final class DfmItems {
     // Machines
     public static final DeferredItem<?> MECHANICAL_CRUSHER = ITEMS.registerSimpleBlockItem(DfmBlocks.MECHANICAL_CRUSHER);
     public static final DeferredItem<?> ELECTRIC_FURNACE = ITEMS.registerSimpleBlockItem(DfmBlocks.ELECTRIC_FURNACE);
+
+    // Dimensional Tanks
+    public static final DeferredItem<DimensionalTankItem> DIMENSIONAL_TANK = ITEMS.registerItem("dimensional_tank",
+            props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_TANK.get(), props));
+    public static final DeferredItem<DimensionalTankItem> DIMENSIONAL_DUAL_TANK = ITEMS.registerItem("dimensional_dual_tank",
+            props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), props));
 
     // Cores and upgrade
     public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", new Item.Properties().rarity(Rarity.RARE));

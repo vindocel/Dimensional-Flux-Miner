@@ -40,7 +40,7 @@ final class GuideContent {
     static List<Chapter> chapters() {
         return List.of(
                 start(), materials(), crusher(), furnace(),
-                assembly(), miner(), automation(), dimensions(), rates(), blight(), trouble());
+                assembly(), miner(), automation(), tanks(), dimensions(), rates(), blight(), trouble());
     }
 
     // ------------------------------------------------------------------ chapters
@@ -179,6 +179,19 @@ final class GuideContent {
         b.heading("network").compat("network", "network", "lanes");
         b.heading("accel").text("accel");
         return b.chapter(DfmItems.DIMENSIONAL_PORT);
+    }
+
+    private static Chapter tanks() {
+        Builder b = new Builder("tanks");
+        b.item(DfmItems.DIMENSIONAL_TANK, "about").crafting("dimensional_tank");
+        b.heading("dual").item(DfmItems.DIMENSIONAL_DUAL_TANK, "dual").crafting("dimensional_dual_tank");
+        b.heading("code").text("code").text("code_change");
+        b.heading("personal").text("personal");
+        b.heading("buckets").text("buckets");
+        b.heading("pipes").text("pipes").text("pipes_dual");
+        b.heading("display").text("display");
+        b.tip("break");
+        return b.chapter(DfmItems.DIMENSIONAL_TANK);
     }
 
     private static Chapter trouble() {

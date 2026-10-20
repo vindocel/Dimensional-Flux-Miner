@@ -27,6 +27,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 - [⛏️ Dimensional Flux Miner](#%EF%B8%8F-dimensional-flux-miner)
 - [⚙️ Mechanical Crusher](#%EF%B8%8F-mechanical-crusher)
 - [🔥 Electric Furnace](#-electric-furnace)
+- [🛢️ Dimensional Tanks](#%EF%B8%8F-dimensional-tanks)
 - [⚡ Speed and the Efficiency Upgrade](#-speed-and-the-efficiency-upgrade)
 - [☠️ Dimensional Death](#%EF%B8%8F-dimensional-death)
 - [🏆 Advancements](#-advancements)
@@ -45,6 +46,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 | ⛏️ **Dimensional Flux Miner** | A 3×3×3 multiblock that turns energy (FE) and **Dimensional Matter (DM)** into the ores that really generate in its dimension, without breaking a single block of the world. |
 | ⚙️ **Mechanical Crusher** | Doubles your ores (triples them with the upgrade) and grinds ingots, raw ores and gems into dust. |
 | 🔥 **Electric Furnace** | A three-lane electric furnace that also makes alloys, with a raw-ore bonus and stored experience. |
+| 🛢️ **Dimensional Tanks** | Liquid tanks paired by a three-color code: every tank with the same code, in any dimension, holds the same liquid. |
 | ⚡ **Speed 1–10** | No speed upgrades to craft: every machine has a speed selector, limited only by your power generation. One machine from early game to end game. |
 | ☠️ **Dimensional Death** | The price of the Basic core's drain: the land, the water and the life around it rot forever. |
 | 📖 **Dimensional Flux Guide** | An animated book with the whole mod explained, in game. |
@@ -184,6 +186,23 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 - In ALLOY mode, lanes 1/2/3 can be routed individually (input-only) in the Side Configuration.
 - Emits light level 14 while working; the ingredients being processed are rendered inside the chamber.
 </details>
+
+---
+
+## 🛢️ Dimensional Tanks
+
+| Tank | Chambers |
+|---|---|
+| **Dimensional Tank** | one chamber of **128 000 mB** |
+| **Dual Dimensional Tank** | two separate chambers of **128 000 mB** each: **A** (right side of the front) and **B** (left side) |
+
+- 🎨 **Dimensional Code**: three of 16 colors on the front panel, picked on the screen (no dye needed) and read left to right; the order counts. Every tank with the same kind and code, in any dimension, shows and moves the same liquid, with the others loaded or not. A single and a dual tank never share, even with the same colors; dual tanks share A with A and B with B.
+- 🔁 Changing the code (click the code on the screen) points the tank at another channel: no liquid moves, is copied or is lost. A broken tank keeps its code on the item, and the liquid stays in the channel.
+- 💎 **Personal codes**: a diamond on the tank makes its code a channel of its own for you, apart from the public one with the same colors; sneak and use it with an empty hand to make it public again (the diamond comes back).
+- 🪣 Buckets and fluid containers: right click the block with a filled one to empty it, with an empty one to take the liquid out (on the dual tank, the right side is A and the left side is B), or click the reservoir on the screen.
+- 🔧 Pipes: every face but the front carries liquid; the single tank starts as input/output on all of them, the dual tank with A on the right side and B on the left. Each face serves one chamber only, and a full chamber never spills into the other. Liquids have their own Auto Input and Auto Eject in the Side Configuration.
+- ⚡ No energy.
+- 🧰 Recipes: tank = 4 Dimensional Steel Chassis + 2 Dimensional Ports + 2 Reinforced Eyes of Ender + 1 Reinforced Structural Glass; dual tank = 2 Dimensional Tanks + 4 Reinforced Eyes of Ender + 2 Pure Steel + 1 Dimensional Steel Chassis.
 
 ---
 

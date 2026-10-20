@@ -8,7 +8,7 @@ import net.minecraft.nbt.Tag;
 
 /**
  * Per-transmission side configuration of a single-block machine. ITEM routes are stored per item profile
- * (Electric Furnace NORMAL / ALLOY); ENERGY, REDSTONE and EXPERIENCE are shared between profiles.
+ * (Electric Furnace NORMAL / ALLOY); ENERGY, REDSTONE, EXPERIENCE and FLUID are shared between profiles.
  * Every face starts as {@link SideRoute#NONE}.
  */
 public final class SideConfiguration {
@@ -20,6 +20,7 @@ public final class SideConfiguration {
     private final SideRoute[] energy = new SideRoute[FACES];
     private final SideRoute[] redstone = new SideRoute[FACES];
     private final SideRoute[] experience = new SideRoute[FACES];
+    private final SideRoute[] fluid = new SideRoute[FACES];
     /**
      * Faces (bit per {@link RelativeFace}) whose route an external network node sets, per transmission: they do not
      * change by hand, batch or clear while the node is there. Not saved: read again from the nodes.
@@ -53,6 +54,7 @@ public final class SideConfiguration {
             case ENERGY -> energy;
             case REDSTONE -> redstone;
             case EXPERIENCE -> experience;
+            case FLUID -> fluid;
         };
     }
 
@@ -175,6 +177,7 @@ public final class SideConfiguration {
         tag.put("energy", write(energy));
         tag.put("redstone", write(redstone));
         tag.put("experience", write(experience));
+        tag.put("fluid", write(fluid));
         return tag;
     }
 
@@ -187,6 +190,7 @@ public final class SideConfiguration {
         read(tag.getList("energy", Tag.TAG_STRING), energy);
         read(tag.getList("redstone", Tag.TAG_STRING), redstone);
         read(tag.getList("experience", Tag.TAG_STRING), experience);
+        read(tag.getList("fluid", Tag.TAG_STRING), fluid);
     }
 
     private static ListTag write(SideRoute[] routes) {

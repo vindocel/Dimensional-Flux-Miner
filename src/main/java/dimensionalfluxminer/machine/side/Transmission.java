@@ -7,7 +7,9 @@ public enum Transmission {
     ITEM,
     ENERGY,
     REDSTONE,
-    EXPERIENCE;
+    EXPERIENCE,
+    /** Liquids of the Dimensional Tanks (input and output). */
+    FLUID;
 
     public static final Transmission[] VALUES = values();
 

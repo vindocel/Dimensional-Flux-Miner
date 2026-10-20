@@ -29,6 +29,8 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.EFFICIENCY_UPGRADE.get());
                 output.accept(DfmItems.MECHANICAL_CRUSHER.get());
                 output.accept(DfmItems.ELECTRIC_FURNACE.get());
+                output.accept(DfmItems.DIMENSIONAL_TANK.get());
+                output.accept(DfmItems.DIMENSIONAL_DUAL_TANK.get());
                 output.accept(DfmItems.ENDER_EYE_REINFORCED.get());
                 output.accept(DfmItems.INGOT_STEEL.get());
                 output.accept(DfmItems.GRAIN_CALCITE.get());

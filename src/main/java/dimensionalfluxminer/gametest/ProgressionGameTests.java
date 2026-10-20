@@ -134,7 +134,8 @@ public final class ProgressionGameTests {
         List<Item> chain = List.of(DfmItems.MECHANICAL_CRUSHER.get(), DfmItems.ELECTRIC_FURNACE.get(), DfmItems.INGOT_STEEL.get(),
                 DfmItems.ENDER_EYE_REINFORCED.get(), DfmItems.REINFORCED_STRUCTURAL_GLASS.get(), DfmItems.STEEL_CHASSIS.get(),
                 DfmItems.VENTILATION_UNIT.get(), DfmItems.DIMENSIONAL_PORT.get(), DfmItems.MINER_TERMINAL.get(), DfmItems.QUANTUM_CORE.get(),
-                DfmItems.BASIC_DIMENSIONAL_CORE.get(), DfmItems.STABILIZED_DIMENSIONAL_CORE.get(), DfmItems.EFFICIENCY_UPGRADE.get());
+                DfmItems.BASIC_DIMENSIONAL_CORE.get(), DfmItems.STABILIZED_DIMENSIONAL_CORE.get(), DfmItems.EFFICIENCY_UPGRADE.get(),
+                DfmItems.DIMENSIONAL_TANK.get(), DfmItems.DIMENSIONAL_DUAL_TANK.get());
         StringBuilder map = new StringBuilder();
         for (Item item : chain) {
             helper.assertTrue(step.containsKey(item), BuiltInRegistries.ITEM.getKey(item) + " is reachable from vanilla items");

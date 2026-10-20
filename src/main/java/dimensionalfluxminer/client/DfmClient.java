@@ -81,6 +81,7 @@ public final class DfmClient {
         event.register(DfmMenus.CRUSHER.get(), CrusherScreen::new);
         event.register(DfmMenus.ELECTRIC_FURNACE.get(), ElectricFurnaceScreen::new);
         event.register(DfmMenus.MINER.get(), dimensionalfluxminer.client.screen.MinerScreen::new);
+        event.register(DfmMenus.DIMENSIONAL_TANK.get(), dimensionalfluxminer.client.screen.TankScreen::new);
     }
 
     @SubscribeEvent
@@ -88,6 +89,7 @@ public final class DfmClient {
         event.registerBlockEntityRenderer(DfmBlockEntities.MECHANICAL_CRUSHER.get(), CrusherRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.ELECTRIC_FURNACE.get(), ElectricFurnaceRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.MINER_CONTROLLER.get(), dimensionalfluxminer.client.render.MinerRenderer::new);
+        event.registerBlockEntityRenderer(DfmBlockEntities.DIMENSIONAL_TANK.get(), dimensionalfluxminer.client.render.TankRenderer::new);
     }
 
     /** The purple water particles behave exactly like the vanilla ones, with their own sprites. */

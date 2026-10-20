@@ -10,13 +10,14 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | Package | Responsibility |
 |---|---|
 | (root) | `DimensionalFluxMiner` (mod entry point, event wiring) and `DfmConfig` (server config, parsed corruption rules) |
-| `registry` | Every deferred register: blocks, items, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
+| `registry` | Every deferred register: blocks, items, data components, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
 | `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping, cable detection (`CableActivity`, also used by the Miner ports, and `CablePortItemHandler`) |
 | `machine.math` | Pure math, covered by JUnit: `RateScale` (Rate 1–10 curve and FE/t), `MinerProductionCurve`, `DynamicEnergyBuffer` (buffer and fractional FE debt), `WorkAccumulator` |
-| `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone), per-machine rules, `NodeInputLanes` (lanes of the network node item inputs on the Electric Furnace Alloy profile) |
+| `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone / experience / fluid), per-machine rules (the Dimensional Tanks too), `NodeInputLanes` (lanes of the network node item inputs on the Electric Furnace Alloy profile) |
 | `menu` | `MachineMenu` and the menu sync used by every screen |
 | `crusher` | Mechanical Crusher: block, block entity, `CrusherProcessing` (recipe lookup and products), menu |
 | `electric_furnace` | Electric Furnace: block entity plus the pieces below |
+| `tank` | Dimensional Tanks: channels of the save, block, block entity, chamber fluid handler, menu, item |
 | `miner` | Dimensional Flux Miner: multiblock, controller and the pieces below |
 | `miner.profile` | Resource Profiles: what the Miner can find in each dimension |
 | `miner.survey` | The Basic core's survey of drainable columns |
@@ -59,6 +60,22 @@ what the face already did is kept), and locks those faces in the Side Configurat
 
 **Mechanical Crusher** (`crusher`): `MechanicalCrusherBlockEntity` runs the cycle and `CrusherProcessing` finds the
 products (explicit recipes first, then the common tags).
+
+### Dimensional Tanks
+
+The tanks are not machines: no energy, Rate or processing, so they do not extend `AbstractMachineBlockEntity`; they
+reuse its Side Configuration button ids and the `SideConfigWindow` (one FLUID tab with its own Auto Input / Auto Eject).
+
+| Class | Responsibility |
+|---|---|
+| `TankChannels` | `SavedData` of the Overworld (one per save, seen from every dimension): the chambers of each channel, keyed by tank kind + code; empty channels are not saved |
+| `TankCode`, `TankKind` | The three ordered dye colors (stable names, never RGB) and the single / dual kinds with the chamber capacity |
+| `DimensionalTankBlockEntity` | An endpoint: code, sides, liquid automation, the channel it points at; syncs the chambers to clients when the channel's version changes (at most every 2 ticks), whichever endpoint changed it |
+| `ChamberFluidHandler` | One chamber as a fluid tank (one liquid with its components, simulate never changes anything); looks the channel up on each call, so a code change takes effect at once |
+| `DimensionalTankBlock`, `DimensionalTankItem`, `TankMenu` | Facing, buckets on the block (the clicked half picks the dual chamber), the code kept on the item (`tank_code` data component, copied by the loot table) |
+
+`client/screen/TankScreen` (reservoirs and code window) and `client/render/TankRenderer` (liquid, gauges and lid stripes
+in the liquid's flat color from `FluidColors`, code on the front and lid panels, at the coordinates of the final models) draw the dynamic parts behind the static model's cut-outs.
 
 ### Miner
 
@@ -143,6 +160,7 @@ are part of the save format; the extracted classes write the same keys as before
 | `MinerGameTests`, `MatterGameTests`, `ProgressionGameTests` | Formation, cycle, DM, filter, profiles, the void, corruption |
 | `CrusherGameTests`, `ElectricFurnaceGameTests` | Recipes, slots, modes, XP, side configuration |
 | `EnergyGameTests`, `ThroughputGameTests` | FE per operation, Rate 1–10, buffers, tick acceleration |
+| `TankGameTests` | Channels by kind and ordered code, dual chambers kept apart, code change and breaking keep the liquid, liquid automation |
 | `ProtectionGameTests` | Config protections and claims (a test claim system, and FTB Chunks when present in `run/mods`) |
 | `OptimizationGameTests` | Every optimisation gives exactly the result of the plain code |
 | `ContentGameTests` | Recipes and advancements load, Corrupted Water and plants, Pure Steel, the guide recipe |

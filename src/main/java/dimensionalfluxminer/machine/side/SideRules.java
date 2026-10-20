@@ -40,6 +40,7 @@ public interface SideRules {
                 case ENERGY -> ENERGY;
                 case REDSTONE -> List.of();
                 case EXPERIENCE -> List.of();
+                case FLUID -> List.of();
             };
         }
 
@@ -65,12 +66,56 @@ public interface SideRules {
                 case ENERGY -> ENERGY;
                 case REDSTONE -> List.of();
                 case EXPERIENCE -> EXPERIENCE;
+                case FLUID -> List.of();
             };
         }
 
         @Override
         public SideRoute defaultRoute(RelativeFace face, Transmission transmission, int profile) {
             return transmission == Transmission.ENERGY && face != RelativeFace.FRONT ? SideRoute.ENERGY_INPUT : SideRoute.NONE;
+        }
+    };
+
+    List<SideRoute> FLUID_SINGLE = List.of(SideRoute.NONE, SideRoute.FLUID_INPUT, SideRoute.FLUID_OUTPUT, SideRoute.FLUID_INPUT_OUTPUT);
+    List<SideRoute> FLUID_DUAL = List.of(SideRoute.NONE, SideRoute.FLUID_A_INPUT, SideRoute.FLUID_A_OUTPUT, SideRoute.FLUID_A_INPUT_OUTPUT,
+            SideRoute.FLUID_B_INPUT, SideRoute.FLUID_B_OUTPUT, SideRoute.FLUID_B_INPUT_OUTPUT);
+
+    /**
+     * Dimensional Tank: FRONT locked (panel and gauge); the other faces only carry liquids. Every configurable face
+     * starts as input/output, so pipes connect without configuration.
+     */
+    SideRules TANK_SINGLE = new SideRules() {
+        @Override
+        public List<SideRoute> allowed(RelativeFace face, Transmission transmission, int profile) {
+            return face != RelativeFace.FRONT && transmission == Transmission.FLUID ? FLUID_SINGLE : List.of();
+        }
+
+        @Override
+        public SideRoute defaultRoute(RelativeFace face, Transmission transmission, int profile) {
+            return face != RelativeFace.FRONT && transmission == Transmission.FLUID ? SideRoute.FLUID_INPUT_OUTPUT : SideRoute.NONE;
+        }
+    };
+
+    /**
+     * Dual Dimensional Tank: like the single tank, but each face serves chamber A or chamber B. The right side (seen
+     * from the front, where chamber A is) starts with A, the left side with B; the other faces start without a route.
+     */
+    SideRules TANK_DUAL = new SideRules() {
+        @Override
+        public List<SideRoute> allowed(RelativeFace face, Transmission transmission, int profile) {
+            return face != RelativeFace.FRONT && transmission == Transmission.FLUID ? FLUID_DUAL : List.of();
+        }
+
+        @Override
+        public SideRoute defaultRoute(RelativeFace face, Transmission transmission, int profile) {
+            if (transmission != Transmission.FLUID) {
+                return SideRoute.NONE;
+            }
+            return switch (face) {
+                case RIGHT -> SideRoute.FLUID_A_INPUT_OUTPUT;
+                case LEFT -> SideRoute.FLUID_B_INPUT_OUTPUT;
+                default -> SideRoute.NONE;
+            };
         }
     };
 }

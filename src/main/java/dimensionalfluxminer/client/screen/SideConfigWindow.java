@@ -42,7 +42,9 @@ final class SideConfigWindow extends DfmScreen.Window {
         /** Auto Input and Auto Eject of items. */
         ITEMS,
         /** Auto Eject of an output-only fluid (no Auto Input). */
-        FLUID_OUTPUT
+        FLUID_OUTPUT,
+        /** Auto Input and Auto Eject of liquids (Dimensional Tanks). */
+        FLUID
     }
 
     /** One tab's automation and the lines explaining it on this machine. */
@@ -121,7 +123,7 @@ final class SideConfigWindow extends DfmScreen.Window {
             case ITEM -> DfmScreen.TAB_ITEM;
             case ENERGY -> DfmScreen.TAB_ENERGY;
             case REDSTONE -> DfmScreen.TAB_REDSTONE;
-            case EXPERIENCE -> DfmScreen.TAB_FLUID;
+            case EXPERIENCE, FLUID -> DfmScreen.TAB_FLUID;
         };
     }
 
@@ -130,7 +132,7 @@ final class SideConfigWindow extends DfmScreen.Window {
             case ITEM -> DfmScreen.ICON_ITEMS;
             case ENERGY -> DfmScreen.ICON_ENERGY;
             case REDSTONE -> DfmScreen.ICON_REDSTONE_ON;
-            case EXPERIENCE -> DfmScreen.ICON_FLUIDS;
+            case EXPERIENCE, FLUID -> DfmScreen.ICON_FLUIDS;
         };
     }
 
@@ -156,7 +158,9 @@ final class SideConfigWindow extends DfmScreen.Window {
         AutomationTab tabAutomation = automation.get(current);
         boolean ejectable = tabAutomation != null;
         boolean items = ejectable && tabAutomation.automation() == Automation.ITEMS;
-        boolean input = items && d.getBoolean("auto_input");
+        boolean liquids = ejectable && tabAutomation.automation() == Automation.FLUID;
+        boolean cycles = items || liquids;
+        boolean input = items ? d.getBoolean("auto_input") : liquids && d.getBoolean("auto_input_fluid");
         boolean eject = items ? d.getBoolean("auto_eject") : d.getBoolean("auto_eject_fluid");
         String mode = input ? eject ? "both" : "input" : eject ? "eject" : "off";
         screen.innerScreen(g, x + 38, y + 25, 80, 12);
@@ -169,9 +173,12 @@ final class SideConfigWindow extends DfmScreen.Window {
                     () -> List.of(Component.translatable("gui.dimensionalfluxminer.side_config.cant_eject")), 0);
         }
 
-        // Items: OFF -> Auto Input -> Auto Eject -> Input + Eject (right click goes back). Output-only fluid: on / off.
-        int next = items ? AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT : AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID;
-        int previous = items ? AbstractMachineBlockEntity.BUTTON_AUTO_IO_PREVIOUS : AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID;
+        // Items and tank liquids: OFF -> Auto Input -> Auto Eject -> Input + Eject (right click goes back).
+        // Output-only fluid: on / off.
+        int next = items ? AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT
+                : liquids ? AbstractMachineBlockEntity.BUTTON_AUTO_FLUID_NEXT : AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID;
+        int previous = items ? AbstractMachineBlockEntity.BUTTON_AUTO_IO_PREVIOUS
+                : liquids ? AbstractMachineBlockEntity.BUTTON_AUTO_FLUID_PREVIOUS : AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID;
         screen.imageButton(g, x + 136, y + 6, 14, DfmScreen.sprite("button/auto_eject"), ejectable, false, mouseX, mouseY,
                 () -> next, () -> previous, () -> {
                     List<Component> lines = new ArrayList<>();
@@ -182,13 +189,16 @@ final class SideConfigWindow extends DfmScreen.Window {
                     if (items) {
                         lines.add(Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(input)));
                         lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)));
+                    } else if (liquids) {
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.auto_input_fluid", MachineText.onOff(input)));
+                        lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject_fluid", MachineText.onOff(eject)));
                     } else {
                         lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject_fluid", MachineText.onOff(eject)));
                     }
                     for (Component help : tabAutomation.help()) {
                         lines.add(help.copy().withStyle(ChatFormatting.GRAY));
                     }
-                    lines.add(Component.translatable(items ? "gui.dimensionalfluxminer.side_config.auto.cycle"
+                    lines.add(Component.translatable(cycles ? "gui.dimensionalfluxminer.side_config.auto.cycle"
                             : "gui.dimensionalfluxminer.side_config.auto.toggle").withStyle(ChatFormatting.DARK_GRAY));
                     return lines;
                 });

@@ -308,6 +308,21 @@ public final class TankGameTests {
         });
     }
 
+    /** Tanks, machines and Miner parts hold water, so under water it surrounds them instead of stopping at their edge. */
+    @GameTest(template = "empty_small")
+    public static void modBlocksHoldWater(GameTestHelper helper) {
+        Block[] blocks = {DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.MECHANICAL_CRUSHER.get(),
+                DfmBlocks.ELECTRIC_FURNACE.get(), DfmBlocks.MINER_TERMINAL.get(), DfmBlocks.STEEL_CHASSIS.get(), DfmBlocks.DIMENSIONAL_PORT.get(),
+                DfmBlocks.REINFORCED_STRUCTURAL_GLASS.get(), DfmBlocks.VENTILATION_UNIT.get(), DfmBlocks.QUANTUM_CORE.get()};
+        for (int i = 0; i < blocks.length; i++) {
+            BlockPos pos = new BlockPos(i % 4, 1, i / 4);
+            helper.assertFalse(blocks[i].defaultBlockState().getValue(BlockStateProperties.WATERLOGGED), blocks[i] + " starts dry");
+            helper.setBlock(pos, blocks[i].defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, true));
+            helper.assertTrue(helper.getLevel().getFluidState(helper.absolutePos(pos)).is(Fluids.WATER), blocks[i] + " holds water");
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = "empty_small")
     public static void outputOnlyFaceRefusesInput(GameTestHelper helper) {
         DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, code(DyeColor.WHITE, DyeColor.BLACK, DyeColor.WHITE));

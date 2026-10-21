@@ -1,17 +1,9 @@
 # Changelog
 
-## 0.2.4 — unreleased (since 0.2.3)
+## 0.2.5 (since 0.2.4)
 
 ### ✨ Added
 
-- 🔌 **Smart faces on the Crusher and the Electric Furnace**, as on the Miner's ports: any cable or pipe that keeps
-  pulling items from a face gets an **Item Output** there, and one that keeps pushing items in gets an **Item Input**.
-  What the face already did is kept (an input face that a cable pulls from becomes input/output). The face is locked
-  in the Side Configuration while the cable stays active ("Set by the cable pulling or pushing here") and is freed a few
-  seconds after it stops; the route stays. A Logistics Networks node still comes first, and the Crusher's top stays a
-  fixed input. Every configurable face now offers an item handler even with no route, so cables find it; it gives and
-  takes nothing until the face gets its route. The cable timing is now shared code with the Miner, which works as
-  before.
 - 🛢️ **Dimensional Tanks** (*Tanque Dimensional* and *Tanque Dimensional Duplo*), with no energy.
   - Recipes: the tank takes 4 Dimensional Steel Chassis, 2 Dimensional Ports, 2 Reinforced Eyes of Ender and 1
     Reinforced Structural Glass; the dual tank 2 Dimensional Tanks, 4 Reinforced Eyes of Ender, 2 Pure Steel and 1
@@ -40,6 +32,28 @@
     Glowing liquids such as lava light the area from inside the tank (the brightest chamber counts).
   - New guide chapter **Dimensional Tanks** (after "Automation and logistics"): recipes, the code, personal codes,
     buckets, pipes and how to read the block.
+- 🧱 **Connected textures** on the loose Steel Chassis, Reinforced Structural Glass and the sides of the Ventilation
+  Unit: blocks of the same kind side by side lose the frame where they touch and read as one surface, framed only
+  around the outside. Glass blocks side by side also hide the faces between them.
+
+### 🔄 Changed
+
+- 🌊 **Under water, the water now surrounds the mod's blocks** instead of stopping at their edge like a wall: the
+  Crusher, the Electric Furnace, the Dimensional Tanks and every Miner part (the formed Miner too) can hold water, like
+  a slab. Blocks placed in water keep it; worlds from before load with dry blocks, as they were.
+
+## 0.2.4 (since 0.2.3)
+
+### ✨ Added
+
+- 🔌 **Smart faces on the Crusher and the Electric Furnace**, as on the Miner's ports: any cable or pipe that keeps
+  pulling items from a face gets an **Item Output** there, and one that keeps pushing items in gets an **Item Input**.
+  What the face already did is kept (an input face that a cable pulls from becomes input/output). The face is locked
+  in the Side Configuration while the cable stays active ("Set by the cable pulling or pushing here") and is freed a few
+  seconds after it stops; the route stays. A Logistics Networks node still comes first, and the Crusher's top stays a
+  fixed input. Every configurable face now offers an item handler even with no route, so cables find it; it gives and
+  takes nothing until the face gets its route. The cable timing is now shared code with the Miner, which works as
+  before.
 
 ### 🔄 Changed
 

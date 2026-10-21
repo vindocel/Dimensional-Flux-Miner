@@ -114,6 +114,38 @@ public final class DfmClient {
         }
     }
 
+    /** Connected textures on the loose Steel Chassis, glass and ventilation sides (every block state of each). */
+    @SubscribeEvent
+    static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+        ResourceLocation chassis = DimensionalFluxMiner.id("block/parts/steel_chassis");
+        ResourceLocation glass = DimensionalFluxMiner.id("block/dimensional_flux_miner/structural_glass_containment");
+        ResourceLocation vent = DimensionalFluxMiner.id("block/parts/ventilation_side");
+        connect(event, DfmBlocks.STEEL_CHASSIS.get(), all(chassis), true);
+        connect(event, DfmBlocks.REINFORCED_STRUCTURAL_GLASS.get(), all(glass), true);
+        // Vents side by side make one long grille, as on the back of the Miner; stacked rows keep their plates.
+        connect(event, DfmBlocks.VENTILATION_UNIT.get(), java.util.Map.of(net.minecraft.core.Direction.NORTH, vent,
+                net.minecraft.core.Direction.SOUTH, vent, net.minecraft.core.Direction.EAST, vent, net.minecraft.core.Direction.WEST, vent), false);
+    }
+
+    private static java.util.Map<net.minecraft.core.Direction, ResourceLocation> all(ResourceLocation texture) {
+        java.util.Map<net.minecraft.core.Direction, ResourceLocation> map = new java.util.EnumMap<>(net.minecraft.core.Direction.class);
+        for (net.minecraft.core.Direction face : net.minecraft.core.Direction.values()) {
+            map.put(face, texture);
+        }
+        return map;
+    }
+
+    private static void connect(ModelEvent.ModifyBakingResult event, net.minecraft.world.level.block.Block block,
+                                java.util.Map<net.minecraft.core.Direction, ResourceLocation> textures, boolean vertical) {
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            var key = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(state);
+            var model = event.getModels().get(key);
+            if (model != null) {
+                event.getModels().put(key, new dimensionalfluxminer.client.render.ConnectedTextureModel(model, block, textures, vertical));
+            }
+        }
+    }
+
     @SubscribeEvent
     static void onClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new IClientItemExtensions() {

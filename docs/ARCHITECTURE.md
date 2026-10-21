@@ -23,12 +23,12 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `miner.survey` | The Basic core's survey of drainable columns |
 | `miner.corruption` | Dimensional Death: terrain and water conversion, protection, effects, spawns |
 | `recipe` | Recipe types (`crushing`, `ore_crushing`, `alloying`, `tag_smelting`, `tag_blasting`) and the reader of other mods' alloy recipes |
-| `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) |
+| `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) and `Waterlogging`, shared by every waterloggable machine, tank and Miner part |
 | `advancement` | Custom advancement trigger |
 | `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
 | `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`) |
 | `mixin` | Corrupted Water on entities and particles, sunlight on corrupted terrain |
-| `client` | Renderers, screens, the guide, sounds, particles. Common code reaches it only through `machine.ClientHooks`; the EMI, JEI and Jade plugins are client side and may use it |
+| `client` | Renderers, screens, the guide, sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI and Jade plugins are client side and may use it |
 | `gametest` | In-world GameTests (see [Tests](#tests)) |
 
 `src/test/java` holds the JUnit tests. They see no Minecraft class, so only pure math is tested there.

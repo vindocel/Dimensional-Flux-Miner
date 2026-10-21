@@ -35,7 +35,8 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
         super(properties);
         registerDefaultState(stateDefinition.any()
                 .setValue(DfmStateProperties.FORMED, false)
-                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .setValue(BlockStateProperties.WATERLOGGED, false));
     }
 
     @Override
@@ -51,7 +52,8 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite());
+        return dimensionalfluxminer.content.Waterlogging.placed(
+                defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite()), context);
     }
 
     @Override

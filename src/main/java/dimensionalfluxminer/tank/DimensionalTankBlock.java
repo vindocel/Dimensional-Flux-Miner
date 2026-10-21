@@ -33,13 +33,26 @@ import net.neoforged.neoforge.fluids.FluidUtil;
  * side of the front, or the right face, is A; the left is B). The personal item makes the code personal, sneaking with
  * an empty hand makes it public again; anything else opens the screen.
  */
-public class DimensionalTankBlock extends BaseEntityBlock {
+public class DimensionalTankBlock extends BaseEntityBlock implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
     private final TankKind kind;
 
     public DimensionalTankBlock(TankKind kind, Properties properties) {
         super(properties);
         this.kind = kind;
-        registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .setValue(BlockStateProperties.WATERLOGGED, false));
+    }
+
+    @Override
+    protected net.minecraft.world.level.material.FluidState getFluidState(BlockState state) {
+        return dimensionalfluxminer.content.Waterlogging.fluid(state);
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, net.minecraft.world.level.LevelAccessor level,
+                                     BlockPos pos, BlockPos neighborPos) {
+        dimensionalfluxminer.content.Waterlogging.tick(state, level, pos);
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
     public TankKind kind() {
@@ -56,12 +69,13 @@ public class DimensionalTankBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.HORIZONTAL_FACING);
+        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.WATERLOGGED);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite());
+        return dimensionalfluxminer.content.Waterlogging.placed(
+                defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite()), context);
     }
 
     @Override

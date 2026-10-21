@@ -15,16 +15,12 @@ Two support machines get you there: the **Mechanical Crusher** and the **Electri
 
 ---
 
-## 🆕 New in 0.2.2 — the first stable release
+## 🆕 New in 0.2.5
 
-- 🚀 **Ad Astra planets**: the Basic core never drains planets or orbits; there the Stabilized core takes each planet's own stone, sands and soils as matter.
-- 👻 **Assembly preview with real blocks**: hold the Miner Terminal to see the whole machine as see-through blocks; once placed, the missing parts stay visible until the machine forms.
-- 🟫 **More matter in the Overworld**: grass blocks (0.2 DM), sand and red sand (0.3 DM) and every terracotta (0.5 DM).
-- 🔗 **Logistics Networks on the Electric Furnace**: node sides feed all three lanes or one lane each in the alloy modes.
-- 📖 **A more complete guide**: new chapters *Automation and logistics* and *Why did my machine stop?*, plus pages on cores, the Drain, the filter, Liquid Experience and claim protections.
-- ⚙️ The Dimensional Crusher is now the **Mechanical Crusher**, and the energy faces of every Side Configuration are light blue, like the energy bar.
-
-> ⚠️ **Updating an older world?** Crushers from older versions disappear (craft them again), and Miners built with the old middle layer come apart when the world loads: their items drop and the parts are ready to be rebuilt (the four middle corners are now Steel Chassis).
+- 🛢️ **Dimensional Tanks**: liquid tanks paired by a three-color code. Every tank with the same code, in any dimension, holds the same liquid; the dual tank keeps two liquids apart. Personal codes with a diamond, buckets, pipes with Auto Input / Auto Eject, and a guide chapter of their own.
+- 🧱 **Connected textures**: Steel Chassis, Reinforced Structural Glass and Ventilation Units side by side read as one surface; a row of vents becomes one long grille.
+- 🌊 **Better under water**: the water now surrounds the machines, the tanks and the Miner instead of stopping at their edge like a wall.
+- 🔌 **Smart faces** (0.2.4): a cable that pulls from or pushes into a Crusher or Electric Furnace face sets that face's role by itself.
 
 ---
 

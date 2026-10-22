@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.7 (since 0.2.6)
+
+### 🔄 Changed
+
+- 🌡️ **Redline is a real challenge now**: setting speed 10 is no longer enough. A machine at speed 10 must run 10
+  seconds in a row at full production, with all the energy (and, on the Miner, the Dimensional Matter) it needs and
+  without stopping; a shortage or a stop starts the count again.
+
 ## 0.2.6 (since 0.2.5)
 
 ### ✨ Added

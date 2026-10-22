@@ -11,7 +11,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 |---|---|
 | (root) | `DimensionalFluxMiner` (mod entry point, event wiring) and `DfmConfig` (server config, parsed corruption rules) |
 | `registry` | Every deferred register: blocks, items, data components, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
-| `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping, cable detection (`CableActivity`, also used by the Miner ports, and `CablePortItemHandler`) |
+| `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping, cable detection (`CableActivity`, also used by the Miner ports, and `CablePortItemHandler`), advancement streaks (`ThroughputStreak`, `FullSpeedStreak`) |
 | `machine.math` | Pure math, covered by JUnit: `RateScale` (Rate 1–10 curve and FE/t), `MinerProductionCurve`, `DynamicEnergyBuffer` (buffer and fractional FE debt), `WorkAccumulator` |
 | `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone / experience / fluid), per-machine rules (the Dimensional Tanks too), `NodeInputLanes` (lanes of the network node item inputs on the Electric Furnace Alloy profile) |
 | `menu` | `MachineMenu` and the menu sync used by every screen |

@@ -106,6 +106,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     /** Whether the last logical cycle advanced work (drives ACTIVE). */
     protected boolean workedThisTick;
     private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
+    private final FullSpeedStreak fullSpeed = new FullSpeedStreak(FullSpeedStreak.REQUIRED_TICKS);
     /** The machine stays ACTIVE for half a second after the work pauses, so short gaps do not flicker it. */
     private static final int ACTIVE_LINGER_TICKS = 10;
     private int activeLinger;
@@ -248,6 +249,10 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         }
         if (normalCall && gameTime % 10 == 0) {
             scanAutomaticSides();
+        }
+        // "Redline": speed 10 at full production (status "running" = all the FE it asked for) for ten seconds in a row.
+        if (normalCall && fullSpeed.record(gameTime, rate == RateScale.MAX_LEVEL && workedThisTick && "running".equals(status))) {
+            reportNearby(DfmAdvancements.MAX_SPEED);
         }
         updateMachineState();
     }
@@ -576,13 +581,6 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
 
     // ---------------------------------------------------------------- menu actions
 
-    /** Applies a validated GUI button press on the server. */
-    private void reportMaxSpeed(Player player) {
-        if (rate == RateScale.MAX_LEVEL && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-            DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
-        }
-    }
-
     /** Players near the machine see its advancement events (it has no owner), at most once every few seconds. */
     protected void reportNearby(String event) {
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && advancements.ready(event, serverLevel.getGameTime())) {
@@ -590,6 +588,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         }
     }
 
+    /** Applies a validated GUI button press on the server. */
     public boolean handleButton(Player player, int id) {
         if (id == BUTTON_RATE_DOWN || id == BUTTON_RATE_UP) {
             int next = RateScale.clampLevel(rate + (id == BUTTON_RATE_UP ? 1 : -1));
@@ -598,13 +597,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             }
             rate = next;
             setChanged();
-            reportMaxSpeed(player);
             return true;
         }
         if (id == BUTTON_RATE_CYCLE || id == BUTTON_RATE_CYCLE_BACK) {
             rate = RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE);
             setChanged();
-            reportMaxSpeed(player);
             return true;
         }
         if (id == BUTTON_REDSTONE_NEXT || id == BUTTON_REDSTONE_PREVIOUS) {

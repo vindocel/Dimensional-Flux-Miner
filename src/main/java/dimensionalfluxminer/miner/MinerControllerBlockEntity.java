@@ -4,6 +4,7 @@ import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmTags;
 import dimensionalfluxminer.machine.CableActivity;
+import dimensionalfluxminer.machine.FullSpeedStreak;
 import dimensionalfluxminer.machine.LogicalTickCounter;
 import dimensionalfluxminer.machine.ThroughputStreak;
 import dimensionalfluxminer.machine.NeighborTransfer;
@@ -46,7 +47,6 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
@@ -121,6 +121,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public static final long TRASH_TO_TREASURE_COBBLESTONE = 10_000;
     private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
     private final ThroughputStreak throughput = new ThroughputStreak(THOUSAND_PER_SECOND, THOUSAND_PER_SECOND_SECONDS);
+    /** "Redline": ticks in a row at speed 10 and full production; {@link #fullSpeedCycle} is the last normal cycle's result. */
+    private final FullSpeedStreak fullSpeed = new FullSpeedStreak(FullSpeedStreak.REQUIRED_TICKS);
+    private boolean fullSpeedCycle;
 
     /** "Thousand per second": at least this many rolls per second... */
     public static final double THOUSAND_PER_SECOND = 1000.0;
@@ -937,6 +940,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (status == MinerStatus.WAITING_FOR_ENERGY && workedRecently()) {
             status = MinerStatus.RUNNING;
         }
+        if (level != null && fullSpeed.record(level.getGameTime(), rate == RateScale.MAX_LEVEL && fullSpeedCycle)) {
+            report(DfmAdvancements.MAX_SPEED);
+        }
         updateVisual();
     }
 
@@ -960,6 +966,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     private void cycle(boolean realTick) {
         processing = false;
+        if (realTick) {
+            fullSpeedCycle = false;
+        }
         if (!formed || !(level instanceof ServerLevel serverLevel)) {
             status = MinerStatus.MULTIBLOCK_INVALID;
             return;
@@ -1059,6 +1068,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             animationStartTick = serverLevel.getGameTime();
         }
         status = stop != null && executed == 0 ? stop : MinerStatus.RUNNING;
+        // Full production: all the FE of the level, no matter shortage and nothing lost to a full output.
+        if (realTick) {
+            fullSpeedCycle = available >= levelPower && stop == null && !missed && plan.workDone() > 0;
+        }
         if (attempts.producedOre()) {
             report(DfmAdvancements.FIRST_ORE);
         }
@@ -1283,9 +1296,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             }
             case BUTTON_RATE_CYCLE, BUTTON_RATE_CYCLE_BACK -> {
                 setRate(RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE));
-                if (rate == RateScale.MAX_LEVEL && player instanceof ServerPlayer serverPlayer) {
-                    DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
-                }
                 return true;
             }
             case BUTTON_AUTO_INPUT -> {

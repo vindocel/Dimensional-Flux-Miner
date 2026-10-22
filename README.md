@@ -256,7 +256,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 | 🧱 | Piece by Piece | form the Miner |
 | 💎 | First Extraction | receive the first ore from the Miner |
 | 🧲 | Ore Surgeon | discard an ore with the filter |
-| 🌡️ | Redline *(challenge)* | set any machine to speed 10 |
+| 🌡️ | Redline *(challenge)* | run any machine at speed 10 and full production for 10 seconds in a row |
 | ⏱️ | A Thousand per Second *(challenge)* | keep 1 000+ operations per second for 5 seconds |
 | ✨ | Absolute Efficiency *(challenge)* | craft the Efficiency Upgrade |
 | 🧹 | Neat Freak | make DM by Matter Injection |

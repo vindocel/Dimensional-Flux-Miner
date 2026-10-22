@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.2.6 (since 0.2.5)
+
+### ✨ Added
+
+- 🔀 **Polymorph support** (optional, the mod still works without it): when an item put in the **Mechanical
+  Crusher** or the **Electric Furnace** has more than one recipe with different results, a button near the outputs
+  lists them and you pick which one the machine makes. The pick is remembered for that item on that machine (saved
+  with the world, also used for items brought by pipes and automation) until you pick another.
+  - Crusher: every `crushing` and `ore_crushing` recipe that accepts the item is offered; items handled only by tags
+    (ores, ingots to dusts) have nothing to choose. Without a pick the result is the same as before.
+  - Electric Furnace: blast furnace and furnace recipes are offered together, and the usual pair that makes the same
+    result counts once, so plain ores show no button. The pick applies to every lane holding the item; the button
+    shows the first lane that has something to choose. Alloys are not covered.
+  - New compatibility box "Polymorph" in the guide's Automation chapter.
+- 🌙 **Dark screens**: a new **Settings** tab on the left of the Crusher, Electric Furnace, Miner and Dimensional
+  Tank screens picks the screen color, **Light** (default) or **Dark**, changing on the spot. Only the gray parts
+  darken (panel, slots, buttons, the machines' artwork); items, liquids and the screens keep their colors. All the
+  screen icons were redrawn by hand in one color that reads on both looks, and the Polymorph recipe button follows
+  the screen's color too.
+  - The window close button has its own icon now.
+  - Side tabs stacked on the same edge form one metal block with their buttons inside, instead of one block per
+    tab.
+  - The panel of every machine screen and window is flat now, without Minecraft's white and black bevel, and joined
+    to the metal frame by a single line.
+  - With **Dark Mode Everywhere** installed, it no longer darkens or recolors this mod's screens: they already have
+    their own dark look.
+  - **Apply to all machines** (on by default, one switch shared by every machine): the color you pick is used
+    everywhere. Turned off, each machine keeps its own color, and the machine you turn it off on keeps the color it
+    shows.
+  - **Machine volume** in the same Settings window: 0 to 100 % in steps of 10 (100 % by default, 0 mutes), for each
+    machine on its own; it changes the running sound of the Crusher, Electric Furnace and Miner. The silent
+    Dimensional Tanks have no volume.
+  - **Icon color**: the icons of the screens can be **Blue** (default) or **Purple**, picked in the same window. With
+    Purple the energy bar is purple too, with the same shimmer, on the machine screens and in Jade, and the text of the
+    terminal screens turns light purple.
+  - The apply-to-all switch is a small button with its own icon beside the colors; it applies the screen color and
+    the icon color (never the volume).
+  - It is a choice of each player, saved on their computer (`config/dimensionalfluxminer-themes.json`), never on
+    the server or in the world.
+
+### 🔄 Changed
+
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
+- 💡 **Glowing panels**: the animated screen on the front of the Crusher and the Electric Furnace glows, like a
+  LED panel, while the machine has energy, idle or working (only the screen, not the whole front, and no light around
+  it); without energy it stays dark.
+- 🔁 **Auto Input and Auto Eject are two buttons now**: in the Side Configuration (Crusher, Electric Furnace, Miner
+  and Dimensional Tanks) the single button that cycled off, input, eject and both became two small switches at the
+  top of the window, **Auto-Input** and **Auto-Eject**, each turned on and off by itself and lit while on. Liquid
+  Experience, which only leaves the machine, keeps only Auto-Eject. Saved settings are kept.
+
+### 🐛 Fixed
+
+- 🧪 **Cognition**: the Experience Obelisk now takes the Electric Furnace's Liquid Experience out of the box (same
+  20 mB per experience point); nothing to configure.
+- 🚫 Hostile mobs could spawn on top of the Crusher, the Electric Furnace, the Dimensional Tanks and the Miner's parts;
+  no mob spawns on any of them now.
+
 ## 0.2.5 (since 0.2.4)
 
 ### ✨ Added
@@ -38,6 +97,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🌊 **Under water, the water now surrounds the mod's blocks** instead of stopping at their edge like a wall: the
   Crusher, the Electric Furnace, the Dimensional Tanks and every Miner part (the formed Miner too) can hold water, like
   a slab. Blocks placed in water keep it; worlds from before load with dry blocks, as they were.
@@ -57,6 +118,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🌐 The mod's **Website** button now opens the [showcase site](https://vindocel.github.io/Showcase-DFM/).
 
 ## 0.2.3 (since 0.2.2)
@@ -69,6 +132,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🔥 **The Alloy Smelter is now the Electric Furnace** (*Fornalha Elétrica*): an electric furnace that also has the
   alloy modes. ⚠️ **Breaks older worlds:** the ID changed to `dimensionalfluxminer:electric_furnace` and the old
   `alloy_smelter` is gone, so smelters placed or kept in older worlds disappear (with their items); craft them again.
@@ -127,6 +192,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🧱 **Miner middle layer.** The four corners of the middle layer are now Steel Chassis instead of Ventilation Units
   (6 Steel Chassis and 5 Ventilation Units in total). ⚠️ Miners built with the previous layout come apart when the
   world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
@@ -207,6 +274,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🧱 **New Miner assembly.** The bottom layer has 7 Dimensional Ports around a Steel Chassis (and the terminal); the
   middle layer has glass on both sides and a Steel Chassis at the back. ⚠️ Miners built with the old layout come apart
   when the world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
@@ -253,6 +322,8 @@
 
 ### 🐛 Fixed
 
+- 🧪 **Cognition**: the Experience Obelisk now takes the Electric Furnace's Liquid Experience out of the box (same
+  20 mB per experience point); nothing to configure.
 - Alloy Smelter speed: speed 10 is **64 operations per lane per tick** (192 for the three furnace lanes, 64 standard
   alloys), no longer 192 per lane. Speed 10 uses 3 200 000 FE/t smelting with three lanes and 1 920 000 FE/t on alloys.
 - Alloy Smelter slots hold at most **64 items** each, inputs and outputs alike, like every other machine slot.
@@ -306,6 +377,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - ⚡ **New energy costs.** Miner: 2 500 FE/t at speed 1 up to 5 000 000 FE/t at speed 10; speeds 1–5 follow the
   geometric scale and speeds 6–9 cost double, so running fast is paid for (production per speed is unchanged).
   Crusher: 1 500 → 1 000 000 FE/t. Alloy Smelter: 2 500 → 2 000 000 FE/t. Existing worlds keep the values in their
@@ -325,6 +398,8 @@
 
 ### 🐛 Fixed
 
+- 🧪 **Cognition**: the Experience Obelisk now takes the Electric Furnace's Liquid Experience out of the box (same
+  20 mB per experience point); nothing to configure.
 - The Matter Input no longer takes ores of another dimension: an ore only becomes DM in a dimension where that exact ore
   generates (Overworld diamond ore is refused in the Nether), through the port and through the automatic input alike.
 - A newly built Miner no longer lights up and plays its power-on sound before it receives any energy.

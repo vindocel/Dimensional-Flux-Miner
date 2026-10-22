@@ -72,6 +72,8 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     /** Liquid automation of the Dimensional Tanks: OFF -> Auto Input -> Auto Eject -> Input + Eject (and back). */
     public static final int BUTTON_AUTO_FLUID_NEXT = 2303;
     public static final int BUTTON_AUTO_FLUID_PREVIOUS = 2304;
+    /** Auto Input of a liquid that enters and leaves (tanks): on / off on its own. */
+    public static final int BUTTON_AUTO_INPUT_FLUID = 2305;
 
     protected final DynamicEnergyBuffer energyBuffer = new DynamicEnergyBuffer(0);
     protected final MachineEnergyStorage energy = new MachineEnergyStorage(energyBuffer, this::setChanged);

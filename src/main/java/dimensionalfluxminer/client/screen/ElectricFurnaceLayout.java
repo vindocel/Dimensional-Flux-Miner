@@ -63,7 +63,7 @@ public final class ElectricFurnaceLayout {
     }
 
     public static void drawElement(GuiGraphics g, int x, int y, Variant variant) {
-        g.blit(variant.texture, x, y, 0, 0, WIDTH, HEIGHT, WIDTH, HEIGHT);
+        GuiTheme.chrome(() -> g.blit(variant.texture, x, y, 0, 0, WIDTH, HEIGHT, WIDTH, HEIGHT));
     }
 
     /**

@@ -391,6 +391,16 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
             setChanged();
             return true;
         }
+        if (id == AbstractMachineBlockEntity.BUTTON_AUTO_INPUT_FLUID) {
+            autoInputFluid = !autoInputFluid;
+            setChanged();
+            return true;
+        }
+        if (id == AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID) {
+            autoEjectFluid = !autoEjectFluid;
+            setChanged();
+            return true;
+        }
         int sideBase = AbstractMachineBlockEntity.BUTTON_SIDE_BASE;
         if (id >= sideBase && id < sideBase + RelativeFace.VALUES.length * 16) {
             int local = id - sideBase;

@@ -50,6 +50,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 | ⚡ **Speed 1–10** | No speed upgrades to craft: every machine has a speed selector, limited only by your power generation. One machine from early game to end game. |
 | ☠️ **Dimensional Death** | The price of the Basic core's drain: the land, the water and the life around it rot forever. |
 | 📖 **Dimensional Flux Guide** | An animated book with the whole mod explained, in game. |
+| 🌙 **Light or dark screens** | A Settings tab on every machine screen (left side) switches it between light and dark, for one machine or all of them; only your own game changes. |
 
 | | |
 |---|---|
@@ -273,6 +274,8 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 - 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face. A cable that keeps pulling items from a face (or pushing into it) sets that face's item route by itself, on the Miner's ports, the Crusher and the Electric Furnace.
 - 📘 **EMI / JEI** (optional): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
+- 🧪 **Cognition**: the Experience Obelisk takes the Electric Furnace's Liquid Experience directly.
+- 🔀 **Polymorph** (optional): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
 - 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Electric Furnace work through the common tags.
 

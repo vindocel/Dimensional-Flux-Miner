@@ -3,6 +3,7 @@ package dimensionalfluxminer.gametest;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
+import dimensionalfluxminer.crusher.CrusherProcessing;
 import dimensionalfluxminer.crusher.MechanicalCrusherBlockEntity;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.RedstoneMode;
@@ -42,6 +43,45 @@ public final class CrusherGameTests {
         be.energyBuffer().setTarget(be.effectivePowerLimit() * 10);
         be.energyBuffer().setStored(be.effectivePowerLimit() * 10);
         return be;
+    }
+
+    /**
+     * Recipe choice: for every explicit recipe input, the first option is the default result, choosing it changes
+     * nothing, an unknown recipe falls back to the default, and options never repeat a result.
+     */
+    @GameTest(template = "empty_small")
+    public static void recipeOptionsStartWithTheDefault(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var manager = level.getRecipeManager();
+        java.util.List<ItemStack> inputs = new java.util.ArrayList<>();
+        manager.getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.CRUSHING.get())
+                .forEach(h -> inputs.addAll(java.util.List.of(h.value().ingredient().getItems())));
+        manager.getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.ORE_CRUSHING.get())
+                .forEach(h -> inputs.addAll(java.util.List.of(h.value().ingredient().getItems())));
+        helper.assertFalse(inputs.isEmpty(), "the mod ships explicit crushing recipes");
+        for (ItemStack input : inputs) {
+            for (boolean upgrade : new boolean[] {false, true}) {
+                var options = CrusherProcessing.options(level, input, upgrade);
+                var resolved = CrusherProcessing.resolve(level, input, upgrade);
+                if (options.isEmpty()) {
+                    continue;
+                }
+                String name = input.getItem() + (upgrade ? " (upgrade)" : "");
+                helper.assertTrue(resolved.isPresent() && ItemStack.matches(options.getFirst().resolution().result(), resolved.get().result()),
+                        "first option is the default for " + name);
+                var chosen = CrusherProcessing.resolve(level, input, upgrade, options.getFirst().id());
+                helper.assertTrue(chosen.isPresent() && ItemStack.matches(chosen.get().result(), resolved.get().result()), "choosing the default keeps it for " + name);
+                var unknown = CrusherProcessing.resolve(level, input, upgrade, DimensionalFluxMiner.id("not_a_recipe"));
+                helper.assertTrue(unknown.isPresent() && ItemStack.matches(unknown.get().result(), resolved.get().result()), "unknown choice falls back for " + name);
+                for (int i = 0; i < options.size(); i++) {
+                    for (int j = i + 1; j < options.size(); j++) {
+                        helper.assertFalse(ItemStack.matches(options.get(i).resolution().result(), options.get(j).resolution().result()),
+                                "repeated result for " + name);
+                    }
+                }
+            }
+        }
+        helper.succeed();
     }
 
     @GameTest(template = "empty_small")

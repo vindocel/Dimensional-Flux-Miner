@@ -1800,7 +1800,7 @@
         7,
         0.125
       ],
-      "shade": true,
+      "shade": false,
       "faces": {
         "north": {
           "uv": [
@@ -1809,7 +1809,12 @@
             16,
             6.73684
           ],
-          "texture": "#terminal_idle"
+          "texture": "#terminal_idle",
+          "neoforge_data": {
+            "block_light": 15,
+            "sky_light": 15,
+            "ambient_occlusion": false
+          }
         }
       }
     },

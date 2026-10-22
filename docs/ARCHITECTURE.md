@@ -26,9 +26,21 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) and `Waterlogging`, shared by every waterloggable machine, tank and Miner part |
 | `advancement` | Custom advancement trigger |
 | `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
-| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`) |
-| `mixin` | Corrupted Water on entities and particles, sunlight on corrupted terrain |
+| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded) |
+| `mixin` | Corrupted Water on entities and particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
 | `client` | Renderers, screens, the guide, sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI and Jade plugins are client side and may use it |
+
+**Light / dark screens** (`client/screen`): `GuiTheme` holds the look of the screen being drawn. Gray parts are drawn
+inside `GuiTheme.chrome` (panel background, slots, button backgrounds, machine artwork, energy frame); in the dark
+look their textures go through the `dark_gui` core shader (gray pixels keep 32% of their brightness, colored pixels
+keep their color), and grays drawn with `fill` use `GuiTheme.gray`. Items, liquids and the navy screens are never
+drawn inside `chrome`. Icons are one image each (`icon/<name>`, a color that reads on both looks); `GuiIcon`
+draws them at their own size, centered. Label colors come from
+`GuiTheme.title/heading/subheading`. Inside `chrome` the mod's own shader is always used (Darkness 1.0 in the light
+look), and `compat.DarkModeCompat` puts the mod's classes on Dark Mode Everywhere's exception list, so that mod never
+darkens these screens twice. The Polymorph button is drawn through `GuiTheme.drawOnMachineScreen`. The choice is the player's
+own: `GuiThemes` keeps it in `config/dimensionalfluxminer-themes.json` (apply-to-all switch, its color, one color per
+machine by world, dimension and position); `ThemeWindow` is the Settings tab's window.
 | `gametest` | In-world GameTests (see [Tests](#tests)) |
 
 `src/test/java` holds the JUnit tests. They see no Minecraft class, so only pure math is tested there.
@@ -54,12 +66,19 @@ what the face already did is kept), and locks those faces in the Side Configurat
 |---|---|
 | `ElectricFurnaceBlockEntity` | Slots, modes, lanes, the furnace and alloy processing of each cycle, XP, persistence |
 | `ElectricFurnaceEnergy` | Energy per profile: furnace FE per item, alloy FE per work unit, work units of a recipe, FE/t of a standard recipe |
-| `ElectricFurnaceRecipes` | Recipe caches: furnace recipe per item (cleared when the `RecipeManager` changes), last alloy, alloy ingredient set |
+| `ElectricFurnaceRecipes` | Recipe caches: furnace recipe per item (cleared when the `RecipeManager` changes or a recipe is chosen), last alloy, alloy ingredient set; `options` lists the blast furnace + furnace recipes of an item, same results merged |
 | `ElectricFurnaceOutputPlanner` | Which of the three outputs a lane or an alloy writes to, and how much room is left |
 | `ElectricFurnaceMode`, `AutoSplit`, `BulkBonus`, `StoredExperience`, `ExperienceFluidHandler` | Mode rules, even spreading, raw-ore bonus, fixed-point XP and its fluid view |
 
 **Mechanical Crusher** (`crusher`): `MechanicalCrusherBlockEntity` runs the cycle and `CrusherProcessing` finds the
 products (explicit recipes first, then the common tags).
+
+**Recipe choice** (`recipe.RecipeChoices`): both machines are a `RecipeChoices.Host`. They keep the recipe chosen per
+input item (NBT `recipe_choices`, written only when something was chosen) and apply it only while a recipe-selection
+integration is installed (`RecipeChoices.enable()`); a version number tells their recipe caches to forget. `recipeOffer`
+says what can be chosen now (Crusher: the input's `crushing` / `ore_crushing` recipes; Electric Furnace: the first lane
+with more than one furnace result). `compat.polymorph.MachineRecipeData` shows that offer through Polymorph and stores
+the pick back in the machine.
 
 ### Dimensional Tanks
 

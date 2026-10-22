@@ -15,12 +15,14 @@ Two support machines get you there: the **Mechanical Crusher** and the **Electri
 
 ---
 
-## 🆕 New in 0.2.5
+## 🆕 New in 0.2.6
 
-- 🛢️ **Dimensional Tanks**: liquid tanks paired by a three-color code. Every tank with the same code, in any dimension, holds the same liquid; the dual tank keeps two liquids apart. Personal codes with a diamond, buckets, pipes with Auto Input / Auto Eject, and a guide chapter of their own.
-- 🧱 **Connected textures**: Steel Chassis, Reinforced Structural Glass and Ventilation Units side by side read as one surface; a row of vents becomes one long grille.
-- 🌊 **Better under water**: the water now surrounds the machines, the tanks and the Miner instead of stopping at their edge like a wall.
-- 🔌 **Smart faces** (0.2.4): a cable that pulls from or pushes into a Crusher or Electric Furnace face sets that face's role by itself.
+- 🌙 **Light or dark screens**: a Settings tab on every machine picks a light or dark screen and blue or purple icons (the energy bar and the terminal text follow), for one machine or all of them, plus each machine's sound volume.
+- 🎨 **Redrawn screens**: new hand-drawn icons, a flat panel set into the metal frame, side tabs joined in one block and separate Auto-Input / Auto-Eject buttons.
+- 🔀 **Polymorph**: pick the result when an item has more than one Crusher or Electric Furnace recipe.
+- 💡 **Glowing panels**: the animated screen of the Crusher and the Electric Furnace glows while the machine has energy.
+- 🧪 **Cognition**: the Experience Obelisk takes Liquid Experience out of the box.
+- 🚫 No mob spawns on the machines, the tanks or the Miner anymore.
 
 ---
 
@@ -193,6 +195,9 @@ Forge your first **Pure Steel** and it is yours. Use it and the book **opens in 
 - 📘 **EMI** and **JEI**: recipe categories for every machine; click a machine's chamber to see its recipes, R / U work on items inside machines.
 - 🔍 **Jade**: machine energy bars, items, stored XP and the liquids in the tanks.
 - 🔗 **Logistics Networks**: nodes set the Miner's ports and the machines' sides by themselves.
+- 🔀 **Polymorph**: pick the result when an item has more than one Crusher or Electric Furnace recipe.
+- 🧪 **Cognition**: the Experience Obelisk takes Liquid Experience directly.
+- 🌙 **Dark Mode Everywhere**: leaves this mod's screens alone; they have their own dark look.
 - ⏩ Tick accelerators: the machines run every extra cycle they are given — at full energy cost.
 - 🌍 Ores and dusts of other mods through the common tags.
 - 🚀 **Ad Astra**: the Miner works on every planet with the Stabilized core.

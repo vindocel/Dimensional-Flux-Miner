@@ -255,6 +255,19 @@ public final class TankGameTests {
         });
     }
 
+    /** The two switches of the Liquids tab: each one turns only its own automation on and off. */
+    @GameTest(template = "empty_small")
+    public static void liquidInputAndEjectSwitchesAreIndependent(GameTestHelper helper) {
+        DimensionalTankBlockEntity tank = place(helper, FIRST, TankKind.SINGLE, code(DyeColor.LIME, DyeColor.LIME, DyeColor.RED));
+        helper.assertTrue(tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_INPUT_FLUID), "Auto Input switch");
+        helper.assertTrue(tank.autoInputFluid() && !tank.autoEjectFluid(), "only Auto Input on");
+        helper.assertTrue(tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID), "Auto Eject switch");
+        helper.assertTrue(tank.autoInputFluid() && tank.autoEjectFluid(), "both on");
+        helper.assertTrue(tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_INPUT_FLUID), "Auto Input switch again");
+        helper.assertTrue(!tank.autoInputFluid() && tank.autoEjectFluid(), "Auto Eject stays on");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty_small")
     public static void personalCodeIsItsOwnChannel(GameTestHelper helper) {
         TankCode colors = code(DyeColor.PURPLE, DyeColor.PURPLE, DyeColor.CYAN);
@@ -319,6 +332,29 @@ public final class TankGameTests {
             helper.assertFalse(blocks[i].defaultBlockState().getValue(BlockStateProperties.WATERLOGGED), blocks[i] + " starts dry");
             helper.setBlock(pos, blocks[i].defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, true));
             helper.assertTrue(helper.getLevel().getFluidState(helper.absolutePos(pos)).is(Fluids.WATER), blocks[i] + " holds water");
+        }
+        helper.succeed();
+    }
+
+    /** No hostile mob spawns on top of a machine, tank or Miner part (loose or formed). */
+    @GameTest(template = "empty_small")
+    public static void noMobSpawnsOnModBlocks(GameTestHelper helper) {
+        Block[] blocks = {DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.MECHANICAL_CRUSHER.get(),
+                DfmBlocks.ELECTRIC_FURNACE.get(), DfmBlocks.MINER_TERMINAL.get(), DfmBlocks.STEEL_CHASSIS.get(), DfmBlocks.DIMENSIONAL_PORT.get(),
+                DfmBlocks.REINFORCED_STRUCTURAL_GLASS.get(), DfmBlocks.VENTILATION_UNIT.get(), DfmBlocks.QUANTUM_CORE.get()};
+        for (int i = 0; i < blocks.length; i++) {
+            BlockPos pos = new BlockPos(i % 4, 1, i / 4);
+            helper.setBlock(pos, blocks[i].defaultBlockState());
+            var state = helper.getBlockState(pos);
+            for (var type : java.util.List.of(net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.CREEPER,
+                    net.minecraft.world.entity.EntityType.SPIDER)) {
+                helper.assertFalse(state.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), type), type + " spawns on " + blocks[i]);
+            }
+            if (state.hasProperty(dimensionalfluxminer.content.DfmStateProperties.FORMED)) {
+                var formed = state.setValue(dimensionalfluxminer.content.DfmStateProperties.FORMED, true);
+                helper.assertFalse(formed.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), net.minecraft.world.entity.EntityType.ZOMBIE),
+                        "zombie spawns on formed " + blocks[i]);
+            }
         }
         helper.succeed();
     }

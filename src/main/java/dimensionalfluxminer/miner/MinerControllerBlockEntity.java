@@ -384,7 +384,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public MinerVisualStage visualStage() {
         return visualStage;
     }
-
     public int loadPercent() {
         return loadPercent;
     }

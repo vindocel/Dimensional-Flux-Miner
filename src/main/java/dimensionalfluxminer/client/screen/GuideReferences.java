@@ -57,7 +57,6 @@ final class GuideReferences {
             Map.entry("miner.matter_ores", List.of("minecraft:diamond", "minecraft:emerald", "minecraft:ancient_debris")),
             Map.entry("miner.matter_upgrade", List.of("efficiency_upgrade")),
             Map.entry("miner.terminal", List.of("miner_terminal")),
-            Map.entry("miner.filter", List.of("efficiency_upgrade")),
             Map.entry("automation.colors", List.of("liquid_experience")),
             Map.entry("automation.auto", List.of("liquid_experience")),
             Map.entry("automation.cables", List.of("stabilized_dimensional_core")),

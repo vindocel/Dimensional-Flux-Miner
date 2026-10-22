@@ -78,7 +78,17 @@ final class MinerSideWindow extends DfmScreen.Window {
 
     @Override
     protected int titlePadEnd() {
-        return 22;
+        // Clears the two automation switches with a 2 px gap.
+        return 156 - SideConfigWindow.INPUT_BUTTON_X + 2;
+    }
+
+    /** Tooltip of an automation switch of the item ports (only on the Items tab). */
+    private static List<Component> switchTooltip(boolean items, Component state, String noteKey) {
+        if (!items) {
+            return List.of(Component.translatable("gui.dimensionalfluxminer.side_config.cant_eject"));
+        }
+        return List.of(state, Component.translatable(noteKey).withStyle(ChatFormatting.GRAY),
+                Component.translatable("gui.dimensionalfluxminer.side_config.auto.toggle").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     @Override
@@ -114,28 +124,22 @@ final class MinerSideWindow extends DfmScreen.Window {
             screenText = Component.translatable(ports.energyManual() ? "gui.dimensionalfluxminer.miner.energy.manual"
                     : "gui.dimensionalfluxminer.miner.energy.auto");
         }
-        screen.fitted(g, screenText, x + 41, y + 25, 74, DfmScreen.SCREEN_TEXT, 0.8F, false);
+        screen.fitted(g, screenText, x + 41, y + 25, 74, DfmScreen.screenText(), 0.8F, false);
 
-        // Automation of the item ports: OFF -> Auto Input -> Auto Eject -> both (right click goes back).
+        // Automation of the item ports: two switches, Auto Input (Matter Input face) and Auto Eject (Item Output face).
         boolean input = d.getBoolean("auto_input");
         boolean eject = d.getBoolean("auto_eject");
-        screen.imageButton(g, x + 136, y + 6, 14, DfmScreen.sprite("button/auto_eject"), items, false, mouseX, mouseY,
-                () -> MinerControllerBlockEntity.BUTTON_AUTO_IO_NEXT, () -> MinerControllerBlockEntity.BUTTON_AUTO_IO_PREVIOUS, () -> {
-                    List<Component> lines = new ArrayList<>();
-                    if (!items) {
-                        lines.add(Component.translatable("gui.dimensionalfluxminer.side_config.cant_eject"));
-                        return lines;
-                    }
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(input)));
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.miner.auto_input.note").withStyle(ChatFormatting.GRAY));
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)));
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.miner.auto_eject.note").withStyle(ChatFormatting.GRAY));
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.side_config.auto.cycle").withStyle(ChatFormatting.DARK_GRAY));
-                    return lines;
-                });
+        screen.imageButton(g, x + SideConfigWindow.INPUT_BUTTON_X, y + 6, DfmScreen.SMALL_BUTTON, GuiIcon.AUTO_INJECT, items, input,
+                mouseX, mouseY, () -> MinerControllerBlockEntity.BUTTON_AUTO_INPUT, null,
+                () -> switchTooltip(items, Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(input)),
+                        "gui.dimensionalfluxminer.miner.auto_input.note"));
+        screen.imageButton(g, x + SideConfigWindow.EJECT_BUTTON_X, y + 6, DfmScreen.SMALL_BUTTON, GuiIcon.AUTO_EJECT, items, eject,
+                mouseX, mouseY, () -> MinerControllerBlockEntity.BUTTON_AUTO_EJECT, null,
+                () -> switchTooltip(items, Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(eject)),
+                        "gui.dimensionalfluxminer.miner.auto_eject.note"));
 
         // Clear: the item roles, or back to the default energy.
-        screen.imageButton(g, x + 136, y + 110, 14, DfmScreen.sprite("button/clear_sides"), true, false, mouseX, mouseY,
+        screen.imageButton(g, x + 132, y + 108, 18, GuiIcon.CLEAR_SIDES, true, false, mouseX, mouseY,
                 () -> items ? MinerControllerBlockEntity.BUTTON_PORTS_CLEAR_ITEMS : MinerControllerBlockEntity.BUTTON_PORTS_RESET_ENERGY, null,
                 () -> List.of(Component.translatable(items ? "gui.dimensionalfluxminer.miner.ports.clear_items"
                         : "gui.dimensionalfluxminer.miner.ports.reset_energy")));
@@ -154,7 +158,7 @@ final class MinerSideWindow extends DfmScreen.Window {
         }
 
         screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.side_config.slots"), x + 4, y + 132, width - 8,
-                DfmScreen.SUBHEADING, 1.0F, true);
+                GuiTheme.subheading(), 1.0F, true);
     }
 
     /**

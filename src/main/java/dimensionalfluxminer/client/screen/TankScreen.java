@@ -107,7 +107,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
         // The code, left to right as on the panel; clicking it opens the code window.
         int codeY = y + RESERVOIR_Y + RESERVOIR_H - SWATCH;
         int codeX = infoX + infoW - (3 * SWATCH + 2 * 3);
-        fitted(g, Component.translatable("gui.dimensionalfluxminer.tank.code"), infoX, codeY + 2, codeX - infoX - 4, SUBHEADING, 1.0F, false);
+        fitted(g, Component.translatable("gui.dimensionalfluxminer.tank.code"), infoX, codeY + 2, codeX - infoX - 4, GuiTheme.subheading(), 1.0F, false);
         TankCode code = code();
         for (int p = 0; p < TankCode.POSITIONS; p++) {
             swatch(g, codeX + p * (SWATCH + 3), codeY, SWATCH, code.get(p), false);
@@ -118,6 +118,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
         }, null, () -> codeTooltip(code), 0);
 
         MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
+        themeTab(g, x, y, MachineTabs.ROW_2, mouseX, mouseY);
     }
 
     private List<Component> codeTooltip(TankCode code) {
@@ -162,20 +163,22 @@ public class TankScreen extends DfmScreen<TankMenu> {
      * show every eighth, with a line across the whole reservoir at half.
      */
     private void reservoir(GuiGraphics g, int x, int y, FluidStack stack, int chamber, boolean highlighted, int mouseX, int mouseY) {
-        int dark = 0xFF373737;
+        int dark = GuiTheme.gray(0xFF373737);
+        int light = GuiTheme.gray(0xFFFFFFFF);
+        int mid = GuiTheme.gray(0xFF8B8B8B);
         int w = RESERVOIR_W;
         int h = RESERVOIR_H;
         g.fill(x, y, x + w - 1, y + 1, dark);
         g.fill(x, y, x + 1, y + h - 1, dark);
-        g.fill(x + 1, y + h - 1, x + w, y + h, 0xFFFFFFFF);
-        g.fill(x + w - 1, y + 1, x + w, y + h, 0xFFFFFFFF);
-        g.fill(x + w - 1, y, x + w, y + 1, 0xFF8B8B8B);
-        g.fill(x, y + h - 1, x + 1, y + h, 0xFF8B8B8B);
+        g.fill(x + 1, y + h - 1, x + w, y + h, light);
+        g.fill(x + w - 1, y + 1, x + w, y + h, light);
+        g.fill(x + w - 1, y, x + w, y + 1, mid);
+        g.fill(x, y + h - 1, x + 1, y + h, mid);
         int ix = x + 1;
         int iy = y + 1;
         int iw = w - 2;
         int ih = h - 2;
-        g.fill(ix, iy, ix + iw, iy + ih, 0xFF8B8B8B);
+        g.fill(ix, iy, ix + iw, iy + ih, mid);
         int filled = stack.isEmpty() ? 0 : Math.max(1, (int) Math.round(ih * Mth.clamp(stack.getAmount() / (double) capacity(), 0, 1)));
         if (filled > 0) {
             fluid(g, stack, ix, iy + ih - filled, iw, filled);
@@ -186,7 +189,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
             g.fill(ix, my, ix + (mark == 4 ? iw : iw * 2 / 5), my + 1, dark);
         }
         if (kind == TankKind.DUAL) {
-            fitted(g, chamberLetter(chamber), ix + iw / 2, iy + 2, iw / 2, 0xFF404040, 0.8F, true);
+            fitted(g, chamberLetter(chamber), ix + iw / 2, iy + 2, iw / 2, GuiTheme.title(), 0.8F, true);
         }
         if (highlighted) {
             MachineTabs.outline(g, x - 1, y - 1, RESERVOIR_W + 2, RESERVOIR_H + 2, sideWindow.focusedRoute().color());
@@ -231,9 +234,9 @@ public class TankScreen extends DfmScreen<TankMenu> {
      * right) around the color. {@code selected} adds a frame in the screen color around it.
      */
     void swatch(GuiGraphics g, int x, int y, int size, DyeColor color, boolean selected) {
-        int dark = 0xFF373737;
-        int light = 0xFFFFFFFF;
-        int corner = 0xFF8B8B8B;
+        int dark = GuiTheme.gray(0xFF373737);
+        int light = GuiTheme.gray(0xFFFFFFFF);
+        int corner = GuiTheme.gray(0xFF8B8B8B);
         g.fill(x, y, x + size - 1, y + 1, dark);
         g.fill(x, y, x + 1, y + size - 1, dark);
         g.fill(x + 1, y + size - 1, x + size, y + size, light);
@@ -285,7 +288,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
                 int position = p;
                 tank.swatch(g, fx, y + 22, FIELD, code.get(p), p == selected);
                 screen.fitted(g, Component.literal(Integer.toString(p + 1)), fx, y + 22 + FIELD + 2, FIELD,
-                        p == selected ? DfmScreen.HEADING : DfmScreen.SUBHEADING, 1.0F, true);
+                        p == selected ? GuiTheme.heading() : GuiTheme.subheading(), 1.0F, true);
                 screen.hotspot(fx, y + 22, FIELD, FIELD, () -> {
                     selected = position;
                     return -1;
@@ -323,7 +326,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
                             Component.translatable(personal ? "gui.dimensionalfluxminer.tank.personal.remove"
                                     : "gui.dimensionalfluxminer.tank.public.make", itemName).withStyle(ChatFormatting.DARK_GRAY)));
             screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.tank.code.kind_note"), x + 4, y + height() - 12, width - 8,
-                    DfmScreen.SUBHEADING, 0.8F, true);
+                    GuiTheme.subheading(), 0.8F, true);
         }
     }
 }

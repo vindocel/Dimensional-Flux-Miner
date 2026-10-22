@@ -124,7 +124,6 @@ final class GuideContent {
         b.heading("terminal").text("terminal");
         b.heading("buttons").text("buttons");
         b.heading("filter").text("filter");
-        b.heading("redstone").text("redstone");
         b.heading("output").text("output");
         return b.chapter(DfmItems.BASIC_DIMENSIONAL_CORE);
     }
@@ -177,6 +176,7 @@ final class GuideContent {
         b.heading("redstone").text("redstone");
         b.heading("cables").text("cables");
         b.heading("network").compat("network", "network", "lanes");
+        b.heading("recipes").compat("recipes", "recipes");
         b.heading("accel").text("accel");
         return b.chapter(DfmItems.DIMENSIONAL_PORT);
     }

@@ -60,6 +60,9 @@ public final class DfmClient {
         ClientHooks.assemblyHighlight = MinerAssemblyHighlight::show;
         // Using the guide opens the book in the hand first; the screen follows once it is open.
         ClientHooks.openGuide = GuideBookAnimation::requestOpen;
+        if (net.neoforged.fml.ModList.get().isLoaded("polymorph")) {
+            dimensionalfluxminer.compat.polymorph.PolymorphClientCompat.register();
+        }
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GuideBookAnimation::onClientTick);
         // Script values of the configuration belong to the server just left.
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
@@ -74,6 +77,13 @@ public final class DfmClient {
             ItemBlockRenderTypes.setRenderLayer(DfmBlocks.CORRUPTED_SEAGRASS.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(DfmBlocks.CORRUPTED_TALL_SEAGRASS.get(), RenderType.cutout());
         });
+    }
+
+    /** Shader of the dark look of the machine screens (reloaded with the resource packs). */
+    @SubscribeEvent
+    static void onRegisterShaders(net.neoforged.neoforge.client.event.RegisterShadersEvent event) throws java.io.IOException {
+        event.registerShader(new net.minecraft.client.renderer.ShaderInstance(event.getResourceProvider(), DimensionalFluxMiner.id("dark_gui"),
+                com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX), dimensionalfluxminer.client.screen.GuiTheme::setShader);
     }
 
     @SubscribeEvent

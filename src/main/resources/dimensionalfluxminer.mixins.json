@@ -4,7 +4,7 @@
   "package": "dimensionalfluxminer.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": ["MobSunlightMixin", "EntityCorruptedWaterMixin"],
-  "client": ["client.ParticleEngineCorruptedWaterMixin"],
+  "client": ["client.ParticleEngineCorruptedWaterMixin", "client.GuiGraphicsThemeMixin"],
   "injectors": {
     "defaultRequire": 1
   }

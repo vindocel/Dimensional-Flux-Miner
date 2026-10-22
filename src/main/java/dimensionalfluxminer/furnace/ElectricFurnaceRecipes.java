@@ -3,13 +3,16 @@ package dimensionalfluxminer.furnace;
 import dimensionalfluxminer.recipe.AlloyRecipeInput;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.recipe.ExternalAlloying;
+import dimensionalfluxminer.recipe.RecipeChoices;
 import dimensionalfluxminer.registry.DfmTags;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackLinkedSet;
@@ -24,12 +27,14 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 /**
  * Recipe lookups of one Electric Furnace, with their caches: the furnace recipe of each lane's item and of every item
  * offered, the alloy of the three lanes, and the items that are alloy ingredients. Everything is rebuilt when the
- * recipes reload (a new {@link RecipeManager}).
+ * recipes reload (a new {@link RecipeManager}); the furnace recipes also when a recipe is chosen for an item.
  */
 final class ElectricFurnaceRecipes {
     private static final int COOKING_CACHE_LIMIT = 256;
 
+    private final RecipeChoices choices;
     private RecipeManager cachedManager;
+    private int cachedChoices;
     private final ItemStack[] laneKey;
     private final Optional<AbstractCookingRecipe>[] laneRecipe;
     private ItemStack[] alloyKey;
@@ -40,7 +45,8 @@ final class ElectricFurnaceRecipes {
             new it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap<>(ItemStackLinkedSet.TYPE_AND_TAG);
 
     @SuppressWarnings("unchecked")
-    ElectricFurnaceRecipes(int lanes) {
+    ElectricFurnaceRecipes(int lanes, RecipeChoices choices) {
+        this.choices = choices;
         laneKey = new ItemStack[lanes];
         laneRecipe = new Optional[lanes];
         alloyKey = new ItemStack[lanes];
@@ -58,9 +64,17 @@ final class ElectricFurnaceRecipes {
     private void refresh(Level level) {
         RecipeManager manager = level.getRecipeManager();
         if (manager == cachedManager) {
+            if (choices.version() != cachedChoices) {
+                // A recipe was chosen for an item: forget the furnace recipes remembered so far.
+                cachedChoices = choices.version();
+                Arrays.fill(laneKey, ItemStack.EMPTY);
+                Arrays.fill(laneRecipe, Optional.empty());
+                cookingCache.clear();
+            }
             return;
         }
         cachedManager = manager;
+        cachedChoices = choices.version();
         clear();
         Set<Item> items = new HashSet<>();
         for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(manager, level.registryAccess())) {
@@ -94,19 +108,62 @@ final class ElectricFurnaceRecipes {
             if (cookingCache.size() >= COOKING_CACHE_LIMIT) {
                 cookingCache.clear();
             }
-            known = find(level, stack);
+            known = find(level, stack, choices.chosen(stack));
             cookingCache.put(stack.copyWithCount(1), known);
         }
         return known;
     }
 
-    private static Optional<AbstractCookingRecipe> find(Level level, ItemStack stack) {
-        SingleRecipeInput input = new SingleRecipeInput(stack.copyWithCount(1));
+    /** The recipe chosen for the item when it still accepts it, otherwise the default one. */
+    private static Optional<AbstractCookingRecipe> find(Level level, ItemStack stack, ResourceLocation chosen) {
+        if (chosen != null) {
+            for (RecipeHolder<? extends AbstractCookingRecipe> option : options(level, stack)) {
+                if (option.id().equals(chosen)) {
+                    return Optional.of(option.value());
+                }
+            }
+        }
+        return defaultRecipe(level, new SingleRecipeInput(stack.copyWithCount(1))).map(RecipeHolder::value);
+    }
+
+    /** Blast furnace recipe of the item, otherwise its furnace recipe. */
+    private static Optional<RecipeHolder<? extends AbstractCookingRecipe>> defaultRecipe(Level level, SingleRecipeInput input) {
         RecipeManager manager = level.getRecipeManager();
-        Optional<AbstractCookingRecipe> blasting = manager.getRecipeFor(RecipeType.BLASTING, input, level)
-                .map(h -> (AbstractCookingRecipe) h.value());
-        return blasting.isPresent() ? blasting : manager.getRecipeFor(RecipeType.SMELTING, input, level)
-                .map(h -> (AbstractCookingRecipe) h.value());
+        Optional<RecipeHolder<? extends AbstractCookingRecipe>> blasting = manager.getRecipeFor(RecipeType.BLASTING, input, level)
+                .map(h -> h);
+        return blasting.isPresent() ? blasting : manager.getRecipeFor(RecipeType.SMELTING, input, level).map(h -> h);
+    }
+
+    /**
+     * Every blast furnace and furnace recipe that accepts the item, the default one first. Recipes making the same result
+     * (the usual blast furnace + furnace pair) are listed once, so only real alternatives are offered.
+     */
+    static List<RecipeHolder<? extends AbstractCookingRecipe>> options(Level level, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return List.of();
+        }
+        SingleRecipeInput input = new SingleRecipeInput(stack.copyWithCount(1));
+        Optional<RecipeHolder<? extends AbstractCookingRecipe>> first = defaultRecipe(level, input);
+        if (first.isEmpty()) {
+            return List.of();
+        }
+        RecipeManager manager = level.getRecipeManager();
+        List<RecipeHolder<? extends AbstractCookingRecipe>> candidates = new ArrayList<>();
+        candidates.add(first.get());
+        candidates.addAll(manager.getRecipesFor(RecipeType.BLASTING, input, level));
+        candidates.addAll(manager.getRecipesFor(RecipeType.SMELTING, input, level));
+        List<RecipeHolder<? extends AbstractCookingRecipe>> options = new ArrayList<>();
+        List<ItemStack> results = new ArrayList<>();
+        for (RecipeHolder<? extends AbstractCookingRecipe> candidate : candidates) {
+            ItemStack result = candidate.value().getResultItem(level.registryAccess());
+            if (result.isEmpty() || options.stream().anyMatch(o -> o.id().equals(candidate.id()))
+                    || results.stream().anyMatch(r -> ItemStack.matches(r, result))) {
+                continue;
+            }
+            options.add(candidate);
+            results.add(result);
+        }
+        return options;
     }
 
     /** The alloy the three lanes hold (the mod's own alloys first, then the alloys of other mods). */

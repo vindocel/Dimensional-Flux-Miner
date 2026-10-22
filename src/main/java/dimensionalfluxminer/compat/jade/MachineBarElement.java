@@ -25,6 +25,7 @@ import snownee.jade.api.ui.Element;
 final class MachineBarElement extends Element {
     private static final ResourceLocation ENERGY_FRAME = DimensionalFluxMiner.id("textures/gui/energy/energy_empty.png");
     private static final ResourceLocation ENERGY_SHEET = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet.png");
+    private static final ResourceLocation ENERGY_SHEET_PURPLE = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet_purple.png");
     private static final int ENERGY_FRAME_LENGTH = 72;
     private static final int ENERGY_BORDER = 3;
     private static final int ENERGY_FILL_LENGTH = 66;
@@ -44,19 +45,22 @@ final class MachineBarElement extends Element {
     private final Component text;
     /** Null for the energy bar. */
     private final Fluid fluid;
+    /** Energy fill in purple (the player's icon color for this machine) instead of blue. */
+    private final boolean purple;
 
-    private MachineBarElement(double fraction, Component text, Fluid fluid) {
+    private MachineBarElement(double fraction, Component text, Fluid fluid, boolean purple) {
         this.fraction = Mth.clamp(fraction, 0, 1);
         this.text = text;
         this.fluid = fluid;
+        this.purple = purple;
     }
 
-    static MachineBarElement energy(double fraction, Component text) {
-        return new MachineBarElement(fraction, text, null);
+    static MachineBarElement energy(double fraction, Component text, boolean purple) {
+        return new MachineBarElement(fraction, text, null, purple);
     }
 
     static MachineBarElement fluid(Fluid fluid, double fraction, Component text) {
-        return new MachineBarElement(fraction, text, fluid);
+        return new MachineBarElement(fraction, text, fluid, false);
     }
 
     @Override
@@ -95,7 +99,7 @@ final class MachineBarElement extends Element {
         int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
         for (int drawn = 0; drawn < filled; drawn += ENERGY_FILL_LENGTH) {
             int piece = Math.min(ENERGY_FILL_LENGTH, filled - drawn);
-            g.blit(ENERGY_SHEET, ENERGY_BORDER, ENERGY_BORDER + area - drawn - piece, 0,
+            g.blit(purple ? ENERGY_SHEET_PURPLE : ENERGY_SHEET, ENERGY_BORDER, ENERGY_BORDER + area - drawn - piece, 0,
                     frame * ENERGY_FILL_LENGTH + ENERGY_FILL_LENGTH - piece, ENERGY_FILL_THICKNESS, piece,
                     ENERGY_FILL_THICKNESS, ENERGY_FILL_LENGTH * ENERGY_FRAMES);
         }

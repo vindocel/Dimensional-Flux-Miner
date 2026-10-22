@@ -54,6 +54,14 @@ public final class DimensionalFluxMiner {
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Reloading.class, DfmConfig::onConfigChanged);
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Unloading.class, DfmConfig::onConfigChanged);
         dimensionalfluxminer.compat.claims.ClaimAdapters.registerInstalled();
+        modBus.addListener(dimensionalfluxminer.compat.DarkModeCompat::onInterModEnqueue);
+        modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) ->
+                event.enqueueWork(dimensionalfluxminer.compat.CognitionCompat::allowLiquidExperience));
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerAboutToStartEvent event) ->
+                dimensionalfluxminer.compat.CognitionCompat.allowLiquidExperience());
+        if (net.neoforged.fml.ModList.get().isLoaded("polymorph")) {
+            dimensionalfluxminer.compat.polymorph.PolymorphCompat.register();
+        }
 
         NeoForge.EVENT_BUS.addListener(ContentEvents::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(ContentEvents::onLootTableLoad);

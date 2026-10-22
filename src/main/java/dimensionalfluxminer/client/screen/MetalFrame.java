@@ -17,8 +17,11 @@ final class MetalFrame {
     private static final int LIGHT_SIDE = 0xFF7D90A3;
     private static final int SHADE = 0xFF2E3644;
     private static final int BODY = 0xFF4E5A6B;
-    /** Line between the band and the panel (replaces the panel's own outline). */
+    /** Line between the band and the panel: shade on the top and left, light on the bottom and right. */
     private static final int INNER = 0xFF2A323D;
+    private static final int INNER_LIGHT = 0xFF6D7C8E;
+    /** Panel color of the light look (the dark look takes it to the dark palette). */
+    private static final int PANEL = 0xFFBEBEBE;
     private static final int RIVET_LIGHT = 0xFFC9D6E0;
     private static final int RIVET_MID = 0xFF6D7C8E;
     private static final int RIVET_DARK = 0xFF1E2631;
@@ -56,23 +59,26 @@ final class MetalFrame {
         rivet(g, x1 - 4, y0 + 2);
         rivet(g, x0 + 2, y1 - 4);
         rivet(g, x1 - 4, y1 - 4);
-        g.blitSprite(DfmScreen.BACKGROUND, x, y, w, h);
+        // Flat panel (no vanilla bevel), set into the band by one line: shade on the top and left, light on the
+        // bottom and right.
+        g.fill(x, y, x + w, y + h, GuiTheme.gray(PANEL));
         g.fill(x, y, x + w, y + 1, INNER);
-        g.fill(x, y + h - 1, x + w, y + h, INNER);
         g.fill(x, y, x + 1, y + h, INNER);
-        g.fill(x + w - 1, y, x + w, y + h, INNER);
+        g.fill(x, y + h - 1, x + w, y + h, INNER_LIGHT);
+        g.fill(x + w - 1, y + 1, x + w, y + h, INNER_LIGHT);
     }
 
     /**
-     * Tab ear of {@code size} x {@code size} at (x, y): on the left side it ends on the panel's left edge, on the
-     * right side it starts on the panel's right edge; the side next to the panel opens into the band.
+     * Tab ear of {@code size} wide and {@code height} tall at (x, y): on the left side it ends on the panel's left
+     * edge, on the right side it starts on the panel's right edge; the side next to the panel opens into the band. Tabs
+     * stacked next to each other share one tall ear.
      */
-    static void ear(GuiGraphics g, int x, int y, int size, boolean leftSide) {
+    static void ear(GuiGraphics g, int x, int y, int size, int height, boolean leftSide) {
         int light = LIGHT_TOP;
         int side = leftSide ? LIGHT_SIDE : SHADE;
         int shade = SHADE;
         int body = BODY;
-        int last = size - 1;
+        int last = height - 1;
         // Columns counted from the outer side; the band itself takes the last BAND columns.
         int open = size - BAND;
         column(g, x, size, leftSide, 0, y + 2, y + last - 1, OUTLINE);

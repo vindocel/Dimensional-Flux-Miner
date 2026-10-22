@@ -92,9 +92,10 @@ public final class DfmBlocks {
         return machineCasing().pushReaction(PushReaction.BLOCK);
     }
 
+    /** Machines, tanks and Miner parts: metal blocks no mob ever spawns on. */
     private static BlockBehaviour.Properties machineCasing() {
         return BlockBehaviour.Properties.of().mapColor(MapColor.METAL).instrument(NoteBlockInstrument.IRON_XYLOPHONE)
-                .requiresCorrectToolForDrops().strength(5.0F, 6.0F).sound(SoundType.METAL);
+                .requiresCorrectToolForDrops().strength(5.0F, 6.0F).sound(SoundType.METAL).isValidSpawn(Blocks::never);
     }
 
     private DfmBlocks() {

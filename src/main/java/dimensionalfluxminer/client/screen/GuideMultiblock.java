@@ -1,33 +1,19 @@
 package dimensionalfluxminer.client.screen;
 
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import dimensionalfluxminer.DimensionalFluxMiner;
-import dimensionalfluxminer.client.render.ModelRendering;
 import dimensionalfluxminer.miner.MinerLayout;
 import dimensionalfluxminer.miner.MinerStructure;
 import java.util.List;
-import net.minecraft.Util;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.Direction;
+import net.minecraft.util.Util;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * Interactive 3D view of the Dimensional Flux Miner assembly for the guide: drag to turn it, show one layer at a
  * time, switch between the loose parts and the formed machine. The parts list highlights one part type on hover.
  */
 final class GuideMultiblock {
-    private static final ResourceLocation FORMED = DimensionalFluxMiner.id("block/dimensional_flux_miner/states/energy_core_basic_idle");
     private static final int VIEW_HEIGHT = 130;
     private static final int WINDOW = 0xFF343442;
     private static final int WINDOW_EDGE = 0xFF22232F;
@@ -58,7 +44,7 @@ final class GuideMultiblock {
         }
 
         @Override
-        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
             int viewH = VIEW_HEIGHT - BUTTON_H - 4;
             // A small dark display set into the page.
             g.fill(x, y, x + width, y + viewH, WINDOW_EDGE);
@@ -71,9 +57,7 @@ final class GuideMultiblock {
             lastFrame = now;
 
             if (!screen.turning()) {
-                g.enableScissor(x + 1, y + 1, x + width - 1, y + viewH - 1);
-                renderStructure(g, x + width / 2.0F, y + viewH / 2.0F + 4, Math.min(width, viewH) / 4.6F);
-                g.disableScissor();
+                renderStructure(g, x + 1, y + 9, x + width - 1, y + viewH - 1, Math.min(width, viewH) / 4.6F);
             }
 
             Component hint = Component.translatable("guide.dimensionalfluxminer.viewer.drag");
@@ -133,50 +117,11 @@ final class GuideMultiblock {
         }
     }
 
-    private static void renderStructure(GuiGraphics g, float centerX, float centerY, float scale) {
-        PoseStack pose = g.pose();
-        pose.pushPose();
-        pose.translate(centerX, centerY, 200);
-        pose.scale(scale, -scale, scale);
-        pose.mulPose(Axis.XP.rotationDegrees(pitch));
-        pose.mulPose(Axis.YP.rotationDegrees(yaw));
-        Lighting.setupFor3DItems();
-        MultiBufferSource.BufferSource buffers = g.bufferSource();
-        if (formed) {
-            // The formed model's origin is the block under the core; its native front is north.
-            pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(Direction.SOUTH)));
-            pose.translate(-0.5, -1.5, -0.5);
-            ModelRendering.render(pose, buffers, ModelRendering.model(FORMED), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-            pose.popPose();
-        } else {
-            var dispatcher = Minecraft.getInstance().getBlockRenderer();
-            for (MinerLayout.Slot slot : MinerLayout.BASE_SLOTS) {
-                if (layer != 0 && slot.dy() + 2 != layer) {
-                    continue;
-                }
-                if (highlight != null && slot.part() != highlight) {
-                    continue;
-                }
-                pose.pushPose();
-                pose.translate(slot.dx() - 0.5, slot.dy() - 0.5, slot.dz() - 0.5);
-                dispatcher.renderSingleBlock(state(slot.part()), pose, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                pose.popPose();
-            }
-        }
-        buffers.endBatch();
-        pose.popPose();
+    /** The 3D view as a picture of the viewport, {@code scale} pixels per block. */
+    private static void renderStructure(GuiGraphicsExtractor g, int x0, int y0, int x1, int y1, float scale) {
+        g.submitPictureInPictureRenderState(new GuideStructureRenderer.State(formed, layer, highlight, yaw, pitch,
+                x0, y0, x1, y1, scale, g.peekScissorStack()));
     }
-
-    private static BlockState state(MinerLayout.Part part) {
-        BlockState state = MinerStructure.blockFor(part).defaultBlockState();
-        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            // The terminal faces the viewer (south), like the base layout.
-            state = state.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH);
-        }
-        return state;
-    }
-
     /** One row per part type: icon, count, name and where it goes; hovering a row shows only that part. */
     static final class PartList implements GuideElement {
         private static final int ROW = 24;
@@ -188,7 +133,7 @@ final class GuideMultiblock {
         }
 
         @Override
-        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
             MinerLayout.Part hovered = null;
             for (int i = 0; i < ORDER.length; i++) {
                 MinerLayout.Part part = ORDER[i];

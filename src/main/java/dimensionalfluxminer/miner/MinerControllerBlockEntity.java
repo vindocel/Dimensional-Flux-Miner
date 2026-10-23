@@ -1,5 +1,10 @@
 package dimensionalfluxminer.miner;
 
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.SlotStorage;
+import dimensionalfluxminer.machine.transfer.Transfer;
+import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmTags;
@@ -45,7 +50,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
@@ -60,16 +65,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Logical controller of the Dimensional Flux Miner, living in the terminal. It owns every buffer of the formed
  * machine and drives production, the Basic environmental drain and the Stabilized Matter Injection.
  */
-public class MinerControllerBlockEntity extends BlockEntity implements MenuProvider {
+public class MinerControllerBlockEntity extends dimensionalfluxminer.content.TagBlockEntity implements MenuProvider {
     public static final int OUTPUT_SLOTS = MinerOutput.SLOTS;
     public static final int MAX_ROLLS_PER_CYCLE = 64;
     /** The animation and the sound go on for 1 s after the work pauses, so short gaps do not flicker them. */
@@ -112,7 +114,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private boolean autoEject;
     /** The nine configurable faces of the lower layer; see {@link MinerPorts}. */
     private final MinerPorts ports = new MinerPorts();
-    private final Set<ResourceLocation> filter = new LinkedHashSet<>();
+    private final Set<Identifier> filter = new LinkedHashSet<>();
     private UUID owner;
     /** Columns this Miner has drained in its life; drives the "half of the area drained" advancement. */
     private long columnsDrained;
@@ -134,7 +136,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         return dimensionalfluxminer.miner.survey.ColumnOrder.get().size() / 2;
     }
 
-    private final ItemStackHandler coreSlot = new ItemStackHandler(1) {
+    private final SlotStorage coreSlot = new SlotStorage(1) {
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return DfmItems.isCore(stack.getItem());
@@ -150,7 +152,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             onCoreChanged();
         }
     };
-    private final ItemStackHandler upgradeSlot = new ItemStackHandler(1) {
+    private final SlotStorage upgradeSlot = new SlotStorage(1) {
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return stack.is(DfmItems.EFFICIENCY_UPGRADE.get());
@@ -213,7 +215,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private int loadPercent;
     private Direction clientFront = Direction.SOUTH;
 
-    private final IEnergyStorage energyPort = new IEnergyStorage() {
+    private final EnergyStore energyPort = new EnergyStore() {
         @Override
         public int receiveEnergy(int toReceive, boolean simulate) {
             if (!formed) {
@@ -253,7 +255,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     };
 
     /** Insertion-only Matter Input (Stabilized Core): accepted substrate becomes DM immediately. */
-    private final IItemHandler matterPort = new IItemHandler() {
+    private final ItemSlots matterPort = new ItemSlots() {
         @Override
         public int getSlots() {
             return 1;
@@ -286,6 +288,25 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         }
     };
 
+    /** What other blocks can change through the ports, put back if their transaction is cancelled. */
+    private final Transfer.Journal<Object[]> journal = new Transfer.Journal<>(
+            () -> new Object[] {energyBuffer.stored(), energyBuffer.debt(), matter.units(), output.handler().snapshot(),
+                    cobblestoneInjected, lastSubstrate, lastSubstrateUnits},
+            snapshot -> {
+                energyBuffer.setStored((long) snapshot[0]);
+                energyBuffer.setDebt((double) snapshot[1]);
+                matter.set((long) snapshot[2]);
+                output.handler().restore((ItemStack[]) snapshot[3]);
+                cobblestoneInjected = (long) snapshot[4];
+                lastSubstrate = (String) snapshot[5];
+                lastSubstrateUnits = (long) snapshot[6];
+                setChanged();
+            });
+
+    public Transfer.Journal<Object[]> journal() {
+        return journal;
+    }
+
     public MinerControllerBlockEntity(BlockPos pos, BlockState state) {
         super(DfmBlockEntities.MINER_CONTROLLER.get(), pos, state);
     }
@@ -303,15 +324,15 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         return structure;
     }
 
-    public ItemStackHandler coreSlot() {
+    public SlotStorage coreSlot() {
         return coreSlot;
     }
 
-    public ItemStackHandler upgradeSlot() {
+    public SlotStorage upgradeSlot() {
         return upgradeSlot;
     }
 
-    public ItemStackHandler output() {
+    public SlotStorage output() {
         return output.handler();
     }
 
@@ -367,7 +388,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         setChanged();
     }
 
-    public Set<ResourceLocation> filter() {
+    public Set<Identifier> filter() {
         return filter;
     }
 
@@ -516,7 +537,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
      * Item capability of a face: Item Output, Matter Input (Stabilized Core only) or both on the same face. The
      * {@code null} side of every miner block is a read-only view of the output buffer (Jade).
      */
-    public IItemHandler itemPort(BlockPos portPos, Direction side) {
+    public ItemSlots itemPort(BlockPos portPos, Direction side) {
         MinerStructure s = structure();
         if (!formed || s == null) {
             return null;
@@ -545,9 +566,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
      * Core) asks for the Matter Input. The face only gives or takes items once it has the role; the next scan moves
      * the role there (see {@link #scanAutomaticPorts}). Slots: the output slots, then one insertion-only matter slot.
      */
-    private final class PortHandler implements IItemHandler {
+    private final class PortHandler implements ItemSlots {
         private final MinerPorts.Face face;
-        private final IItemHandler view = output.extractionView();
+        private final ItemSlots view = output.extractionView();
 
         PortHandler(MinerPorts.Face face) {
             this.face = face;
@@ -614,7 +635,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
      * Energy capability of a face: every face by default, only the hand-picked ones once the player chose some. The
      * {@code null} side of every miner block is a read-only view of the energy buffer (Jade).
      */
-    public IEnergyStorage energyPort(BlockPos portPos, Direction side) {
+    public EnergyStore energyPort(BlockPos portPos, Direction side) {
         MinerStructure s = structure();
         if (!formed || s == null) {
             return null;
@@ -754,8 +775,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             Direction out = face.outward(front);
             BlockPos neighbor = face.owner(s.core(), front).relative(out);
-            if (level.isLoaded(neighbor) && level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
-                    neighbor, out.getOpposite()) != null) {
+            if (level.isLoaded(neighbor) && Transfer.energy(level, neighbor, out.getOpposite()) != null) {
                 mask |= face.bit();
             }
         }
@@ -807,10 +827,17 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         invalidatePorts();
         setChanged();
         syncToClients();
-        PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new net.minecraft.world.level.ChunkPos(worldPosition),
+        PacketDistributor.sendToPlayersTrackingChunk(serverLevel, net.minecraft.world.level.ChunkPos.containing(worldPosition),
                 new MinerFormationPayload(s.members().stream().map(MinerStructure.Member::pos).toList()));
         DfmAdvancements.awardOwner(serverLevel, owner, worldPosition, DfmAdvancements.MINER_FORMED);
         return null;
+    }
+
+    /** Breaking the terminal takes the machine apart too (the parts' removal no longer finds this block entity). */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        invalidate();
     }
 
     /**
@@ -1043,7 +1070,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         WorkAccumulator.Plan plan = work.plan(rateNow, MAX_ROLLS_PER_CYCLE);
         // Basic: corruption is the source of matter, performed only when the buffer needs it.
         MinerSurvey drainSurvey = survey;
-        MinerAttempts.Result attempts = MinerAttempts.run(plan.operations(), profile, serverLevel.random, filter, hasEfficiencyUpgrade(), matter,
+        MinerAttempts.Result attempts = MinerAttempts.run(plan.operations(), profile, serverLevel.getRandom(), filter, hasEfficiencyUpgrade(), matter,
                 core == CoreKind.BASIC ? () -> drainColumn(serverLevel, drainSurvey) : () -> false, output);
         long executed = attempts.executed();
         boolean missed = attempts.missed();
@@ -1142,7 +1169,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         }
         MinerLayout.Front front = MinerStructure.toFront(s.front());
         MinerPorts.Face face = MinerPorts.Face.VALUES[ports.outputFace()];
-        IItemHandler target = NeighborTransfer.neighbor(level, face.owner(s.core(), front), face.outward(front));
+        ItemSlots target = NeighborTransfer.neighbor(level, face.owner(s.core(), front), face.outward(front));
         if (target != null) {
             output.ejectTo(target);
         }
@@ -1195,7 +1222,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private void syncToClients() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
@@ -1214,7 +1241,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void readUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         readClient(tag);
     }
 
@@ -1223,21 +1250,15 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
-        if (pkt.getTag() != null) {
-            readClient(pkt.getTag());
-        }
-    }
 
     private void readClient(CompoundTag tag) {
-        formed = tag.getBoolean("formed");
-        visualStage = MinerVisualStage.byKey(tag.getString("stage"));
-        loadPercent = tag.getInt("load");
-        rate = RateScale.clampLevel(tag.getInt("rate"));
-        animationStartTick = tag.getLong("anim_start");
-        portLooks = tag.getInt("port_looks");
-        int[] colors = tag.getIntArray("node_colors");
+        formed = tag.getBooleanOr("formed", false);
+        visualStage = MinerVisualStage.byKey(tag.getStringOr("stage", ""));
+        loadPercent = tag.getIntOr("load", 0);
+        rate = RateScale.clampLevel(tag.getIntOr("rate", 0));
+        animationStartTick = tag.getLongOr("anim_start", 0L);
+        portLooks = tag.getIntOr("port_looks", 0);
+        int[] colors = tag.getIntArray("node_colors").orElse(new int[0]);
         nodeColors = colors.length == MinerPorts.Face.VALUES.length ? colors : new int[MinerPorts.Face.VALUES.length];
         clientFront = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
@@ -1326,7 +1347,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
                     List<ResourceFamily> families = ResourceProfiles.get(serverLevel).families();
                     int index = id - BUTTON_FILTER_TOGGLE;
                     if (index < families.size()) {
-                        ResourceLocation key = families.get(index).key();
+                        Identifier key = families.get(index).key();
                         if (!filter.remove(key)) {
                             filter.add(key);
                         }
@@ -1392,7 +1413,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         tag.putDouble("load", metrics.smoothedLoad());
         tag.putDouble("nominal", curve().levelRate(rate));
         if (level != null) {
-            tag.putString("dimension", level.dimension().location().toString());
+            tag.putString("dimension", level.dimension().identifier().toString());
         }
         tag.putInt("output_used", output.usedSlots());
         if (level instanceof ServerLevel serverLevel) {
@@ -1434,8 +1455,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     // ---------------------------------------------------------------- persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveTag(tag, registries);
         tag.putBoolean("formed", formed);
         tag.putLong("energy", energyBuffer.stored());
         tag.putDouble("energy_debt", energyBuffer.debt());
@@ -1452,7 +1473,7 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         filter.forEach(key -> filterTag.add(StringTag.valueOf(key.toString())));
         tag.put("filter", filterTag);
         if (owner != null) {
-            tag.putUUID("owner", owner);
+            tag.store("owner", net.minecraft.core.UUIDUtil.CODEC, owner);
         }
         tag.putLong("columns_drained", columnsDrained);
         tag.putLong("cobblestone_injected", cobblestoneInjected);
@@ -1462,34 +1483,34 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        formed = tag.getBoolean("formed");
-        energyBuffer.setStored(tag.getLong("energy"));
-        energyBuffer.setDebt(tag.getDouble("energy_debt"));
-        work.setProgress(tag.getDouble("work_progress"));
-        matter.set(tag.getLong("dm"));
-        rate = RateScale.clampLevel(tag.contains("rate") ? tag.getInt("rate") : 1);
+    protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadTag(tag, registries);
+        formed = tag.getBooleanOr("formed", false);
+        energyBuffer.setStored(tag.getLongOr("energy", 0L));
+        energyBuffer.setDebt(tag.getDoubleOr("energy_debt", 0.0));
+        work.setProgress(tag.getDoubleOr("work_progress", 0.0));
+        matter.set(tag.getLongOr("dm", 0L));
+        rate = RateScale.clampLevel(tag.contains("rate") ? tag.getIntOr("rate", 0) : 1);
         // A normal save/restart with the structure intact keeps the manual START state.
-        runRequested = tag.getBoolean("run_requested") && formed;
-        redstoneControl = tag.getBoolean("redstone_control");
-        autoInput = tag.getBoolean("auto_input");
-        autoEject = tag.getBoolean("auto_eject");
-        ports.load(tag.getCompound("ports"));
+        runRequested = tag.getBooleanOr("run_requested", false) && formed;
+        redstoneControl = tag.getBooleanOr("redstone_control", false);
+        autoInput = tag.getBooleanOr("auto_input", false);
+        autoEject = tag.getBooleanOr("auto_eject", false);
+        ports.load(tag.getCompoundOrEmpty("ports"));
         filter.clear();
-        ListTag filterTag = tag.getList("filter", Tag.TAG_STRING);
+        ListTag filterTag = tag.getListOrEmpty("filter");
         for (int i = 0; i < filterTag.size(); i++) {
-            ResourceLocation key = ResourceLocation.tryParse(filterTag.getString(i));
+            Identifier key = Identifier.tryParse(filterTag.getStringOr(i, ""));
             if (key != null) {
                 filter.add(key);
             }
         }
-        owner = tag.hasUUID("owner") ? tag.getUUID("owner") : null;
-        columnsDrained = tag.getLong("columns_drained");
-        cobblestoneInjected = tag.getLong("cobblestone_injected");
-        coreSlot.deserializeNBT(registries, tag.getCompound("core"));
-        upgradeSlot.deserializeNBT(registries, tag.getCompound("upgrade"));
-        output.load(registries, tag.getCompound("output"));
+        owner = tag.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
+        columnsDrained = tag.getLongOr("columns_drained", 0L);
+        cobblestoneInjected = tag.getLongOr("cobblestone_injected", 0L);
+        coreSlot.deserializeNBT(registries, tag.getCompoundOrEmpty("core"));
+        upgradeSlot.deserializeNBT(registries, tag.getCompoundOrEmpty("upgrade"));
+        output.load(registries, tag.getCompoundOrEmpty("output"));
         lastCore = coreKind();
         structure = null;
         wasPowered = energyBuffer.stored() > 0;

@@ -19,7 +19,7 @@ import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.registry.DfmBlocks;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
@@ -74,7 +74,7 @@ public class DfmEmiPlugin implements EmiPlugin {
     private static final class Crushing extends BasicEmiRecipe {
         private final CrusherProcessing.Display display;
 
-        Crushing(ResourceLocation id, CrusherProcessing.Display display) {
+        Crushing(Identifier id, CrusherProcessing.Display display) {
             super(CRUSHING, id, CrusherLayout.WIDTH, CrusherLayout.HEIGHT);
             this.display = display;
             inputs.add(EmiIngredient.of(display.inputs().stream().map(EmiStack::of).toList()));
@@ -101,7 +101,7 @@ public class DfmEmiPlugin implements EmiPlugin {
         private final RecipeViewerData.FurnaceDisplay display;
 
         Furnace(RecipeViewerData.FurnaceDisplay display) {
-            super(SMELTING, ResourceLocation.fromNamespaceAndPath(DimensionalFluxMiner.MOD_ID,
+            super(SMELTING, Identifier.fromNamespaceAndPath(DimensionalFluxMiner.MOD_ID,
                     "/smelting/" + display.id().getNamespace() + "/" + display.id().getPath()), ELEMENT_W, ELEMENT_H);
             this.display = display;
             inputs.add(EmiIngredient.of(display.input(), display.inputCount()));
@@ -127,7 +127,7 @@ public class DfmEmiPlugin implements EmiPlugin {
     private static final class Alloying extends BasicEmiRecipe {
         private final long cycleMs;
 
-        Alloying(ResourceLocation id, AlloyingRecipe recipe) {
+        Alloying(Identifier id, AlloyingRecipe recipe) {
             super(ALLOYING, id, ELEMENT_W, ELEMENT_H);
             this.cycleMs = recipe.processingTicks() * 50L;
             for (SizedIngredient sized : recipe.ingredients()) {

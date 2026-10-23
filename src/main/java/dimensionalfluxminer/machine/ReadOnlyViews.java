@@ -1,8 +1,8 @@
 package dimensionalfluxminer.machine;
 
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
 
 /**
  * Read-only capability views returned for the {@code null} side (no face). Information tools such as Jade query
@@ -13,8 +13,8 @@ public final class ReadOnlyViews {
     private ReadOnlyViews() {
     }
 
-    public static IItemHandler items(IItemHandler source) {
-        return new IItemHandler() {
+    public static ItemSlots items(ItemSlots source) {
+        return new ItemSlots() {
             @Override
             public int getSlots() {
                 return source.getSlots();
@@ -47,8 +47,8 @@ public final class ReadOnlyViews {
         };
     }
 
-    public static IEnergyStorage energy(IEnergyStorage source) {
-        return new IEnergyStorage() {
+    public static EnergyStore energy(EnergyStore source) {
+        return new EnergyStore() {
             @Override
             public int receiveEnergy(int toReceive, boolean simulate) {
                 return 0;

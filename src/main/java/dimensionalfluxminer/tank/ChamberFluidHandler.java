@@ -1,15 +1,15 @@
 package dimensionalfluxminer.tank;
 
+import dimensionalfluxminer.machine.transfer.FluidTanks;
 import java.util.function.Supplier;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
  * One chamber of a tank's channel as a fluid tank. It holds a single liquid (components included) up to
  * {@link TankKind#CHAMBER_CAPACITY}; a different liquid is refused while the chamber is not empty. Simulated calls
  * never change the channel. The channel is looked up on every call, so a code change takes effect at once.
  */
-public final class ChamberFluidHandler implements IFluidHandler {
+public final class ChamberFluidHandler implements FluidTanks {
     private final Supplier<TankChannels.Channel> channel;
     private final int chamber;
     private final java.util.function.BooleanSupplier fills;

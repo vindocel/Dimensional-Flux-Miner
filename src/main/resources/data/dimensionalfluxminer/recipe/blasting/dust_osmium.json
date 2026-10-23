@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_osmium"
-  },
+  "ingredient": "dimensionalfluxminer:dust_osmium",
   "result_tag": "c:ingots/osmium",
   "experience": 0.7,
   "cookingtime": 100

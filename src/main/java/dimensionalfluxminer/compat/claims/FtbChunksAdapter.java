@@ -83,7 +83,7 @@ final class FtbChunksAdapter implements ProtectionService.ClaimAdapter {
     }
 
     private Object claim(Api a, Object manager, ServerLevel level, BlockPos pos) throws ReflectiveOperationException {
-        return a.getChunk().invoke(manager, a.chunkDimPos().newInstance(level.dimension(), new ChunkPos(pos)));
+        return a.getChunk().invoke(manager, a.chunkDimPos().newInstance(level.dimension(), ChunkPos.containing(pos)));
     }
 
     @Override

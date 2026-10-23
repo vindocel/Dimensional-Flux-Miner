@@ -10,11 +10,9 @@
           "name": "dimensionalfluxminer:steel_chassis"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/steel_chassis"

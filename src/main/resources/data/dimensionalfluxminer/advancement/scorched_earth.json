@@ -10,6 +10,6 @@
     "hidden": false
   },
   "criteria": {
-    "stepped": { "trigger": "minecraft:location", "conditions": { "player": { "stepping_on": { "block": { "blocks": [ "dimensionalfluxminer:corrupted_dirt", "dimensionalfluxminer:corrupted_grass" ] } } } } }
+    "stepped": { "trigger": "minecraft:location", "conditions": { "player": { "type": "minecraft:entity_properties", "entity": "this", "predicate": { "minecraft:stepping_on": { "block": { "blocks": [ "dimensionalfluxminer:corrupted_dirt", "dimensionalfluxminer:corrupted_grass" ] } } } } } }
   }
 }

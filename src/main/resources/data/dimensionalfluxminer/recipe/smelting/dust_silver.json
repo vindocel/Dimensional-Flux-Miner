@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_smelting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_silver"
-  },
+  "ingredient": "dimensionalfluxminer:dust_silver",
   "result_tag": "c:ingots/silver",
   "experience": 0.7,
   "cookingtime": 200

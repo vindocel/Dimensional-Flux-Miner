@@ -10,11 +10,9 @@
           "name": "dimensionalfluxminer:corrupted_dirt"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/corrupted_dirt"

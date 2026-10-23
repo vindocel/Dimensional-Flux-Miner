@@ -16,7 +16,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -41,7 +41,7 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
     private RecipeHolder<?> selected;
 
     private List<RecipeChoices.Option> sentOptions;
-    private ResourceLocation sentSelected;
+    private Identifier sentSelected;
 
     private MachineRecipeData(BlockEntity owner, RecipeChoices.Host host) {
         this.owner = owner;
@@ -64,14 +64,14 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
             for (int i = 0; i < current.size(); i++) {
                 list.add(new Pair(i, current.get(i).id(), current.get(i).result()));
             }
-            chosen = level.getRecipeManager().byKey(offer.get().selected(host.recipeChoices())).orElse(null);
+            chosen = dimensionalfluxminer.recipe.Recipes.byKey(level, offer.get().selected(host.recipeChoices())).orElse(null);
         }
         recipes = list;
         options = current;
         selected = chosen;
     }
 
-    private ResourceLocation selectedId() {
+    private Identifier selectedId() {
         return selected == null ? null : selected.id();
     }
 
@@ -118,7 +118,7 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
         if (input.isEmpty()) {
             return null;
         }
-        for (RecipeHolder<T> holder : level.getRecipeManager().getAllRecipesFor(type)) {
+        for (RecipeHolder<T> holder : dimensionalfluxminer.recipe.Recipes.byType(level, type)) {
             if (holder.value().matches(input, level)) {
                 return holder;
             }
@@ -201,14 +201,14 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
     }
 
     /** One entry of the list, kept in the machine's order (the default recipe first). */
-    private record Pair(int order, ResourceLocation id, ItemStack output) implements IRecipePair {
+    private record Pair(int order, Identifier id, ItemStack output) implements IRecipePair {
         @Override
         public ItemStack getOutput() {
             return output;
         }
 
         @Override
-        public ResourceLocation getResourceLocation() {
+        public Identifier getResourceLocation() {
             return id;
         }
 

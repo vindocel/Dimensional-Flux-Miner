@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "minecraft:book"
-    },
-    {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    {
-      "item": "dimensionalfluxminer:ender_eye_reinforced"
-    }
+    "minecraft:book",
+    "dimensionalfluxminer:ingot_steel",
+    "dimensionalfluxminer:ender_eye_reinforced"
   ],
   "result": {
     "id": "dimensionalfluxminer:guide_book",

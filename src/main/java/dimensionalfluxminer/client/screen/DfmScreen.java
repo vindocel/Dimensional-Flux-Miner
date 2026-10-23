@@ -1,5 +1,6 @@
 package dimensionalfluxminer.client.screen;
 
+import net.minecraft.client.renderer.RenderPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.compat.RecipeViewers;
@@ -12,20 +13,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 /**
  * Base machine screen: textured panel, typed slots, side tabs (26 px holders with an 18 px button inside) and
@@ -60,10 +64,10 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     private static final int WINDOW_Z = 400;
     private static final int WINDOW_Z_STEP = 400;
 
-    static final ResourceLocation SCREEN = sprite("panel/screen");
-    static final ResourceLocation BUTTON_DISABLED = sprite("button/disabled");
-    static final ResourceLocation BUTTON_NORMAL = sprite("button/normal");
-    static final ResourceLocation BUTTON_HIGHLIGHTED = sprite("button/highlighted");
+    static final Identifier SCREEN = sprite("panel/screen");
+    static final Identifier BUTTON_DISABLED = sprite("button/disabled");
+    static final Identifier BUTTON_NORMAL = sprite("button/normal");
+    static final Identifier BUTTON_HIGHLIGHTED = sprite("button/highlighted");
     /** Small buttons of a window's top bar (close, Auto Input, Auto Eject). */
     static final int SMALL_BUTTON = 10;
     /** Window close button, the size of the other top-bar buttons, with the close icon centered on it. */
@@ -71,10 +75,10 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     /** Window title area starts after the close button. */
     private static final int TITLE_START = 18;
     /** Energy bar frame (14 x 72) and shimmering fill sheet (42 frames of 8 x 66, one every 100 ms). */
-    static final ResourceLocation ENERGY_EMPTY = DimensionalFluxMiner.id("textures/gui/energy/energy_empty.png");
-    static final ResourceLocation ENERGY_SHEET = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet.png");
+    static final Identifier ENERGY_EMPTY = DimensionalFluxMiner.id("textures/gui/energy/energy_empty.png");
+    static final Identifier ENERGY_SHEET = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet.png");
     /** The same shimmering fill in purple, for the purple icon color. */
-    static final ResourceLocation ENERGY_SHEET_PURPLE = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet_purple.png");
+    static final Identifier ENERGY_SHEET_PURPLE = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet_purple.png");
 
     /** Text color of the terminal screens: light blue, or a light purple with the purple icon color. */
     public static int screenText() {
@@ -82,14 +86,14 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** Energy fill of the icon color of the screen being drawn. */
-    static ResourceLocation energySheet() {
+    static Identifier energySheet() {
         return GuiTheme.purple() ? ENERGY_SHEET_PURPLE : ENERGY_SHEET;
     }
     static final int ENERGY_FRAME_HEIGHT = 72;
     static final int ENERGY_FILL_HEIGHT = 66;
     static final int ENERGY_FRAMES = 42;
     static final long ENERGY_FRAME_MS = 100;
-    static final ResourceLocation CHECK = sprite("slot/overlay_check");
+    static final Identifier CHECK = sprite("slot/overlay_check");
 
     static final GuiIcon ICON_SIDE_CONFIG = GuiIcon.SIDE_CONFIG;
     static final GuiIcon ICON_UPGRADE = GuiIcon.UPGRADE;
@@ -113,7 +117,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     private static final int RATE_STRIP_WIDTH = 8;
     private static final long RATE_BLINK_MS = 500;
     static final GuiIcon ICON_REDSTONE_LOW = GuiIcon.REDSTONE_LOW;
-    static final ResourceLocation WARNING_TAB = sprite("tab/warning_left");
+    static final Identifier WARNING_TAB = sprite("tab/warning_left");
 
     /** Last position of each window (relative to the panel), kept while the game runs. */
     private static final Map<String, int[]> LAST_POSITIONS = new HashMap<>();
@@ -132,7 +136,11 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         super(menu, inventory, title);
     }
 
-    static ResourceLocation sprite(String path) {
+    protected DfmScreen(M menu, Inventory inventory, Component title, int width, int height) {
+        super(menu, inventory, title, width, height);
+    }
+
+    static Identifier sprite(String path) {
         return DimensionalFluxMiner.id(path);
     }
 
@@ -162,7 +170,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** Settings tab (left column, row {@code row} from the top of the panel): opens the look of the screens. */
-    void themeTab(GuiGraphics g, int x, int y, int row, int mouseX, int mouseY) {
+    void themeTab(GuiGraphicsExtractor g, int x, int y, int row, int mouseX, int mouseY) {
         windowTab(g, x - TAB_SIZE, y + row, true, TAB_DEFAULT, ICON_SETTINGS, themeWindow, mouseX, mouseY,
                 () -> List.of(Component.translatable("gui.dimensionalfluxminer.theme")));
     }
@@ -181,24 +189,31 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     // ------------------------------------------------------------------ main panel
 
     /** Draws the machine content (absolute coordinates). Panel, labels and player slots are already drawn. */
-    protected abstract void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY);
+    protected abstract void renderMain(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY);
 
     /** Top of the player inventory slots (menu coordinates). */
     protected abstract int inventoryTop();
 
     @Override
-    protected final void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+    public final void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        // The look applies to this screen only (set here, cleared once the screen is drawn): recipe viewers and
+        // tooltips drawn after it stay as they are.
+        GuiTheme.setDark(GuiThemes.dark(menu.pos()));
+        GuiTheme.setPurple(GuiThemes.purple(menu.pos()));
+        mainHotspots.clear();
+        itemAreas.clear();
+        super.extractBackground(g, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
         renderPanel(g, x, y);
         fitted(g, title, x, y + titleLabelY, imageWidth, GuiTheme.title(), 1.0F, true);
-        g.drawString(font, playerInventoryTitle, x + inventoryLabelX, y + inventoryLabelY, GuiTheme.title(), false);
+        g.text(font, playerInventoryTitle, x + inventoryLabelX, y + inventoryLabelY, GuiTheme.title(), false);
         renderMain(g, x, y, mouseX, mouseY);
         drawTabs(g);
     }
 
     /** Panel with its metal frame and player inventory slot frames; screens with their own artwork override it. */
-    protected void renderPanel(GuiGraphics g, int x, int y) {
+    protected void renderPanel(GuiGraphicsExtractor g, int x, int y) {
         MetalFrame.panel(g, x, y, imageWidth, imageHeight);
         int top = inventoryTop();
         for (int row = 0; row < 3; row++) {
@@ -211,61 +226,46 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         }
     }
 
+    /** Title and inventory label are drawn with the panel. */
     @Override
-    protected final void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.pose().pushPose();
-        g.pose().translate(-leftPos, -topPos, 0);
-        renderWindows(g, mouseX, mouseY);
-        g.pose().popPose();
+    protected final void extractLabels(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+    }
+
+    /** Windows go above the panel and its slot items; the carried item and tooltips are drawn above them. */
+    @Override
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractContents(graphics, mouseX, mouseY, partialTick);
+        renderWindows(graphics, mouseX, mouseY);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // The look applies to this screen only: recipe viewers and tooltips drawn after it stay as they are.
-        GuiTheme.setDark(GuiThemes.dark(menu.pos()));
-        GuiTheme.setPurple(GuiThemes.purple(menu.pos()));
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         try {
-            renderThemed(graphics, mouseX, mouseY, partialTick);
+            super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         } finally {
             GuiTheme.setDark(false);
             GuiTheme.setPurple(false);
         }
     }
 
-    private void renderThemed(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        mainHotspots.clear();
-        itemAreas.clear();
-        super.render(graphics, mouseX, mouseY, partialTick);
-        ItemStack carried = menu.getCarried();
-        if (!windows.isEmpty() && !carried.isEmpty()) {
-            // The vanilla carried item is drawn below the windows; draw it again above them.
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, WINDOW_Z + windows.size() * WINDOW_Z_STEP);
-            graphics.renderItem(carried, mouseX - 8, mouseY - 8);
-            graphics.renderItemDecorations(font, carried, mouseX - 8, mouseY - 8);
-            graphics.pose().popPose();
+    @Override
+    protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        if (!menu.getCarried().isEmpty()) {
+            return;
         }
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, WINDOW_Z + (windows.size() + 1) * WINDOW_Z_STEP);
-        if (menu.getCarried().isEmpty()) {
-            Window top = windowAt(mouseX, mouseY);
-            List<Hotspot> layer = top == null ? mainHotspots : top.hotspots;
-            boolean shown = false;
-            for (Hotspot hotspot : layer) {
-                if (hotspot.contains(mouseX, mouseY) && hotspot.tooltip != null) {
-                    List<Component> lines = hotspot.tooltip.get();
-                    if (!lines.isEmpty()) {
-                        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
-                        shown = true;
-                    }
-                    break;
+        Window top = windowAt(mouseX, mouseY);
+        List<Hotspot> layer = top == null ? mainHotspots : top.hotspots;
+        for (Hotspot hotspot : layer) {
+            if (hotspot.contains(mouseX, mouseY) && hotspot.tooltip != null) {
+                List<Component> lines = hotspot.tooltip.get();
+                if (!lines.isEmpty()) {
+                    graphics.setComponentTooltipForNextFrame(font, lines, mouseX, mouseY);
+                    return;
                 }
-            }
-            if (!shown) {
-                renderTooltip(graphics, mouseX, mouseY);
+                break;
             }
         }
-        graphics.pose().popPose();
+        super.extractTooltip(graphics, mouseX, mouseY);
     }
 
     // ------------------------------------------------------------------ windows
@@ -306,7 +306,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             return 0;
         }
 
-        protected abstract void render(GuiGraphics g, int x, int y, int mouseX, int mouseY);
+        protected abstract void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY);
 
         protected void onClose() {
         }
@@ -398,7 +398,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         return null;
     }
 
-    private void renderWindows(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderWindows(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         for (int i = 0; i < windows.size(); i++) {
             Window w = windows.get(i);
             w.pendingHotspots = new ArrayList<>();
@@ -406,11 +406,9 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             int x = w.x();
             int y = w.y();
             int h = w.height();
-            g.pose().pushPose();
-            // Above the slot items and their counts (z ~300) of the panel and of the windows below.
-            g.pose().translate(0, 0, WINDOW_Z + i * WINDOW_Z_STEP);
+            // Above the slot items and their counts of the panel and of the windows below.
+            g.nextStratum();
             drawing = w;
-            RenderSystem.enableBlend();
             MetalFrame.panel(g, x, y, w.width, h);
             closeButton(g, x + 6, y + 6, mouseX, mouseY, w);
             // The title uses the bar between the close button and the window's own top-right button, if any.
@@ -421,14 +419,16 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             w.hotspots = w.pendingHotspots;
             w.slotRects = w.pendingSlots;
             drawing = null;
-            g.pose().popPose();
         }
     }
 
     // ------------------------------------------------------------------ input
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         Window top = windowAt(mouseX, mouseY);
         for (Window w : List.copyOf(windows)) {
             w.mousePressed(mouseX, mouseY, w == top);
@@ -436,63 +436,64 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         if (top != null) {
             windows.remove(top);
             windows.add(top);
-            if (click(top.hotspots, mouseX, mouseY, button)) {
+            if (click(top.hotspots, mouseX, mouseY, button, event.hasShiftDown())) {
                 return true;
             }
             if (hoveredSlot != null && top.hasSlot(hoveredSlot.x, hoveredSlot.y)) {
-                return super.mouseClicked(mouseX, mouseY, button);
+                return super.mouseClicked(event, doubleClick);
             }
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && mouseY < top.y() + WINDOW_BAR) {
+            if (button == InputConstants.MOUSE_BUTTON_LEFT && mouseY < top.y() + WINDOW_BAR) {
                 dragged = top;
                 dragOffsetX = mouseX - top.x();
                 dragOffsetY = mouseY - top.y();
             }
             return true;
         }
-        if (click(mainHotspots, mouseX, mouseY, button)) {
+        if (click(mainHotspots, mouseX, mouseY, button, event.hasShiftDown())) {
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
         if (dragged != null) {
-            dragged.relX = (int) Math.round(mouseX - dragOffsetX) - leftPos;
-            dragged.relY = (int) Math.round(mouseY - dragOffsetY) - topPos;
+            dragged.relX = (int) Math.round(event.x() - dragOffsetX) - leftPos;
+            dragged.relY = (int) Math.round(event.y() - dragOffsetY) - topPos;
             clamp(dragged);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (dragged != null && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (dragged != null && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             dragged = null;
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && !windows.isEmpty()) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == InputConstants.KEY_ESCAPE && !windows.isEmpty()) {
             closeWindow(windows.getLast());
             return true;
         }
-        if (!windows.isEmpty() && windows.getLast().keyPressed(keyCode, scanCode, modifiers)) {
+        if (!windows.isEmpty() && windows.getLast().keyPressed(event.key(), event.keycode(), event.modifiers())) {
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char c, int modifiers) {
-        if (!windows.isEmpty() && windows.getLast().charTyped(c, modifiers)) {
+    public boolean charTyped(CharacterEvent event) {
+        if (!windows.isEmpty() && Character.isBmpCodePoint(event.codepoint())
+                && windows.getLast().charTyped((char) event.codepoint(), 0)) {
             return true;
         }
-        return super.charTyped(c, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
@@ -505,7 +506,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     @Override
-    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeft, int guiTop, int button) {
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeft, int guiTop) {
         if (windowAt(mouseX, mouseY) != null) {
             return false;
         }
@@ -514,7 +515,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                 return false;
             }
         }
-        return super.hasClickedOutside(mouseX, mouseY, guiLeft, guiTop, button);
+        return super.hasClickedOutside(mouseX, mouseY, guiLeft, guiTop);
     }
 
     @Override
@@ -525,12 +526,12 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         super.removed();
     }
 
-    private boolean click(List<Hotspot> list, double mouseX, double mouseY, int button) {
+    private boolean click(List<Hotspot> list, double mouseX, double mouseY, int button, boolean shift) {
         for (Hotspot hotspot : List.copyOf(list)) {
             if (hotspot.contains(mouseX, mouseY)) {
-                boolean middle = button == GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
-                IntSupplier action = button == GLFW.GLFW_MOUSE_BUTTON_RIGHT ? hotspot.rightId
-                        : button == GLFW.GLFW_MOUSE_BUTTON_LEFT ? hotspot.leftId : middle ? hotspot.middleId : null;
+                boolean middle = button == InputConstants.MOUSE_BUTTON_MIDDLE;
+                IntSupplier action = button == InputConstants.MOUSE_BUTTON_RIGHT ? hotspot.rightId
+                        : button == InputConstants.MOUSE_BUTTON_LEFT ? hotspot.leftId : middle ? hotspot.middleId : null;
                 if (action == null) {
                     return true;
                 }
@@ -539,7 +540,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                 }
                 int id = action.getAsInt();
                 if (id >= 0) {
-                    if (!middle && Screen.hasShiftDown() && hotspot.shiftOffset > 0) {
+                    if (!middle && shift && hotspot.shiftOffset > 0) {
                         id += hotspot.shiftOffset;
                     }
                     send(id);
@@ -592,7 +593,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         EXTRA("slot/extra"),
         OUTPUT_WARNING("slot/output_warning");
 
-        final ResourceLocation sprite;
+        final Identifier sprite;
 
         SlotKind(String path) {
             this.sprite = sprite(path);
@@ -600,12 +601,12 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** 18 x 18 slot frame; the item area starts at (x + 1, y + 1). */
-    protected void slot(GuiGraphics g, SlotKind kind, int x, int y) {
-        GuiTheme.chrome(() -> g.blitSprite(kind.sprite, x, y, 18, 18));
+    protected void slot(GuiGraphicsExtractor g, SlotKind kind, int x, int y) {
+        GuiTheme.chrome(() -> g.blitSprite(RenderPipelines.GUI_TEXTURED, kind.sprite, x, y, 18, 18));
     }
 
     /** Draws a real container slot inside the window being drawn and keeps the menu slot under it. */
-    protected void windowSlot(GuiGraphics g, WindowSlot slot, SlotKind kind, int x, int y, ItemStack ghost, int mouseX, int mouseY) {
+    protected void windowSlot(GuiGraphicsExtractor g, WindowSlot slot, SlotKind kind, int x, int y, ItemStack ghost, int mouseX, int mouseY) {
         int rx = x + 1 - leftPos;
         int ry = y + 1 - topPos;
         slot.place(true, rx, ry);
@@ -615,44 +616,38 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         slot(g, kind, x, y);
         ItemStack stack = slot.getItem();
         if (!stack.isEmpty()) {
-            g.renderItem(stack, x + 1, y + 1);
-            g.renderItemDecorations(font, stack, x + 1, y + 1);
+            g.item(stack, x + 1, y + 1);
+            g.itemDecorations(font, stack, x + 1, y + 1);
         } else if (!ghost.isEmpty()) {
             ghost(g, ghost, x + 1, y + 1);
         }
         if (hovered(x + 1, y + 1, 16, 16, mouseX, mouseY)) {
-            g.pose().pushPose();
-            g.pose().translate(0, 0, 160);
             g.fill(x + 1, y + 1, x + 17, y + 17, 0x80FFFFFF);
-            g.pose().popPose();
         }
     }
 
     /** Faded item hinting what an empty slot accepts. */
-    protected void ghost(GuiGraphics g, ItemStack stack, int x, int y) {
-        g.renderFakeItem(stack, x, y);
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 200);
+    protected void ghost(GuiGraphicsExtractor g, ItemStack stack, int x, int y) {
+        g.fakeItem(stack, x, y);
         g.fill(x, y, x + 16, y + 16, GuiTheme.gray(0xA08B8B8B));
-        g.pose().popPose();
     }
 
     /** Item icon with an aggregate count (logical queue display). */
-    protected void queueEntry(GuiGraphics g, ItemStack prototype, long count, int x, int y) {
+    protected void queueEntry(GuiGraphicsExtractor g, ItemStack prototype, long count, int x, int y) {
         if (prototype.isEmpty() || count <= 0) {
             return;
         }
         itemAreas.add(new ItemArea(new HoveredItem(prototype, x, y), drawing));
-        g.renderItem(prototype, x, y);
-        g.renderItemDecorations(font, prototype, x, y, compact(count));
+        g.item(prototype, x, y);
+        g.itemDecorations(font, prototype, x, y, compact(count));
     }
 
-    protected void innerScreen(GuiGraphics g, int x, int y, int w, int h) {
-        g.blitSprite(SCREEN, x, y, w, h);
+    protected void innerScreen(GuiGraphicsExtractor g, int x, int y, int w, int h) {
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, SCREEN, x, y, w, h);
     }
 
     /** Lines of screen text (scale 0.8), one every {@code pitch} pixels starting at {@code y}. */
-    protected void screenLines(GuiGraphics g, List<Component> lines, int x, int y, int maxWidth, int pitch) {
+    protected void screenLines(GuiGraphicsExtractor g, List<Component> lines, int x, int y, int maxWidth, int pitch) {
         for (int i = 0; i < lines.size(); i++) {
             fitted(g, lines.get(i), x, y + i * pitch, maxWidth, screenText(), 0.8F, false);
         }
@@ -662,31 +657,31 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Text scaled by {@code scale} (and further down if needed to fit {@code maxWidth}); centered in the width
      * when {@code center} is set.
      */
-    protected void fitted(GuiGraphics g, Component text, int x, int y, int maxWidth, int color, float scale, boolean center) {
+    protected void fitted(GuiGraphicsExtractor g, Component text, int x, int y, int maxWidth, int color, float scale, boolean center) {
         int width = font.width(text);
         float s = width * scale > maxWidth && width > 0 ? maxWidth / (float) width : scale;
         float drawn = width * s;
         float dx = center ? x + (maxWidth - drawn) / 2.0F : x;
         float dy = y + (font.lineHeight * (scale - s)) / 2.0F;
-        g.pose().pushPose();
-        g.pose().translate(dx, dy, 0);
-        g.pose().scale(s, s, 1.0F);
-        g.drawString(font, text, 0, 0, color, false);
-        g.pose().popPose();
+        g.pose().pushMatrix();
+        g.pose().translate(dx, dy);
+        g.pose().scale(s, s);
+        g.text(font, text, 0, 0, color, false);
+        g.pose().popMatrix();
     }
 
-    protected void text(GuiGraphics g, Component text, int x, int y, int color) {
-        g.drawString(font, text, x, y, color, false);
+    protected void text(GuiGraphicsExtractor g, Component text, int x, int y, int color) {
+        g.text(font, text, x, y, color, false);
     }
 
     /**
      * Text centered in {@code width}; when it does not fit, it slides from one side to the other (and back) inside
      * that width, so all of it can be read without shrinking or cutting it.
      */
-    protected void scrollingText(GuiGraphics g, Component text, int x, int y, int width, int color) {
+    protected void scrollingText(GuiGraphicsExtractor g, Component text, int x, int y, int width, int color) {
         int textWidth = font.width(text);
         if (textWidth <= width) {
-            g.drawString(font, text, x + (width - textWidth) / 2, y, color, false);
+            g.text(font, text, x + (width - textWidth) / 2, y, color, false);
             return;
         }
         int overflow = textWidth - width;
@@ -695,12 +690,12 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         double phase = Math.sin(Math.PI / 2 * Math.cos(2 * Math.PI * seconds / period)) / 2 + 0.5;
         int offset = (int) Math.round(Mth.lerp(phase, 0, overflow));
         g.enableScissor(x, y - 1, x + width, y + font.lineHeight + 1);
-        g.drawString(font, text, x - offset, y, color, false);
+        g.text(font, text, x - offset, y, color, false);
         g.disableScissor();
     }
 
     /** Close button of a window with the close icon centered on it. */
-    private void closeButton(GuiGraphics g, int x, int y, int mouseX, int mouseY, Window window) {
+    private void closeButton(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY, Window window) {
         boolean hover = hovered(x, y, CLOSE_SIZE, CLOSE_SIZE, mouseX, mouseY);
         buttonHotspot(x, y, CLOSE_SIZE, CLOSE_SIZE, () -> {
             closeWindow(window);
@@ -715,58 +710,56 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * (8 px, 3 px inside the frame) that grows from the bottom. Shorter bars keep the frame's top border and its
      * bottom-aligned part so the frame marks and the fill stay aligned.
      */
-    protected void energyBar(GuiGraphics g, int x, int y, int height, double fraction) {
+    protected void energyBar(GuiGraphicsExtractor g, int x, int y, int height, double fraction) {
         int h = Math.min(ENERGY_FRAME_HEIGHT, height);
         GuiTheme.chrome(() -> {
-            g.blit(ENERGY_EMPTY, x, y, 0, 0, 14, 3, 14, ENERGY_FRAME_HEIGHT);
-            g.blit(ENERGY_EMPTY, x, y + 3, 0, ENERGY_FRAME_HEIGHT - (h - 3), 14, h - 3, 14, ENERGY_FRAME_HEIGHT);
+            g.blit(RenderPipelines.GUI_TEXTURED, ENERGY_EMPTY, x, y, 0, 0, 14, 3, 14, ENERGY_FRAME_HEIGHT);
+            g.blit(RenderPipelines.GUI_TEXTURED, ENERGY_EMPTY, x, y + 3, 0, ENERGY_FRAME_HEIGHT - (h - 3), 14, h - 3, 14, ENERGY_FRAME_HEIGHT);
         });
         int area = h - 6;
         int filled = (int) Math.round(area * Mth.clamp(fraction, 0, 1));
         if (filled > 0) {
             int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
-            g.blit(energySheet(), x + 3, y + 3 + area - filled, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - filled,
+            g.blit(RenderPipelines.GUI_TEXTURED, energySheet(), x + 3, y + 3 + area - filled, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - filled,
                     8, filled, 8, ENERGY_FILL_HEIGHT * ENERGY_FRAMES);
         }
     }
 
 
-    private void buttonBackground(GuiGraphics g, int x, int y, int w, int h, boolean active, boolean lit) {
-        RenderSystem.enableBlend();
-        GuiTheme.chrome(() -> g.blitSprite(!active ? BUTTON_DISABLED : lit ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL, x, y, w, h));
+    private void buttonBackground(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean active, boolean lit) {
+        GuiTheme.chrome(() -> g.blitSprite(RenderPipelines.GUI_TEXTURED, !active ? BUTTON_DISABLED : lit ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL, x, y, w, h));
     }
 
     /** Text button. Inactive buttons are drawn dark and ignore clicks. */
-    protected void button(GuiGraphics g, int x, int y, int w, int h, Component label, boolean active, int mouseX, int mouseY,
+    protected void button(GuiGraphicsExtractor g, int x, int y, int w, int h, Component label, boolean active, int mouseX, int mouseY,
                           IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         toggleButton(g, x, y, w, h, label, active, false, mouseX, mouseY, left, right, tooltip);
     }
 
     /** Text button; {@code lit} keeps the highlighted background (toggle ON). */
-    protected void toggleButton(GuiGraphics g, int x, int y, int w, int h, Component label, boolean active, boolean lit, int mouseX,
+    protected void toggleButton(GuiGraphicsExtractor g, int x, int y, int w, int h, Component label, boolean active, boolean lit, int mouseX,
                                 int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, w, h, mouseX, mouseY);
         buttonHotspot(x, y, w, h, active ? left : null, active ? right : null, tooltip);
         buttonBackground(g, x, y, w, h, active, hover || lit);
         int textWidth = font.width(label);
         float s = textWidth > w - 4 ? (w - 4) / (float) textWidth : 1.0F;
-        g.pose().pushPose();
-        g.pose().translate(x + (w - textWidth * s) / 2.0F, y + (h - 8 * s) / 2.0F, 0);
-        g.pose().scale(s, s, 1.0F);
-        g.drawString(font, label, 0, 0, active ? BUTTON_TEXT : BUTTON_TEXT_INACTIVE, true);
-        g.pose().popPose();
+        g.pose().pushMatrix();
+        g.pose().translate(x + (w - textWidth * s) / 2.0F, y + (h - 8 * s) / 2.0F);
+        g.pose().scale(s, s);
+        g.text(font, label, 0, 0, active ? BUTTON_TEXT : BUTTON_TEXT_INACTIVE, true);
+        g.pose().popMatrix();
     }
 
     /**
      * Square button with an icon of {@code iconW} x {@code iconH} drawn at its own pixel size, centered. A
      * {@code pressed} button keeps the dark (sunk) background but stays clickable: it is a push-on / push-off switch.
      */
-    protected void iconButton(GuiGraphics g, int x, int y, int size, GuiIcon icon, boolean pressed,
+    protected void iconButton(GuiGraphicsExtractor g, int x, int y, int size, GuiIcon icon, boolean pressed,
                               int mouseX, int mouseY, IntSupplier left, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, left, null, tooltip);
-        RenderSystem.enableBlend();
-        GuiTheme.chrome(() -> g.blitSprite(pressed ? BUTTON_DISABLED : hover ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL, x, y, size, size));
+        GuiTheme.chrome(() -> g.blitSprite(RenderPipelines.GUI_TEXTURED, pressed ? BUTTON_DISABLED : hover ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL, x, y, size, size));
         icon.drawCentered(g, x, y, size, size);
     }
 
@@ -774,33 +767,33 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * The machine energy bar laid on its side: {@code length} px long (frame middle and shimmering fill repeated, so the
      * pixels keep their size), 14 px tall, filling from the left.
      */
-    protected void energyBarHorizontal(GuiGraphics g, int x, int y, int length, double fraction) {
+    protected void energyBarHorizontal(GuiGraphicsExtractor g, int x, int y, int length, double fraction) {
         int border = 3;
         int area = length - 2 * border;
         int filled = (int) Math.round(area * Mth.clamp(fraction, 0, 1));
-        g.pose().pushPose();
+        g.pose().pushMatrix();
         // The vertical bar turned a quarter: its bottom, where the fill starts, ends up on the left.
-        g.pose().translate(x + length, y, 0);
-        g.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90));
+        g.pose().translate(x + length, y);
+        g.pose().rotate((float) Math.toRadians(90));
         GuiTheme.chrome(() -> {
-            g.blit(ENERGY_EMPTY, 0, 0, 0, 0, 14, border, 14, ENERGY_FRAME_HEIGHT);
+            g.blit(RenderPipelines.GUI_TEXTURED, ENERGY_EMPTY, 0, 0, 0, 0, 14, border, 14, ENERGY_FRAME_HEIGHT);
             for (int pos = border; pos < length - border; pos += ENERGY_FILL_HEIGHT) {
                 int piece = Math.min(ENERGY_FILL_HEIGHT, length - border - pos);
-                g.blit(ENERGY_EMPTY, 0, pos, 0, border, 14, piece, 14, ENERGY_FRAME_HEIGHT);
+                g.blit(RenderPipelines.GUI_TEXTURED, ENERGY_EMPTY, 0, pos, 0, border, 14, piece, 14, ENERGY_FRAME_HEIGHT);
             }
-            g.blit(ENERGY_EMPTY, 0, length - border, 0, ENERGY_FRAME_HEIGHT - border, 14, border, 14, ENERGY_FRAME_HEIGHT);
+            g.blit(RenderPipelines.GUI_TEXTURED, ENERGY_EMPTY, 0, length - border, 0, ENERGY_FRAME_HEIGHT - border, 14, border, 14, ENERGY_FRAME_HEIGHT);
         });
         int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
         for (int drawn = 0; drawn < filled; drawn += ENERGY_FILL_HEIGHT) {
             int piece = Math.min(ENERGY_FILL_HEIGHT, filled - drawn);
-            g.blit(energySheet(), border, border + area - drawn - piece, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - piece,
+            g.blit(RenderPipelines.GUI_TEXTURED, energySheet(), border, border + area - drawn - piece, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - piece,
                     8, piece, 8, ENERGY_FILL_HEIGHT * ENERGY_FRAMES);
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     /** Square button with an icon covering it. {@code lit} keeps the highlighted background (toggle ON). */
-    protected void imageButton(GuiGraphics g, int x, int y, int size, GuiIcon icon, boolean active, boolean lit,
+    protected void imageButton(GuiGraphicsExtractor g, int x, int y, int size, GuiIcon icon, boolean active, boolean lit,
                                int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, active ? left : null, active ? right : null, tooltip);
@@ -809,16 +802,13 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** Square button whose background is tinted with {@code color} (null keeps the plain button). */
-    protected void colorButton(GuiGraphics g, int x, int y, int size, Integer color, boolean active, int mouseX, int mouseY,
+    protected void colorButton(GuiGraphicsExtractor g, int x, int y, int size, Integer color, boolean active, int mouseX, int mouseY,
                                IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, active ? left : null, active ? right : null, tooltip);
-        if (color != null) {
-            int tint = buttonTint(color);
-            g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, 1.0F);
-        }
-        buttonBackground(g, x, y, size, size, active, hover);
-        g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        int tint = color != null ? 0xFF000000 | buttonTint(color) : 0xFFFFFFFF;
+        GuiTheme.chrome(() -> g.blitSprite(RenderPipelines.GUI_TEXTURED, !active ? BUTTON_DISABLED : hover ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL,
+                x, y, size, size, tint));
     }
 
     /** Button tint: the color with saturation -0.1 and value +0.1. */
@@ -851,7 +841,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Side tab: a 26 x 26 metal ear of the panel frame (tinted with {@code color}) on the left or right edge with
      * an 18 x 18 button inside. A disabled tab (its window already open) is drawn dark and ignores clicks.
      */
-    protected void tab(GuiGraphics g, int x, int y, boolean leftSide, int color, GuiIcon icon, boolean enabled,
+    protected void tab(GuiGraphicsExtractor g, int x, int y, boolean leftSide, int color, GuiIcon icon, boolean enabled,
                        int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         iconTab(g, x, y, leftSide, color, icon, TAB_INNER, enabled, false, mouseX, mouseY, left, right, tooltip);
     }
@@ -860,13 +850,13 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Tab with an icon of {@code iconSize} centered on the button. {@code lit} keeps the highlighted background
      * (toggle ON).
      */
-    protected void iconTab(GuiGraphics g, int x, int y, boolean leftSide, int color, GuiIcon icon, int iconSize, boolean enabled,
+    protected void iconTab(GuiGraphicsExtractor g, int x, int y, boolean leftSide, int color, GuiIcon icon, int iconSize, boolean enabled,
                            boolean lit, int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         iconTab(g, x, y, leftSide, color, icon, iconSize, enabled, lit, false, mouseX, mouseY, left, right, tooltip);
     }
 
     /** Same as above; {@code warning} draws the holder with hazard stripes (the tab is related to a problem). */
-    protected void iconTab(GuiGraphics g, int x, int y, boolean leftSide, int color, GuiIcon icon, int iconSize, boolean enabled,
+    protected void iconTab(GuiGraphicsExtractor g, int x, int y, boolean leftSide, int color, GuiIcon icon, int iconSize, boolean enabled,
                            boolean lit, boolean warning, int mouseX, int mouseY, IntSupplier left, IntSupplier right,
                            Supplier<List<Component>> tooltip) {
         int[] inner = tabFrame(g, x, y, leftSide, color, enabled, lit, warning, mouseX, mouseY, left, right, tooltip);
@@ -875,10 +865,10 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** Problems tab (26 x 26, left side): lists what keeps the machine from running. */
-    protected void warningTab(GuiGraphics g, int x, int y, List<Component> problems) {
+    protected void warningTab(GuiGraphicsExtractor g, int x, int y, List<Component> problems) {
         ears.add(new Ear(x, y, TAB_SIZE, true));
         // The striped sign of the warning sprite (with its sunken edge) sits where the button of the other tabs is.
-        tabContents.add(() -> g.blitSprite(WARNING_TAB, TAB_SIZE, TAB_SIZE, 3, 3, x + TAB_BUTTON_LEFT - 1, y + TAB_BUTTON_TOP - 1,
+        tabContents.add(() -> g.blitSprite(RenderPipelines.GUI_TEXTURED, WARNING_TAB, TAB_SIZE, TAB_SIZE, 3, 3, x + TAB_BUTTON_LEFT - 1, y + TAB_BUTTON_TOP - 1,
                 TAB_INNER + 3, TAB_INNER + 3));
         hotspot(x, y, TAB_SIZE, TAB_SIZE, null, null, () -> {
             List<Component> lines = new ArrayList<>();
@@ -894,7 +884,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Holder and button background of a tab; returns the button's top-left corner. The holder is only noted here and
      * the button drawn later ({@link #drawTabs}), so tabs stacked next to each other share one holder.
      */
-    private int[] tabFrame(GuiGraphics g, int x, int y, boolean leftSide, int color, boolean enabled, boolean lit, boolean warning,
+    private int[] tabFrame(GuiGraphicsExtractor g, int x, int y, boolean leftSide, int color, boolean enabled, boolean lit, boolean warning,
                            int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         ears.add(new Ear(x, y, TAB_SIZE, leftSide));
         // Centered on the metal between the outer bevel and the panel's inner line.
@@ -903,7 +893,6 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         boolean hover = hovered(bx, by, TAB_INNER, TAB_INNER, mouseX, mouseY);
         buttonHotspot(bx, by, TAB_INNER, TAB_INNER, enabled ? left : null, enabled ? right : null, tooltip);
         tabContents.add(() -> {
-            RenderSystem.enableBlend();
             // The tab's color (or the hazard dashes of a related problem) lights a ring around the button.
             if (warning || color != TAB_DEFAULT) {
                 MetalFrame.ring(g, bx, by, TAB_INNER, color, warning);
@@ -925,7 +914,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Draws the tab holders noted since the last call, then their buttons. Holders on the same edge that touch (the
      * usual 2 px between stacked tabs) are joined into one block holding all their buttons.
      */
-    private void drawTabs(GuiGraphics g) {
+    private void drawTabs(GuiGraphicsExtractor g) {
         List<Ear> sorted = new ArrayList<>(ears);
         sorted.sort(java.util.Comparator.comparing(Ear::left).thenComparingInt(Ear::x).thenComparingInt(Ear::y));
         Ear block = null;
@@ -950,7 +939,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** Tab that opens {@code window}; disabled while the window is open. */
-    protected void windowTab(GuiGraphics g, int x, int y, boolean leftSide, int color, GuiIcon icon, Window window,
+    protected void windowTab(GuiGraphicsExtractor g, int x, int y, boolean leftSide, int color, GuiIcon icon, Window window,
                              int mouseX, int mouseY, Supplier<List<Component>> tooltip) {
         tab(g, x, y, leftSide, color, icon, !isWindowOpen(window), mouseX, mouseY, () -> {
             openWindow(window);
@@ -959,12 +948,9 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
     /** Vanilla-style highlight of a machine slot (frame at x, y) under the mouse, drawn above its item. */
-    protected void slotHover(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    protected void slotHover(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         if (hovered(x + 1, y + 1, 16, 16, mouseX, mouseY)) {
-            g.pose().pushPose();
-            g.pose().translate(0, 0, 200);
             g.fill(x + 1, y + 1, x + 17, y + 17, 0x80FFFFFF);
-            g.pose().popPose();
         }
     }
 
@@ -972,7 +958,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Clickable progress area: opens the given recipe categories in the installed recipe viewer (EMI or JEI). Does
      * nothing when no viewer is installed.
      */
-    protected void recipeArea(int x, int y, int w, int h, Supplier<ResourceLocation[]> categories, Supplier<List<Component>> tooltip) {
+    protected void recipeArea(int x, int y, int w, int h, Supplier<Identifier[]> categories, Supplier<List<Component>> tooltip) {
         if (!RecipeViewers.available()) {
             hotspot(x, y, w, h, null, null, tooltip, 0);
             return;
@@ -991,7 +977,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Rate selector tab: one colored strip per level stacked from the bottom, the strip of the current level blinking.
      * Left click next level (10 wraps to 1), right click previous.
      */
-    protected void rateTab(GuiGraphics g, int x, int y, boolean leftSide, int rate, int nextId, int previousId, int mouseX, int mouseY,
+    protected void rateTab(GuiGraphicsExtractor g, int x, int y, boolean leftSide, int rate, int nextId, int previousId, int mouseX, int mouseY,
                            Supplier<List<Component>> details) {
         int[] inner = tabFrame(g, x, y, leftSide, TAB_DEFAULT, true, false, false, mouseX, mouseY, () -> nextId, () -> previousId, () -> {
             List<Component> lines = new ArrayList<>();

@@ -28,9 +28,9 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
@@ -57,7 +57,7 @@ public class DfmJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public ResourceLocation getPluginUid() {
+    public Identifier getPluginUid() {
         return DimensionalFluxMiner.id("jei_plugin");
     }
 
@@ -87,8 +87,8 @@ public class DfmJeiPlugin implements IModPlugin {
             return;
         }
         registration.addRecipes(CRUSHING, RecipeViewerData.crushing());
-        registration.addRecipes(SMELTING, RecipeViewerData.electricFurnaceSmelting(level.getRecipeManager(), level.registryAccess()));
-        registration.addRecipes(ALLOYING, RecipeViewerData.alloying(level.getRecipeManager()));
+        registration.addRecipes(SMELTING, RecipeViewerData.electricFurnaceSmelting(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess()));
+        registration.addRecipes(ALLOYING, RecipeViewerData.alloying(dimensionalfluxminer.recipe.Recipes.map(level)));
     }
 
     /** Machine items are drawn by the screen, not in vanilla slots: R / U work on them through this handler. */
@@ -158,7 +158,7 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
-        public void draw(CrusherProcessing.Display recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
+        public void draw(CrusherProcessing.Display recipe, IRecipeSlotsView view, GuiGraphicsExtractor g, double mouseX, double mouseY) {
             CrusherLayout.drawMechanism(g, 0, 0, CrusherLayout.WIDTH);
             CrusherLayout.drawPreview(g, 0, 0, 4000);
         }
@@ -200,7 +200,7 @@ public class DfmJeiPlugin implements IModPlugin {
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, RecipeViewerData.FurnaceDisplay recipe, IFocusGroup focuses) {
             builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[0], 2 + ElectricFurnaceLayout.INPUT_Y)
-                    .addItemStacks(List.of(recipe.input().getItems()).stream().map(s -> s.copyWithCount(recipe.inputCount())).toList());
+                    .addItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(recipe.input())).stream().map(s -> s.copyWithCount(recipe.inputCount())).toList());
             var output = builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.FURNACE.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y)
                     .addItemStack(recipe.output());
             if (recipe.bulk()) {
@@ -209,13 +209,13 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
-        public void draw(RecipeViewerData.FurnaceDisplay recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
+        public void draw(RecipeViewerData.FurnaceDisplay recipe, IRecipeSlotsView view, GuiGraphicsExtractor g, double mouseX, double mouseY) {
             ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE);
             ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE, recipe.cookTicks() * 50L);
         }
 
         @Override
-        public ResourceLocation getRegistryName(RecipeViewerData.FurnaceDisplay recipe) {
+        public Identifier getRegistryName(RecipeViewerData.FurnaceDisplay recipe) {
             return recipe.id();
         }
     }
@@ -259,7 +259,7 @@ public class DfmJeiPlugin implements IModPlugin {
             List<SizedIngredient> ingredients = recipe.ingredients();
             for (int i = 0; i < ingredients.size() && i < 3; i++) {
                 builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[i], 2 + ElectricFurnaceLayout.INPUT_Y)
-                        .addItemStacks(List.of(ingredients.get(i).getItems()));
+                        .addItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(ingredients.get(i).ingredient())));
             }
             builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y).addItemStack(recipe.result());
             recipe.byproduct().ifPresent(b -> builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[1], 2 + ElectricFurnaceLayout.OUTPUT_Y)
@@ -268,14 +268,14 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
-        public void draw(RecipeHolder<AlloyingRecipe> recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
+        public void draw(RecipeHolder<AlloyingRecipe> recipe, IRecipeSlotsView view, GuiGraphicsExtractor g, double mouseX, double mouseY) {
             ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY);
             ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY, recipe.value().processingTicks() * 50L);
         }
 
         @Override
-        public ResourceLocation getRegistryName(RecipeHolder<AlloyingRecipe> recipe) {
-            return recipe.id();
+        public Identifier getRegistryName(RecipeHolder<AlloyingRecipe> recipe) {
+            return recipe.id().identifier();
         }
     }
 }

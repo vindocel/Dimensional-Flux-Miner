@@ -1,9 +1,12 @@
 {
   "neoforge:conditions": [
-    { "type": "neoforge:mod_loaded", "modid": "malum" }
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "malum"
+    }
   ],
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": { "tag": "c:ores/blazing_quartz" },
+  "ingredient": "#c:ores/blazing_quartz",
   "result": {
     "id": "malum:blazing_quartz"
   },

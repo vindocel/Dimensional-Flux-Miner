@@ -7,12 +7,8 @@
     "CPC"
   ],
   "key": {
-    "C": {
-      "item": "dimensionalfluxminer:steel_chassis"
-    },
-    "P": {
-      "item": "minecraft:glass_pane"
-    }
+    "C": "dimensionalfluxminer:steel_chassis",
+    "P": "minecraft:glass_pane"
   },
   "result": {
     "id": "dimensionalfluxminer:miner_terminal",

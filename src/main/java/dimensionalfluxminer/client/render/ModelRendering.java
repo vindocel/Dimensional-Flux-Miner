@@ -1,32 +1,44 @@
 package dimensionalfluxminer.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.resources.model.ModelDebugName;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 
-/** Helpers to draw standalone baked models (loaded through ModelEvent.RegisterAdditional) from renderers. */
+/** Helpers to draw standalone models (loaded through ModelEvent.RegisterStandalone) from renderers. */
 public final class ModelRendering {
+    /** One key per model file: keys are compared by identity. */
+    private static final Map<Identifier, StandaloneModelKey<BlockStateModelPart>> KEYS = new ConcurrentHashMap<>();
+
     private ModelRendering() {
     }
 
-    public static ModelResourceLocation standalone(ResourceLocation id) {
-        return ModelResourceLocation.standalone(id);
+    public static StandaloneModelKey<BlockStateModelPart> standalone(Identifier id) {
+        return KEYS.computeIfAbsent(id, key -> new StandaloneModelKey<>((ModelDebugName) key::toString));
     }
 
-    public static BakedModel model(ResourceLocation id) {
-        return Minecraft.getInstance().getModelManager().getModel(standalone(id));
+    /** Registers {@code id} to be loaded as a standalone model. */
+    public static void register(ModelEvent.RegisterStandalone event, Identifier id) {
+        event.register(standalone(id), SimpleUnbakedStandaloneModel.simpleModelWrapper(id));
     }
 
-    public static void render(PoseStack pose, MultiBufferSource buffers, BakedModel model, int light, int overlay) {
-        RenderType type = RenderType.cutout();
-        Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(pose.last(), buffers.getBuffer(type), null,
-                model, 1.0F, 1.0F, 1.0F, light, overlay, ModelData.EMPTY, type);
+    public static BlockStateModelPart model(Identifier id) {
+        return Minecraft.getInstance().getModelManager().getStandaloneModel(standalone(id));
+    }
+
+    /** Draws the model with the render type of each of its quads (cutout unless the model says otherwise). */
+    public static void render(PoseStack pose, SubmitNodeCollector collector, BlockStateModelPart model, int light, int overlay) {
+        collector.submitMultiLayerBlockModel(pose, List.of(model), false, BlockModelRenderState.EMPTY_TINTS, light, overlay, 0);
     }
 
     /** Blockstate-style Y rotation (clockwise seen from above) of a model whose native front is north. */

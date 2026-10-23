@@ -53,7 +53,7 @@ public final class CorruptionService {
     public static ColumnPlan plan(ServerLevel level, int x, int z) {
         List<Conversion> conversions = new ArrayList<>();
         List<Vegetation> vegetation = new ArrayList<>();
-        int min = level.getMinBuildHeight();
+        int min = level.getMinY();
         List<BlockPos> decorative = new ArrayList<>();
         BlockPos ground = findGround(level, x, z, decorative);
         if (ground == null) {
@@ -101,7 +101,7 @@ public final class CorruptionService {
         if (WaterCorruption.isCorruptibleWater(state)) {
             return true;
         }
-        int min = level.getMinBuildHeight();
+        int min = level.getMinY();
         BlockPos.MutableBlockPos pos = ground.mutable();
         for (int layer = 0; layer < SOLID_DEPTH && pos.getY() >= min; layer++) {
             state = level.getBlockState(pos);
@@ -127,7 +127,7 @@ public final class CorruptionService {
 
     private static BlockPos findGround(ServerLevel level, int x, int z, List<BlockPos> decorative) {
         int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
-        int min = level.getMinBuildHeight();
+        int min = level.getMinY();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, top, z);
         int cover = 0;
         while (pos.getY() >= min) {

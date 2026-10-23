@@ -41,17 +41,7 @@ public final class DfmRecipes {
 
     private static <T extends Recipe<?>> DeferredHolder<RecipeSerializer<?>, RecipeSerializer<T>> serializer(
             String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
-        return SERIALIZERS.register(name, () -> new RecipeSerializer<T>() {
-            @Override
-            public MapCodec<T> codec() {
-                return codec;
-            }
-
-            @Override
-            public StreamCodec<RegistryFriendlyByteBuf, T> streamCodec() {
-                return streamCodec;
-            }
-        });
+        return SERIALIZERS.register(name, () -> new RecipeSerializer<>(codec, streamCodec));
     }
 
     private DfmRecipes() {

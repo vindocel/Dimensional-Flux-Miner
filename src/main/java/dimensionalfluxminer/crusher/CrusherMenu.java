@@ -1,5 +1,6 @@
 package dimensionalfluxminer.crusher;
 
+import dimensionalfluxminer.machine.transfer.SlotStorage;
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.menu.WindowSlot;
 import dimensionalfluxminer.registry.DfmItems;
@@ -10,7 +11,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class CrusherMenu extends MachineMenu<MechanicalCrusherBlockEntity> {
     /** Player inventory under the processing mechanism (181 px panel). */
@@ -28,7 +28,7 @@ public class CrusherMenu extends MachineMenu<MechanicalCrusherBlockEntity> {
 
     private CrusherMenu(int containerId, Inventory inventory, BlockPos pos, MechanicalCrusherBlockEntity be) {
         super(DfmMenus.CRUSHER.get(), containerId, inventory, pos, be);
-        addSlot(new WindowSlot(be != null ? be.upgradeSlot() : new ItemStackHandler(1), 0,
+        addSlot(new WindowSlot(be != null ? be.upgradeSlot() : new SlotStorage(1), 0,
                 stack -> stack.is(DfmItems.EFFICIENCY_UPGRADE.get()), 1));
         addPlayerInventory(inventory, 8, INVENTORY_TOP);
     }

@@ -2,7 +2,7 @@ package dimensionalfluxminer.registry;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
@@ -46,7 +46,7 @@ public final class DfmTags {
 
     public static final class Items {
         public static TagKey<Item> common(String path) {
-            return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", path));
+            return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", path));
         }
 
         private Items() {

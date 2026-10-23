@@ -1,5 +1,6 @@
 package dimensionalfluxminer.machine;
 
+import dimensionalfluxminer.machine.transfer.TagStacks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -253,11 +254,29 @@ public final class ItemQueue {
         return entries.stream().anyMatch(e -> predicate.test(e.prototype));
     }
 
+    /** Copy of the contents, put back by {@link #restore} (transactions that are cancelled). */
+    public Object snapshot() {
+        List<Entry> copy = new ArrayList<>(entries.size());
+        for (Entry e : entries) {
+            copy.add(new Entry(e.prototype.copy(), e.count));
+        }
+        return copy;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void restore(Object snapshot) {
+        entries.clear();
+        for (Entry e : (List<Entry>) snapshot) {
+            entries.add(new Entry(e.prototype.copy(), e.count));
+        }
+        onChange.run();
+    }
+
     public ListTag save(HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (Entry e : entries) {
             CompoundTag tag = new CompoundTag();
-            tag.put("item", e.prototype.save(registries));
+            tag.put("item", TagStacks.save(registries, e.prototype));
             tag.putLong("count", e.count);
             list.add(tag);
         }
@@ -267,9 +286,9 @@ public final class ItemQueue {
     public void load(ListTag list, HolderLookup.Provider registries) {
         entries.clear();
         for (int i = 0; i < list.size(); i++) {
-            CompoundTag tag = list.getCompound(i);
-            ItemStack prototype = ItemStack.parseOptional(registries, tag.getCompound("item"));
-            long count = tag.getLong("count");
+            CompoundTag tag = list.getCompoundOrEmpty(i);
+            ItemStack prototype = TagStacks.parse(registries, tag.getCompoundOrEmpty("item"));
+            long count = tag.getLongOr("count", 0L);
             if (!prototype.isEmpty() && count > 0 && entries.size() < maxKinds) {
                 entries.add(new Entry(prototype.copyWithCount(1), count));
             }

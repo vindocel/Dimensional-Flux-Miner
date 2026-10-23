@@ -12,13 +12,13 @@ import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -123,7 +123,7 @@ final class SideConfigWindow extends DfmScreen.Window {
         if (focused == null) {
             return SideRoute.NONE;
         }
-        return config().get(focused, current, data.get().getInt("profile"));
+        return config().get(focused, current, data.get().getIntOr("profile", 0));
     }
 
     @Override
@@ -134,8 +134,8 @@ final class SideConfigWindow extends DfmScreen.Window {
 
     private SideConfiguration config() {
         SideConfiguration config = new SideConfiguration(rules);
-        config.load(data.get().getCompound("sides"));
-        int[] locks = data.get().getIntArray("node_sides");
+        config.load(data.get().getCompoundOrEmpty("sides"));
+        int[] locks = data.get().getIntArray("node_sides").orElse(new int[0]);
         for (Transmission t : Transmission.VALUES) {
             config.setLocks(t, t.ordinal() < locks.length ? locks[t.ordinal()] : 0);
         }
@@ -161,10 +161,10 @@ final class SideConfigWindow extends DfmScreen.Window {
     }
 
     @Override
-    protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         CompoundTag d = data.get();
         SideConfiguration config = config();
-        int profile = d.getInt("profile");
+        int profile = d.getIntOr("profile", 0);
 
         for (int i = 0; i < transmissions.size(); i++) {
             Transmission t = transmissions.get(i);
@@ -184,8 +184,8 @@ final class SideConfigWindow extends DfmScreen.Window {
         boolean items = ejectable && tabAutomation.automation() == Automation.ITEMS;
         boolean liquids = ejectable && tabAutomation.automation() == Automation.FLUID;
         boolean hasInput = items || liquids;
-        boolean input = items ? d.getBoolean("auto_input") : liquids && d.getBoolean("auto_input_fluid");
-        boolean eject = items ? d.getBoolean("auto_eject") : d.getBoolean("auto_eject_fluid");
+        boolean input = items ? d.getBooleanOr("auto_input", false) : liquids && d.getBooleanOr("auto_input_fluid", false);
+        boolean eject = items ? d.getBooleanOr("auto_eject", false) : d.getBooleanOr("auto_eject_fluid", false);
         String mode = input ? eject ? "both" : "input" : eject ? "eject" : "off";
         screen.innerScreen(g, x + 38, y + 25, 80, 12);
         Component screenText = ejectable
@@ -213,11 +213,11 @@ final class SideConfigWindow extends DfmScreen.Window {
         Transmission tab = current;
         SideRoute nextTarget = config.batchTarget(tab, profile, true);
         screen.imageButton(g, x + 132, y + 93, 18, GuiIcon.CLEAR_SIDES, true, false, mouseX, mouseY,
-                () -> Screen.hasShiftDown() ? AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL
+                () -> Minecraft.getInstance().hasShiftDown() ? AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL
                         : AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + tab.ordinal() * 2,
-                () -> Screen.hasShiftDown() ? AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL
+                () -> Minecraft.getInstance().hasShiftDown() ? AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL
                         : AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + tab.ordinal() * 2 + 1,
-                () -> Screen.hasShiftDown() || nextTarget == SideRoute.NONE
+                () -> Minecraft.getInstance().hasShiftDown() || nextTarget == SideRoute.NONE
                         ? List.of(Component.translatable("gui.dimensionalfluxminer.side_config.clear"),
                                 Component.translatable("gui.dimensionalfluxminer.side_config.clear_all").withStyle(ChatFormatting.GRAY))
                         : List.of(Component.translatable("gui.dimensionalfluxminer.side_config.increment",
@@ -238,14 +238,14 @@ final class SideConfigWindow extends DfmScreen.Window {
                 GuiTheme.subheading(), 1.0F, true);
     }
 
-    private void side(GuiGraphics g, SideConfiguration config, int profile, RelativeFace face, int x, int y, int mouseX, int mouseY) {
+    private void side(GuiGraphicsExtractor g, SideConfiguration config, int profile, RelativeFace face, int x, int y, int mouseX, int mouseY) {
         List<SideRoute> allowed = rules.allowed(face, current, profile);
         boolean enabled = !allowed.isEmpty();
         // A Logistics Networks node or an active cable uses this face: its route is set from outside and cannot be changed here.
         boolean node = config.locked(face, current);
-        boolean cable = node && current == Transmission.ITEM && (data.get().getInt("cable_sides") & (1 << face.ordinal())) != 0;
+        boolean cable = node && current == Transmission.ITEM && (data.get().getIntOr("cable_sides", 0) & (1 << face.ordinal())) != 0;
         // A node's item input on a machine with dedicated lanes cannot move, but a click picks all / lane 1 / 2 / 3.
-        boolean lanes = node && current == Transmission.ITEM && (data.get().getInt("node_lanes") & (1 << face.ordinal())) != 0;
+        boolean lanes = node && current == Transmission.ITEM && (data.get().getIntOr("node_lanes", 0) & (1 << face.ordinal())) != 0;
         boolean fixed = allowed.size() < 2 || node && !lanes;
         SideRoute route = enabled ? config.get(face, current, profile) : SideRoute.NONE;
         if (screen.hovered(x, y, SIDE, SIDE, mouseX, mouseY)) {
@@ -279,14 +279,14 @@ final class SideConfigWindow extends DfmScreen.Window {
                     return lines;
                 });
         if (!neighbor.isEmpty()) {
-            g.renderItem(neighbor, x + 3, y + 3);
+            g.item(neighbor, x + 3, y + 3);
         }
         if (node) {
             // Same frame as on the Miner's side window.
-            g.pose().pushPose();
-            g.pose().translate(0, 0, 200);
-            g.renderOutline(x, y, SIDE, SIDE, 0xFF52D9DB);
-            g.pose().popPose();
+            g.pose().pushMatrix();
+            g.pose().translate(0, 0);
+            g.outline(x, y, SIDE, SIDE, 0xFF52D9DB);
+            g.pose().popMatrix();
         }
     }
 
@@ -309,8 +309,7 @@ final class SideConfigWindow extends DfmScreen.Window {
             BlockPos other = pos.relative(side);
             BlockState state = level.getBlockState(other);
             if (!state.isAir()) {
-                BlockHitResult hit = new BlockHitResult(other.getCenter().relative(side.getOpposite(), 0.5), side.getOpposite(), other, false);
-                result[face.ordinal()] = state.getCloneItemStack(hit, level, other, mc.player);
+                result[face.ordinal()] = state.getCloneItemStack(other, level, false, mc.player);
             }
         }
         return result;

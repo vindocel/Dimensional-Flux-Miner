@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_lead"
-  },
+  "ingredient": "dimensionalfluxminer:dust_lead",
   "result_tag": "c:ingots/lead",
   "experience": 0.7,
   "cookingtime": 100

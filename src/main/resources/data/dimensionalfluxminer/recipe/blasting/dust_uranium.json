@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_uranium"
-  },
+  "ingredient": "dimensionalfluxminer:dust_uranium",
   "result_tag": "c:ingots/uranium",
   "experience": 0.7,
   "cookingtime": 100

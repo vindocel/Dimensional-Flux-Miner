@@ -7,18 +7,10 @@
     "CEC"
   ],
   "key": {
-    "C": {
-      "item": "dimensionalfluxminer:steel_chassis"
-    },
-    "E": {
-      "item": "dimensionalfluxminer:ender_eye_reinforced"
-    },
-    "P": {
-      "item": "dimensionalfluxminer:dimensional_port"
-    },
-    "G": {
-      "item": "dimensionalfluxminer:reinforced_structural_glass"
-    }
+    "C": "dimensionalfluxminer:steel_chassis",
+    "E": "dimensionalfluxminer:ender_eye_reinforced",
+    "P": "dimensionalfluxminer:dimensional_port",
+    "G": "dimensionalfluxminer:reinforced_structural_glass"
   },
   "result": {
     "id": "dimensionalfluxminer:dimensional_tank",

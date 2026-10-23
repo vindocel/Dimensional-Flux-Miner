@@ -3,16 +3,15 @@ package dimensionalfluxminer.client.particle;
 import dimensionalfluxminer.content.CoreFluxOptions;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleProvider;
-import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.particle.SingleQuadParticle;
+import net.minecraft.util.LightCoordsUtil;
 
 /**
  * A quantum mote that appears inside the Miner and is pulled into its core: it starts slowly, speeds up as it falls in,
  * fades in when it appears and shrinks as it reaches the core. The spawn velocity is the offset to the core; a higher\n * speed makes the trip shorter.
  */
-public class CoreFluxParticle extends TextureSheetParticle {
+public class CoreFluxParticle extends SingleQuadParticle {
     private final double startX;
     private final double startY;
     private final double startZ;
@@ -23,7 +22,7 @@ public class CoreFluxParticle extends TextureSheetParticle {
 
     CoreFluxParticle(ClientLevel level, double x, double y, double z, double toCoreX, double toCoreY, double toCoreZ,
                      float speed, float red, float green, float blue, SpriteSet sprites) {
-        super(level, x, y, z);
+        super(level, x, y, z, sprites.get(level.getRandom()));
         this.startX = x;
         this.startY = y;
         this.startZ = z;
@@ -39,7 +38,6 @@ public class CoreFluxParticle extends TextureSheetParticle {
         this.alpha = 0;
         this.hasPhysics = false;
         this.gravity = 0;
-        pickSprite(sprites);
     }
 
     @Override
@@ -59,22 +57,22 @@ public class CoreFluxParticle extends TextureSheetParticle {
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    protected SingleQuadParticle.Layer getLayer() {
+        return SingleQuadParticle.Layer.TRANSLUCENT;
     }
 
     @Override
-    protected int getLightColor(float partialTick) {
-        return LightTexture.FULL_BRIGHT;
+    protected int getLightCoords(float partialTick) {
+        return LightCoordsUtil.FULL_BRIGHT;
     }
 
     /** Cyan-blue motes of the Basic Core (#62DEDD). */
     public static ParticleProvider<CoreFluxOptions> basic(SpriteSet sprites) {
-        return (options, level, x, y, z, dx, dy, dz) -> new CoreFluxParticle(level, x, y, z, dx, dy, dz, options.speed(), 0x62 / 255F, 0xDE / 255F, 0xDD / 255F, sprites);
+        return (options, level, x, y, z, dx, dy, dz, random) -> new CoreFluxParticle(level, x, y, z, dx, dy, dz, options.speed(), 0x62 / 255F, 0xDE / 255F, 0xDD / 255F, sprites);
     }
 
     /** Violet motes of the Stabilized Core. */
     public static ParticleProvider<CoreFluxOptions> stabilized(SpriteSet sprites) {
-        return (options, level, x, y, z, dx, dy, dz) -> new CoreFluxParticle(level, x, y, z, dx, dy, dz, options.speed(), 0.72F, 0.4F, 1.0F, sprites);
+        return (options, level, x, y, z, dx, dy, dz, random) -> new CoreFluxParticle(level, x, y, z, dx, dy, dz, options.speed(), 0.72F, 0.4F, 1.0F, sprites);
     }
 }

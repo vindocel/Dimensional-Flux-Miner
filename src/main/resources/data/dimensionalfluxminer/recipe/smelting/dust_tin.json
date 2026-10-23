@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_smelting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_tin"
-  },
+  "ingredient": "dimensionalfluxminer:dust_tin",
   "result_tag": "c:ingots/tin",
   "experience": 0.7,
   "cookingtime": 200

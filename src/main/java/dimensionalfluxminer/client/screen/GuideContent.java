@@ -256,7 +256,7 @@ final class GuideContent {
             }
             List<Row> list = new ArrayList<>();
             for (var entry : BuiltInRegistries.ITEM.getDataMap(DfmDataMaps.MATTER_VALUE).entrySet()) {
-                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.getKey()));
+                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(entry.getKey()));
                 if (stack.isEmpty() || stack.is(DfmTags.Items.common("ores"))) {
                     continue;
                 }
@@ -265,7 +265,7 @@ final class GuideContent {
                     continue;
                 }
                 DfmDataMaps.MatterValue value = entry.getValue();
-                String dimensionId = value.dimensions().isEmpty() ? "any" : value.dimensions().getFirst().location().getPath();
+                String dimensionId = value.dimensions().isEmpty() ? "any" : value.dimensions().getFirst().identifier().getPath();
                 list.add(new Row(stack.getHoverName().getString(), dimensionOrder(dimensionId),
                         Component.translatable("guide.dimensionalfluxminer.dimension." + dimensionId).getString(), value.units()));
             }
@@ -380,7 +380,7 @@ final class GuideContent {
         /** A row of slots, each cycling once a second through its items (a block and its variants, the ores...). */
         Builder cycling(List<? extends List<? extends ItemLike>> slots) {
             elements.add(new GuideElements.ItemRow(() -> {
-                long tick = net.minecraft.Util.getMillis() / 1000;
+                long tick = net.minecraft.util.Util.getMillis() / 1000;
                 List<ItemStack> list = new ArrayList<>();
                 for (List<? extends ItemLike> slot : slots) {
                     list.add(new ItemStack(slot.get((int) (tick % slot.size()))));
@@ -406,7 +406,7 @@ final class GuideContent {
             return this;
         }
 
-        Builder viewer(String name, net.minecraft.resources.ResourceLocation... categories) {
+        Builder viewer(String name, net.minecraft.resources.Identifier... categories) {
             elements.add(new GuideElements.ViewerButton(key("", name), categories));
             return this;
         }

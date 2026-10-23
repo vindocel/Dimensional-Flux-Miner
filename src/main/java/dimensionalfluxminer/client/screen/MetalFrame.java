@@ -1,6 +1,6 @@
 package dimensionalfluxminer.client.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Brushed-metal frame drawn in code around panels and windows: a 4 px band outside the panel (dark outline with
@@ -34,7 +34,7 @@ final class MetalFrame {
     }
 
     /** The panel at (x, y, w, h) with the band around it. */
-    static void panel(GuiGraphics g, int x, int y, int w, int h) {
+    static void panel(GuiGraphicsExtractor g, int x, int y, int w, int h) {
         int x0 = x - BAND;
         int y0 = y - BAND;
         int x1 = x + w + BAND;
@@ -73,7 +73,7 @@ final class MetalFrame {
      * edge, on the right side it starts on the panel's right edge; the side next to the panel opens into the band. Tabs
      * stacked next to each other share one tall ear.
      */
-    static void ear(GuiGraphics g, int x, int y, int size, int height, boolean leftSide) {
+    static void ear(GuiGraphicsExtractor g, int x, int y, int size, int height, boolean leftSide) {
         int light = LIGHT_TOP;
         int side = leftSide ? LIGHT_SIDE : SHADE;
         int shade = SHADE;
@@ -98,7 +98,7 @@ final class MetalFrame {
      * One pixel light ring set into the metal around a button at (x, y, size): the tab's color, or yellow and black
      * hazard dashes when {@code hazard} is set.
      */
-    static void ring(GuiGraphics g, int x, int y, int size, int color, boolean hazard) {
+    static void ring(GuiGraphicsExtractor g, int x, int y, int size, int color, boolean hazard) {
         int x0 = x - 1;
         int y0 = y - 1;
         int span = size + 2;
@@ -131,25 +131,25 @@ final class MetalFrame {
         }
     }
 
-    private static void row(GuiGraphics g, int x, int size, boolean leftSide, int from, int to, int y, int color) {
+    private static void row(GuiGraphicsExtractor g, int x, int size, boolean leftSide, int from, int to, int y, int color) {
         int a = leftSide ? x + from : x + size - 1 - to;
         int b = leftSide ? x + to : x + size - 1 - from;
         g.fill(a, y, b + 1, y + 1, color);
     }
 
-    private static void column(GuiGraphics g, int x, int size, boolean leftSide, int col, int fromY, int toY, int color) {
+    private static void column(GuiGraphicsExtractor g, int x, int size, boolean leftSide, int col, int fromY, int toY, int color) {
         int c = leftSide ? x + col : x + size - 1 - col;
         g.fill(c, fromY, c + 1, toY, color);
     }
 
-    private static void rivet(GuiGraphics g, int x, int y) {
+    private static void rivet(GuiGraphicsExtractor g, int x, int y) {
         pixel(g, x, y, RIVET_LIGHT);
         pixel(g, x + 1, y, RIVET_MID);
         pixel(g, x, y + 1, RIVET_MID);
         pixel(g, x + 1, y + 1, RIVET_DARK);
     }
 
-    private static void pixel(GuiGraphics g, int x, int y, int color) {
+    private static void pixel(GuiGraphicsExtractor g, int x, int y, int color) {
         g.fill(x, y, x + 1, y + 1, color);
     }
 

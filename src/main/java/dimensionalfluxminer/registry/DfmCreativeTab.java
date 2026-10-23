@@ -55,7 +55,7 @@ public final class DfmCreativeTab {
      */
     private static ItemStack icon() {
         ItemStack stack = new ItemStack(DfmItems.ELECTRIC_FURNACE.get());
-        stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(1));
+        stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(java.util.List.of(1.0F), java.util.List.of(), java.util.List.of(), java.util.List.of()));
         return stack;
     }
 

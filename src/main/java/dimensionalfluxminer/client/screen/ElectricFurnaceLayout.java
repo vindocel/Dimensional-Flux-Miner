@@ -1,10 +1,11 @@
 package dimensionalfluxminer.client.screen;
 
+import net.minecraft.client.renderer.RenderPipelines;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.furnace.ElectricFurnaceMode;
-import net.minecraft.Util;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Util;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 /**
@@ -12,7 +13,7 @@ import net.minecraft.util.Mth;
  * the recipe viewers. Coordinates are relative to the top-left corner of the first input slot frame.
  */
 public final class ElectricFurnaceLayout {
-    private static final ResourceLocation HEAT = DimensionalFluxMiner.id("textures/gui/electric_furnace/heat.png");
+    private static final Identifier HEAT = DimensionalFluxMiner.id("textures/gui/electric_furnace/heat.png");
 
     public static final int WIDTH = 68;
     public static final int HEIGHT = 75;
@@ -38,7 +39,7 @@ public final class ElectricFurnaceLayout {
         /** Alloy + furnace: one chamber feeding the three outputs. */
         ALL("element_alloy_furnace", new int[] {0, 25, 50}, new int[] {26, 33, 41}, 35);
 
-        private final ResourceLocation texture;
+        private final Identifier texture;
         public final int[] outputX;
         public final int[] heatX;
         public final int heatY;
@@ -62,24 +63,24 @@ public final class ElectricFurnaceLayout {
     private ElectricFurnaceLayout() {
     }
 
-    public static void drawElement(GuiGraphics g, int x, int y, Variant variant) {
-        GuiTheme.chrome(() -> g.blit(variant.texture, x, y, 0, 0, WIDTH, HEIGHT, WIDTH, HEIGHT));
+    public static void drawElement(GuiGraphicsExtractor g, int x, int y, Variant variant) {
+        GuiTheme.chrome(() -> g.blit(RenderPipelines.GUI_TEXTURED, variant.texture, x, y, 0, 0, WIDTH, HEIGHT, WIDTH, HEIGHT));
     }
 
     /**
      * Heat opening: full at the start of the recipe, consumed from the top as it progresses (cropped, never
      * stretched); nothing is drawn once the last row is gone.
      */
-    public static void heat(GuiGraphics g, int x, int y, double progress) {
+    public static void heat(GuiGraphicsExtractor g, int x, int y, double progress) {
         int removed = Math.min(HEAT_HEIGHT, (int) Math.floor(Mth.clamp(progress, 0, 1) * HEAT_HEIGHT));
         if (removed >= HEAT_HEIGHT) {
             return;
         }
-        g.blit(HEAT, x, y + removed, 0, removed, 2, HEAT_HEIGHT - removed, 2, HEAT_HEIGHT);
+        g.blit(RenderPipelines.GUI_TEXTURED, HEAT, x, y + removed, 0, removed, 2, HEAT_HEIGHT - removed, 2, HEAT_HEIGHT);
     }
 
     /** Heat of all the openings for recipe previews: one recipe every {@code cycleMs}. */
-    public static void previewHeat(GuiGraphics g, int x, int y, Variant variant, long cycleMs) {
+    public static void previewHeat(GuiGraphicsExtractor g, int x, int y, Variant variant, long cycleMs) {
         double progress = (Util.getMillis() % cycleMs) / (double) cycleMs;
         for (int hx : variant.heatX) {
             heat(g, x + hx, y + variant.heatY, progress);

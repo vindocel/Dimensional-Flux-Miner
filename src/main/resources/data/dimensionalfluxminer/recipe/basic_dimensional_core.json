@@ -7,15 +7,9 @@
     "SDS"
   ],
   "key": {
-    "S": {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    "D": {
-      "item": "minecraft:diamond"
-    },
-    "C": {
-      "item": "minecraft:end_crystal"
-    }
+    "S": "dimensionalfluxminer:ingot_steel",
+    "D": "minecraft:diamond",
+    "C": "minecraft:end_crystal"
   },
   "result": {
     "id": "dimensionalfluxminer:basic_dimensional_core",

@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_nickel"
-  },
+  "ingredient": "dimensionalfluxminer:dust_nickel",
   "result_tag": "c:ingots/nickel",
   "experience": 0.7,
   "cookingtime": 100

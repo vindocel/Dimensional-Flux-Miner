@@ -3,7 +3,7 @@
     "icon": { "id": "dimensionalfluxminer:guide_book" },
     "title": { "translate": "advancements.dimensionalfluxminer.root.title" },
     "description": { "translate": "advancements.dimensionalfluxminer.root.description" },
-    "background": "dimensionalfluxminer:textures/block/corruption/corrupted_stone.png",
+    "background": "dimensionalfluxminer:block/corruption/corrupted_stone",
     "frame": "task",
     "show_toast": true,
     "announce_to_chat": false,

@@ -1,6 +1,5 @@
 {
   "ambientocclusion": true,
-  "render_type": "minecraft:cutout",
   "textures": {
     "t1": "dimensionalfluxminer:block/dimensional_tank/safety_stripe",
     "t3": "dimensionalfluxminer:block/dimensional_tank/gauge_scale",

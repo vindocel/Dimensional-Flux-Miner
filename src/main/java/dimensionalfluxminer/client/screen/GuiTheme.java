@@ -1,7 +1,8 @@
 package dimensionalfluxminer.client.screen;
 
-import java.util.function.Supplier;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import dimensionalfluxminer.DimensionalFluxMiner;
+import net.minecraft.client.renderer.RenderPipelines;
 
 /**
  * Light or dark look of the machine screens while one is drawn. The dark look only touches the gray parts of the
@@ -10,8 +11,11 @@ import net.minecraft.client.renderer.ShaderInstance;
  * ones. Icons, items, liquids and the navy screens are never drawn inside it, so they keep their colors.
  */
 public final class GuiTheme {
-    /** Brightness kept by gray pixels in the dark look (same value as {@code Darkness} in {@code dark_gui.json}). */
+    /** Brightness kept by gray pixels in the dark look ({@code DARKNESS} of {@code dark_gui.fsh}). */
     static final float DARKNESS = 0.32F;
+    /** Textured GUI pipelines of the chrome: dark, and light (no change, but still the mod's shader). */
+    public static final RenderPipeline DARK_PIPELINE = pipeline("dark_gui", DARKNESS);
+    public static final RenderPipeline LIGHT_PIPELINE = pipeline("light_gui", 1.0F);
     /** Panel color of each look, for the previews of the theme window. */
     static final int LIGHT_PANEL = 0xFFBEBEBE;
     static final int DARK_PANEL = 0xFF3D3D3D;
@@ -19,7 +23,6 @@ public final class GuiTheme {
     static final int BLUE_ICONS = 0xFF20C8D1;
     static final int PURPLE_ICONS = 0xFF9366DE;
 
-    private static ShaderInstance shader;
     private static boolean dark;
     /** Icons of the screen being drawn: purple, otherwise blue. */
     private static boolean purple;
@@ -28,9 +31,12 @@ public final class GuiTheme {
     private GuiTheme() {
     }
 
-    /** Set when the shaders load (and reload with the resource packs). */
-    public static void setShader(ShaderInstance instance) {
-        shader = instance;
+    private static RenderPipeline pipeline(String name, float darkness) {
+        return RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+                .withLocation(DimensionalFluxMiner.id("pipeline/" + name))
+                .withFragmentShader(DimensionalFluxMiner.id("core/dark_gui"))
+                .withShaderDefine("DARKNESS", darkness)
+                .build();
     }
 
     static void setDark(boolean value) {
@@ -60,19 +66,14 @@ public final class GuiTheme {
     }
 
     /**
-     * Shader used by a texture drawn now. Inside {@link #chrome} it is always the mod's own shader (dark, or with no
-     * change in the light look), so screen-wide dark shaders of other mods never touch these screens twice.
+     * Pipeline of a texture drawn now. Inside {@link #chrome} the plain textured one becomes the mod's own (dark, or with
+     * no change in the light look), so screen-wide dark shaders of other mods never touch these screens twice.
      */
-    public static Supplier<ShaderInstance> shader(Supplier<ShaderInstance> normal) {
-        if (chromeDepth == 0 || shader == null) {
+    public static RenderPipeline pipeline(RenderPipeline normal) {
+        if (chromeDepth == 0 || normal != RenderPipelines.GUI_TEXTURED) {
             return normal;
         }
-        float darkness = dark ? DARKNESS : 1.0F;
-        ShaderInstance instance = shader;
-        return () -> {
-            instance.safeGetUniform("Darkness").set(darkness);
-            return instance;
-        };
+        return dark ? DARK_PIPELINE : LIGHT_PIPELINE;
     }
 
     /**

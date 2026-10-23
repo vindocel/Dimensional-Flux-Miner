@@ -1,8 +1,6 @@
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": {
-    "tag": "c:ores/coal"
-  },
+  "ingredient": "#c:ores/coal",
   "result": {
     "id": "minecraft:coal"
   },

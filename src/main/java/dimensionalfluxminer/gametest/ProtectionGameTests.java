@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -20,16 +19,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * Territorial protection of the Dimensional Death with a claim system of the test: positions it claims belong to one
  * player, may be listed as failing, or the whole system may be unavailable. Each test registers its own instance,
  * limited to its own area, and removes it at the end; the tests that claim everything run in their own batch.
  */
-@GameTestHolder(DimensionalFluxMiner.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class ProtectionGameTests {
     private static final UUID ALICE = UUID.fromString("00000000-0000-0000-0000-00000000a11c");
     private static final UUID BOB = UUID.fromString("00000000-0000-0000-0000-000000000b0b");
@@ -82,11 +77,15 @@ public final class ProtectionGameTests {
         }
     }
 
-    /** Claims the columns of the test area with local x >= {@code fromX}. */
+    /**
+     * Claims the columns of the test area with local x >= {@code fromX}, never past the test's own bounds: tests of a
+     * batch run side by side, so a wider claim would cover a neighbor test.
+     */
     private static Predicate<BlockPos> area(GameTestHelper helper, int fromX) {
         BlockPos origin = helper.absolutePos(BlockPos.ZERO);
-        return p -> p.getX() >= origin.getX() + fromX && p.getX() < origin.getX() + 16 && p.getZ() >= origin.getZ() - 1
-                && p.getZ() < origin.getZ() + 16;
+        net.minecraft.world.phys.AABB bounds = helper.getBounds();
+        return p -> p.getX() >= origin.getX() + fromX && p.getX() < Math.min(origin.getX() + 16, bounds.maxX)
+                && p.getZ() >= Math.max(origin.getZ() - 1, bounds.minZ) && p.getZ() < Math.min(origin.getZ() + 16, bounds.maxZ);
     }
 
     /** Grass on dirt and stone at local (x, z), with a short grass plant on top. */
@@ -229,14 +228,14 @@ public final class ProtectionGameTests {
     @GameTest(template = "empty_small", batch = "protection")
     public static void serverRulesProtectSpawnAndRegions(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        int radius = level.getServer().getSpawnProtectionRadius();
-        BlockPos spawn = level.getSharedSpawnPos();
+        int radius = level.getServer() instanceof net.minecraft.server.dedicated.DedicatedServer dedicated ? dedicated.spawnProtectionRadius() : 16;
+        BlockPos spawn = level.getRespawnData().pos();
         helper.assertTrue(ProtectionService.inProtectedRegion(level, spawn) == (radius > 0), "spawn protection follows the server (" + radius + ")");
         helper.assertFalse(ProtectionService.inProtectedRegion(level, spawn.offset(radius + 1, 0, 0)), "outside the spawn protection");
         DfmConfig.Region region = DfmConfig.Region.parse("minecraft:overworld, 10, -5, -10, 5");
-        helper.assertTrue(region != null && region.contains(level.dimension().location(), 0, 0) && region.contains(level.dimension().location(), -10, 5),
+        helper.assertTrue(region != null && region.contains(level.dimension().identifier(), 0, 0) && region.contains(level.dimension().identifier(), -10, 5),
                 "region corners included: " + region);
-        helper.assertFalse(region.contains(level.dimension().location(), 11, 0) || region.contains(net.minecraft.world.level.Level.NETHER.location(), 0, 0),
+        helper.assertFalse(region.contains(level.dimension().identifier(), 11, 0) || region.contains(net.minecraft.world.level.Level.NETHER.identifier(), 0, 0),
                 "outside the region or in another dimension");
         helper.assertTrue(DfmConfig.Region.parse("minecraft:overworld,1,2,3") == null && DfmConfig.Region.parse("x,a,1,2,3") == null, "invalid entries refused");
         helper.assertTrue(DfmConfig.corruptionEnabled() && ProtectionService.corruptionAllowed(level), "corruption on by default");
@@ -250,7 +249,7 @@ public final class ProtectionGameTests {
         var registries = helper.getLevel().registryAccess();
         CompoundTag saved = c.saveWithoutMetadata(registries);
         c.setOwner(BOB);
-        c.loadWithComponents(saved, registries);
+        TestSupport.load(c, saved, registries);
         helper.assertTrue(ALICE.equals(c.owner()), "owner kept: " + c.owner());
         helper.succeed();
     }
@@ -274,7 +273,7 @@ public final class ProtectionGameTests {
         ServerLevel level = helper.getLevel();
         var source = level.getServer().createCommandSourceStack();
         BlockPos inside = helper.absolutePos(new BlockPos(2, 1, 2));
-        net.minecraft.world.level.ChunkPos chunk = new net.minecraft.world.level.ChunkPos(inside);
+        net.minecraft.world.level.ChunkPos chunk = net.minecraft.world.level.ChunkPos.containing(inside);
         BlockPos outside = new BlockPos(chunk.getMinBlockX() - 20, inside.getY(), chunk.getMinBlockZ() - 20);
         String teamsApi = "dev.ftb.mods.ftbteams.api.FTBTeamsAPI$API";
         String teamManager = "dev.ftb.mods.ftbteams.api.TeamManager";
@@ -335,6 +334,7 @@ public final class ProtectionGameTests {
     @GameTest(template = "empty_large", batch = "protection_reward", timeoutTicks = 300)
     public static void authorizedCorruptionPaysExactly64Dm(GameTestHelper helper) {
         MinerControllerBlockEntity c = MinerGameTests.build(helper);
+        TestSupport.naturalGround(helper, 24);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
         MinerGameTests.powerUp(c, 3);
         c.setRunRequested(true);

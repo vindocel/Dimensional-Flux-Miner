@@ -18,7 +18,7 @@ import dimensionalfluxminer.registry.DfmItems;
 import dimensionalfluxminer.registry.DfmParticles;
 import dimensionalfluxminer.registry.DfmRecipes;
 import dimensionalfluxminer.registry.DfmSounds;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -48,8 +48,11 @@ public final class DimensionalFluxMiner {
         modBus.addListener(DfmDataMaps::register);
         modBus.addListener(DfmBlockEntities::registerCapabilities);
         modBus.addListener(DfmNetwork::register);
+        dimensionalfluxminer.gametest.DfmGameTests.register(modBus);
+        dimensionalfluxminer.compat.Ae2Compat.register(modBus);
 
-        container.registerConfig(ModConfig.Type.SERVER, DfmConfig.SPEC);
+        // Same file name as before the SYNCED type, so existing worlds keep their settings.
+        container.registerConfig(ModConfig.Type.SYNCED, DfmConfig.SPEC, MOD_ID + "-server.toml");
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Loading.class, DfmConfig::onConfigChanged);
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Reloading.class, DfmConfig::onConfigChanged);
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Unloading.class, DfmConfig::onConfigChanged);
@@ -59,10 +62,12 @@ public final class DimensionalFluxMiner {
                 event.enqueueWork(dimensionalfluxminer.compat.CognitionCompat::allowLiquidExperience));
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerAboutToStartEvent event) ->
                 dimensionalfluxminer.compat.CognitionCompat.allowLiquidExperience());
-        if (net.neoforged.fml.ModList.get().isLoaded("polymorph")) {
-            dimensionalfluxminer.compat.polymorph.PolymorphCompat.register();
-        }
 
+        // The guide, the matter values and the recipe viewers read these recipes on the client too.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> event.sendRecipes(
+                DfmRecipes.CRUSHING.get(), DfmRecipes.ORE_CRUSHING.get(), DfmRecipes.ALLOYING.get(),
+                net.minecraft.world.item.crafting.RecipeType.CRAFTING, net.minecraft.world.item.crafting.RecipeType.SMELTING,
+                net.minecraft.world.item.crafting.RecipeType.BLASTING, net.minecraft.world.item.crafting.RecipeType.STONECUTTING));
         NeoForge.EVENT_BUS.addListener(ContentEvents::onEntityJoin);
         NeoForge.EVENT_BUS.addListener(ContentEvents::onLootTableLoad);
         NeoForge.EVENT_BUS.addListener(ResourceProfiles::onAddReloadListeners);
@@ -78,7 +83,7 @@ public final class DimensionalFluxMiner {
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent event) -> DfmConfig.setOverrides(java.util.Map.of()));
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 }

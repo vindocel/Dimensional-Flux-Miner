@@ -83,21 +83,21 @@ public final class ProtectionService {
      * dimensions of the configuration and not of a dimension type in {@code #dimensionalfluxminer:corruption_blocked}.
      */
     public static boolean corruptionAllowed(Level level) {
-        return DfmConfig.corruptionEnabled() && !DfmConfig.corruptionBlockedDimensions().contains(level.dimension().location())
+        return DfmConfig.corruptionEnabled() && !DfmConfig.corruptionBlockedDimensions().contains(level.dimension().identifier())
                 && !level.dimensionTypeRegistration().is(DfmTags.DimensionTypes.CORRUPTION_BLOCKED);
     }
 
     /** Spawn protection and the administrative regions of the configuration. */
     public static boolean inProtectedRegion(ServerLevel level, BlockPos pos) {
         if (DfmConfig.corruptionRespectsSpawnProtection() && level.dimension() == Level.OVERWORLD) {
-            int radius = level.getServer().getSpawnProtectionRadius();
-            BlockPos spawn = level.getSharedSpawnPos();
+            int radius = level.getServer() instanceof net.minecraft.server.dedicated.DedicatedServer dedicated ? dedicated.spawnProtectionRadius() : 16;
+            BlockPos spawn = level.getRespawnData().pos();
             if (radius > 0 && Math.max(Math.abs(pos.getX() - spawn.getX()), Math.abs(pos.getZ() - spawn.getZ())) <= radius) {
                 return true;
             }
         }
         for (DfmConfig.Region region : DfmConfig.corruptionProtectedRegions()) {
-            if (region.contains(level.dimension().location(), pos.getX(), pos.getZ())) {
+            if (region.contains(level.dimension().identifier(), pos.getX(), pos.getZ())) {
                 return true;
             }
         }
@@ -169,7 +169,7 @@ public final class ProtectionService {
                 }
                 for (BlockPos pos : positions) {
                     if (adapter.chunkBased()) {
-                        long chunk = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
+                        long chunk = ChunkPos.pack(pos.getX() >> 4, pos.getZ() >> 4);
                         if (chunk == lastChunk) {
                             continue;
                         }

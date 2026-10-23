@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_zinc"
-  },
+  "ingredient": "dimensionalfluxminer:dust_zinc",
   "result_tag": "c:ingots/zinc",
   "experience": 0.7,
   "cookingtime": 100

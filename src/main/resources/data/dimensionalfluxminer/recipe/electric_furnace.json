@@ -7,18 +7,10 @@
     "III"
   ],
   "key": {
-    "R": {
-      "item": "minecraft:redstone_block"
-    },
-    "M": {
-      "item": "minecraft:magma_block"
-    },
-    "A": {
-      "item": "minecraft:blast_furnace"
-    },
-    "I": {
-      "item": "minecraft:iron_block"
-    }
+    "R": "minecraft:redstone_block",
+    "M": "minecraft:magma_block",
+    "A": "minecraft:blast_furnace",
+    "I": "minecraft:iron_block"
   },
   "result": {
     "id": "dimensionalfluxminer:electric_furnace",

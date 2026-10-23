@@ -5,10 +5,10 @@ import dimensionalfluxminer.machine.RedstoneMode;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Standard tabs of the single-block machines and small drawing helpers shared by their screens. */
 final class MachineTabs {
@@ -30,24 +30,24 @@ final class MachineTabs {
         return s.panelHeight() - 29;
     }
 
-    static void details(DfmScreen<?> s, GuiGraphics g, int x, int y, boolean leftSide, int row, MachineWindows.InfoWindow window,
+    static void details(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, boolean leftSide, int row, MachineWindows.InfoWindow window,
                         int mouseX, int mouseY) {
         s.windowTab(g, leftSide ? x - DfmScreen.TAB_SIZE : x + s.panelWidth(), y + row, leftSide, DfmScreen.TAB_DEFAULT,
                 DfmScreen.ICON_STATS, window, mouseX, mouseY, () -> List.of(Component.translatable("gui.dimensionalfluxminer.details")));
     }
 
     /** Rate selector tab (right column, second row). */
-    static void rate(DfmScreen<?> s, GuiGraphics g, int x, int y, CompoundTag d, int nextId, int previousId, List<Component> details,
+    static void rate(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, CompoundTag d, int nextId, int previousId, List<Component> details,
                      int mouseX, int mouseY) {
-        s.rateTab(g, x + s.panelWidth(), y + ROW_2, false, d.getInt("rate"), nextId, previousId, mouseX, mouseY, () -> details);
+        s.rateTab(g, x + s.panelWidth(), y + ROW_2, false, d.getIntOr("rate", 0), nextId, previousId, mouseX, mouseY, () -> details);
     }
 
-    static void sideConfig(DfmScreen<?> s, GuiGraphics g, int x, int y, DfmScreen.Window window, int mouseX, int mouseY) {
+    static void sideConfig(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, DfmScreen.Window window, int mouseX, int mouseY) {
         s.windowTab(g, x - DfmScreen.TAB_SIZE, y + TOP_Y, true, DfmScreen.TAB_DEFAULT, DfmScreen.ICON_SIDE_CONFIG, window,
                 mouseX, mouseY, () -> List.of(Component.translatable("gui.dimensionalfluxminer.side_config")));
     }
 
-    static void upgrades(DfmScreen<?> s, GuiGraphics g, int x, int y, MachineWindows.UpgradeWindow window, int mouseX, int mouseY) {
+    static void upgrades(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, MachineWindows.UpgradeWindow window, int mouseX, int mouseY) {
         s.windowTab(g, x + s.panelWidth(), y + TOP_Y, false, DfmScreen.TAB_DEFAULT, DfmScreen.ICON_UPGRADE, window,
                 mouseX, mouseY, () -> List.of(Component.translatable("gui.dimensionalfluxminer.upgrades")));
     }
@@ -56,13 +56,13 @@ final class MachineTabs {
      * Redstone Control tab of Crusher and Electric Furnace: the whole block listens to redstone; left click selects the next
      * mode (Ignored, Normal, Inverted), right click the previous one. Striped while redstone is halting the machine.
      */
-    static void redstone(DfmScreen<?> s, GuiGraphics g, int x, int y, CompoundTag d, int mouseX, int mouseY) {
-        RedstoneMode mode = RedstoneMode.byName(d.getString("redstone_mode"));
-        redstoneTab(s, g, x, y, mode, d.getBoolean("redstone_halt"), AbstractMachineBlockEntity.BUTTON_REDSTONE_NEXT,
+    static void redstone(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, CompoundTag d, int mouseX, int mouseY) {
+        RedstoneMode mode = RedstoneMode.byName(d.getStringOr("redstone_mode", ""));
+        redstoneTab(s, g, x, y, mode, d.getBooleanOr("redstone_halt", false), AbstractMachineBlockEntity.BUTTON_REDSTONE_NEXT,
                 AbstractMachineBlockEntity.BUTTON_REDSTONE_PREVIOUS, mouseX, mouseY);
     }
 
-    static void redstoneTab(DfmScreen<?> s, GuiGraphics g, int x, int y, RedstoneMode mode, boolean halted, int nextId, int previousId,
+    static void redstoneTab(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, RedstoneMode mode, boolean halted, int nextId, int previousId,
                             int mouseX, int mouseY) {
         GuiIcon icon = switch (mode) {
             case IGNORED -> DfmScreen.ICON_REDSTONE_OFF;
@@ -75,12 +75,12 @@ final class MachineTabs {
     }
 
     /** Problems tab (bottom left) when something keeps a Crusher or Electric Furnace from running. */
-    static void problems(DfmScreen<?> s, GuiGraphics g, int x, int y, CompoundTag d) {
+    static void problems(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, CompoundTag d) {
         List<Component> problems = new ArrayList<>();
-        if (d.getBoolean("redstone_halt")) {
-            problems.add(redstoneProblem(RedstoneMode.byName(d.getString("redstone_mode"))));
+        if (d.getBooleanOr("redstone_halt", false)) {
+            problems.add(redstoneProblem(RedstoneMode.byName(d.getStringOr("redstone_mode", ""))));
         }
-        switch (d.getString("status")) {
+        switch (d.getStringOr("status", "")) {
             case "output_blocked" -> problems.add(Component.translatable("gui.dimensionalfluxminer.problem.output_blocked"));
             case "no_energy" -> problems.add(Component.translatable("gui.dimensionalfluxminer.problem.no_energy"));
             default -> {
@@ -94,14 +94,14 @@ final class MachineTabs {
                 : "gui.dimensionalfluxminer.problem.redstone_absent");
     }
 
-    static void warnings(DfmScreen<?> s, GuiGraphics g, int x, int y, List<Component> problems) {
+    static void warnings(DfmScreen<?> s, GuiGraphicsExtractor g, int x, int y, List<Component> problems) {
         if (!problems.isEmpty()) {
             s.warningTab(g, x - DfmScreen.TAB_SIZE, y + bottomY(s), problems);
         }
     }
 
     /** One pixel outline (configuration-only slot highlight). */
-    static void outline(GuiGraphics g, int x, int y, int w, int h, int color) {
+    static void outline(GuiGraphicsExtractor g, int x, int y, int w, int h, int color) {
         g.fill(x, y, x + w, y + 1, color);
         g.fill(x, y + h - 1, x + w, y + h, color);
         g.fill(x, y, x + 1, y + h, color);

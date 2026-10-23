@@ -114,7 +114,7 @@ public final class MinerAssembly {
     /** Shows the highlight of {@code terminal}, or hides it when it is the one the player already sees. */
     public static void toggleHighlight(ServerPlayer player, BlockPos terminal) {
         boolean shown = terminal.equals(SHOWN.get(player.getUUID()));
-        highlight(player, terminal, shown ? List.of() : missing(player.serverLevel(), terminal));
+        highlight(player, terminal, shown ? List.of() : missing(player.level(), terminal));
     }
 
     /** Terminal whose highlight each player sees (server side, to switch it with a click; one entry per player). */
@@ -126,13 +126,13 @@ public final class MinerAssembly {
 
     /** The first stack of {@code item} in the inventory (hands first), or EMPTY. */
     private static ItemStack find(Inventory inventory, Item item) {
-        if (inventory.getSelected().is(item)) {
-            return inventory.getSelected();
+        if (inventory.getSelectedItem().is(item)) {
+            return inventory.getSelectedItem();
         }
-        if (inventory.offhand.getFirst().is(item)) {
-            return inventory.offhand.getFirst();
+        if (inventory.getItem(Inventory.SLOT_OFFHAND).is(item)) {
+            return inventory.getItem(Inventory.SLOT_OFFHAND);
         }
-        for (ItemStack stack : inventory.items) {
+        for (ItemStack stack : inventory.getNonEquipmentItems()) {
             if (stack.is(item)) {
                 return stack;
             }

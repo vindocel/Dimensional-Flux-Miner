@@ -12,15 +12,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** Steel chassis: structural part; the lower one is a redstone and external tick-acceleration receiver. */
 public class MinerChassisBlock extends MinerPartBlock implements EntityBlock {
-    public static final com.mojang.serialization.MapCodec<MinerChassisBlock> CODEC = simpleCodec(MinerChassisBlock::new);
 
     public MinerChassisBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() {
-        return CODEC;
     }
 
     @Override
@@ -31,7 +25,7 @@ public class MinerChassisBlock extends MinerPartBlock implements EntityBlock {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide || type != DfmBlockEntities.MINER_LINK.get()) {
+        if (level.isClientSide() || type != DfmBlockEntities.MINER_LINK.get()) {
             return null;
         }
         return (BlockEntityTicker<T>) (BlockEntityTicker<MinerLinkBlockEntity>) MinerLinkBlockEntity::serverTick;

@@ -1,8 +1,6 @@
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": {
-    "tag": "c:ores/lapis"
-  },
+  "ingredient": "#c:ores/lapis",
   "result": {
     "id": "minecraft:lapis_lazuli"
   },

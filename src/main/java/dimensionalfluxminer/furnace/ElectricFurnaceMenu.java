@@ -1,5 +1,6 @@
 package dimensionalfluxminer.furnace;
 
+import dimensionalfluxminer.machine.transfer.SlotStorage;
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.menu.WindowSlot;
 import dimensionalfluxminer.registry.DfmItems;
@@ -10,7 +11,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class ElectricFurnaceMenu extends MachineMenu<ElectricFurnaceBlockEntity> {
     /** Player inventory right under the processing element (187 px panel). */
@@ -27,7 +27,7 @@ public class ElectricFurnaceMenu extends MachineMenu<ElectricFurnaceBlockEntity>
 
     private ElectricFurnaceMenu(int containerId, Inventory inventory, BlockPos pos, ElectricFurnaceBlockEntity be) {
         super(DfmMenus.ELECTRIC_FURNACE.get(), containerId, inventory, pos, be);
-        addSlot(new WindowSlot(be != null ? be.upgradeSlot() : new ItemStackHandler(1), 0,
+        addSlot(new WindowSlot(be != null ? be.upgradeSlot() : new SlotStorage(1), 0,
                 stack -> stack.is(DfmItems.EFFICIENCY_UPGRADE.get()), 1));
         addPlayerInventory(inventory, INVENTORY_LEFT, INVENTORY_TOP);
     }

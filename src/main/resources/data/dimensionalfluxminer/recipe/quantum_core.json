@@ -7,15 +7,9 @@
     "ERE"
   ],
   "key": {
-    "E": {
-      "item": "dimensionalfluxminer:ender_eye_reinforced"
-    },
-    "R": {
-      "item": "dimensionalfluxminer:reinforced_structural_glass"
-    },
-    "C": {
-      "item": "minecraft:conduit"
-    }
+    "E": "dimensionalfluxminer:ender_eye_reinforced",
+    "R": "dimensionalfluxminer:reinforced_structural_glass",
+    "C": "minecraft:conduit"
   },
   "result": {
     "id": "dimensionalfluxminer:quantum_core",

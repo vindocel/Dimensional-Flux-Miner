@@ -1,5 +1,8 @@
 package dimensionalfluxminer.miner;
 
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.machine.LogicalTickCounter;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -10,15 +13,19 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 
 /**
  * Link from a steel chassis or dimensional port to its formed controller. The controller answers the capability of
  * each configurable face ({@code MinerPorts}); the lower-layer ports and chassis act as lightweight tick-acceleration
  * receivers.
  */
-public class MinerLinkBlockEntity extends BlockEntity {
+public class MinerLinkBlockEntity extends dimensionalfluxminer.content.TagBlockEntity {
     private BlockPos controller;
     private final LogicalTickCounter tickCounter = new LogicalTickCounter();
 
@@ -50,6 +57,7 @@ public class MinerLinkBlockEntity extends BlockEntity {
      */
     public static void serverTick(Level level, BlockPos pos, BlockState state, MinerLinkBlockEntity be) {
         if (be.tickCounter.register(level.getGameTime())) {
+            dimensionalfluxminer.compat.Ae2Compat.pull(be, be::energyStorage);
             return;
         }
         MinerControllerBlockEntity controller = be.controller();
@@ -62,27 +70,38 @@ public class MinerLinkBlockEntity extends BlockEntity {
         }
     }
 
-    public IItemHandler itemHandler(Direction side) {
+    public ItemSlots itemHandler(Direction side) {
         MinerControllerBlockEntity c = controller();
         return c == null ? null : c.itemPort(worldPosition, side);
     }
 
-    public IEnergyStorage energyStorage(Direction side) {
+    public EnergyStore energyStorage(Direction side) {
         MinerControllerBlockEntity c = controller();
         return c == null ? null : c.energyPort(worldPosition, side);
     }
 
+    /** The controller's port of this face, as the NeoForge item capability. */
+    public ResourceHandler<ItemResource> exposedItems(Direction side) {
+        MinerControllerBlockEntity c = controller();
+        return c == null ? null : Transfer.exposeItems(c.itemPort(worldPosition, side), c.journal());
+    }
+
+    public EnergyHandler exposedEnergy(Direction side) {
+        MinerControllerBlockEntity c = controller();
+        return c == null ? null : Transfer.exposeEnergy(c.energyPort(worldPosition, side), c.journal());
+    }
+
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveTag(tag, registries);
         if (controller != null) {
-            tag.put("controller", NbtUtils.writeBlockPos(controller));
+            tag.store("controller", BlockPos.CODEC, controller);
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        controller = NbtUtils.readBlockPos(tag, "controller").orElse(null);
+    protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadTag(tag, registries);
+        controller = tag.read("controller", BlockPos.CODEC).orElse(null);
     }
 }

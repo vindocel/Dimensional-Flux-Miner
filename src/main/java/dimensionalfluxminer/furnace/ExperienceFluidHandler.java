@@ -1,14 +1,14 @@
 package dimensionalfluxminer.furnace;
 
+import dimensionalfluxminer.machine.transfer.FluidTanks;
 import dimensionalfluxminer.registry.DfmFluids;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
  * Output-only virtual fluid view over the Electric Furnace's stored XP ({@code #c:experience}, 1 XP = 20 mB).
  * There is no second tank: draining N mB subtracts exactly N * 50 milli-XP.
  */
-public final class ExperienceFluidHandler implements IFluidHandler {
+public final class ExperienceFluidHandler implements FluidTanks {
     private final StoredExperience experience;
     private final Runnable onChange;
 

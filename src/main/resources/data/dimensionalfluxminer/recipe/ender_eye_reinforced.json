@@ -7,12 +7,8 @@
     " S "
   ],
   "key": {
-    "S": {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    "E": {
-      "item": "minecraft:ender_eye"
-    }
+    "S": "dimensionalfluxminer:ingot_steel",
+    "E": "minecraft:ender_eye"
   },
   "result": {
     "id": "dimensionalfluxminer:ender_eye_reinforced",

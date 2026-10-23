@@ -2,6 +2,15 @@
 
 ## 0.2.7 (since 0.2.6)
 
+### 🧱 Minecraft 26.3
+
+- 🆙 **Ported to Minecraft 26.3** (NeoForge 26.3.0.95, Java 25), with every feature of the 1.21.1 line. Machines,
+  tanks and Miners save their data in the same format as before.
+- 📘 EMI and Polymorph have no 26.x version yet, so their integrations are off on this line. JEI and Jade
+  use their 26.3 versions; the KubeJS integration is built against KubeJS 26.1.2, waiting for a 26.3 release.
+- ⚡ **Applied Energistics 2 power** (optional): the Crusher, the Electric Furnace and the Miner's energy ports join an
+  ME network they touch and draw AE as energy (1 AE = 2 FE), with no channel and no idle cost.
+
 ### 🔄 Changed
 
 - 🌡️ **Redline is a real challenge now**: setting speed 10 is no longer enough. A machine at speed 10 must run 10

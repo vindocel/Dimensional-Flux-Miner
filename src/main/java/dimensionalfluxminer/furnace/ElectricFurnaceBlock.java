@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class ElectricFurnaceBlock extends HorizontalMachineBlock {
-    public static final MapCodec<ElectricFurnaceBlock> CODEC = simpleCodec(ElectricFurnaceBlock::new);
 
     public ElectricFurnaceBlock(Properties properties) {
         super(properties);
@@ -22,11 +21,6 @@ public class ElectricFurnaceBlock extends HorizontalMachineBlock {
     /** Real block light derived from the machine state (no separate LIT property): ACTIVE emits 14, OFF/IDLE emit 0. */
     public static int lightFromState(BlockState state) {
         return state.getValue(DfmStateProperties.MACHINE_STATE) == MachineState.ACTIVE ? 14 : 0;
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

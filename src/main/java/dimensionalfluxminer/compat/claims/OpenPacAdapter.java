@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
@@ -41,8 +41,8 @@ final class OpenPacAdapter implements ProtectionService.ClaimAdapter {
             Class<?> protection = Class.forName("xaero.pac.common.server.claims.protection.api.IChunkProtectionAPI");
             Class<?> claim = Class.forName("xaero.pac.common.claims.player.api.IPlayerChunkClaimAPI");
             current = new Api(server.getMethod("get", MinecraftServer.class), server.getMethod("getServerClaimsManager"),
-                    claims.getMethod("get", ResourceLocation.class, BlockPos.class), server.getMethod("getChunkProtection"),
-                    protection.getMethod("hasChunkAccess", UUID.class, ResourceLocation.class, int.class, int.class),
+                    claims.getMethod("get", Identifier.class, BlockPos.class), server.getMethod("getChunkProtection"),
+                    protection.getMethod("hasChunkAccess", UUID.class, Identifier.class, int.class, int.class),
                     claim.getMethod("getPlayerId"));
             api = current;
             return current;
@@ -72,7 +72,7 @@ final class OpenPacAdapter implements ProtectionService.ClaimAdapter {
     }
 
     private Object claim(Api a, Object instance, ServerLevel level, BlockPos pos) throws ReflectiveOperationException {
-        return a.claimAt().invoke(a.claimsManager().invoke(instance), level.dimension().location(), pos);
+        return a.claimAt().invoke(a.claimsManager().invoke(instance), level.dimension().identifier(), pos);
     }
 
     @Override
@@ -89,7 +89,7 @@ final class OpenPacAdapter implements ProtectionService.ClaimAdapter {
             if (owner == null) {
                 return ProtectionService.Status.INDETERMINATE;
             }
-            Object access = a.hasChunkAccess().invoke(a.protection().invoke(instance), owner, level.dimension().location(),
+            Object access = a.hasChunkAccess().invoke(a.protection().invoke(instance), owner, level.dimension().identifier(),
                     pos.getX() >> 4, pos.getZ() >> 4);
             return Boolean.TRUE.equals(access) ? ProtectionService.Status.AUTHORIZED : ProtectionService.Status.UNAUTHORIZED;
         } catch (ReflectiveOperationException e) {

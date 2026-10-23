@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
@@ -57,9 +57,7 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
     private final MachineWindows.InfoWindow detailsWindow;
 
     public ElectricFurnaceScreen(ElectricFurnaceMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        imageWidth = WIDTH;
-        imageHeight = HEIGHT;
+        super(menu, inventory, title, WIDTH, HEIGHT);
         sideWindow = new SideConfigWindow(this, "electric_furnace.side_config", SideRules.ELECTRIC_FURNACE,
                 List.of(Transmission.ITEM, Transmission.ENERGY, Transmission.EXPERIENCE), this::data, menu.pos(),
                 Map.of(Transmission.ITEM, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.ITEMS, List.of(
@@ -74,20 +72,20 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
                     return List.of(
                             MachineText.statusLine(d),
                             Component.translatable("gui.dimensionalfluxminer.electric_furnace.mode", modeName(d)),
-                            Component.translatable("gui.dimensionalfluxminer.rate.tooltip", d.getInt("rate")),
-                            Component.translatable("gui.dimensionalfluxminer.power_limit", fe(d.getLong("power")) + "/t"),
+                            Component.translatable("gui.dimensionalfluxminer.rate.tooltip", d.getIntOr("rate", 0)),
+                            Component.translatable("gui.dimensionalfluxminer.power_limit", fe(d.getLongOr("power", 0L)) + "/t"),
                             MachineText.energyLine(d),
-                            Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(d.getBoolean("auto_input"))),
-                            Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(d.getBoolean("auto_eject"))),
-                            Component.translatable("gui.dimensionalfluxminer.auto_eject_fluid", MachineText.onOff(d.getBoolean("auto_eject_fluid"))),
-                            Component.translatable("gui.dimensionalfluxminer.auto_split", MachineText.onOff(d.getBoolean("auto_split"))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(d.getBooleanOr("auto_input", false))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(d.getBooleanOr("auto_eject", false))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_eject_fluid", MachineText.onOff(d.getBooleanOr("auto_eject_fluid", false))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_split", MachineText.onOff(d.getBooleanOr("auto_split", false))),
                             MachineText.redstone(d));
                 });
     }
 
     private static ElectricFurnaceMode mode(CompoundTag d) {
         try {
-            return ElectricFurnaceMode.valueOf(d.getString("mode"));
+            return ElectricFurnaceMode.valueOf(d.getStringOr("mode", ""));
         } catch (IllegalArgumentException e) {
             return ElectricFurnaceMode.ALL;
         }
@@ -103,24 +101,24 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
     }
 
     @Override
-    protected void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    protected void renderMain(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         CompoundTag d = data();
         ElectricFurnaceLayout.Variant variant = ElectricFurnaceLayout.Variant.of(mode(d));
-        boolean alloyRunning = d.getBoolean("alloy_running");
+        boolean alloyRunning = d.getBooleanOr("alloy_running", false);
         HolderLookup.Provider registries = menu.player().registryAccess();
         Component mode = modeName(d);
-        boolean blocked = "output_blocked".equals(d.getString("status"));
-        boolean operating = "active".equals(d.getString("state"));
+        boolean blocked = "output_blocked".equals(d.getStringOr("status", ""));
+        boolean operating = "active".equals(d.getStringOr("state", ""));
         int ex = x + ELEMENT_X;
         int ey = y + ELEMENT_Y;
         ElectricFurnaceLayout.drawElement(g, ex, ey, variant);
 
-        ListTag lanes = d.getList("lanes", Tag.TAG_COMPOUND);
+        ListTag lanes = d.getListOrEmpty("lanes");
         for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
-            CompoundTag laneTag = lane < lanes.size() ? lanes.getCompound(lane) : new CompoundTag();
+            CompoundTag laneTag = lane < lanes.size() ? lanes.getCompoundOrEmpty(lane) : new CompoundTag();
             int ix = ex + ElectricFurnaceLayout.INPUT_X[lane];
             int iy = ey + ElectricFurnaceLayout.INPUT_Y;
-            QueueView in = QueueView.read(laneTag.getList("in", Tag.TAG_COMPOUND), registries);
+            QueueView in = QueueView.read(laneTag.getListOrEmpty("in"), registries);
             if (!in.isEmpty()) {
                 queueEntry(g, in.prototype(0), in.count(0), ix + 1, iy + 1);
             }
@@ -135,18 +133,18 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
                     ElectricFurnaceBlockEntity.BUTTON_SHIFT, creativePick(ElectricFurnaceBlockEntity.BUTTON_PICK_INPUT + index));
             // Smelting: each opening shows the progress of its own lane.
             if (operating && !alloyRunning && !in.isEmpty()) {
-                ElectricFurnaceLayout.heat(g, ex + variant.heatX[lane], ey + variant.heatY, laneTag.getDouble("progress"));
+                ElectricFurnaceLayout.heat(g, ex + variant.heatX[lane], ey + variant.heatY, laneTag.getDoubleOr("progress", 0.0));
             }
         }
         // Alloy: one combined operation, the three openings share its progress.
         if (operating && alloyRunning) {
             for (int hx : variant.heatX) {
-                ElectricFurnaceLayout.heat(g, ex + hx, ey + variant.heatY, d.getDouble("alloy_progress"));
+                ElectricFurnaceLayout.heat(g, ex + hx, ey + variant.heatY, d.getDoubleOr("alloy_progress", 0.0));
             }
         }
         for (int i = 0; i < variant.outputX.length; i++) {
-            CompoundTag laneTag = i < lanes.size() ? lanes.getCompound(i) : new CompoundTag();
-            QueueView out = QueueView.read(laneTag.getList("out", Tag.TAG_COMPOUND), registries);
+            CompoundTag laneTag = i < lanes.size() ? lanes.getCompoundOrEmpty(i) : new CompoundTag();
+            QueueView out = QueueView.read(laneTag.getListOrEmpty("out"), registries);
             int number = i + 1;
             Supplier<List<Component>> tooltip = variant == ElectricFurnaceLayout.Variant.ALLOY
                     ? () -> out.slotTooltip(0, number == 1 ? "gui.dimensionalfluxminer.electric_furnace.main_output"
@@ -158,22 +156,22 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
         // The heat chamber opens this machine's recipes in EMI / JEI.
         recipeArea(ex + ElectricFurnaceLayout.CHAMBER_X, ey + ElectricFurnaceLayout.CHAMBER_Y, ElectricFurnaceLayout.CHAMBER_W, ElectricFurnaceLayout.CHAMBER_H,
                 () -> switch (variant) {
-            case FURNACE -> new ResourceLocation[] {RecipeViewers.SMELTING};
-            case ALLOY -> new ResourceLocation[] {RecipeViewers.ALLOYING};
-            case ALL -> alloyRunning ? new ResourceLocation[] {RecipeViewers.ALLOYING, RecipeViewers.SMELTING}
-                    : new ResourceLocation[] {RecipeViewers.SMELTING, RecipeViewers.ALLOYING};
+            case FURNACE -> new Identifier[] {RecipeViewers.SMELTING};
+            case ALLOY -> new Identifier[] {RecipeViewers.ALLOYING};
+            case ALL -> alloyRunning ? new Identifier[] {RecipeViewers.ALLOYING, RecipeViewers.SMELTING}
+                    : new Identifier[] {RecipeViewers.SMELTING, RecipeViewers.ALLOYING};
         }, () -> List.of(MachineText.statusLine(d)));
 
-        long cap = Math.max(1, d.getLong("fe_capacity"));
-        energyBar(g, x + ENERGY_X, y + ENERGY_Y, ENERGY_FRAME_HEIGHT, (double) d.getLong("fe") / cap);
+        long cap = Math.max(1, d.getLongOr("fe_capacity", 0L));
+        energyBar(g, x + ENERGY_X, y + ENERGY_Y, ENERGY_FRAME_HEIGHT, (double) d.getLongOr("fe", 0L) / cap);
         hotspot(x + ENERGY_X, y + ENERGY_Y, 14, ENERGY_FRAME_HEIGHT, null, null, () -> MachineText.energyTooltip(d), 0);
 
         MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
         MachineTabs.details(this, g, x, y, true, MachineTabs.ROW_2, detailsWindow, mouseX, mouseY);
         MachineTabs.upgrades(this, g, x, y, upgradeWindow, mouseX, mouseY);
         MachineTabs.rate(this, g, x, y, d, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE_BACK,
-                List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLong("power"))),
-                        Component.translatable("gui.dimensionalfluxminer.rate.speed_lane", number(d.getDouble("lane_speed") * 20))),
+                List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLongOr("power", 0L))),
+                        Component.translatable("gui.dimensionalfluxminer.rate.speed_lane", number(d.getDoubleOr("lane_speed", 0.0) * 20))),
                 mouseX, mouseY);
         GuiIcon modeIcon = switch (variant) {
             case FURNACE -> ICON_SMELTING;
@@ -184,7 +182,7 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
                 () -> ElectricFurnaceBlockEntity.BUTTON_MODE, () -> ElectricFurnaceBlockEntity.BUTTON_MODE_BACK, () -> List.of(
                         Component.translatable("gui.dimensionalfluxminer.electric_furnace.mode", mode),
                         Component.translatable("gui.dimensionalfluxminer.electric_furnace.mode.tooltip").withStyle(ChatFormatting.DARK_GRAY)));
-        boolean split = d.getBoolean("auto_split");
+        boolean split = d.getBooleanOr("auto_split", false);
         iconTab(g, x - TAB_SIZE, y + MachineTabs.ROW_3, true, TAB_DEFAULT, ICON_SORTING, TAB_INNER, true, split, mouseX, mouseY,
                 () -> ElectricFurnaceBlockEntity.BUTTON_AUTO_SPLIT, null, () -> List.of(
                         Component.translatable("gui.dimensionalfluxminer.auto_split", MachineText.onOff(split)),
@@ -211,7 +209,7 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
         }
     }
 
-    private void outputBox(GuiGraphics g, boolean blocked, QueueView view, int bx, int by, int buttonId, Supplier<List<Component>> tooltip,
+    private void outputBox(GuiGraphicsExtractor g, boolean blocked, QueueView view, int bx, int by, int buttonId, Supplier<List<Component>> tooltip,
                            int mouseX, int mouseY) {
         if (blocked) {
             slot(g, SlotKind.OUTPUT_WARNING, bx, by);

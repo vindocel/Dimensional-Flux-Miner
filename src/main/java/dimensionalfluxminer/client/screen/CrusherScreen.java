@@ -9,11 +9,11 @@ import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
@@ -37,9 +37,7 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
     private final MachineWindows.InfoWindow detailsWindow;
 
     public CrusherScreen(CrusherMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        imageWidth = 176;
-        imageHeight = CrusherMenu.INVENTORY_TOP + 82;
+        super(menu, inventory, title, 176, CrusherMenu.INVENTORY_TOP + 82);
         sideWindow = new SideConfigWindow(this, "crusher.side_config", SideRules.CRUSHER,
                 List.of(Transmission.ITEM, Transmission.ENERGY), this::data, menu.pos(),
                 Map.of(Transmission.ITEM, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.ITEMS, List.of(
@@ -52,12 +50,12 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
                     CompoundTag d = data();
                     return List.of(
                             MachineText.statusLine(d),
-                            Component.translatable("gui.dimensionalfluxminer.rate.tooltip", d.getInt("rate")),
-                            Component.translatable("gui.dimensionalfluxminer.power_limit", fe(d.getLong("power")) + "/t"),
-                            Component.translatable("gui.dimensionalfluxminer.throughput", number(d.getDouble("ops"))),
+                            Component.translatable("gui.dimensionalfluxminer.rate.tooltip", d.getIntOr("rate", 0)),
+                            Component.translatable("gui.dimensionalfluxminer.power_limit", fe(d.getLongOr("power", 0L)) + "/t"),
+                            Component.translatable("gui.dimensionalfluxminer.throughput", number(d.getDoubleOr("ops", 0.0))),
                             MachineText.energyLine(d),
-                            Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(d.getBoolean("auto_input"))),
-                            Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(d.getBoolean("auto_eject"))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(d.getBooleanOr("auto_input", false))),
+                            Component.translatable("gui.dimensionalfluxminer.auto_eject", MachineText.onOff(d.getBooleanOr("auto_eject", false))),
                             MachineText.redstone(d));
                 });
     }
@@ -68,26 +66,26 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
     }
 
     @Override
-    protected void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    protected void renderMain(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         CompoundTag d = data();
         var registries = menu.player().registryAccess();
         int mx = x + MECH_X;
         int my = y + MECH_Y;
-        boolean operating = "active".equals(d.getString("state"));
+        boolean operating = "active".equals(d.getStringOr("state", ""));
 
         // Mechanism up to the end of its output pipe, then the four output slots.
         CrusherLayout.drawMechanism(g, mx, my, CrusherLayout.PIPE_END);
         CrusherLayout.drawMill(g, mx, my, operating);
-        CrusherLayout.drawProgress(g, mx, my, operating ? d.getDouble("progress") : 0);
+        CrusherLayout.drawProgress(g, mx, my, operating ? d.getDoubleOr("progress", 0.0) : 0);
         recipeArea(mx + CrusherLayout.CHAMBER_X, my, CrusherLayout.CHAMBER_WIDTH, CrusherLayout.HEIGHT,
-                () -> new ResourceLocation[] {RecipeViewers.CRUSHING}, () -> List.of(
+                () -> new Identifier[] {RecipeViewers.CRUSHING}, () -> List.of(
                         MachineText.statusLine(d),
-                        Component.translatable("gui.dimensionalfluxminer.throughput", number(d.getDouble("ops")))));
+                        Component.translatable("gui.dimensionalfluxminer.throughput", number(d.getDoubleOr("ops", 0.0)))));
 
         // Input queue (click with an item to insert, empty hand to take back, shift = to inventory)
         int ix = mx + CrusherLayout.INPUT_X;
         int iy = my + CrusherLayout.INPUT_Y;
-        QueueView input = QueueView.read(d.getList("input", Tag.TAG_COMPOUND), registries);
+        QueueView input = QueueView.read(d.getListOrEmpty("input"), registries);
         if (!input.isEmpty()) {
             queueEntry(g, input.prototype(0), input.count(0), ix + 1, iy + 1);
         }
@@ -99,8 +97,8 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
                 () -> input.slotTooltip(0, "gui.dimensionalfluxminer.crusher.input"),
                 MechanicalCrusherBlockEntity.BUTTON_SHIFT, creativePick(MechanicalCrusherBlockEntity.BUTTON_PICK_INPUT));
 
-        boolean blocked = "output_blocked".equals(d.getString("status"));
-        QueueView output = QueueView.read(d.getList("output", Tag.TAG_COMPOUND), registries);
+        boolean blocked = "output_blocked".equals(d.getStringOr("status", ""));
+        QueueView output = QueueView.read(d.getListOrEmpty("output"), registries);
         for (int i = 0; i < MechanicalCrusherBlockEntity.OUTPUT_KINDS; i++) {
             int ox = mx + OUT_X + (i % 2) * 18;
             int oy = my + OUT_Y + (i / 2) * 18;
@@ -116,16 +114,16 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
                     MechanicalCrusherBlockEntity.BUTTON_SHIFT, creativePick(MechanicalCrusherBlockEntity.BUTTON_PICK_OUTPUT + kind));
         }
 
-        long cap = Math.max(1, d.getLong("fe_capacity"));
-        energyBar(g, x + 7, y + ENERGY_Y, ENERGY_FRAME_HEIGHT, (double) d.getLong("fe") / cap);
+        long cap = Math.max(1, d.getLongOr("fe_capacity", 0L));
+        energyBar(g, x + 7, y + ENERGY_Y, ENERGY_FRAME_HEIGHT, (double) d.getLongOr("fe", 0L) / cap);
         hotspot(x + 7, y + ENERGY_Y, 14, ENERGY_FRAME_HEIGHT, null, null, () -> MachineText.energyTooltip(d), 0);
 
         MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
         MachineTabs.details(this, g, x, y, true, MachineTabs.ROW_2, detailsWindow, mouseX, mouseY);
         MachineTabs.upgrades(this, g, x, y, upgradeWindow, mouseX, mouseY);
         MachineTabs.rate(this, g, x, y, d, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE_BACK,
-                List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLong("power"))),
-                        Component.translatable("gui.dimensionalfluxminer.rate.speed", number(d.getDouble("ops") * 20))), mouseX, mouseY);
+                List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLongOr("power", 0L))),
+                        Component.translatable("gui.dimensionalfluxminer.rate.speed", number(d.getDoubleOr("ops", 0.0) * 20))), mouseX, mouseY);
         themeTab(g, x, y, MachineTabs.ROW_3, mouseX, mouseY);
         MachineTabs.redstone(this, g, x, y, d, mouseX, mouseY);
         MachineTabs.problems(this, g, x, y, d);

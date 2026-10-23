@@ -42,8 +42,8 @@ public final class CorruptedWaterFluid {
         }
 
         @Override
-        public void tick(Level level, BlockPos pos, FluidState state) {
-            super.tick(level, pos, state);
+        public void tick(ServerLevel level, BlockPos pos, BlockState blockState, FluidState state) {
+            super.tick(level, pos, blockState, state);
             corruptBelow(level, pos);
         }
 
@@ -60,7 +60,7 @@ public final class CorruptedWaterFluid {
         }
 
         @Override
-        protected void randomTick(Level level, BlockPos pos, FluidState state, RandomSource random) {
+        protected void randomTick(ServerLevel level, BlockPos pos, FluidState state, RandomSource random) {
             corruptBelow(level, pos);
         }
     }
@@ -71,8 +71,8 @@ public final class CorruptedWaterFluid {
         }
 
         @Override
-        public void tick(Level level, BlockPos pos, FluidState state) {
-            super.tick(level, pos, state);
+        public void tick(ServerLevel level, BlockPos pos, BlockState blockState, FluidState state) {
+            super.tick(level, pos, blockState, state);
             corruptBelow(level, pos);
         }
 
@@ -89,7 +89,7 @@ public final class CorruptedWaterFluid {
         }
 
         @Override
-        protected void randomTick(Level level, BlockPos pos, FluidState state, RandomSource random) {
+        protected void randomTick(ServerLevel level, BlockPos pos, FluidState state, RandomSource random) {
             corruptBelow(level, pos);
         }
     }

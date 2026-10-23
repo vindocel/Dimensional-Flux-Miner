@@ -7,15 +7,9 @@
     "ISI"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_bars"
-    },
-    "S": {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    "C": {
-      "item": "dimensionalfluxminer:steel_chassis"
-    }
+    "I": "minecraft:iron_bars",
+    "S": "dimensionalfluxminer:ingot_steel",
+    "C": "dimensionalfluxminer:steel_chassis"
   },
   "result": {
     "id": "dimensionalfluxminer:ventilation_unit",

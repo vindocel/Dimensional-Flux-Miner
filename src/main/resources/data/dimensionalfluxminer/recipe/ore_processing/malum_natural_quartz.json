@@ -1,9 +1,15 @@
 {
   "neoforge:conditions": [
-    { "type": "neoforge:mod_loaded", "modid": "malum" }
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "malum"
+    }
   ],
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": [ { "item": "malum:natural_quartz_ore" }, { "item": "malum:deepslate_quartz_ore" } ],
+  "ingredient": [
+    "malum:natural_quartz_ore",
+    "malum:deepslate_quartz_ore"
+  ],
   "result": {
     "id": "malum:natural_quartz"
   },

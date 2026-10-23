@@ -12,16 +12,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** Decorative corrupted vegetation placed by the Blight in place of short grass. */
 public class CorruptedGrassPlantBlock extends BushBlock {
-    public static final MapCodec<CorruptedGrassPlantBlock> CODEC = simpleCodec(CorruptedGrassPlantBlock::new);
     private static final VoxelShape SHAPE = Block.box(2.0, 0.0, 2.0, 14.0, 13.0, 14.0);
 
     public CorruptedGrassPlantBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    protected MapCodec<? extends BushBlock> codec() {
-        return CODEC;
     }
 
     @Override

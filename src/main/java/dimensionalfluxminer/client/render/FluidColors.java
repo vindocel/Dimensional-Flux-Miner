@@ -35,12 +35,11 @@ public final class FluidColors {
             long weight = 0;
             for (int y = 0; y < contents.height(); y++) {
                 for (int x = 0; x < contents.width(); x++) {
-                    // NativeImage pixels are ABGR.
-                    int abgr = image.getPixelRGBA(x, y);
-                    int a = (abgr >>> 24) & 0xFF;
-                    r += (long) (abgr & 0xFF) * a;
-                    g += (long) ((abgr >> 8) & 0xFF) * a;
-                    b += (long) ((abgr >> 16) & 0xFF) * a;
+                    int argb = image.getPixel(x, y);
+                    int a = (argb >>> 24) & 0xFF;
+                    r += (long) ((argb >> 16) & 0xFF) * a;
+                    g += (long) ((argb >> 8) & 0xFF) * a;
+                    b += (long) (argb & 0xFF) * a;
                     weight += a;
                 }
             }

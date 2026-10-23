@@ -7,12 +7,8 @@
     " E "
   ],
   "key": {
-    "E": {
-      "item": "dimensionalfluxminer:ender_eye_reinforced"
-    },
-    "C": {
-      "item": "dimensionalfluxminer:steel_chassis"
-    }
+    "E": "dimensionalfluxminer:ender_eye_reinforced",
+    "C": "dimensionalfluxminer:steel_chassis"
   },
   "result": {
     "id": "dimensionalfluxminer:dimensional_port",

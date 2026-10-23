@@ -57,7 +57,7 @@ public final class MinerClientEffects {
             case ENERGY_CORE_STABILIZED -> DfmParticles.CORE_FLUX_STABILIZED.get();
             default -> null;
         };
-        RandomSource random = be.getLevel().random;
+        RandomSource random = be.getLevel().getRandom();
         // Higher Rates pull faster and more often; each mote lives shorter, so the cloud keeps its density.
         float speed = MinerVisualStage.rateSpeed(miner.rate());
         if (type == null) {
@@ -90,7 +90,7 @@ public final class MinerClientEffects {
         if (level == null) {
             return;
         }
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         for (BlockPos pos : positions) {
             for (int i = 0; i < PARTICLES_PER_BLOCK; i++) {
                 double x = pos.getX() + random.nextDouble();

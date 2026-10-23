@@ -7,18 +7,10 @@
     "ESE"
   ],
   "key": {
-    "E": {
-      "item": "dimensionalfluxminer:ender_eye_reinforced"
-    },
-    "S": {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    "T": {
-      "item": "dimensionalfluxminer:dimensional_tank"
-    },
-    "C": {
-      "item": "dimensionalfluxminer:steel_chassis"
-    }
+    "E": "dimensionalfluxminer:ender_eye_reinforced",
+    "S": "dimensionalfluxminer:ingot_steel",
+    "T": "dimensionalfluxminer:dimensional_tank",
+    "C": "dimensionalfluxminer:steel_chassis"
   },
   "result": {
     "id": "dimensionalfluxminer:dimensional_dual_tank",

@@ -20,7 +20,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.RegistryOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
@@ -34,13 +34,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraft.world.level.levelgen.SurfaceRules;
+import net.minecraft.world.level.levelgen.material.rule.MaterialRule;
 import net.minecraft.world.level.levelgen.structure.templatesystem.AlwaysTrueTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RandomBlockMatchTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RandomBlockStateMatchTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
-import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.levelgen.feature.AbstractOreFeature;
+import net.minecraft.world.level.levelgen.feature.BlockReplacement;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.placement.PlacementModifier;
@@ -94,24 +97,24 @@ public final class ProfileBuilder {
         if (ProfileWeights.emptyWeight(share) <= 0) {
             return profile;
         }
-        Map<ResourceLocation, Integer> weights = new LinkedHashMap<>();
+        Map<Identifier, Integer> weights = new LinkedHashMap<>();
         profile.families().forEach(f -> weights.put(f.key(), f.weight()));
-        Map<ResourceLocation, Integer> scaled = ProfileWeights.scaleForEmpty(weights, share);
+        Map<Identifier, Integer> scaled = ProfileWeights.scaleForEmpty(weights, share);
         List<ResourceFamily> families = profile.families().stream()
                 .map(f -> new ResourceFamily(f.key(), f.variants(), scaled.get(f.key()), f.crusherOutput())).toList();
-        DimensionalFluxMiner.LOGGER.debug("Resource Profile {}: {} families, void {}", level.dimension().location(), families.size(), share);
+        DimensionalFluxMiner.LOGGER.debug("Resource Profile {}: {} families, void {}", level.dimension().identifier(), families.size(), share);
         return new ResourceProfile(profile.dimension(), families, ProfileWeights.emptyWeight(share));
     }
 
     private static ResourceProfile buildFamilies(ServerLevel level, List<ProfileOverride> overrides) {
-        Map<ResourceLocation, Accumulator> families = new LinkedHashMap<>();
+        Map<Identifier, Accumulator> families = new LinkedHashMap<>();
         analyzeWorldgen(level, families);
         applyOverrides(level, overrides, families);
 
-        Map<ResourceLocation, Double> scores = new LinkedHashMap<>();
-        Map<ResourceLocation, Double> shares = new HashMap<>();
-        Map<ResourceLocation, Item> outputs = new HashMap<>();
-        families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(ResourceLocation::toString))).forEach(e -> {
+        Map<Identifier, Double> scores = new LinkedHashMap<>();
+        Map<Identifier, Double> shares = new HashMap<>();
+        Map<Identifier, Item> outputs = new HashMap<>();
+        families.entrySet().stream().sorted(Map.Entry.comparingByKey(Comparator.comparing(Identifier::toString))).forEach(e -> {
             Accumulator acc = e.getValue();
             if (acc.variants.isEmpty()) {
                 return;
@@ -119,7 +122,7 @@ public final class ProfileBuilder {
             Item output = acc.crusherOutput != null ? acc.crusherOutput : crusherOutput(level, acc.variants.keySet().iterator().next());
             if (output == null) {
                 DimensionalFluxMiner.LOGGER.warn("Resource family {} in {} has no resolvable Crusher output; add a crusher_output override. Family excluded.",
-                        e.getKey(), level.dimension().location());
+                        e.getKey(), level.dimension().identifier());
                 return;
             }
             outputs.put(e.getKey(), output);
@@ -128,16 +131,16 @@ public final class ProfileBuilder {
                 shares.put(e.getKey(), acc.share);
             }
         });
-        Map<ResourceLocation, Integer> weights = ProfileWeights.applyShares(ProfileWeights.normalize(scores), shares);
+        Map<Identifier, Integer> weights = ProfileWeights.applyShares(ProfileWeights.normalize(scores), shares);
         List<ResourceFamily> result = new ArrayList<>();
-        for (Map.Entry<ResourceLocation, Integer> e : weights.entrySet()) {
+        for (Map.Entry<Identifier, Integer> e : weights.entrySet()) {
             Accumulator acc = families.get(e.getKey());
             List<ResourceFamily.Variant> variants = new ArrayList<>();
             acc.variants.forEach((item, w) -> variants.add(new ResourceFamily.Variant(item, Math.max(w, ProfileWeights.EPSILON))));
             result.add(new ResourceFamily(e.getKey(), List.copyOf(variants), e.getValue(), outputs.get(e.getKey())));
         }
         result.sort(Comparator.comparing(f -> f.key().toString()));
-        DimensionalFluxMiner.LOGGER.debug("Resource Profile {}: {}", level.dimension().location(),
+        DimensionalFluxMiner.LOGGER.debug("Resource Profile {}: {}", level.dimension().identifier(),
                 result.stream().map(f -> f.key() + "=" + f.weight()).toList());
         return new ResourceProfile(level.dimension(), List.copyOf(result));
     }
@@ -147,24 +150,24 @@ public final class ProfileBuilder {
     }
 
     /** Family of an ore item: built-in vanilla table first, then {@code c:ores/<material>}. */
-    public static Optional<ResourceLocation> familyOf(Item item) {
+    public static Optional<Identifier> familyOf(Item item) {
         for (Map.Entry<String, List<Block>> e : VANILLA_FAMILIES.entrySet()) {
             for (Block block : e.getValue()) {
                 if (block.asItem() == item) {
-                    return Optional.of(ResourceLocation.withDefaultNamespace(e.getKey()));
+                    return Optional.of(Identifier.withDefaultNamespace(e.getKey()));
                 }
             }
         }
-        return new ItemStack(item).getTags()
+        return item.builtInRegistryHolder().tags()
                 .filter(t -> t.location().getNamespace().equals("c") && t.location().getPath().startsWith("ores/"))
                 .map(t -> t.location().getPath().substring("ores/".length()))
                 .findFirst()
                 .map(material -> VANILLA_FAMILIES.containsKey(material)
-                        ? ResourceLocation.withDefaultNamespace(material)
-                        : ResourceLocation.fromNamespaceAndPath("c", material));
+                        ? Identifier.withDefaultNamespace(material)
+                        : Identifier.fromNamespaceAndPath("c", material));
     }
 
-    private static void analyzeWorldgen(ServerLevel level, Map<ResourceLocation, Accumulator> families) {
+    private static void analyzeWorldgen(ServerLevel level, Map<Identifier, Accumulator> families) {
         analyzeBiomes(level.getChunkSource().getGenerator().getBiomeSource().possibleBiomes(), level.registryAccess(),
                 terrainBlocks(level), families);
     }
@@ -173,50 +176,68 @@ public final class ProfileBuilder {
      * Raw scores ({@code veinSize * placementsPerChunk * probability * biomeCoverage}) of every family generated by
      * {@code biomes}, before the weight transform. Used to study the distribution of any set of biomes.
      */
-    public static Map<ResourceLocation, Double> rawScores(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries) {
+    public static Map<Identifier, Double> rawScores(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries) {
         return rawScores(biomes, registries, null);
     }
 
     /** Same, counting only the ore blocks that can replace one of {@code terrain} (null = every ore block). */
-    public static Map<ResourceLocation, Double> rawScores(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries,
+    public static Map<Identifier, Double> rawScores(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries,
                                                          Set<BlockState> terrain) {
-        Map<ResourceLocation, Accumulator> families = new LinkedHashMap<>();
+        Map<Identifier, Accumulator> families = new LinkedHashMap<>();
         analyzeBiomes(biomes, registries, terrain, families);
-        Map<ResourceLocation, Double> scores = new LinkedHashMap<>();
+        Map<Identifier, Double> scores = new LinkedHashMap<>();
         families.forEach((key, acc) -> scores.put(key, acc.rawScore));
         return scores;
     }
 
     /**
-     * Blocks the terrain of a dimension is made of: the default block and every block of the surface rule of its noise
-     * settings (stone and deepslate in the Overworld, netherrack in the Nether, end stone in the End, the mod's own
-     * stone in a modded dimension). Null when the generator is not noise based: then every ore block counts.
+     * Blocks the terrain of a dimension is made of: the default block and every block its material rule places (stone
+     * and deepslate in the Overworld, netherrack in the Nether, end stone in the End, the mod's own stone in a modded
+     * dimension). Null when the generator is not noise based: then every ore block counts.
      */
     public static Set<BlockState> terrainBlocks(ServerLevel level) {
         if (!(level.getChunkSource().getGenerator() instanceof NoiseBasedChunkGenerator noise)) {
             return null;
         }
-        NoiseGeneratorSettings settings = noise.generatorSettings().value();
+        return terrainBlocks(noise.generatorSettings().value(), level.registryAccess());
+    }
+
+    /** The terrain blocks of a set of noise settings (see {@link #terrainBlocks(ServerLevel)}). */
+    public static Set<BlockState> terrainBlocks(NoiseGeneratorSettings settings, net.minecraft.core.RegistryAccess registries) {
         Set<BlockState> blocks = new HashSet<>();
         blocks.add(settings.defaultBlock());
-        RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, level.registryAccess());
-        SurfaceRules.RuleSource.CODEC.encodeStart(ops, settings.surfaceRule()).result()
-                .ifPresent(json -> collectStates(json, ops, blocks));
+        RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, registries);
+        collectRule(settings.materialRule().value(), registries, ops, blocks, new HashSet<>());
         blocks.removeIf(BlockState::isAir);
         return blocks;
     }
 
-    private static void collectStates(JsonElement json, RegistryOps<JsonElement> ops, Set<BlockState> blocks) {
+    private static void collectRule(MaterialRule rule, net.minecraft.core.HolderLookup.Provider registries,
+                                    RegistryOps<JsonElement> ops, Set<BlockState> blocks, Set<Identifier> visited) {
+        MaterialRule.DIRECT_CODEC.encodeStart(ops, rule).result()
+                .ifPresent(json -> collectStates(json, registries, ops, blocks, visited));
+    }
+
+    /** Every {@code result_state} of a material rule; rules named by id (registered rules) are read too. */
+    private static void collectStates(JsonElement json, net.minecraft.core.HolderLookup.Provider registries,
+                                      RegistryOps<JsonElement> ops, Set<BlockState> blocks, Set<Identifier> visited) {
         if (json instanceof JsonObject obj) {
             for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
                 if (e.getKey().equals("result_state")) {
                     BlockState.CODEC.parse(ops, e.getValue()).result().ifPresent(blocks::add);
                 } else {
-                    collectStates(e.getValue(), ops, blocks);
+                    collectStates(e.getValue(), registries, ops, blocks, visited);
                 }
             }
         } else if (json instanceof JsonArray array) {
-            array.forEach(element -> collectStates(element, ops, blocks));
+            array.forEach(element -> collectStates(element, registries, ops, blocks, visited));
+        } else if (json instanceof JsonPrimitive primitive && primitive.isString()) {
+            Identifier id = Identifier.tryParse(primitive.getAsString());
+            if (id != null && visited.add(id)) {
+                registries.lookup(Registries.MATERIAL_RULE)
+                        .flatMap(rules -> rules.get(ResourceKey.create(Registries.MATERIAL_RULE, id)))
+                        .ifPresent(holder -> collectRule(holder.value(), registries, ops, blocks, visited));
+            }
         }
     }
 
@@ -231,14 +252,14 @@ public final class ProfileBuilder {
                 return true;
             }
             if (obj.has("block")) {
-                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.tryParse(obj.get("block").getAsString()));
+                Block block = BuiltInRegistries.BLOCK.getValue(Identifier.tryParse(obj.get("block").getAsString()));
                 return terrain.stream().anyMatch(s -> s.is(block));
             }
             BlockState state = BlockState.CODEC.parse(JsonOps.INSTANCE, obj.get("block_state")).result().orElse(null);
             return state == null || terrain.contains(state);
         }
         RandomSource random = RandomSource.create(0);
-        return terrain.stream().anyMatch(s -> rule.test(s, random));
+        return terrain.stream().anyMatch(s -> rule.test(s, net.minecraft.core.BlockPos.ZERO, random));
     }
 
     /**
@@ -264,7 +285,7 @@ public final class ProfileBuilder {
     }
 
     private static void analyzeBiomes(Set<Holder<Biome>> biomes, net.minecraft.core.HolderLookup.Provider registries,
-                                      Set<BlockState> terrain, Map<ResourceLocation, Accumulator> families) {
+                                      Set<BlockState> terrain, Map<Identifier, Accumulator> families) {
         if (biomes.isEmpty()) {
             return;
         }
@@ -312,7 +333,7 @@ public final class ProfileBuilder {
                 if (item == Items.AIR) {
                     continue;
                 }
-                Optional<ResourceLocation> family = familyOf(item);
+                Optional<Identifier> family = familyOf(item);
                 if (family.isEmpty()) {
                     continue;
                 }
@@ -340,24 +361,27 @@ public final class ProfileBuilder {
     }
 
     /**
-     * Vanilla {@link OreConfiguration}s are read directly. Other ore features (for example ore types with their own
-     * configuration codec) are read from their serialized form: every {@code targets[].state} entry is an ore
-     * block, and a numeric {@code size} is the vein size ({@link #DEFAULT_VEIN_SIZE} when the size lives elsewhere,
-     * such as in a mod config).
+     * Vanilla ore features ({@link AbstractOreFeature}) are read directly. Other ore features (for example ore types
+     * with their own codec) are read from their serialized form: every {@code targets[].state} entry is an ore block,
+     * and a numeric {@code size} is the vein size ({@link #DEFAULT_VEIN_SIZE} when the size lives elsewhere, such as in a
+     * mod config). The fields sit at the top level or, in older formats, in {@code config}.
      */
-    public static Optional<OreShape> oreShape(ConfiguredFeature<?, ?> feature, RegistryOps<JsonElement> ops) {
-        if (feature.config() instanceof OreConfiguration ore) {
-            return Optional.of(new OreShape(ore.targetStates.stream().map(t -> t.state).toList(),
-                    ore.targetStates.stream().map(t -> t.target).toList(), ore.size));
+    public static Optional<OreShape> oreShape(Feature feature, RegistryOps<JsonElement> ops) {
+        if (feature instanceof AbstractOreFeature ore) {
+            return Optional.of(new OreShape(ore.targetStates().stream().map(BlockReplacement::state).toList(),
+                    ore.targetStates().stream().map(BlockReplacement::target).toList(), ore.size()));
         }
         JsonElement json;
         try {
-            json = ConfiguredFeature.DIRECT_CODEC.encodeStart(ops, feature).getOrThrow();
+            json = Feature.DIRECT_CODEC.encodeStart(ops, feature).getOrThrow();
         } catch (RuntimeException e) {
             return Optional.empty();
         }
-        if (!(json instanceof JsonObject root) || !(root.get("config") instanceof JsonObject config)
-                || !(config.get("targets") instanceof JsonArray targets)) {
+        if (!(json instanceof JsonObject root)) {
+            return Optional.empty();
+        }
+        JsonObject config = root.get("config") instanceof JsonObject nested ? nested : root;
+        if (!(config.get("targets") instanceof JsonArray targets)) {
             return Optional.empty();
         }
         List<BlockState> states = new ArrayList<>();
@@ -387,8 +411,8 @@ public final class ProfileBuilder {
             if (count == null) {
                 return 1.0;
             }
-            IntProvider provider = IntProvider.CODEC.parse(JsonOps.INSTANCE, count).getOrThrow();
-            return (provider.getMinValue() + provider.getMaxValue()) / 2.0;
+            IntProvider provider = net.minecraft.util.valueproviders.IntProviders.CODEC.parse(JsonOps.INSTANCE, count).getOrThrow();
+            return (provider.minInclusive() + provider.maxInclusive()) / 2.0;
         } catch (RuntimeException e) {
             return 1.0;
         }
@@ -404,12 +428,12 @@ public final class ProfileBuilder {
         }
     }
 
-    private static void applyOverrides(ServerLevel level, List<ProfileOverride> overrides, Map<ResourceLocation, Accumulator> families) {
+    private static void applyOverrides(ServerLevel level, List<ProfileOverride> overrides, Map<Identifier, Accumulator> families) {
         for (ProfileOverride o : overrides) {
             if (!o.appliesTo(level.dimension())) {
                 continue;
             }
-            Item item = BuiltInRegistries.ITEM.get(o.resource());
+            Item item = BuiltInRegistries.ITEM.getValue(o.resource());
             if (item == Items.AIR) {
                 DimensionalFluxMiner.LOGGER.warn("Dimensional miner resource override references unknown item {}", o.resource());
                 continue;
@@ -419,7 +443,7 @@ public final class ProfileBuilder {
                 families.values().removeIf(acc -> acc.variants.isEmpty());
                 continue;
             }
-            Optional<ResourceLocation> key = o.family().or(() -> familyOf(item));
+            Optional<Identifier> key = o.family().or(() -> familyOf(item));
             if (key.isEmpty()) {
                 key = Optional.of(BuiltInRegistries.ITEM.getKey(item));
             }
@@ -430,7 +454,7 @@ public final class ProfileBuilder {
             Accumulator acc = families.computeIfAbsent(key.get(), k -> new Accumulator());
             acc.variants.merge(item, 1.0, (a, b) -> a);
             o.weight().ifPresent(w -> acc.share = w);
-            o.crusherOutput().map(BuiltInRegistries.ITEM::get).filter(i -> i != Items.AIR).ifPresent(i -> acc.crusherOutput = i);
+            o.crusherOutput().map(BuiltInRegistries.ITEM::getValue).filter(i -> i != Items.AIR).ifPresent(i -> acc.crusherOutput = i);
         }
     }
 }

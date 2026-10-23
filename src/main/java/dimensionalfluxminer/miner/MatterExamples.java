@@ -20,10 +20,7 @@ public final class MatterExamples {
             List.of(Items.DEEPSLATE, Items.COBBLED_DEEPSLATE, Items.POLISHED_DEEPSLATE, Items.DEEPSLATE_BRICKS, Items.DEEPSLATE_TILES),
             List.of(Items.DIRT, Items.GRASS_BLOCK),
             List.of(Items.SAND, Items.RED_SAND),
-            List.of(Items.TERRACOTTA, Items.WHITE_TERRACOTTA, Items.ORANGE_TERRACOTTA, Items.MAGENTA_TERRACOTTA,
-                    Items.LIGHT_BLUE_TERRACOTTA, Items.YELLOW_TERRACOTTA, Items.LIME_TERRACOTTA, Items.PINK_TERRACOTTA,
-                    Items.GRAY_TERRACOTTA, Items.LIGHT_GRAY_TERRACOTTA, Items.CYAN_TERRACOTTA, Items.PURPLE_TERRACOTTA,
-                    Items.BLUE_TERRACOTTA, Items.BROWN_TERRACOTTA, Items.GREEN_TERRACOTTA, Items.RED_TERRACOTTA, Items.BLACK_TERRACOTTA),
+            java.util.stream.Stream.concat(java.util.stream.Stream.of(Items.TERRACOTTA), Items.DYED_TERRACOTTA.asList().stream()).toList(),
             List.of(Items.IRON_ORE, Items.COPPER_ORE, Items.COAL_ORE, Items.GOLD_ORE, Items.REDSTONE_ORE, Items.LAPIS_ORE,
                     Items.DIAMOND_ORE, Items.EMERALD_ORE));
 

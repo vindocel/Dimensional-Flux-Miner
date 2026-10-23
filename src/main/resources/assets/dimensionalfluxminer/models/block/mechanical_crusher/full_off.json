@@ -8,7 +8,6 @@
   "flip_v": true,
   "emissive_ambient": false,
   "ambientocclusion": false,
-  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "dimensionalfluxminer:block/mechanical_crusher/mechanical_crusher",
     "machine": "dimensionalfluxminer:block/mechanical_crusher/mechanical_crusher"

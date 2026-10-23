@@ -11,15 +11,9 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class MechanicalCrusherBlock extends HorizontalMachineBlock {
-    public static final MapCodec<MechanicalCrusherBlock> CODEC = simpleCodec(MechanicalCrusherBlock::new);
 
     public MechanicalCrusherBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

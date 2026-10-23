@@ -3,7 +3,7 @@ package dimensionalfluxminer;
 import dimensionalfluxminer.machine.math.LevelTable;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
@@ -86,7 +86,7 @@ public final class DfmConfig {
             .comment("Electric Furnace: recipe types of other mods also run as alloys when their recipes have 1 to 3 counted item",
                     "ingredients and item results (a second result becomes the byproduct). Types of mods that are not installed are ignored.")
             .defineListAllowEmpty("electric_furnace.externalAlloyRecipeTypes", List.of("enderio:alloy_smelting", "oritech:foundry"),
-                    () -> "", o -> o instanceof String s && ResourceLocation.tryParse(s) != null);
+                    () -> "", o -> o instanceof String s && Identifier.tryParse(s) != null);
 
     public static final ModConfigSpec.BooleanValue CORRUPTION_ENABLED = BUILDER
             .comment("Dimensional Death: whether the Basic Core may corrupt terrain at all. When false the Basic Core finds",
@@ -94,7 +94,7 @@ public final class DfmConfig {
             .define("corruption.enabled", true);
     public static final ModConfigSpec.ConfigValue<List<? extends String>> CORRUPTION_BLOCKED_DIMENSIONS = BUILDER
             .comment("Dimensional Death: dimensions where nothing is ever corrupted (and Corrupted Water does not spread).")
-            .defineListAllowEmpty("corruption.blockedDimensions", List.of(), () -> "", o -> o instanceof String s && ResourceLocation.tryParse(s) != null);
+            .defineListAllowEmpty("corruption.blockedDimensions", List.of(), () -> "", o -> o instanceof String s && Identifier.tryParse(s) != null);
     public static final ModConfigSpec.BooleanValue CORRUPTION_SPAWN_PROTECTION = BUILDER
             .comment("Dimensional Death: never corrupt inside the server's spawn protection (spawn-protection of server.properties,",
                     "a square around the world spawn in the Overworld).")
@@ -111,7 +111,7 @@ public final class DfmConfig {
     public static final ModConfigSpec.ConfigValue<String> TANK_PERSONAL_ITEM = BUILDER
             .comment("Dimensional Tanks: item that turns a tank's code into a personal one (a channel of its own for the player",
                     "who used it). Using the tank empty-handed while sneaking makes it public again and gives the item back.")
-            .define("tank.personalItem", "minecraft:diamond", o -> o instanceof String s && ResourceLocation.tryParse(s) != null);
+            .define("tank.personalItem", "minecraft:diamond", o -> o instanceof String s && Identifier.tryParse(s) != null);
     public static final ModConfigSpec.BooleanValue TANK_ANARCHY_MODE = BUILDER
             .comment("Dimensional Tanks: a broken personal tank drops as a public one, plus the personal item.")
             .define("tank.anarchyMode", false);
@@ -119,13 +119,13 @@ public final class DfmConfig {
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     /** An administrative rectangle of one dimension (block coordinates, inclusive). */
-    public record Region(ResourceLocation dimension, int minX, int minZ, int maxX, int maxZ) {
+    public record Region(Identifier dimension, int minX, int minZ, int maxX, int maxZ) {
         public static Region parse(String text) {
             String[] parts = text.split(",");
             if (parts.length != 5) {
                 return null;
             }
-            ResourceLocation dimension = ResourceLocation.tryParse(parts[0].trim());
+            Identifier dimension = Identifier.tryParse(parts[0].trim());
             if (dimension == null) {
                 return null;
             }
@@ -140,7 +140,7 @@ public final class DfmConfig {
             }
         }
 
-        public boolean contains(ResourceLocation dim, int x, int z) {
+        public boolean contains(Identifier dim, int x, int z) {
             return dimension.equals(dim) && x >= minX && x <= maxX && z >= minZ && z <= maxZ;
         }
     }
@@ -249,7 +249,7 @@ public final class DfmConfig {
     }
 
     /** The corruption rules of the configuration, parsed once (they are read for every corrupted block and water flow). */
-    public record CorruptionRules(boolean enabled, java.util.Set<ResourceLocation> blockedDimensions, boolean spawnProtection,
+    public record CorruptionRules(boolean enabled, java.util.Set<Identifier> blockedDimensions, boolean spawnProtection,
                                   List<Region> regions, boolean claimFailureDenies) {
     }
 
@@ -259,7 +259,7 @@ public final class DfmConfig {
         CorruptionRules rules = corruptionRules;
         if (rules == null) {
             rules = new CorruptionRules(value(CORRUPTION_ENABLED),
-                    java.util.Set.copyOf(value(CORRUPTION_BLOCKED_DIMENSIONS).stream().map(ResourceLocation::tryParse)
+                    java.util.Set.copyOf(value(CORRUPTION_BLOCKED_DIMENSIONS).stream().map(Identifier::tryParse)
                             .filter(java.util.Objects::nonNull).toList()),
                     value(CORRUPTION_SPAWN_PROTECTION),
                     value(CORRUPTION_PROTECTED_REGIONS).stream().map(Region::parse).filter(java.util.Objects::nonNull).toList(),
@@ -322,7 +322,7 @@ public final class DfmConfig {
         return corruptionRules().enabled();
     }
 
-    public static java.util.Set<ResourceLocation> corruptionBlockedDimensions() {
+    public static java.util.Set<Identifier> corruptionBlockedDimensions() {
         return corruptionRules().blockedDimensions();
     }
 
@@ -344,7 +344,7 @@ public final class DfmConfig {
     /** Recipe types of other mods run as alloys by the Electric Furnace. */
     /** Item that makes a Dimensional Tank personal (diamond unless configured; an unknown id falls back to it). */
     public static net.minecraft.world.item.Item tankPersonalItem() {
-        ResourceLocation id = ResourceLocation.tryParse(value(TANK_PERSONAL_ITEM));
+        Identifier id = Identifier.tryParse(value(TANK_PERSONAL_ITEM));
         var item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
         return item == null || item == net.minecraft.world.item.Items.AIR ? net.minecraft.world.item.Items.DIAMOND : item;
     }
@@ -353,9 +353,9 @@ public final class DfmConfig {
         return value(TANK_ANARCHY_MODE);
     }
 
-    public static List<ResourceLocation> externalAlloyTypes() {
+    public static List<Identifier> externalAlloyTypes() {
         List<? extends String> ids = value(ELECTRIC_FURNACE_EXTERNAL_ALLOY_TYPES);
-        return ids.stream().map(ResourceLocation::tryParse).filter(java.util.Objects::nonNull).toList();
+        return ids.stream().map(Identifier::tryParse).filter(java.util.Objects::nonNull).toList();
     }
 
     /** FE cost of one operation; the default while the server configuration is not loaded. */

@@ -19,7 +19,13 @@ base {
     archivesName = "${mod_id}-${minecraft_version}"
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+sourceSets.main.java {
+    // EMI and Polymorph have no 26.x build yet; their optional integrations come back when they do.
+    exclude('dimensionalfluxminer/compat/emi/**')
+    exclude('dimensionalfluxminer/compat/polymorph/**')
+}
 
 sourceSets.main.resources {
     exclude('**/*.bbmodel')
@@ -28,10 +34,6 @@ sourceSets.main.resources {
 neoForge {
     version = project.neo_version
 
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 
     runs {
         client {
@@ -93,10 +95,9 @@ repositories {
 }
 
 dependencies {
-    compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     compileOnly "maven.modrinth:jade:${jade_version}"
-    compileOnly "maven.modrinth:polymorph:${polymorph_version}"
+    compileOnly("maven.modrinth:ae2:${ae2_version}") { transitive = false }
     compileOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") { transitive = false }
     compileOnly("dev.latvian.mods:rhino:${rhino_version}") { transitive = false }
 

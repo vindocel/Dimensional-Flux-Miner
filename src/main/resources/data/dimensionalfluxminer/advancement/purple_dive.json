@@ -10,6 +10,6 @@
     "hidden": false
   },
   "criteria": {
-    "dived": { "trigger": "minecraft:location", "conditions": { "player": { "location": { "fluid": { "fluids": [ "dimensionalfluxminer:corrupted_water", "dimensionalfluxminer:flowing_corrupted_water" ] } } } } }
+    "dived": { "trigger": "minecraft:location", "conditions": { "player": { "type": "minecraft:entity_properties", "entity": "this", "predicate": { "minecraft:location": { "fluid": { "fluids": [ "dimensionalfluxminer:corrupted_water", "dimensionalfluxminer:flowing_corrupted_water" ] } } } } } }
   }
 }

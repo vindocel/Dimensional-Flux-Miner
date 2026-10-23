@@ -9,17 +9,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.WeightedRandomList;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.neoforged.neoforge.event.EventHooks;
@@ -48,7 +48,7 @@ public final class BlightSpawnManager {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % INTERVAL_TICKS != 0) {
             return;
         }
-        if (level.getDifficulty() == Difficulty.PEACEFUL || !level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+        if (level.getDifficulty() == Difficulty.PEACEFUL || !level.getGameRules().get(GameRules.SPAWN_MOBS)) {
             return;
         }
         BlightData data = BlightData.get(level);
@@ -69,7 +69,7 @@ public final class BlightSpawnManager {
                 candidates.add(chunk);
             }
         }
-        Collections.shuffle(candidates, new java.util.Random(level.random.nextLong()));
+        Collections.shuffle(candidates, new java.util.Random(level.getRandom().nextLong()));
         int budget = MAX_ATTEMPTS_PER_PASS;
         for (long chunk : candidates) {
             if (budget <= 0) {
@@ -78,7 +78,7 @@ public final class BlightSpawnManager {
             double density = density(level, data, ChunkPos.getX(chunk), ChunkPos.getZ(chunk));
             double expected = ATTEMPTS_AT_FULL_DENSITY * density * density;
             int attempts = (int) Math.floor(expected);
-            if (level.random.nextDouble() < expected - attempts) {
+            if (level.getRandom().nextDouble() < expected - attempts) {
                 attempts++;
             }
             for (int i = 0; i < attempts && budget > 0; i++) {
@@ -96,7 +96,7 @@ public final class BlightSpawnManager {
             for (int dz = -1; dz <= 1; dz++) {
                 if (level.hasChunk(cx + dx, cz + dz)) {
                     loaded++;
-                    corrupted += data.count(ChunkPos.asLong(cx + dx, cz + dz));
+                    corrupted += data.count(ChunkPos.pack(cx + dx, cz + dz));
                 }
             }
         }
@@ -114,7 +114,7 @@ public final class BlightSpawnManager {
         if (columns.isEmpty()) {
             return;
         }
-        RandomSource random = level.random;
+        RandomSource random = level.getRandom();
         long packed = columns.getLong(random.nextInt(columns.size()));
         int x = BlightData.unpackX(packed);
         int z = BlightData.unpackZ(packed);
@@ -146,32 +146,32 @@ public final class BlightSpawnManager {
                 return;
             }
         }
-        WeightedRandomList<MobSpawnSettings.SpawnerData> entries = level.getChunkSource().getGenerator()
-                .getMobsAt(level.getBiome(pos), level.structureManager(), MobCategory.MONSTER, pos);
+        WeightedList<MobSpawnSettings.SpawnerData> entries = level.getChunkSource().getGenerator()
+                .getMobsAt(level, level.structureManager(), MobCategory.MONSTER, pos);
         MobSpawnSettings.SpawnerData entry = entries.getRandom(random).orElse(null);
-        if (entry == null || entry.type.is(DfmTags.Entities.BLIGHT_SPAWN_BLACKLIST)) {
+        if (entry == null || entry.type().builtInRegistryHolder().is(DfmTags.Entities.BLIGHT_SPAWN_BLACKLIST)) {
             return;
         }
-        EntityType<?> type = entry.type;
+        EntityType<?> type = entry.type();
         if (!SpawnPlacements.isSpawnPositionOk(type, level, pos) || !level.noCollision(type.getSpawnAABB(x + 0.5, y, z + 0.5))) {
             return;
         }
         if (!rulesAllow(level, type, pos, random)) {
             return;
         }
-        Entity entity = type.create(level);
+        Entity entity = type.create(level, EntitySpawnReason.NATURAL);
         if (!(entity instanceof Mob mob)) {
             if (entity != null) {
                 entity.discard();
             }
             return;
         }
-        mob.moveTo(x + 0.5, y, z + 0.5, random.nextFloat() * 360.0F, 0.0F);
+        mob.snapTo(x + 0.5, y, z + 0.5, random.nextFloat() * 360.0F, 0.0F);
         if (!mob.checkSpawnObstruction(level)) {
             mob.discard();
             return;
         }
-        EventHooks.finalizeMobSpawn(mob, level, level.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
+        EventHooks.finalizeMobSpawn(mob, level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.NATURAL, null);
         level.addFreshEntityWithPassengers(mob);
     }
 
@@ -181,17 +181,17 @@ public final class BlightSpawnManager {
      */
     @SuppressWarnings("unchecked")
     static boolean rulesAllow(ServerLevel level, EntityType<?> type, BlockPos pos, RandomSource random) {
-        if (SpawnPlacements.checkSpawnRules(type, level, MobSpawnType.NATURAL, pos, random)) {
+        if (SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.NATURAL, pos, random)) {
             return true;
         }
-        if (!type.is(DfmTags.Entities.BLIGHT_LIGHT_BYPASS_ELIGIBLE) || type.getCategory() != MobCategory.MONSTER) {
+        if (!type.builtInRegistryHolder().is(DfmTags.Entities.BLIGHT_LIGHT_BYPASS_ELIGIBLE) || type.getCategory() != MobCategory.MONSTER) {
             return false;
         }
-        Entity probe = type.create(level);
+        Entity probe = type.create(level, EntitySpawnReason.NATURAL);
         boolean monster = probe instanceof Monster;
         if (probe != null) {
             probe.discard();
         }
-        return monster && Monster.checkAnyLightMonsterSpawnRules((EntityType<? extends Monster>) type, level, MobSpawnType.NATURAL, pos, random);
+        return monster && Monster.checkAnyLightMonsterSpawnRules((EntityType<? extends Monster>) type, level, EntitySpawnReason.NATURAL, pos, random);
     }
 }

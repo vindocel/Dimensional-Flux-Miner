@@ -10,11 +10,9 @@
           "name": "dimensionalfluxminer:corrupted_terracotta"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/corrupted_terracotta"

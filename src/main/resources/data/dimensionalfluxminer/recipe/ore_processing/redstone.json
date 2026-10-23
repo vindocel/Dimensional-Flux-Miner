@@ -1,8 +1,6 @@
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": {
-    "tag": "c:ores/redstone"
-  },
+  "ingredient": "#c:ores/redstone",
   "result": {
     "id": "minecraft:redstone"
   },

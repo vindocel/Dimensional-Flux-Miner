@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackLinkedSet;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeMap;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
@@ -27,13 +27,13 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 /**
  * Recipe lookups of one Electric Furnace, with their caches: the furnace recipe of each lane's item and of every item
  * offered, the alloy of the three lanes, and the items that are alloy ingredients. Everything is rebuilt when the
- * recipes reload (a new {@link RecipeManager}); the furnace recipes also when a recipe is chosen for an item.
+ * recipes reload (a new {@link RecipeMap}); the furnace recipes also when a recipe is chosen for an item.
  */
 final class ElectricFurnaceRecipes {
     private static final int COOKING_CACHE_LIMIT = 256;
 
     private final RecipeChoices choices;
-    private RecipeManager cachedManager;
+    private RecipeMap cachedManager;
     private int cachedChoices;
     private final ItemStack[] laneKey;
     private final Optional<AbstractCookingRecipe>[] laneRecipe;
@@ -62,7 +62,7 @@ final class ElectricFurnaceRecipes {
     }
 
     private void refresh(Level level) {
-        RecipeManager manager = level.getRecipeManager();
+        RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
         if (manager == cachedManager) {
             if (choices.version() != cachedChoices) {
                 // A recipe was chosen for an item: forget the furnace recipes remembered so far.
@@ -79,7 +79,7 @@ final class ElectricFurnaceRecipes {
         Set<Item> items = new HashSet<>();
         for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(manager, level.registryAccess())) {
             for (SizedIngredient sized : holder.value().ingredients()) {
-                for (ItemStack option : sized.ingredient().getItems()) {
+                for (ItemStack option : dimensionalfluxminer.recipe.Recipes.stacks(sized.ingredient())) {
                     items.add(option.getItem());
                 }
             }
@@ -115,7 +115,7 @@ final class ElectricFurnaceRecipes {
     }
 
     /** The recipe chosen for the item when it still accepts it, otherwise the default one. */
-    private static Optional<AbstractCookingRecipe> find(Level level, ItemStack stack, ResourceLocation chosen) {
+    private static Optional<AbstractCookingRecipe> find(Level level, ItemStack stack, Identifier chosen) {
         if (chosen != null) {
             for (RecipeHolder<? extends AbstractCookingRecipe> option : options(level, stack)) {
                 if (option.id().equals(chosen)) {
@@ -128,10 +128,10 @@ final class ElectricFurnaceRecipes {
 
     /** Blast furnace recipe of the item, otherwise its furnace recipe. */
     private static Optional<RecipeHolder<? extends AbstractCookingRecipe>> defaultRecipe(Level level, SingleRecipeInput input) {
-        RecipeManager manager = level.getRecipeManager();
-        Optional<RecipeHolder<? extends AbstractCookingRecipe>> blasting = manager.getRecipeFor(RecipeType.BLASTING, input, level)
+        RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
+        Optional<RecipeHolder<? extends AbstractCookingRecipe>> blasting = dimensionalfluxminer.recipe.Recipes.first(level, RecipeType.BLASTING, input)
                 .map(h -> h);
-        return blasting.isPresent() ? blasting : manager.getRecipeFor(RecipeType.SMELTING, input, level).map(h -> h);
+        return blasting.isPresent() ? blasting : dimensionalfluxminer.recipe.Recipes.first(level, RecipeType.SMELTING, input).map(h -> h);
     }
 
     /**
@@ -147,15 +147,15 @@ final class ElectricFurnaceRecipes {
         if (first.isEmpty()) {
             return List.of();
         }
-        RecipeManager manager = level.getRecipeManager();
+        RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
         List<RecipeHolder<? extends AbstractCookingRecipe>> candidates = new ArrayList<>();
         candidates.add(first.get());
-        candidates.addAll(manager.getRecipesFor(RecipeType.BLASTING, input, level));
-        candidates.addAll(manager.getRecipesFor(RecipeType.SMELTING, input, level));
+        candidates.addAll(dimensionalfluxminer.recipe.Recipes.matching(level, RecipeType.BLASTING, input));
+        candidates.addAll(dimensionalfluxminer.recipe.Recipes.matching(level, RecipeType.SMELTING, input));
         List<RecipeHolder<? extends AbstractCookingRecipe>> options = new ArrayList<>();
         List<ItemStack> results = new ArrayList<>();
         for (RecipeHolder<? extends AbstractCookingRecipe> candidate : candidates) {
-            ItemStack result = candidate.value().getResultItem(level.registryAccess());
+            ItemStack result = candidate.value().assemble(input);
             if (result.isEmpty() || options.stream().anyMatch(o -> o.id().equals(candidate.id()))
                     || results.stream().anyMatch(r -> ItemStack.matches(r, result))) {
                 continue;
@@ -187,7 +187,7 @@ final class ElectricFurnaceRecipes {
 
     /** True when one alloy recipe uses both items as different ingredients. */
     static boolean alloyPartners(Level level, ItemStack a, ItemStack b) {
-        for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(level.getRecipeManager(), level.registryAccess())) {
+        for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess())) {
             List<SizedIngredient> ingredients = holder.value().ingredients();
             for (int i = 0; i < ingredients.size(); i++) {
                 for (int j = 0; j < ingredients.size(); j++) {
@@ -205,7 +205,7 @@ final class ElectricFurnaceRecipes {
         if (result.getCount() != 1) {
             return false;
         }
-        return input.getTags()
+        return input.typeHolder().tags()
                 .filter(t -> t.location().getNamespace().equals("c") && t.location().getPath().startsWith("raw_materials/"))
                 .map(t -> t.location().getPath().substring("raw_materials/".length()))
                 .anyMatch(material -> result.is(DfmTags.Items.common("ingots/" + material)));

@@ -1,9 +1,12 @@
 {
   "neoforge:conditions": [
-    { "type": "neoforge:mod_loaded", "modid": "malum" }
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "malum"
+    }
   ],
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": { "tag": "c:ores/cthonic_gold" },
+  "ingredient": "#c:ores/cthonic_gold",
   "result": {
     "id": "malum:cthonic_gold_fragment"
   },

@@ -8,7 +8,8 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 displayURL="https://vindocel.github.io/Showcase-DFM/"
-logoFile="logo.png"
+bannerFile="logo.png"
+iconFile="icon.png"
 description='''
 A miner that never digs: it turns energy into the ores of your dimension. With a crusher, an electric furnace and an animated guide.
 '''

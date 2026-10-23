@@ -7,24 +7,12 @@
     "IFI"
   ],
   "key": {
-    "C": {
-      "item": "minecraft:coal_block"
-    },
-    "R": {
-      "item": "minecraft:redstone_block"
-    },
-    "G": {
-      "item": "minecraft:grindstone"
-    },
-    "V": {
-      "item": "minecraft:glass_pane"
-    },
-    "I": {
-      "item": "minecraft:iron_block"
-    },
-    "F": {
-      "item": "minecraft:cauldron"
-    }
+    "C": "minecraft:coal_block",
+    "R": "minecraft:redstone_block",
+    "G": "minecraft:grindstone",
+    "V": "minecraft:glass_pane",
+    "I": "minecraft:iron_block",
+    "F": "minecraft:cauldron"
   },
   "result": {
     "id": "dimensionalfluxminer:mechanical_crusher",

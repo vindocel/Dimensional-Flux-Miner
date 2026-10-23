@@ -8,7 +8,6 @@
   "flip_v": true,
   "emissive_ambient": true,
   "ambientocclusion": false,
-  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "dimensionalfluxminer:block/dimensional_flux_miner/dimensional_flux_miner",
     "core_side_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_cyan_static_glow",

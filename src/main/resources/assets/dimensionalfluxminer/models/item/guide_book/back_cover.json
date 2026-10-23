@@ -4,8 +4,8 @@
     128
   ],
   "textures": {
-    "0": "dimensionalfluxminer:item/guide_book",
-    "particle": "dimensionalfluxminer:item/guide_book"
+    "0": "dimensionalfluxminer:block/guide_book",
+    "particle": "dimensionalfluxminer:block/guide_book"
   },
   "elements": [
     {

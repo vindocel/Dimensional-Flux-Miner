@@ -7,9 +7,7 @@
     "SSS"
   ],
   "key": {
-    "S": {
-      "item": "dimensionalfluxminer:slag"
-    }
+    "S": "dimensionalfluxminer:slag"
   },
   "result": {
     "id": "dimensionalfluxminer:slag_aggregate",

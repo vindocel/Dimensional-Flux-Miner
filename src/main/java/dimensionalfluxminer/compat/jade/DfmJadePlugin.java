@@ -9,7 +9,7 @@ import dimensionalfluxminer.miner.block.MinerPartBlock;
 import dimensionalfluxminer.furnace.ElectricFurnaceBlock;
 import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IServerDataProvider;
@@ -26,7 +26,7 @@ import snownee.jade.api.view.HideThingsExtensionProvider;
  */
 @WailaPlugin
 public class DfmJadePlugin implements IWailaPlugin {
-    static final ResourceLocation UID = DimensionalFluxMiner.id("machine_bars");
+    static final Identifier UID = DimensionalFluxMiner.id("machine_bars");
     static final String ENERGY = "energy";
     static final String CAPACITY = "capacity";
     static final String XP = "stored_xp";
@@ -41,6 +41,10 @@ public class DfmJadePlugin implements IWailaPlugin {
         registration.registerEnergyStorage(HideThingsExtensionProvider.instance(), AbstractMachineBlockEntity.class);
         registration.registerEnergyStorage(HideThingsExtensionProvider.instance(), MinerControllerBlockEntity.class);
         registration.registerEnergyStorage(HideThingsExtensionProvider.instance(), MinerLinkBlockEntity.class);
+        // Items only when there are some: an empty list would draw an empty frame.
+        registration.registerItemStorage(MachineItemsData.INSTANCE, AbstractMachineBlockEntity.class);
+        registration.registerItemStorage(MachineItemsData.INSTANCE, MinerControllerBlockEntity.class);
+        registration.registerItemStorage(MachineItemsData.INSTANCE, MinerLinkBlockEntity.class);
     }
 
     @Override
@@ -76,7 +80,7 @@ public class DfmJadePlugin implements IWailaPlugin {
         }
 
         @Override
-        public ResourceLocation getUid() {
+        public Identifier getUid() {
             return UID;
         }
     }

@@ -13,19 +13,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /** Dimensional Matter given by the Matter Input: upgrade bonus, reinjected ores and recipe variants. */
-@GameTestHolder(DimensionalFluxMiner.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class MatterGameTests {
     private MatterGameTests() {
     }
@@ -49,7 +44,7 @@ public final class MatterGameTests {
                 new Case(Items.RED_SAND, overworld, 3, 5),
                 new Case(Items.GRASS_BLOCK, overworld, 2, 4),
                 new Case(Items.TERRACOTTA, overworld, 5, 7),
-                new Case(Items.CYAN_TERRACOTTA, overworld, 5, 7),
+                new Case(Items.DYED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.CYAN), overworld, 5, 7),
                 new Case(Items.STONE, overworld, 5, 7),
                 new Case(Items.OBSIDIAN, overworld, 10, 12),
                 new Case(Items.OBSIDIAN, nether, 10, 12),
@@ -64,7 +59,7 @@ public final class MatterGameTests {
                 new Case(Items.ANCIENT_DEBRIS, nether, 20, 20));
         for (Case c : cases) {
             helper.assertTrue(units(c.item(), c.level(), false) == c.plain() && units(c.item(), c.level(), true) == c.upgraded(),
-                    c.item() + " in " + c.level().dimension().location() + ": " + units(c.item(), c.level(), false) + " / "
+                    c.item() + " in " + c.level().dimension().identifier() + ": " + units(c.item(), c.level(), false) + " / "
                             + units(c.item(), c.level(), true) + ", expected " + c.plain() + " / " + c.upgraded());
         }
         // Still only matter of the Miner's dimension.
@@ -82,7 +77,7 @@ public final class MatterGameTests {
                 for (ResourceFamily.Variant variant : family.variants()) {
                     int upgraded = units(variant.item(), level, true);
                     helper.assertTrue(upgraded <= MatterValues.ROLL_COST_UNITS,
-                            variant.item() + " reinjected in " + level.dimension().location() + " gives " + upgraded + " units");
+                            variant.item() + " reinjected in " + level.dimension().identifier() + " gives " + upgraded + " units");
                     checked++;
                 }
             }
@@ -150,7 +145,7 @@ public final class MatterGameTests {
         for (ServerLevel level : List.of(overworld, nether, overworld.getServer().getLevel(Level.END))) {
             for (Item item : BuiltInRegistries.ITEM) {
                 ItemStack stack = new ItemStack(item);
-                if (MatterValues.isOre(stack) || stack.getItemHolder().getData(DfmDataMaps.MATTER_VALUE) != null) {
+                if (MatterValues.isOre(stack) || stack.typeHolder().getData(DfmDataMaps.MATTER_VALUE) != null) {
                     continue;
                 }
                 int plain = units(item, level, false);
@@ -159,7 +154,7 @@ public final class MatterGameTests {
                 }
                 int upgraded = units(item, level, true);
                 helper.assertTrue(plain > 0 && upgraded >= plain && upgraded <= plain + Math.min(plain, 2),
-                        item + " in " + level.dimension().location() + ": " + plain + " -> " + upgraded);
+                        item + " in " + level.dimension().identifier() + ": " + plain + " -> " + upgraded);
             }
         }
         helper.succeed();
@@ -224,13 +219,13 @@ public final class MatterGameTests {
             return;
         }
         var other = helper.getLevel().getServer().getLevel(net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.ResourceLocation.parse("allthemodium:the_other")));
+                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.Identifier.parse("allthemodium:the_other")));
         if (other == null) {
             helper.succeed();
             return;
         }
-        Item stone = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("allthemodium:ancient_stone"));
-        Item dirt = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("allthemodium:ancient_dirt"));
+        Item stone = BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("allthemodium:ancient_stone"));
+        Item dirt = BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("allthemodium:ancient_dirt"));
         helper.assertTrue(units(stone, other, false) == 5 && units(stone, other, true) == 7, "ancient stone 0.5 -> 0.7 DM");
         helper.assertTrue(units(dirt, other, false) == 1 && units(dirt, other, true) == 2, "ancient dirt 0.1 -> 0.2 DM");
         helper.assertTrue(units(stone, helper.getLevel(), true) < 0, "only in The Other");
@@ -251,7 +246,7 @@ public final class MatterGameTests {
                     if (MatterValues.isOre(new ItemStack(item))) {
                         continue;
                     }
-                    helper.assertTrue(units(item, level, false) > 0, item + " is not matter in " + dimension.location());
+                    helper.assertTrue(units(item, level, false) > 0, item + " is not matter in " + dimension.identifier());
                 }
             }
         }
@@ -266,16 +261,16 @@ public final class MatterGameTests {
     public static void adAstraPlanetsTakeTheirOwnMatterOnly(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         ServerLevel moon = server.getLevel(net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.ResourceLocation.parse("ad_astra:moon")));
+                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.Identifier.parse("ad_astra:moon")));
         ServerLevel mercury = server.getLevel(net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.ResourceLocation.parse("ad_astra:mercury")));
+                net.minecraft.core.registries.Registries.DIMENSION, net.minecraft.resources.Identifier.parse("ad_astra:mercury")));
         if (!net.neoforged.fml.ModList.get().isLoaded("ad_astra") || moon == null || mercury == null) {
             helper.succeed();
             return;
         }
-        Item moonStone = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("ad_astra:moon_stone"));
-        Item moonCobblestone = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("ad_astra:moon_cobblestone"));
-        Item moonSand = BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("ad_astra:moon_sand"));
+        Item moonStone = BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("ad_astra:moon_stone"));
+        Item moonCobblestone = BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("ad_astra:moon_cobblestone"));
+        Item moonSand = BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("ad_astra:moon_sand"));
         helper.assertTrue(units(moonStone, moon, false) == 5 && units(moonCobblestone, moon, false) == 3
                 && units(moonSand, moon, false) == 3, "moon stone 0.5, cobblestone and sand 0.3 DM");
         helper.assertTrue(units(moonStone, mercury, false) < 0 && units(moonStone, helper.getLevel(), false) < 0, "moon stone only on the Moon");

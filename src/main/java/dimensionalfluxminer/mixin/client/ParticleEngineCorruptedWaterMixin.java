@@ -5,6 +5,7 @@ import dimensionalfluxminer.registry.DfmParticles;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
+import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -47,8 +48,8 @@ public abstract class ParticleEngineCorruptedWaterMixin {
     @Inject(method = "createParticle", at = @At("RETURN"))
     private void dimensionalfluxminer$tintUnderwaterSpecks(ParticleOptions options, double x, double y, double z, double xSpeed,
                                                            double ySpeed, double zSpeed, CallbackInfoReturnable<Particle> cir) {
-        Particle particle = cir.getReturnValue();
-        if (particle != null && options == ParticleTypes.UNDERWATER && dimensionalfluxminer$inCorruptedWater(x, y, z, false)) {
+        if (cir.getReturnValue() instanceof SingleQuadParticle particle && options == ParticleTypes.UNDERWATER
+                && dimensionalfluxminer$inCorruptedWater(x, y, z, false)) {
             // Purple instead of the pale blue of water.
             particle.setColor(0.55F, 0.3F, 0.75F);
         }

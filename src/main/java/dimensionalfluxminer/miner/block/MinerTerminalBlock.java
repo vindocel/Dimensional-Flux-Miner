@@ -29,7 +29,6 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /** The Miner terminal: its horizontal facing defines the front of the whole machine; it hosts the controller. */
 public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
-    public static final MapCodec<MinerTerminalBlock> CODEC = simpleCodec(MinerTerminalBlock::new);
 
     public MinerTerminalBlock(Properties properties) {
         super(properties);
@@ -37,11 +36,6 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
                 .setValue(DfmStateProperties.FORMED, false)
                 .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
                 .setValue(BlockStateProperties.WATERLOGGED, false));
-    }
-
-    @Override
-    protected MapCodec<? extends Block> codec() {
-        return CODEC;
     }
 
     @Override
@@ -77,7 +71,7 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
         if (type != DfmBlockEntities.MINER_CONTROLLER.get()) {
             return null;
         }
-        return level.isClientSide
+        return level.isClientSide()
                 ? (BlockEntityTicker<T>) (BlockEntityTicker<MinerControllerBlockEntity>) MinerControllerClientTicker::tick
                 : (BlockEntityTicker<T>) (BlockEntityTicker<MinerControllerBlockEntity>) MinerControllerBlockEntity::serverTick;
     }
@@ -85,19 +79,19 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (!level.isClientSide && placer instanceof Player player && level.getBlockEntity(pos) instanceof MinerControllerBlockEntity controller) {
+        if (!level.isClientSide() && placer instanceof Player player && level.getBlockEntity(pos) instanceof MinerControllerBlockEntity controller) {
             controller.setOwner(player.getUUID());
             controller.tryForm();
             // The highlight of the parts still missing shows as soon as the terminal is down.
             if (!controller.formed() && player instanceof ServerPlayer serverPlayer) {
-                MinerAssembly.highlight(serverPlayer, pos, MinerAssembly.missing(serverPlayer.serverLevel(), pos));
+                MinerAssembly.highlight(serverPlayer, pos, MinerAssembly.missing(serverPlayer.level(), pos));
             }
         }
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof MinerControllerBlockEntity controller) {
             if (!controller.formed()) {
                 if (controller.owner() == null) {
@@ -107,26 +101,26 @@ public class MinerTerminalBlock extends MinerPartBlock implements EntityBlock {
                 if (problem != null) {
                     // Assisted assembly: one missing part per click from the inventory, and a highlight of the rest; a
                     // click that places nothing switches the highlight off and on.
-                    int before = MinerAssembly.missing(serverPlayer.serverLevel(), pos).size();
-                    Component assembly = MinerAssembly.placeNext(serverPlayer.serverLevel(), pos, serverPlayer);
+                    int before = MinerAssembly.missing(serverPlayer.level(), pos).size();
+                    Component assembly = MinerAssembly.placeNext(serverPlayer.level(), pos, serverPlayer);
                     if (!controller.formed()) {
-                        var left = MinerAssembly.missing(serverPlayer.serverLevel(), pos);
+                        var left = MinerAssembly.missing(serverPlayer.level(), pos);
                         if (left.size() < before) {
                             MinerAssembly.highlight(serverPlayer, pos, left);
                         } else {
                             MinerAssembly.toggleHighlight(serverPlayer, pos);
                         }
-                        serverPlayer.displayClientMessage(assembly != null ? assembly : problem, true);
+                        serverPlayer.sendOverlayMessage(assembly != null ? assembly : problem);
                         return InteractionResult.CONSUME;
                     }
                 }
                 MinerAssembly.highlight(serverPlayer, pos, java.util.List.of());
-                serverPlayer.displayClientMessage(Component.translatable("message.dimensionalfluxminer.structure_formed"), true);
+                serverPlayer.sendOverlayMessage(Component.translatable("message.dimensionalfluxminer.structure_formed"));
                 return InteractionResult.CONSUME;
             }
             serverPlayer.openMenu(controller, pos);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
     /** Client-side ticker: the looping sound and the core particles (rendering is done by the block entity renderer). */

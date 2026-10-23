@@ -64,7 +64,7 @@ public final class MinerPorts {
                 case 1 -> MinerLayout.rotate(1, 0, front);
                 default -> MinerLayout.rotate(0, -1, front);
             };
-            return Direction.fromDelta(r[0], 0, r[1]);
+            return Direction.getNearest(r[0], 0, r[1], null);
         }
 
         /** Base-orientation offset of the owner block from the core (x, y, z). */
@@ -320,9 +320,9 @@ public final class MinerPorts {
     }
 
     public void load(CompoundTag tag) {
-        outputFace = valid(tag.contains("output") ? tag.getInt("output") : -1);
-        matterFace = valid(tag.contains("matter") ? tag.getInt("matter") : -1);
-        energyMask = tag.getInt("energy") & ((1 << Face.VALUES.length) - 1);
+        outputFace = valid(tag.contains("output") ? tag.getIntOr("output", 0) : -1);
+        matterFace = valid(tag.contains("matter") ? tag.getIntOr("matter", 0) : -1);
+        energyMask = tag.getIntOr("energy", 0) & ((1 << Face.VALUES.length) - 1);
     }
 
     private static int valid(int face) {

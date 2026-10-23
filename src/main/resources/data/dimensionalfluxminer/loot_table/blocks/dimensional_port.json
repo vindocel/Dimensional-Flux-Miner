@@ -10,11 +10,9 @@
           "name": "dimensionalfluxminer:dimensional_port"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/dimensional_port"

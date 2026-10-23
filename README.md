@@ -5,7 +5,7 @@
 **A miner that never digs.**
 It tunes into the frequency of the dimension it stands in and makes that dimension's ores appear out of nothing.
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-62B47A?style=for-the-badge)](https://www.minecraft.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62B47A?style=for-the-badge)](https://www.minecraft.net/)
 [![NeoForge](https://img.shields.io/badge/NeoForge-21.1.255-E07A2F?style=for-the-badge)](https://neoforged.net/)
 [![Java](https://img.shields.io/badge/Java-21-5382A1?style=for-the-badge)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/License-EPL--2.0-9366DE?style=for-the-badge)](LICENSE)
@@ -54,9 +54,9 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 
 | | |
 |---|---|
-| Minecraft | **1.21.1** |
-| NeoForge | **21.1.255** |
-| Java | **21** |
+| Minecraft | **26.3** |
+| NeoForge | **26.3.0.95** |
+| Java | **25** |
 | Mod ID | `dimensionalfluxminer` |
 | License | EPL-2.0 (see [`LICENSE`](LICENSE)) |
 
@@ -82,7 +82,7 @@ Your first **Pure Steel** earns you the guide (through the "Forged in the Flux" 
 - 📄 **Real pages**: the presentation and the clickable **contents** open the book; every chapter starts on a left page and the pages flow one after another, with a page-turn animation and sound. The violet ribbon goes back to the contents.
 - 🧊 **Interactive 3D Miner**: rotate the assembly, look at one layer at a time, switch between loose parts and the formed machine, hover a part to isolate it.
 - 🧾 **Live data**: crafting recipes come from the server, the speed tables and matter values follow the server configuration and datapacks.
-- 🔎 Item tooltips everywhere and buttons that open the machine recipes in EMI / JEI. The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
+- 🔎 Item tooltips everywhere and buttons that open the machine recipes in JEI (also EMI on the 1.21.1 line). The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
 
 All text lives in the language files (`guide.dimensionalfluxminer.*`), in English and Brazilian Portuguese.
 
@@ -272,10 +272,11 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 ## 🔌 Compatibility
 
 - 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face. A cable that keeps pulling items from a face (or pushing into it) sets that face's item route by itself, on the Miner's ports, the Crusher and the Electric Furnace.
-- 📘 **EMI / JEI** (optional): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
+- 📘 **JEI** (optional; EMI only on the 1.21.1 line, it has no 26.x build yet): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
+- ⚡ **Applied Energistics 2** (optional): the Crusher, the Electric Furnace and the Miner's energy ports draw AE from an ME network they touch (1 AE = 2 FE, no channel).
 - 🧪 **Cognition**: the Experience Obelisk takes the Electric Furnace's Liquid Experience directly.
-- 🔀 **Polymorph** (optional): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
+- 🔀 **Polymorph** (optional, 1.21.1 line only until it ships for 26.x): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
 - 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Electric Furnace work through the common tags.
 

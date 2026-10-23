@@ -7,15 +7,9 @@
     "BLB"
   ],
   "key": {
-    "B": {
-      "item": "dimensionalfluxminer:basic_dimensional_core"
-    },
-    "L": {
-      "item": "minecraft:lodestone"
-    },
-    "S": {
-      "item": "minecraft:beacon"
-    }
+    "B": "dimensionalfluxminer:basic_dimensional_core",
+    "L": "minecraft:lodestone",
+    "S": "minecraft:beacon"
   },
   "result": {
     "id": "dimensionalfluxminer:stabilized_dimensional_core",

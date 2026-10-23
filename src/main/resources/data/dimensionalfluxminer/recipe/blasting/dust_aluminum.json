@@ -9,9 +9,7 @@
     }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_aluminum"
-  },
+  "ingredient": "dimensionalfluxminer:dust_aluminum",
   "result_tag": "c:ingots/aluminum",
   "experience": 0.7,
   "cookingtime": 100

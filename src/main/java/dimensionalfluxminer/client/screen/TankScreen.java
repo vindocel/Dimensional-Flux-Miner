@@ -1,5 +1,6 @@
 package dimensionalfluxminer.client.screen;
 
+import net.minecraft.client.renderer.RenderPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -42,9 +43,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
     private final CodeWindow codeWindow;
 
     public TankScreen(TankMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        imageWidth = 176;
-        imageHeight = TankMenu.INVENTORY_TOP + 82;
+        super(menu, inventory, title, 176, TankMenu.INVENTORY_TOP + 82);
         kind = inventory.player.level().getBlockState(menu.pos()).getBlock() instanceof dimensionalfluxminer.tank.DimensionalTankBlock block
                 ? block.kind() : TankKind.SINGLE;
         List<Component> help = new ArrayList<>();
@@ -64,20 +63,20 @@ public class TankScreen extends DfmScreen<TankMenu> {
     }
 
     private TankCode code() {
-        return TankCode.load(data().getCompound("code"));
+        return TankCode.load(data().getCompoundOrEmpty("code"));
     }
 
     private FluidStack[] chambers() {
-        return DimensionalTankBlockEntity.readChambers(data().getList("chambers", Tag.TAG_COMPOUND), kind.chambers(),
+        return DimensionalTankBlockEntity.readChambers(data().getListOrEmpty("chambers"), kind.chambers(),
                 menu.player().registryAccess());
     }
 
     private int capacity() {
-        return Math.max(1, data().getInt("capacity"));
+        return Math.max(1, data().getIntOr("capacity", 0));
     }
 
     @Override
-    protected void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    protected void renderMain(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         FluidStack[] chambers = chambers();
         int focusedChamber = isWindowOpen(sideWindow) ? sideWindow.focusedRoute().fluidChamber() : -1;
         List<Component> lines = new ArrayList<>();
@@ -162,7 +161,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
      * slot's gray inside): the liquid fills from the bottom with its own sprite and color, and dark marks on the left
      * show every eighth, with a line across the whole reservoir at half.
      */
-    private void reservoir(GuiGraphics g, int x, int y, FluidStack stack, int chamber, boolean highlighted, int mouseX, int mouseY) {
+    private void reservoir(GuiGraphicsExtractor g, int x, int y, FluidStack stack, int chamber, boolean highlighted, int mouseX, int mouseY) {
         int dark = GuiTheme.gray(0xFF373737);
         int light = GuiTheme.gray(0xFFFFFFFF);
         int mid = GuiTheme.gray(0xFF8B8B8B);
@@ -213,27 +212,23 @@ public class TankScreen extends DfmScreen<TankMenu> {
     }
 
     /** Tiles the liquid's still sprite (16 x 16 pieces, cut at the edges), tinted with its color. */
-    private void fluid(GuiGraphics g, FluidStack stack, int x, int y, int w, int h) {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(stack.getFluid());
-        TextureAtlasSprite sprite = minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(ext.getStillTexture(stack));
-        int tint = ext.getTintColor(stack);
-        RenderSystem.enableBlend();
-        g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, ((tint >>> 24) & 0xFF) / 255.0F);
+    private void fluid(GuiGraphicsExtractor g, FluidStack stack, int x, int y, int w, int h) {
+        TextureAtlasSprite sprite = dimensionalfluxminer.client.render.FluidSprites.still(stack.getFluid());
+        int tint = dimensionalfluxminer.client.render.FluidSprites.tint(stack);
         g.enableScissor(x, y, x + w, y + h);
         for (int ty = y + h - 16; ty > y - 16; ty -= 16) {
             for (int tx = x; tx < x + w; tx += 16) {
-                g.blit(tx, ty, 0, 16, 16, sprite);
+                g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, tx, ty, 16, 16, tint);
             }
         }
         g.disableScissor();
-        g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     /**
      * A code color drawn as an item slot holding the color: the slot's sunken bevel (dark top and left, light bottom and
      * right) around the color. {@code selected} adds a frame in the screen color around it.
      */
-    void swatch(GuiGraphics g, int x, int y, int size, DyeColor color, boolean selected) {
+    void swatch(GuiGraphicsExtractor g, int x, int y, int size, DyeColor color, boolean selected) {
         int dark = GuiTheme.gray(0xFF373737);
         int light = GuiTheme.gray(0xFFFFFFFF);
         int corner = GuiTheme.gray(0xFF8B8B8B);
@@ -280,7 +275,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
         }
 
         @Override
-        protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+        protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
             TankCode code = tank.code();
             int fieldsX = x + (width - (3 * FIELD + 2 * 8)) / 2;
             for (int p = 0; p < TankCode.POSITIONS; p++) {

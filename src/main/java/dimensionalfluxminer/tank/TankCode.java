@@ -64,7 +64,7 @@ public record TankCode(DyeColor first, DyeColor second, DyeColor third, Optional
     }
 
     public TankCode withOwner(Player player) {
-        return new TankCode(first, second, third, Optional.of(player.getUUID()), Optional.of(player.getGameProfile().getName()));
+        return new TankCode(first, second, third, Optional.of(player.getUUID()), Optional.of(player.getGameProfile().name()));
     }
 
     public TankCode withoutOwner() {
@@ -90,16 +90,16 @@ public record TankCode(DyeColor first, DyeColor second, DyeColor third, Optional
         tag.putString("first", first.getSerializedName());
         tag.putString("second", second.getSerializedName());
         tag.putString("third", third.getSerializedName());
-        owner.ifPresent(uuid -> tag.putUUID("owner", uuid));
+        owner.ifPresent(uuid -> tag.store("owner", UUIDUtil.CODEC, uuid));
         ownerName.ifPresent(name -> tag.putString("owner_name", name));
         return tag;
     }
 
     /** Missing or unknown colors fall back to white; no owner = public. */
     public static TankCode load(CompoundTag tag) {
-        Optional<UUID> owner = tag.hasUUID("owner") ? Optional.of(tag.getUUID("owner")) : Optional.empty();
-        Optional<String> name = owner.isPresent() && tag.contains("owner_name") ? Optional.of(tag.getString("owner_name")) : Optional.empty();
-        return new TankCode(color(tag.getString("first")), color(tag.getString("second")), color(tag.getString("third")), owner, name);
+        Optional<UUID> owner = tag.read("owner", UUIDUtil.CODEC);
+        Optional<String> name = owner.isPresent() && tag.contains("owner_name") ? Optional.of(tag.getStringOr("owner_name", "")) : Optional.empty();
+        return new TankCode(color(tag.getStringOr("first", "")), color(tag.getStringOr("second", "")), color(tag.getStringOr("third", "")), owner, name);
     }
 
     private static DyeColor color(String name) {

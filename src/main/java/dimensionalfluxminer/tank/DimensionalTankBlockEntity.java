@@ -1,5 +1,7 @@
 package dimensionalfluxminer.tank;
 
+import dimensionalfluxminer.machine.transfer.FluidTanks;
+import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideConfiguration;
@@ -34,10 +36,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidActionResult;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidUtil;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+import net.neoforged.neoforge.transfer.resource.ResourceStack;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * A Dimensional Tank: an endpoint of the channel named by its kind and its three-color code. The liquid is kept in
@@ -45,7 +51,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
  * same content. No energy, no processing. Each face carries the liquid of one chamber (Side Configuration) and the
  * liquids have their own Auto Input and Auto Eject (default OFF); capabilities stay available with both OFF.
  */
-public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvider {
+public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.TagBlockEntity implements MenuProvider {
     /** {@code BUTTON_CODE_BASE + position * 16 + dye color id}: picks the color of one code position. */
     public static final int BUTTON_CODE_BASE = 3000;
     /** {@code BUTTON_CONTAINER + chamber}: the carried container is emptied into (or filled from) that chamber. */
@@ -70,7 +76,28 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     private long lastSync = -SYNC_INTERVAL;
     /** Client: the chambers last received from the server. */
     private FluidStack[] clientChambers;
-    private final Map<Direction, IFluidHandler> handlers = new EnumMap<>(Direction.class);
+    private final Map<Direction, FluidTanks> handlers = new EnumMap<>(Direction.class);
+
+    /** The chambers of the channel, put back if a transaction of another block that changed them is cancelled. */
+    private final Transfer.Journal<Object[]> journal = new Transfer.Journal<>(() -> {
+        TankChannels.Channel c = channel();
+        FluidStack[] copy = new FluidStack[c == null ? 0 : c.chambers()];
+        for (int i = 0; i < copy.length; i++) {
+            copy[i] = c.get(i).copy();
+        }
+        return new Object[] {c, copy};
+    }, snapshot -> {
+        if (snapshot[0] instanceof TankChannels.Channel c) {
+            FluidStack[] copy = (FluidStack[]) snapshot[1];
+            for (int i = 0; i < copy.length; i++) {
+                c.set(i, copy[i]);
+            }
+        }
+    });
+
+    public Transfer.Journal<Object[]> journal() {
+        return journal;
+    }
 
     public DimensionalTankBlockEntity(BlockPos pos, BlockState state) {
         super(DfmBlockEntities.DIMENSIONAL_TANK.get(), pos, state);
@@ -152,6 +179,16 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         return true;
     }
 
+    /** Anarchy mode: the drop is public (see the components), so the personal item drops apart. */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null && dimensionalfluxminer.DfmConfig.tankAnarchyMode() && code().personal()) {
+            net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
+                    new ItemStack(dimensionalfluxminer.DfmConfig.tankPersonalItem()));
+        }
+    }
+
     /** Makes a personal code public again and gives the personal item back (none in creative). */
     public boolean makePublic(Player player) {
         if (!code.personal()) {
@@ -166,7 +203,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
 
     /** Server: the channel of this tank (null on the client or outside a server). */
     public TankChannels.Channel channel() {
-        if (channel == null && level != null && !level.isClientSide && level.getServer() != null) {
+        if (channel == null && level != null && !level.isClientSide() && level.getServer() != null) {
             channel = TankChannels.get(level.getServer()).channel(kind, code);
         }
         return channel;
@@ -174,7 +211,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
 
     /** Liquid of a chamber: the channel on the server, the last update on the client. Do not modify it. */
     public FluidStack chamber(int index) {
-        if (level != null && level.isClientSide) {
+        if (level != null && level.isClientSide()) {
             return index < clientChambers.length ? clientChambers[index] : FluidStack.EMPTY;
         }
         TankChannels.Channel c = channel();
@@ -182,7 +219,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** Full access to one chamber (both directions), as used by buckets and the screen. */
-    public IFluidHandler chamberHandler(int index) {
+    public FluidTanks chamberHandler(int index) {
         return new ChamberFluidHandler(this::channel, index, true, true);
     }
 
@@ -261,16 +298,16 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
             if (!level.isLoaded(target)) {
                 continue;
             }
-            IFluidHandler neighbor = level.getCapability(Capabilities.FluidHandler.BLOCK, target, side.getOpposite());
+            FluidTanks neighbor = Transfer.fluids(level, target, side.getOpposite());
             if (neighbor == null) {
                 continue;
             }
-            IFluidHandler own = new ChamberFluidHandler(this::channel, chamber, true, true);
+            FluidTanks own = new ChamberFluidHandler(this::channel, chamber, true, true);
             if (in) {
-                FluidUtil.tryFluidTransfer(own, neighbor, Integer.MAX_VALUE, true);
+                FluidTanks.move(own, neighbor, Integer.MAX_VALUE);
             }
             if (out) {
-                FluidUtil.tryFluidTransfer(neighbor, own, Integer.MAX_VALUE, true);
+                FluidTanks.move(neighbor, own, Integer.MAX_VALUE);
             }
         }
     }
@@ -283,7 +320,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
      * would otherwise send part of the ejected liquid straight back (the last mB bouncing between tank and pipe). The
      * {@code null} side is a read-only view of every chamber (information tools).
      */
-    public IFluidHandler fluidFor(Direction side) {
+    public FluidTanks fluidFor(Direction side) {
         if (side == null) {
             return new ReadOnlyChambers();
         }
@@ -307,7 +344,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** Every chamber, nothing can be inserted or extracted. */
-    private final class ReadOnlyChambers implements IFluidHandler {
+    private final class ReadOnlyChambers implements FluidTanks {
         @Override
         public int getTanks() {
             return kind.chambers();
@@ -436,29 +473,30 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
      * from it. One container at a time; the result goes back to the cursor (or the inventory).
      */
     private boolean useCarried(Player player, int chamber) {
-        AbstractContainerMenu menu = player.containerMenu;
-        ItemStack carried = menu.getCarried();
-        if (carried.isEmpty()) {
+        if (player.containerMenu.getCarried().isEmpty() || level == null) {
             return false;
         }
-        ItemStack one = carried.copyWithCount(1);
-        IFluidHandler handler = chamberHandler(chamber);
-        FluidActionResult result = FluidUtil.tryEmptyContainer(one, handler, Integer.MAX_VALUE, player, true);
-        if (!result.isSuccess()) {
-            result = FluidUtil.tryFillContainer(one, handler, Integer.MAX_VALUE, player, true);
-        }
-        if (!result.isSuccess()) {
+        ResourceHandler<FluidResource> item = ItemAccess.forPlayerCursor(player, player.containerMenu).oneByOne()
+                .getCapability(Capabilities.Fluid.ITEM);
+        if (item == null) {
             return false;
         }
-        carried.shrink(1);
-        if (carried.isEmpty()) {
-            menu.setCarried(result.getResult());
-        } else {
-            MachineMenu.giveToPlayer(player, result.getResult(), true);
+        ResourceHandler<FluidResource> tank = Transfer.exposeFluids(chamberHandler(chamber), journal);
+        try (Transaction transaction = Transaction.openRoot()) {
+            boolean pickup = false;
+            ResourceStack<FluidResource> moved = ResourceHandlerUtil.moveFirst(item, tank, resource -> true, Integer.MAX_VALUE, transaction);
+            if (moved == null) {
+                pickup = true;
+                moved = ResourceHandlerUtil.moveFirst(tank, item, resource -> true, Integer.MAX_VALUE, transaction);
+            }
+            if (moved == null) {
+                return false;
+            }
+            transaction.commit();
+            FluidUtil.triggerSoundAndGameEvent(moved.resource(), level, player.position(), player, pickup);
+            return true;
         }
-        return true;
     }
-
     /** Snapshot sent to open menus (server -> client). */
     public void writeMenuData(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putString("kind", kind.id());
@@ -473,7 +511,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     private ListTag writeChambers(HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (int i = 0; i < kind.chambers(); i++) {
-            list.add(chamber(i).saveOptional(registries));
+            list.add(dimensionalfluxminer.machine.transfer.TagStacks.save(registries, chamber(i)));
         }
         return list;
     }
@@ -481,7 +519,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     public static FluidStack[] readChambers(ListTag list, int count, HolderLookup.Provider registries) {
         FluidStack[] result = new FluidStack[count];
         for (int i = 0; i < count; i++) {
-            result[i] = i < list.size() ? FluidStack.parseOptional(registries, list.getCompound(i)) : FluidStack.EMPTY;
+            result[i] = i < list.size() ? dimensionalfluxminer.machine.transfer.TagStacks.parseFluid(registries, list.getCompoundOrEmpty(i)) : FluidStack.EMPTY;
         }
         return result;
     }
@@ -489,8 +527,8 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     // ---------------------------------------------------------------- persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveTag(tag, registries);
         tag.put("code", code.save());
         tag.put("sides", sides.save());
         tag.putBoolean("auto_input_fluid", autoInputFluid);
@@ -498,18 +536,18 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        code = tag.contains("code", Tag.TAG_COMPOUND) ? TankCode.load(tag.getCompound("code")) : TankCode.DEFAULT;
-        sides.load(tag.getCompound("sides"));
-        autoInputFluid = tag.getBoolean("auto_input_fluid");
-        autoEjectFluid = tag.getBoolean("auto_eject_fluid");
+    protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadTag(tag, registries);
+        code = tag.getCompound("code").map(TankCode::load).orElse(TankCode.DEFAULT);
+        sides.load(tag.getCompoundOrEmpty("sides"));
+        autoInputFluid = tag.getBooleanOr("auto_input_fluid", false);
+        autoEjectFluid = tag.getBooleanOr("auto_eject_fluid", false);
         channel = null;
         handlers.clear();
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput input) {
+    protected void applyImplicitComponents(net.minecraft.core.component.DataComponentGetter input) {
         super.applyImplicitComponents(input);
         TankCode stored = input.get(DfmDataComponents.TANK_CODE.get());
         if (stored != null) {
@@ -526,9 +564,8 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public void removeComponentsFromTag(CompoundTag tag) {
-        tag.remove("code");
+    public void removeComponentsFromTag(net.minecraft.world.level.storage.ValueOutput output) {
+        output.discard("code");
     }
 
     // ---------------------------------------------------------------- client sync
@@ -542,7 +579,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void readUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         readClientData(tag, registries);
     }
 
@@ -551,22 +588,15 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            readClientData(tag, registries);
-        }
-    }
 
     private void readClientData(CompoundTag tag, HolderLookup.Provider registries) {
-        code = TankCode.load(tag.getCompound("code"));
-        clientChambers = readChambers(tag.getList("chambers", Tag.TAG_COMPOUND), kind.chambers(), registries);
+        code = TankCode.load(tag.getCompoundOrEmpty("code"));
+        clientChambers = readChambers(tag.getListOrEmpty("chambers"), kind.chambers(), registries);
         updateLight();
     }
 
     private void syncToClients() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }

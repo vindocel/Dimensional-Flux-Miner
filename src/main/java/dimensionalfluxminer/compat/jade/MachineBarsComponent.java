@@ -5,7 +5,7 @@ import dimensionalfluxminer.registry.DfmFluids;
 import java.util.Locale;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
@@ -28,16 +28,16 @@ enum MachineBarsComponent implements IBlockComponentProvider {
         if (!data.contains(DfmJadePlugin.ENERGY)) {
             return;
         }
-        long energy = data.getLong(DfmJadePlugin.ENERGY);
-        long capacity = Math.max(1, data.getLong(DfmJadePlugin.CAPACITY));
+        long energy = data.getLongOr(DfmJadePlugin.ENERGY, 0L);
+        long capacity = Math.max(1, data.getLongOr(DfmJadePlugin.CAPACITY, 0L));
         // The energy fill follows the icon color the player picked for this machine (blue or purple).
         net.minecraft.core.BlockPos machine = data.contains(DfmJadePlugin.MACHINE)
-                ? net.minecraft.core.BlockPos.of(data.getLong(DfmJadePlugin.MACHINE)) : accessor.getPosition();
+                ? net.minecraft.core.BlockPos.of(data.getLongOr(DfmJadePlugin.MACHINE, 0L)) : accessor.getPosition();
         tooltip.add(MachineBarElement.energy(energy / (double) capacity,
                 Component.literal(DfmScreen.compact(energy) + " / " + DfmScreen.fe(capacity)),
                 dimensionalfluxminer.client.screen.GuiThemes.purple(machine)));
         if (data.contains(DfmJadePlugin.XP)) {
-            double xp = data.getDouble(DfmJadePlugin.XP);
+            double xp = data.getDoubleOr(DfmJadePlugin.XP, 0.0);
             long millibuckets = Math.round(xp * MB_PER_XP);
             Component text = Component.empty().append(DfmFluids.LIQUID_EXPERIENCE_TYPE.get().getDescription())
                     .append(String.format(Locale.ROOT, ": %,d mB", millibuckets));
@@ -46,7 +46,7 @@ enum MachineBarsComponent implements IBlockComponentProvider {
     }
 
     @Override
-    public ResourceLocation getUid() {
+    public Identifier getUid() {
         return DfmJadePlugin.UID;
     }
 }

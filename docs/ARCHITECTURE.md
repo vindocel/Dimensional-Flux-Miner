@@ -3,6 +3,22 @@
 How the code of Dimensional Flux Miner is organised, where each rule lives and how to work on it safely.
 Gameplay numbers are in [BALANCE.md](BALANCE.md); releases are in [RELEASING.md](RELEASING.md).
 
+## Minecraft 26.3 line
+
+This branch builds Minecraft 26.3 (NeoForge 26.3.0.95, Java 25). The gameplay code is the same as on the 1.21.1 line;
+these layers keep it and the saves unchanged on the new API:
+
+- `machine.transfer`: the machines keep their slot, energy and tank classes (`ItemSlots`, `SlotStorage`,
+  `EnergyStore`, `FluidTanks`); `Transfer` exposes them as NeoForge transfer handlers (with a snapshot `Journal`
+  per block entity for transactions) and wraps other blocks' handlers the same way.
+- `content.TagBlockEntity`: block entities still save and load a `CompoundTag` with the same keys, bridged to the new
+  value input/output. `content.TagSavedData`: saved data with codecs, moving the old `data/<name>.dat` files once.
+- `gametest.DfmGameTests`: registers every `@GameTest` method (the mod's own annotation) as a test function and
+  instance; each batch is a test environment that moves the world spawn away while it runs.
+- Recipes are a registry read before item components exist: results are `ItemStackTemplate`s. Clients get the
+  mod's recipe types from the server (`OnDatapackSyncEvent`, `recipe.Recipes`).
+- EMI and Polymorph have no 26.x build: `compat/emi` and `compat/polymorph` stay in the tree but are left out of the
+  compile (`build.gradle`). KubeJS compiles against its 26.1.2 API.
 ## Packages
 
 Everything lives under `src/main/java/dimensionalfluxminer`.
@@ -27,7 +43,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `advancement` | Custom advancement trigger |
 | `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
 | `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded) |
-| `mixin` | Corrupted Water on entities and particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
+| `mixin` | Corrupted Water particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
 | `client` | Renderers, screens, the guide, sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI and Jade plugins are client side and may use it |
 
 **Light / dark screens** (`client/screen`): `GuiTheme` holds the look of the screen being drawn. Gray parts are drawn
@@ -186,7 +202,8 @@ are part of the save format; the extracted classes write the same keys as before
 | `BenchmarkGameTests` | Opt-in benchmark: `DFM_BENCHMARK=1 ./gradlew runGameTestServer` logs `BENCH` lines |
 
 The GameTest server loads the mods in `run/mods`; compat tests adapt to the mods present. Corruption tests need
-`skyAccess = true`.
+`skyAccess = true`. The test world is flat sandstone, with no spawn chunks: a test that needs natural ground lays it
+(`TestSupport.naturalGround`), and claims of a test never reach past its own bounds.
 
 ## Working on the mod
 

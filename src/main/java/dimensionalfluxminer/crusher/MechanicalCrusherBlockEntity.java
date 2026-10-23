@@ -1,5 +1,6 @@
 package dimensionalfluxminer.crusher;
 
+import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
@@ -32,10 +33,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeMap;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.items.IItemHandler;
 
 public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity implements RecipeChoices.Host {
     /** Throughput endpoints: Rate 1 = 1 operation / 200 ticks, Rate 10 = 64 operations per logical tick. */
@@ -70,7 +70,7 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
 
     private ItemStack cachedInput = ItemStack.EMPTY;
     private boolean cachedUpgrade;
-    private RecipeManager cachedRecipes;
+    private RecipeMap cachedRecipes;
     private int cachedChoices;
     private Optional<CrusherProcessing.Resolution> cachedResolution = Optional.empty();
 
@@ -132,7 +132,7 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
             return Optional.empty();
         }
         boolean upgrade = hasEfficiencyUpgrade();
-        RecipeManager recipes = level.getRecipeManager();
+        RecipeMap recipes = dimensionalfluxminer.recipe.Recipes.map(level);
         if (!ItemStack.isSameItemSameComponents(stack, cachedInput) || upgrade != cachedUpgrade || recipes != cachedRecipes
                 || recipeChoices.version() != cachedChoices) {
             cachedInput = stack.copyWithCount(1);
@@ -270,10 +270,22 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
     }
 
     @Override
-    protected IItemHandler createItemHandler(SideRoute route) {
+    protected ItemSlots createItemHandler(SideRoute route) {
         List<ItemQueue> inputs = route.insertsItems() ? List.of(input) : List.of();
         List<ItemQueue> outputs = route.extractsItems() ? List.of(output) : List.of();
         return new QueueItemHandler(inputs, this::insertInput, outputs, this::setChanged);
+    }
+
+    @Override
+    protected Object snapshotContents() {
+        return new Object[] {input.snapshot(), output.snapshot()};
+    }
+
+    @Override
+    protected void restoreContents(Object snapshot) {
+        Object[] queues = (Object[]) snapshot;
+        input.restore(queues[0]);
+        output.restore(queues[1]);
     }
 
     private void setVisual(ItemStack stack) {
@@ -289,15 +301,15 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
             return;
         }
         // Bounded visual budget, independent from the logical throughput.
-        if (level.random.nextInt(3) != 0) {
+        if (level.getRandom().nextInt(3) != 0) {
             return;
         }
         Direction front = facing();
-        double x = worldPosition.getX() + 0.5 + front.getStepX() * 0.3 + (level.random.nextDouble() - 0.5) * 0.4;
-        double y = worldPosition.getY() + 0.75 + level.random.nextDouble() * 0.2;
-        double z = worldPosition.getZ() + 0.5 + front.getStepZ() * 0.3 + (level.random.nextDouble() - 0.5) * 0.4;
-        level.addParticle(new ItemParticleOption(ParticleTypes.ITEM, visualItem), x, y, z,
-                (level.random.nextDouble() - 0.5) * 0.08, 0.06, (level.random.nextDouble() - 0.5) * 0.08);
+        double x = worldPosition.getX() + 0.5 + front.getStepX() * 0.3 + (level.getRandom().nextDouble() - 0.5) * 0.4;
+        double y = worldPosition.getY() + 0.75 + level.getRandom().nextDouble() * 0.2;
+        double z = worldPosition.getZ() + 0.5 + front.getStepZ() * 0.3 + (level.getRandom().nextDouble() - 0.5) * 0.4;
+        level.addParticle(new ItemParticleOption(ParticleTypes.ITEM, net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(visualItem)), x, y, z,
+                (level.getRandom().nextDouble() - 0.5) * 0.08, 0.06, (level.getRandom().nextDouble() - 0.5) * 0.08);
     }
 
     public ItemStack visualItem() {
@@ -307,13 +319,13 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
     @Override
     protected void writeClientData(CompoundTag tag, HolderLookup.Provider registries) {
         if (!visualItem.isEmpty()) {
-            tag.put("visual", visualItem.save(registries));
+            tag.put("visual", dimensionalfluxminer.machine.transfer.TagStacks.save(registries, visualItem));
         }
     }
 
     @Override
     protected void readClientData(CompoundTag tag, HolderLookup.Provider registries) {
-        visualItem = tag.contains("visual") ? ItemStack.parseOptional(registries, tag.getCompound("visual")) : ItemStack.EMPTY;
+        visualItem = tag.contains("visual") ? dimensionalfluxminer.machine.transfer.TagStacks.parse(registries, tag.getCompoundOrEmpty("visual")) : ItemStack.EMPTY;
     }
 
     // ---------------------------------------------------------------- menu
@@ -369,8 +381,8 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
     // ---------------------------------------------------------------- persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveTag(tag, registries);
         tag.put("input", input.save(registries));
         tag.put("output", output.save(registries));
         // Progress already paid for survives a save and reload.
@@ -379,11 +391,11 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity imp
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        input.load(tag.getList("input", Tag.TAG_COMPOUND), registries);
-        output.load(tag.getList("output", Tag.TAG_COMPOUND), registries);
-        work.setProgress(tag.getDouble("work_progress"));
+    protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadTag(tag, registries);
+        input.load(tag.getListOrEmpty("input"), registries);
+        output.load(tag.getListOrEmpty("output"), registries);
+        work.setProgress(tag.getDoubleOr("work_progress", 0.0));
         recipeChoices.load(tag);
     }
 

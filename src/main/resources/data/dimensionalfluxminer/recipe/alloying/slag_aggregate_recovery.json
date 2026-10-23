@@ -2,9 +2,7 @@
   "type": "dimensionalfluxminer:alloying",
   "ingredients": [
     {
-      "ingredient": {
-        "item": "dimensionalfluxminer:slag_aggregate"
-      },
+      "ingredient": "dimensionalfluxminer:slag_aggregate",
       "count": 1
     }
   ],

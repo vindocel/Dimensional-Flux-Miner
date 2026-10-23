@@ -1,5 +1,7 @@
 package dimensionalfluxminer.gametest;
 
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.ItemQueue;
@@ -14,7 +16,6 @@ import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
@@ -24,16 +25,11 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-import net.neoforged.neoforge.items.IItemHandler;
 
 /**
  * Rate-10 throughput of the Electric Furnace: 64 operations per lane and 192 in total, really reached and sustained when
  * the inputs are fed and the outputs drained. Every slot holds 64 items at most.
  */
-@GameTestHolder(DimensionalFluxMiner.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class ThroughputGameTests {
     private static final BlockPos MACHINE = new BlockPos(2, 1, 2);
     private static final long PLENTY = 1_000_000_000_000L;
@@ -127,8 +123,8 @@ public final class ThroughputGameTests {
         BlockPos sink = MACHINE.relative(RelativeFace.RIGHT.toDirection(be.facing()));
         helper.setBlock(source, Blocks.CHEST);
         helper.setBlock(sink, Blocks.CHEST);
-        Container in = (Container) helper.getBlockEntity(source);
-        Container out = (Container) helper.getBlockEntity(sink);
+        Container in = (Container) TestSupport.blockEntity(helper, source);
+        Container out = (Container) TestSupport.blockEntity(helper, sink);
         be.setAutoInput(true);
         be.setAutoEject(true);
         long[] made = {0};
@@ -253,7 +249,7 @@ public final class ThroughputGameTests {
             helper.assertTrue("output_blocked".equals(be.status()), "status output_blocked, got " + be.status());
             // Automation sees three ordinary slots of at most 64.
             be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT);
-            IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(MACHINE),
+            ItemSlots handler = Transfer.items(helper.getLevel(), helper.absolutePos(MACHINE),
                     RelativeFace.BACK.toDirection(be.facing()));
             // One slot per output first; the cable probe slots of the inputs come after them.
             helper.assertTrue(handler.getSlots() > ElectricFurnaceBlockEntity.LANES, "one slot per output, then the probe slots");
@@ -340,7 +336,7 @@ public final class ThroughputGameTests {
             var registries = helper.getLevel().registryAccess();
             CompoundTag saved = be.saveWithoutMetadata(registries);
             clearAll(be);
-            be.loadWithComponents(saved, registries);
+            TestSupport.load(be, saved, registries);
             helper.assertTrue(be.output(0).countOf(new ItemStack(Items.GLASS)) == 64, "64 glass kept");
             helper.assertTrue(be.output(2).countOf(new ItemStack(Items.IRON_INGOT)) == 13, "13 ingots kept");
             helper.assertTrue(be.input(1).firstCount() == 37, "37 sand kept");

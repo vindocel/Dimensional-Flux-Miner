@@ -5,7 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 /**
@@ -19,15 +19,15 @@ import net.minecraft.world.level.Level;
  *     <li>{@code crusher_output}: canonical Crusher product for the family.</li>
  * </ul>
  */
-public record ProfileOverride(ResourceLocation resource, Optional<ResourceKey<Level>> dimension, Optional<ResourceLocation> family,
-                              Optional<Double> weight, boolean enabled, Optional<ResourceLocation> crusherOutput) {
+public record ProfileOverride(Identifier resource, Optional<ResourceKey<Level>> dimension, Optional<Identifier> family,
+                              Optional<Double> weight, boolean enabled, Optional<Identifier> crusherOutput) {
     public static final Codec<ProfileOverride> CODEC = RecordCodecBuilder.create(i -> i.group(
-            ResourceLocation.CODEC.fieldOf("resource").forGetter(ProfileOverride::resource),
+            Identifier.CODEC.fieldOf("resource").forGetter(ProfileOverride::resource),
             ResourceKey.codec(Registries.DIMENSION).optionalFieldOf("dimension").forGetter(ProfileOverride::dimension),
-            ResourceLocation.CODEC.optionalFieldOf("family").forGetter(ProfileOverride::family),
+            Identifier.CODEC.optionalFieldOf("family").forGetter(ProfileOverride::family),
             Codec.doubleRange(0.0, 1.0).optionalFieldOf("weight").forGetter(ProfileOverride::weight),
             Codec.BOOL.optionalFieldOf("enabled", true).forGetter(ProfileOverride::enabled),
-            ResourceLocation.CODEC.optionalFieldOf("crusher_output").forGetter(ProfileOverride::crusherOutput)
+            Identifier.CODEC.optionalFieldOf("crusher_output").forGetter(ProfileOverride::crusherOutput)
     ).apply(i, ProfileOverride::new));
 
     public boolean appliesTo(ResourceKey<Level> level) {

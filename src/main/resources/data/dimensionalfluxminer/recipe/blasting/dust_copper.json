@@ -1,9 +1,7 @@
 {
   "type": "minecraft:blasting",
   "category": "misc",
-  "ingredient": {
-    "item": "dimensionalfluxminer:dust_copper"
-  },
+  "ingredient": "dimensionalfluxminer:dust_copper",
   "result": {
     "id": "minecraft:copper_ingot"
   },

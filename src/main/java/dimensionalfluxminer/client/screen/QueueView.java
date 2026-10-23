@@ -16,11 +16,11 @@ record QueueView(List<ItemStack> prototypes, List<Long> counts) {
         List<ItemStack> prototypes = new ArrayList<>();
         List<Long> counts = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            CompoundTag tag = list.getCompound(i);
-            ItemStack stack = ItemStack.parseOptional(registries, tag.getCompound("item"));
+            CompoundTag tag = list.getCompoundOrEmpty(i);
+            ItemStack stack = dimensionalfluxminer.machine.transfer.TagStacks.parse(registries, tag.getCompoundOrEmpty("item"));
             if (!stack.isEmpty()) {
                 prototypes.add(stack);
-                counts.add(tag.getLong("count"));
+                counts.add(tag.getLongOr("count", 0L));
             }
         }
         return new QueueView(prototypes, counts);

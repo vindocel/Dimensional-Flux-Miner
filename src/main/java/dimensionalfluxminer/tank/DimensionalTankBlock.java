@@ -1,13 +1,11 @@
 package dimensionalfluxminer.tank;
 
-import com.mojang.serialization.MapCodec;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -25,7 +23,10 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import dimensionalfluxminer.machine.transfer.Transfer;
 
 /**
  * Dimensional Tank block (single or dual). Right click with a filled bucket or fluid container empties it into a
@@ -49,23 +50,17 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, net.minecraft.world.level.LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
-        dimensionalfluxminer.content.Waterlogging.tick(state, level, pos);
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level,
+                                     net.minecraft.world.level.ScheduledTickAccess ticks, BlockPos pos, Direction direction, BlockPos neighborPos,
+                                     BlockState neighborState, net.minecraft.util.RandomSource random) {
+        dimensionalfluxminer.content.Waterlogging.tick(state, level, ticks, pos);
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
     public TankKind kind() {
         return kind;
     }
 
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return kind == TankKind.DUAL ? DUAL_CODEC : SINGLE_CODEC;
-    }
-
-    private static final MapCodec<DimensionalTankBlock> SINGLE_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.SINGLE, p));
-    private static final MapCodec<DimensionalTankBlock> DUAL_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.DUAL, p));
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -107,34 +102,34 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
     @Override
     @SuppressWarnings("unchecked")
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide || type != DfmBlockEntities.DIMENSIONAL_TANK.get()) {
+        if (level.isClientSide() || type != DfmBlockEntities.DIMENSIONAL_TANK.get()) {
             return null;
         }
         return (BlockEntityTicker<T>) (BlockEntityTicker<DimensionalTankBlockEntity>) DimensionalTankBlockEntity::serverTick;
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                               BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof DimensionalTankBlockEntity tank)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         // The personal item (a diamond by default) on a public tank gives it a channel of its own for this player.
         if (stack.is(dimensionalfluxminer.DfmConfig.tankPersonalItem()) && !tank.code().personal()) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 tank.makePersonal(player, stack);
             }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+            return InteractionResult.SUCCESS;
         }
-        if (FluidUtil.getFluidHandler(stack).isEmpty()) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (stack.isEmpty() || ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM) == null) {
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
-        if (level.isClientSide) {
-            return ItemInteractionResult.SUCCESS;
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
         }
         int chamber = chamberAt(state.getValue(BlockStateProperties.HORIZONTAL_FACING), hit.getLocation().subtract(Vec3.atLowerCornerOf(pos)));
-        return FluidUtil.interactWithFluidHandler(player, hand, tank.chamberHandler(chamber))
-                ? ItemInteractionResult.CONSUME : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return FluidUtil.interactWithFluidHandler(player, hand, pos, Transfer.exposeFluids(tank.chamberHandler(chamber), tank.journal()), null)
+                ? InteractionResult.CONSUME : InteractionResult.TRY_WITH_EMPTY_HAND;
     }
 
     /** Chamber under a point of the block (0..1 coordinates): on the dual tank A is the half with the lower model X. */
@@ -154,23 +149,13 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof DimensionalTankBlockEntity tank) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof DimensionalTankBlockEntity tank) {
             // Sneaking with an empty hand makes a personal tank public again (the personal item comes back).
             if (!player.isShiftKeyDown() || !tank.makePublic(player)) {
                 serverPlayer.openMenu(tank, pos);
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
-    /** Anarchy mode: the drop is public (see the block entity's components), so the personal item drops apart. */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && dimensionalfluxminer.DfmConfig.tankAnarchyMode()
-                && level.getBlockEntity(pos) instanceof DimensionalTankBlockEntity tank && tank.code().personal()) {
-            net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
-                    new ItemStack(dimensionalfluxminer.DfmConfig.tankPersonalItem()));
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
-    }
 }

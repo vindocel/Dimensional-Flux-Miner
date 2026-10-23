@@ -1,11 +1,12 @@
 package dimensionalfluxminer.client.screen;
 
+import net.minecraft.client.renderer.RenderPipelines;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
 /**
@@ -15,8 +16,10 @@ import net.minecraft.util.FormattedCharSequence;
  */
 final class GuideBook {
     static final int GAP = 5;
-    /** The book's own texture: its page illustrations and the core seal decorate the guide. */
-    static final ResourceLocation TEXTURE = DimensionalFluxMiner.id("textures/item/guide_book.png");
+    /** The book's own texture: its page illustrations decorate the guide. */
+    static final Identifier TEXTURE = DimensionalFluxMiner.id("textures/block/guide_book.png");
+    /** The mod icon (the same image as the mod list), shown on the cover page. */
+    private static final Identifier ICON = DimensionalFluxMiner.id("textures/gui/guide_icon.png");
 
     record Placed(GuideElement element, int y, int height) {
     }
@@ -181,7 +184,7 @@ final class GuideBook {
 
     // ------------------------------------------------------------------ front matter and decoration
 
-    /** The core seal of the cover, centered. */
+    /** The mod icon on the cover, centered. */
     record Emblem() implements GuideElement {
         @Override
         public int height(GuideScreen screen, int width) {
@@ -189,8 +192,8 @@ final class GuideBook {
         }
 
         @Override
-        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
-            g.blit(TEXTURE, x + (width - 32) / 2, y + 1, 32, 32, 32, 64, 16, 16, 128, 128);
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+            g.blit(RenderPipelines.GUI_TEXTURED, ICON, x + (width - 32) / 2, y + 1, 0, 0, 32, 32, 64, 64, 64, 64);
         }
     }
 
@@ -201,7 +204,7 @@ final class GuideBook {
         }
 
         @Override
-        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
             screen.fittedText(g, text, x, y + 1, width, color, true);
         }
     }
@@ -214,9 +217,9 @@ final class GuideBook {
         }
 
         @Override
-        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
             int u = variant == 0 ? 64 : 96;
-            g.blit(TEXTURE, x - GuideScreen.PAD_X, y - GuideScreen.PAD_TOP, screen.pageWidth(), screen.pageHeight(), u, 0, 32, 48, 128, 128);
+            g.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x - GuideScreen.PAD_X, y - GuideScreen.PAD_TOP, u, 0, screen.pageWidth(), screen.pageHeight(), 32, 48, 128, 128);
         }
     }
 
@@ -243,7 +246,7 @@ final class GuideBook {
         }
 
         @Override
-        public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
             int row = row();
             for (int c = 0; c < book.chapters.size(); c++) {
                 int ry = y + c * row;
@@ -251,17 +254,17 @@ final class GuideBook {
                 if (over) {
                     g.fill(x - 2, ry, x + width + 2, ry + row, GuideElements.TINT);
                 }
-                g.pose().pushPose();
-                g.pose().translate(x, ry + (row - 13) / 2.0F, 0);
-                g.pose().scale(0.8125F, 0.8125F, 1.0F);
-                g.renderItem(book.chapters.get(c).icon().get(), 0, 0);
-                g.pose().popPose();
+                g.pose().pushMatrix();
+                g.pose().translate(x, ry + (row - 13) / 2.0F);
+                g.pose().scale(0.8125F, 0.8125F);
+                g.item(book.chapters.get(c).icon().get(), 0, 0);
+                g.pose().popMatrix();
                 String page = Integer.toString(book.chapterStart[c] + 1);
                 int pageW = screen.font().width(page);
                 int ty = ry + (row - 8) / 2;
                 screen.fittedText(g, Component.translatable("guide.dimensionalfluxminer.chapter." + book.chapters.get(c).id()), x + 18,
                         ty, width - 24 - pageW, over ? GuideElements.HEADING : GuideElements.BODY);
-                g.drawString(screen.font(), page, x + width - pageW, ty, GuideElements.MUTED, false);
+                g.text(screen.font(), page, x + width - pageW, ty, GuideElements.MUTED, false);
             }
         }
 

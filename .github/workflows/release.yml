@@ -36,11 +36,11 @@ jobs:
           TARGET: ${{ github.event.release.target_commitish }}
         run: bash scripts/validate-release.sh tag
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -99,5 +99,5 @@ jobs:
           loaders: neoforge
           game-versions: ${{ steps.release.outputs.minecraft_version }}
           game-version-filter: none
-          java: 21
+          java: 25
           fail-mode: fail

@@ -1,5 +1,9 @@
 package dimensionalfluxminer.gametest;
 
+import net.minecraft.world.entity.EntityTypes;
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.miner.MatterValues;
@@ -21,24 +25,17 @@ import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Spider;
+import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-import net.neoforged.neoforge.items.IItemHandler;
 
-@GameTestHolder(DimensionalFluxMiner.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class MinerGameTests {
     private static final BlockPos TERMINAL = new BlockPos(4, 1, 5);
 
@@ -56,7 +53,7 @@ public final class MinerGameTests {
             helper.setBlock(TERMINAL.offset(m.pos().subtract(terminalAbs)), MinerStructure.blockFor(m.slot().part()));
         }
         helper.setBlock(TERMINAL, DfmBlocks.MINER_TERMINAL.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
-        MinerControllerBlockEntity controller = helper.getBlockEntity(TERMINAL);
+        MinerControllerBlockEntity controller = TestSupport.blockEntity(helper, TERMINAL);
         var problem = controller.tryForm();
         helper.assertTrue(controller.formed(), "structure should form: " + (problem == null ? "no message" : problem.getString()));
         return controller;
@@ -101,12 +98,12 @@ public final class MinerGameTests {
         // Energy by default: every one of the nine faces accepts it, no other face of the port blocks does.
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             Direction out = face.outward(MinerLayout.Front.SOUTH);
-            helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), out) != null, "energy on " + face);
-            helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), Direction.UP) == null, "no energy up " + face);
+            helper.assertTrue(Transfer.energy(level, portPos(c, face), out) != null, "energy on " + face);
+            helper.assertTrue(Transfer.energy(level, portPos(c, face), Direction.UP) == null, "no energy up " + face);
             // Every outward face has an item handler (so a cable can be noticed), none of the inward faces.
-            IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, face), out);
+            ItemSlots items = Transfer.items(level, portPos(c, face), out);
             helper.assertTrue(items != null && items.getSlots() == 28, "item handler on " + face);
-            helper.assertTrue(level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, face), Direction.UP) == null, "no items up " + face);
+            helper.assertTrue(Transfer.items(level, portPos(c, face), Direction.UP) == null, "no items up " + face);
         }
         helper.assertTrue(MinerPorts.Face.WEST_CENTER.outward(MinerLayout.Front.SOUTH) == Direction.WEST
                 && MinerPorts.Face.EAST_CENTER.outward(MinerLayout.Front.SOUTH) == Direction.EAST
@@ -116,7 +113,7 @@ public final class MinerGameTests {
         helper.assertFalse(c.handleButton(null, itemsEast), "locked without a Core");
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
         helper.assertTrue(c.handleButton(null, itemsEast), "Item Output on the right middle face");
-        IItemHandler outHandler = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
+        ItemSlots outHandler = Transfer.items(level, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
         helper.assertTrue(outHandler != null && outHandler.getSlots() == 28, "27 output slots and the matter slot");
         helper.assertTrue(!outHandler.insertItem(0, new ItemStack(Items.STONE), false).isEmpty(), "output never accepts insertion");
         // With the Basic Core the cycle is only none / Item Output.
@@ -127,7 +124,7 @@ public final class MinerGameTests {
         for (int i = 0; i < 3; i++) {
             c.handleButton(null, itemsEast);
         }
-        IItemHandler both = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
+        ItemSlots both = Transfer.items(level, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
         helper.assertTrue(both != null && both.getSlots() == 28, "output slots and one matter slot");
         helper.assertTrue(both.insertItem(27, new ItemStack(Items.STONE, 2), false).isEmpty() && c.dmUnits() == 10, "matter accepted on the shared face");
         // Free roles first: with the Item Output on the right, the left face cycles Matter Input, both, then Item Output.
@@ -149,10 +146,10 @@ public final class MinerGameTests {
         helper.assertTrue(c.ports().isOutput(MinerPorts.Face.WEST_CENTER), "right click goes back to Item Output");
         // Energy by hand: only the chosen faces; reset goes back to every face.
         c.handleButton(null, MinerControllerBlockEntity.BUTTON_PORT_ENERGY + MinerPorts.Face.REAR_CENTER.ordinal());
-        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.NORTH) != null
-                && level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.WEST_REAR), Direction.WEST) == null, "chosen energy face only");
+        helper.assertTrue(Transfer.energy(level, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.NORTH) != null
+                && Transfer.energy(level, portPos(c, MinerPorts.Face.WEST_REAR), Direction.WEST) == null, "chosen energy face only");
         c.handleButton(null, MinerControllerBlockEntity.BUTTON_PORTS_RESET_ENERGY);
-        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.WEST_REAR), Direction.WEST) != null, "back to every face");
+        helper.assertTrue(Transfer.energy(level, portPos(c, MinerPorts.Face.WEST_REAR), Direction.WEST) != null, "back to every face");
         // The corner block carries two independent faces.
         helper.assertTrue(portPos(c, MinerPorts.Face.WEST_REAR).equals(portPos(c, MinerPorts.Face.REAR_WEST)), "two faces on one corner");
         // Taking the Stabilized Core out drops the Matter Input.
@@ -169,7 +166,7 @@ public final class MinerGameTests {
         BlockPos terminalAbs = helper.absolutePos(TERMINAL);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         BlockPos away = helper.absolutePos(TERMINAL.south(4));
-        player.moveTo(away.getX() + 0.5, away.getY(), away.getZ() + 0.5);
+        player.snapTo(away.getX() + 0.5, away.getY(), away.getZ() + 0.5);
         var empty = MinerAssembly.placeNext(helper.getLevel(), terminalAbs, player);
         helper.assertTrue(empty != null && MinerAssembly.missing(helper.getLevel(), terminalAbs).size() == 26,
                 "nothing placed without items");
@@ -183,7 +180,7 @@ public final class MinerGameTests {
         for (int click = 0; click < 26; click++) {
             MinerAssembly.placeNext(helper.getLevel(), terminalAbs, player);
         }
-        MinerControllerBlockEntity controller = helper.getBlockEntity(TERMINAL);
+        MinerControllerBlockEntity controller = TestSupport.blockEntity(helper, TERMINAL);
         helper.assertTrue(controller.formed(), "the 26 clicks build and form the machine");
         helper.assertTrue(player.getInventory().isEmpty(), "every part was taken from the inventory");
         helper.succeed();
@@ -224,7 +221,7 @@ public final class MinerGameTests {
         helper.assertTrue(c.cobblestoneInjected() == MinerControllerBlockEntity.TRASH_TO_TREASURE_COBBLESTONE,
                 "cobblestone counted: " + c.cobblestoneInjected());
         CompoundTag saved = c.saveWithoutMetadata(helper.getLevel().registryAccess());
-        helper.assertTrue(saved.getLong("cobblestone_injected") == MinerControllerBlockEntity.TRASH_TO_TREASURE_COBBLESTONE,
+        helper.assertTrue(saved.getLongOr("cobblestone_injected", 0L) == MinerControllerBlockEntity.TRASH_TO_TREASURE_COBBLESTONE,
                 "the count is not saved");
         helper.succeed();
     }
@@ -281,12 +278,12 @@ public final class MinerGameTests {
         helper.runAfterDelay(4, () -> {
             var data = new net.minecraft.nbt.CompoundTag();
             c.writeMenuData(data);
-            helper.assertTrue("NONE".equals(data.getString("limit")), "nothing limits it: " + data.getString("limit"));
-            double nominal = data.getDouble("nominal");
-            helper.assertTrue(Math.abs(data.getDouble("potential") - nominal * 11) < 1e-6,
-                    "potential counts the 11 cycles: " + data.getDouble("potential") + " for " + nominal);
-            helper.assertTrue(Math.abs(data.getDouble("actual") - nominal * 11) < 1e-6,
-                    "actual sums every cycle at full rate: " + data.getDouble("actual"));
+            helper.assertTrue("NONE".equals(data.getStringOr("limit", "")), "nothing limits it: " + data.getStringOr("limit", ""));
+            double nominal = data.getDoubleOr("nominal", 0.0);
+            helper.assertTrue(Math.abs(data.getDoubleOr("potential", 0.0) - nominal * 11) < 1e-6,
+                    "potential counts the 11 cycles: " + data.getDoubleOr("potential", 0.0) + " for " + nominal);
+            helper.assertTrue(Math.abs(data.getDoubleOr("actual", 0.0) - nominal * 11) < 1e-6,
+                    "actual sums every cycle at full rate: " + data.getDoubleOr("actual", 0.0));
             helper.succeed();
         });
     }
@@ -334,7 +331,7 @@ public final class MinerGameTests {
     public static void matterInputConvertsSubstrateImmediately(GameTestHelper helper) {
         MinerControllerBlockEntity c = build(helper);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
-        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, useMatterPort(c), Direction.NORTH);
+        ItemSlots matter = Transfer.items(helper.getLevel(), useMatterPort(c), Direction.NORTH);
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.STONE, 10), false).isEmpty(), "stone accepted");
         helper.assertTrue(c.dmUnits() == 50, "10 stone = 5.0 DM, got " + c.dmUnits());
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.DIRT, 10), false).isEmpty(), "dirt accepted");
@@ -358,7 +355,7 @@ public final class MinerGameTests {
     public static void matterInputOnlyTakesMatterOfItsOwnDimension(GameTestHelper helper) {
         MinerControllerBlockEntity c = build(helper);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
-        IItemHandler matter = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, useMatterPort(c), Direction.NORTH);
+        ItemSlots matter = Transfer.items(helper.getLevel(), useMatterPort(c), Direction.NORTH);
         helper.assertTrue(matter.insertItem(0, new ItemStack(Items.DIAMOND_ORE, 2), false).isEmpty(), "Overworld diamond ore accepted");
         helper.assertTrue(c.dmUnits() == 20, "2 diamond ore = 2 DM, got " + c.dmUnits());
         for (var foreign : List.of(Items.NETHER_QUARTZ_ORE, Items.NETHER_GOLD_ORE, Items.ANCIENT_DEBRIS, Items.NETHERRACK,
@@ -615,7 +612,7 @@ public final class MinerGameTests {
         for (int i = 0; i < 20; i++) {
             c.acceleratedCycle();
         }
-        IEnergyStorage input = helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.WEST_CENTER), Direction.WEST);
+        EnergyStore input = Transfer.energy(helper.getLevel(), portPos(c, MinerPorts.Face.WEST_CENTER), Direction.WEST);
         long cycle = c.powerLimit();
         long accepted = input.receiveEnergy(Integer.MAX_VALUE, false);
         helper.assertTrue(accepted == 10 * cycle + 20 * cycle,
@@ -648,7 +645,7 @@ public final class MinerGameTests {
         for (int i = 0; i < MinerControllerBlockEntity.OUTPUT_SLOTS; i++) {
             c.output().setStackInSlot(i, new ItemStack(Items.COBBLESTONE, 64));
         }
-        IItemHandler out = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, useOutputPort(c), Direction.EAST);
+        ItemSlots out = Transfer.items(helper.getLevel(), useOutputPort(c), Direction.EAST);
         int taken = 0;
         for (int slot = 0; slot < out.getSlots(); slot++) {
             taken += out.extractItem(slot, 64, false).getCount();
@@ -702,8 +699,8 @@ public final class MinerGameTests {
         var level = helper.getLevel();
         MinerPorts.Face west = MinerPorts.Face.WEST_CENTER;
         MinerPorts.Face rear = MinerPorts.Face.REAR_CENTER;
-        IItemHandler pulled = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, west), Direction.WEST);
-        IItemHandler pushed = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, rear), Direction.NORTH);
+        ItemSlots pulled = Transfer.items(level, portPos(c, west), Direction.WEST);
+        ItemSlots pushed = Transfer.items(level, portPos(c, rear), Direction.NORTH);
         helper.assertTrue(pulled.extractItem(0, 1, false).isEmpty(), "nothing leaves before the face has the role");
         helper.assertTrue(pushed.insertItem(27, new ItemStack(Items.STONE, 2), false).getCount() == 2, "nothing enters before the role");
         helper.runAfterDelay(20, () -> {
@@ -712,7 +709,7 @@ public final class MinerGameTests {
             helper.assertTrue(pulled.extractItem(0, 1, false).getCount() == 1, "the pulling cable now gets items");
             helper.assertTrue(pushed.insertItem(27, new ItemStack(Items.STONE, 2), false).isEmpty(), "the pushing cable now feeds Matter");
             // A second cable pulling elsewhere does not steal the role while the first keeps pulling.
-            IItemHandler other = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
+            ItemSlots other = Transfer.items(level, portPos(c, MinerPorts.Face.EAST_CENTER), Direction.EAST);
             other.extractItem(0, 1, true);
             pulled.extractItem(0, 1, true);
         });
@@ -737,9 +734,9 @@ public final class MinerGameTests {
         helper.assertTrue(ports.isOutput(east) && !ports.isOutput(west), "the node takes the Item Output");
         // The node reaches its face from any side of the block.
         var level = helper.getLevel();
-        IItemHandler up = level.getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, east), Direction.UP);
+        ItemSlots up = Transfer.items(level, portPos(c, east), Direction.UP);
         helper.assertTrue(up != null && up.getSlots() == 28, "output from the node's side");
-        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.DOWN) != null,
+        helper.assertTrue(Transfer.energy(level, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.DOWN) != null,
                 "energy from the node's side");
         // Locked: the face does not cycle, the role is not offered elsewhere, clearing keeps it.
         ports.cycleItems(east, true, true);
@@ -812,6 +809,23 @@ public final class MinerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty_large")
+    public static void breakingTheTerminalRestoresTheParts(GameTestHelper helper) {
+        MinerControllerBlockEntity c = build(helper);
+        c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.STABILIZED_DIMENSIONAL_CORE.get()));
+        helper.getLevel().destroyBlock(helper.absolutePos(TERMINAL), true);
+        AABB area = new AABB(helper.absolutePos(BlockPos.ZERO)).expandTowards(9, 6, 9);
+        long cores = helper.getLevel().getEntitiesOfClass(ItemEntity.class, area).stream()
+                .filter(e -> e.getItem().is(DfmItems.STABILIZED_DIMENSIONAL_CORE.get())).mapToInt(e -> e.getItem().getCount()).sum();
+        helper.assertTrue(cores == 1, "core dropped once: " + cores);
+        for (MinerStructure.Member m : MinerStructure.layout(helper.absolutePos(TERMINAL), Direction.SOUTH).members()) {
+            var state = helper.getLevel().getBlockState(m.pos());
+            if (state.hasProperty(DfmStateProperties.FORMED)) {
+                helper.assertFalse(state.getValue(DfmStateProperties.FORMED), "renders restored at " + m.pos());
+            }
+        }
+        helper.succeed();
+    }
     @GameTest(template = "empty_large", skyAccess = true)
     public static void columnCorruptionFollowsDepthRules(GameTestHelper helper) {
         // Column A: short grass over grass / dirt / stone / stone (the 4th block stays normal).
@@ -880,7 +894,7 @@ public final class MinerGameTests {
     public static void resourceProfileFamiliesAreWeightedAndCrushable(GameTestHelper helper) {
         ResourceProfile profile = ResourceProfiles.get(helper.getLevel());
         int total = profile.totalWeight();
-        DimensionalFluxMiner.LOGGER.info("Resource Profile {} (total {}): {}", profile.dimension().location(), total,
+        DimensionalFluxMiner.LOGGER.info("Resource Profile {} (total {}): {}", profile.dimension().identifier(), total,
                 profile.families().stream().map(f -> f.key() + "=" + f.weight() + "->" + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(f.crusherOutput())).toList());
         helper.assertTrue(Math.abs(total - 10_000) <= profile.families().size(), "weights normalized to ~10000: " + total);
         for (ResourceFamily family : profile.families()) {
@@ -891,7 +905,7 @@ public final class MinerGameTests {
                         "every producible ore is processed by the Crusher: " + v.item());
             }
         }
-        helper.assertTrue(profile.family(net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron")).isPresent(), "iron family present");
+        helper.assertTrue(profile.family(net.minecraft.resources.Identifier.withDefaultNamespace("iron")).isPresent(), "iron family present");
         helper.succeed();
     }
 
@@ -899,8 +913,8 @@ public final class MinerGameTests {
     @GameTest(template = "empty_large", skyAccess = true)
     public static void terracottaAndCalciteCorrupt(GameTestHelper helper) {
         var level = helper.getLevel();
-        helper.setBlock(new BlockPos(1, 1, 1), Blocks.WHITE_GLAZED_TERRACOTTA);
-        helper.setBlock(new BlockPos(1, 2, 1), Blocks.RED_TERRACOTTA);
+        helper.setBlock(new BlockPos(1, 1, 1), Blocks.GLAZED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.WHITE));
+        helper.setBlock(new BlockPos(1, 2, 1), Blocks.DYED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.RED));
         helper.setBlock(new BlockPos(1, 3, 1), Blocks.TERRACOTTA);
         helper.setBlock(new BlockPos(3, 1, 1), Blocks.DIORITE);
         helper.setBlock(new BlockPos(3, 2, 1), Blocks.DRIPSTONE_BLOCK);
@@ -947,7 +961,7 @@ public final class MinerGameTests {
             if (!mods.isLoaded(o.mod())) {
                 continue;
             }
-            var ore = registry.get(net.minecraft.resources.ResourceLocation.parse(o.ore()));
+            var ore = registry.getValue(net.minecraft.resources.Identifier.parse(o.ore()));
             var family = dimensionalfluxminer.miner.profile.ProfileBuilder.familyOf(ore);
             helper.assertTrue(family.isPresent() && family.get().toString().equals(o.family()), o.ore() + " family: " + family);
             var resolution = dimensionalfluxminer.crusher.CrusherProcessing.resolve(helper.getLevel(), new ItemStack(ore), false);
@@ -962,7 +976,7 @@ public final class MinerGameTests {
         if (mods.isLoaded("forbidden_arcanus")) {
             ResourceProfile profile = ResourceProfiles.get(helper.getLevel());
             for (String key : List.of("c:runic", "c:stellarite")) {
-                helper.assertTrue(profile.family(net.minecraft.resources.ResourceLocation.parse(key)).isPresent(), "overworld profile has " + key);
+                helper.assertTrue(profile.family(net.minecraft.resources.Identifier.parse(key)).isPresent(), "overworld profile has " + key);
             }
         }
         helper.succeed();
@@ -972,10 +986,11 @@ public final class MinerGameTests {
     @GameTest(template = "empty_large", batch = "basic_drain", timeoutTicks = 200)
     public static void basicCoreSurveysDrainsAndProduces(GameTestHelper helper) {
         MinerControllerBlockEntity c = build(helper);
+        TestSupport.naturalGround(helper, 24);
         c.coreSlot().setStackInSlot(0, new ItemStack(DfmItems.BASIC_DIMENSIONAL_CORE.get()));
         powerUp(c, 10);
         c.setRunRequested(true);
-        IItemHandler rear = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, portPos(c, MinerPorts.Face.REAR_CENTER), Direction.NORTH);
+        ItemSlots rear = Transfer.items(helper.getLevel(), portPos(c, MinerPorts.Face.REAR_CENTER), Direction.NORTH);
         helper.assertTrue(rear.insertItem(rear.getSlots() - 1, new ItemStack(Items.STONE, 4), false).getCount() == 4,
                 "Basic never takes matter");
         helper.succeedWhen(() -> {
@@ -995,7 +1010,7 @@ public final class MinerGameTests {
                 helper.setBlock(new BlockPos(x, 2, z), DfmBlocks.CORRUPTED_WATER.get());
             }
         }
-        Spider spider = helper.spawn(EntityType.SPIDER, new BlockPos(4, 1, 4));
+        Spider spider = helper.spawn(EntityTypes.SPIDER, new BlockPos(4, 1, 4));
         spider.setHealth(4.0F);
         helper.succeedWhen(() -> helper.assertTrue(spider.getHealth() > 4.0F, "monster healed in corrupted water"));
     }
@@ -1062,7 +1077,7 @@ public final class MinerGameTests {
                 helper.setBlock(new BlockPos(x, 2, z), DfmBlocks.CORRUPTED_WATER.get());
             }
         }
-        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 1, 4));
+        var cow = helper.spawn(EntityTypes.COW, new BlockPos(4, 1, 4));
         float full = cow.getMaxHealth();
         helper.succeedWhen(() -> {
             helper.assertTrue(cow.isInWater(), "corrupted water counts as water (splash, swimming, sounds)");
@@ -1074,8 +1089,8 @@ public final class MinerGameTests {
     public static void corruptedSedimentFallsAndSmeltsIntoGlass(GameTestHelper helper) {
         var level = helper.getLevel();
         var input = new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(DfmItems.CORRUPTED_SEDIMENT.get()));
-        var recipe = level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMELTING, input, level);
-        helper.assertTrue(recipe.isPresent() && recipe.get().value().assemble(input, level.registryAccess()).is(Items.GLASS),
+        var recipe = dimensionalfluxminer.recipe.Recipes.first(level, net.minecraft.world.item.crafting.RecipeType.SMELTING, input);
+        helper.assertTrue(recipe.isPresent() && recipe.get().value().assemble(input).is(Items.GLASS),
                 "corrupted sediment smelts into glass");
         helper.assertTrue(DfmBlocks.CORRUPTED_SEDIMENT.get().defaultBlockState().is(net.minecraft.tags.BlockTags.SAND), "it is sand");
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
@@ -1094,7 +1109,7 @@ public final class MinerGameTests {
                 }
             }
         }
-        var drowned = helper.spawn(EntityType.DROWNED, new BlockPos(4, 1, 4));
+        var drowned = helper.spawn(EntityTypes.DROWNED, new BlockPos(4, 1, 4));
         drowned.setPersistenceRequired();
         drowned.setAirSupply(0);
         // Out of air, a mob that drowns loses air below 0 and takes drowning damage after 20 ticks; a drowned does not.
@@ -1118,7 +1133,7 @@ public final class MinerGameTests {
                 }
             }
         }
-        var warden = helper.spawn(EntityType.WARDEN, new BlockPos(4, 1, 4));
+        var warden = helper.spawn(EntityTypes.WARDEN, new BlockPos(4, 1, 4));
         // The test server has no player: without this the Warden may despawn in the middle of the test.
         warden.setPersistenceRequired();
         // Spawned without the normal spawn setup, a Warden has no dig cooldown and digs away (vanilla) almost at once.

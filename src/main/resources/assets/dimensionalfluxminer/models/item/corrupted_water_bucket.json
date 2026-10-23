@@ -1,5 +1,0 @@
-{
-  "loader": "neoforge:fluid_container",
-  "parent": "neoforge:item/bucket",
-  "fluid": "dimensionalfluxminer:corrupted_water"
-}

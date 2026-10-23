@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -61,7 +61,7 @@ public final class CrusherProcessing {
      * Same as {@link #resolve(Level, ItemStack, boolean)}, but the explicit recipe {@code chosen} (when not null and
      * still accepting the input) replaces the default one.
      */
-    public static Optional<Resolution> resolve(Level level, ItemStack input, boolean efficiencyUpgrade, ResourceLocation chosen) {
+    public static Optional<Resolution> resolve(Level level, ItemStack input, boolean efficiencyUpgrade, Identifier chosen) {
         if (chosen != null) {
             for (Option option : options(level, input, efficiencyUpgrade)) {
                 if (option.id().equals(chosen)) {
@@ -73,7 +73,7 @@ public final class CrusherProcessing {
     }
 
     /** One explicit recipe that accepts an input and what it makes. */
-    public record Option(ResourceLocation id, Resolution resolution) {
+    public record Option(Identifier id, Resolution resolution) {
     }
 
     /**
@@ -86,19 +86,18 @@ public final class CrusherProcessing {
             return List.of();
         }
         SingleRecipeInput recipeInput = new SingleRecipeInput(input.copyWithCount(1));
-        var manager = level.getRecipeManager();
         List<Option> options = new ArrayList<>();
-        Optional<RecipeHolder<CrushingRecipe>> crushing = manager.getRecipeFor(DfmRecipes.CRUSHING.get(), recipeInput, level);
-        Optional<RecipeHolder<OreCrushingRecipe>> ore = manager.getRecipeFor(DfmRecipes.ORE_CRUSHING.get(), recipeInput, level);
+        Optional<RecipeHolder<CrushingRecipe>> crushing = dimensionalfluxminer.recipe.Recipes.first(level, DfmRecipes.CRUSHING.get(), recipeInput);
+        Optional<RecipeHolder<OreCrushingRecipe>> ore = dimensionalfluxminer.recipe.Recipes.first(level, DfmRecipes.ORE_CRUSHING.get(), recipeInput);
         if (crushing.isEmpty() && (ore.isEmpty() || ore.get().value().product().isEmpty())) {
             return List.of();
         }
-        crushing.ifPresent(h -> addOption(options, h.id(), new Resolution(h.value().result().copy(), false)));
-        for (RecipeHolder<CrushingRecipe> h : manager.getRecipesFor(DfmRecipes.CRUSHING.get(), recipeInput, level)) {
-            addOption(options, h.id(), new Resolution(h.value().result().copy(), false));
+        crushing.ifPresent(h -> addOption(options, h.id().identifier(), new Resolution(h.value().result().copy(), false)));
+        for (RecipeHolder<CrushingRecipe> h : dimensionalfluxminer.recipe.Recipes.matching(level, DfmRecipes.CRUSHING.get(), recipeInput)) {
+            addOption(options, h.id().identifier(), new Resolution(h.value().result().copy(), false));
         }
         ore.ifPresent(h -> addOre(options, h, efficiencyUpgrade));
-        for (RecipeHolder<OreCrushingRecipe> h : manager.getRecipesFor(DfmRecipes.ORE_CRUSHING.get(), recipeInput, level)) {
+        for (RecipeHolder<OreCrushingRecipe> h : dimensionalfluxminer.recipe.Recipes.matching(level, DfmRecipes.ORE_CRUSHING.get(), recipeInput)) {
             addOre(options, h, efficiencyUpgrade);
         }
         return options;
@@ -107,11 +106,11 @@ public final class CrusherProcessing {
     private static void addOre(List<Option> options, RecipeHolder<OreCrushingRecipe> holder, boolean efficiencyUpgrade) {
         ItemStack product = holder.value().product();
         if (!product.isEmpty()) {
-            addOption(options, holder.id(), new Resolution(product.copyWithCount(holder.value().yield(efficiencyUpgrade)), true));
+            addOption(options, holder.id().identifier(), new Resolution(product.copyWithCount(holder.value().yield(efficiencyUpgrade)), true));
         }
     }
 
-    private static void addOption(List<Option> options, ResourceLocation id, Resolution resolution) {
+    private static void addOption(List<Option> options, Identifier id, Resolution resolution) {
         for (Option known : options) {
             if (known.id().equals(id) || ItemStack.matches(known.resolution().result(), resolution.result())) {
                 return;
@@ -125,12 +124,11 @@ public final class CrusherProcessing {
             return Optional.empty();
         }
         SingleRecipeInput recipeInput = new SingleRecipeInput(input.copyWithCount(1));
-        var manager = level.getRecipeManager();
-        Optional<CrushingRecipe> crushing = manager.getRecipeFor(DfmRecipes.CRUSHING.get(), recipeInput, level).map(h -> h.value());
+        Optional<CrushingRecipe> crushing = dimensionalfluxminer.recipe.Recipes.first(level, DfmRecipes.CRUSHING.get(), recipeInput).map(h -> h.value());
         if (crushing.isPresent()) {
             return Optional.of(new Resolution(crushing.get().result().copy(), false));
         }
-        Optional<OreCrushingRecipe> ore = manager.getRecipeFor(DfmRecipes.ORE_CRUSHING.get(), recipeInput, level).map(h -> h.value());
+        Optional<OreCrushingRecipe> ore = dimensionalfluxminer.recipe.Recipes.first(level, DfmRecipes.ORE_CRUSHING.get(), recipeInput).map(h -> h.value());
         if (ore.isPresent()) {
             ItemStack product = ore.get().product();
             if (!product.isEmpty()) {
@@ -150,7 +148,7 @@ public final class CrusherProcessing {
 
     /** {@code c:ores/<material>} membership resolved to the Raw item, else the gem, of the same material. */
     static Optional<Item> oreFamilyProduct(ItemStack input) {
-        return input.getTags()
+        return input.typeHolder().tags()
                 .filter(tag -> tag.location().getNamespace().equals("c") && tag.location().getPath().startsWith("ores/"))
                 .map(tag -> tag.location().getPath().substring("ores/".length()))
                 .map(material -> {
@@ -163,10 +161,10 @@ public final class CrusherProcessing {
 
     /** Ingot, raw material or gem of a material that has a dust: one dust per item. */
     static Optional<Item> materialDust(ItemStack input) {
-        if (input.getTags().anyMatch(tag -> tag.location().getNamespace().equals("c") && tag.location().getPath().startsWith("dusts"))) {
+        if (input.typeHolder().tags().anyMatch(tag -> tag.location().getNamespace().equals("c") && tag.location().getPath().startsWith("dusts"))) {
             return Optional.empty();
         }
-        return input.getTags()
+        return input.typeHolder().tags()
                 .filter(tag -> tag.location().getNamespace().equals("c"))
                 .map(tag -> tag.location().getPath())
                 .flatMap(path -> DUST_SOURCES.stream().filter(path::startsWith).map(prefix -> path.substring(prefix.length())))
@@ -184,21 +182,20 @@ public final class CrusherProcessing {
     /** Everything the Crusher can process right now, grouped by result, for recipe viewers. */
     public static List<Display> displays(Level level) {
         Set<Item> candidates = new LinkedHashSet<>();
-        var manager = level.getRecipeManager();
-        for (RecipeHolder<CrushingRecipe> holder : manager.getAllRecipesFor(DfmRecipes.CRUSHING.get())) {
-            for (ItemStack option : holder.value().ingredient().getItems()) {
+        for (RecipeHolder<CrushingRecipe> holder : dimensionalfluxminer.recipe.Recipes.byType(level, DfmRecipes.CRUSHING.get())) {
+            for (ItemStack option : dimensionalfluxminer.recipe.Recipes.stacks(holder.value().ingredient())) {
                 candidates.add(option.getItem());
             }
         }
-        for (RecipeHolder<OreCrushingRecipe> holder : manager.getAllRecipesFor(DfmRecipes.ORE_CRUSHING.get())) {
-            for (ItemStack option : holder.value().ingredient().getItems()) {
+        for (RecipeHolder<OreCrushingRecipe> holder : dimensionalfluxminer.recipe.Recipes.byType(level, DfmRecipes.ORE_CRUSHING.get())) {
+            for (ItemStack option : dimensionalfluxminer.recipe.Recipes.stacks(holder.value().ingredient())) {
                 candidates.add(option.getItem());
             }
         }
         BuiltInRegistries.ITEM.getTags().forEach(pair -> {
-            var id = pair.getFirst().location();
+            var id = pair.key().location();
             if (id.getNamespace().equals("c") && (id.getPath().startsWith("ores/") || DUST_SOURCES.stream().anyMatch(id.getPath()::startsWith))) {
-                pair.getSecond().stream().map(Holder::value).forEach(candidates::add);
+                pair.stream().map(Holder::value).forEach(candidates::add);
             }
         });
         Map<String, Display> grouped = new LinkedHashMap<>();

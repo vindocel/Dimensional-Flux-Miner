@@ -7,15 +7,9 @@
     "SRS"
   ],
   "key": {
-    "S": {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    "R": {
-      "item": "dimensionalfluxminer:reinforced_structural_glass"
-    },
-    "E": {
-      "item": "dimensionalfluxminer:ender_eye_reinforced"
-    }
+    "S": "dimensionalfluxminer:ingot_steel",
+    "R": "dimensionalfluxminer:reinforced_structural_glass",
+    "E": "dimensionalfluxminer:ender_eye_reinforced"
   },
   "result": {
     "id": "dimensionalfluxminer:steel_chassis",

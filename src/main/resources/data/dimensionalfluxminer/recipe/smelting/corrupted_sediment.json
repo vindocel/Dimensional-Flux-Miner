@@ -1,9 +1,7 @@
 {
   "type": "minecraft:smelting",
   "category": "blocks",
-  "ingredient": {
-    "item": "dimensionalfluxminer:corrupted_sediment"
-  },
+  "ingredient": "dimensionalfluxminer:corrupted_sediment",
   "result": {
     "id": "minecraft:glass"
   },

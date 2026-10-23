@@ -1,10 +1,10 @@
 package dimensionalfluxminer.machine;
 
+import dimensionalfluxminer.machine.transfer.EnergyStore;
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /** Input-only NeoForge energy view of a {@link DynamicEnergyBuffer}; DFM machines never output FE. */
-public final class MachineEnergyStorage implements IEnergyStorage {
+public final class MachineEnergyStorage implements EnergyStore {
     private final DynamicEnergyBuffer buffer;
     private final Runnable onChange;
 

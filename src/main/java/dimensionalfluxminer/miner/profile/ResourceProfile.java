@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -102,7 +102,7 @@ public final class ResourceProfile {
         return index < 0 ? Optional.empty() : Optional.of(families.get(index));
     }
 
-    public Optional<ResourceFamily> family(ResourceLocation key) {
+    public Optional<ResourceFamily> family(Identifier key) {
         return families.stream().filter(f -> f.key().equals(key)).findFirst();
     }
 
@@ -123,6 +123,6 @@ public final class ResourceProfile {
 
     @Override
     public String toString() {
-        return "ResourceProfile[" + dimension.location() + ", " + families.size() + " families, void " + emptyWeight + "]";
+        return "ResourceProfile[" + dimension.identifier() + ", " + families.size() + " families, void " + emptyWeight + "]";
     }
 }

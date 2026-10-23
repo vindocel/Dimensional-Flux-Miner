@@ -1,8 +1,7 @@
 {
   "ambientocclusion": false,
-  "render_type": "minecraft:translucent",
   "textures": {
-    "t0": "dimensionalfluxminer:block/dimensional_tank/structural_glass",
+    "t0": {"sprite": "dimensionalfluxminer:block/dimensional_tank/structural_glass", "force_translucent": true},
     "particle": "dimensionalfluxminer:block/dimensional_tank/armor_plate"
   },
   "elements": [

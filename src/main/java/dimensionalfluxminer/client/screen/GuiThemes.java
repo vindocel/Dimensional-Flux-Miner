@@ -139,7 +139,7 @@ public final class GuiThemes {
         } else {
             world = "unknown";
         }
-        String dimension = mc.level != null ? mc.level.dimension().location().toString() : "unknown";
+        String dimension = mc.level != null ? mc.level.dimension().identifier().toString() : "unknown";
         return world + "|" + dimension + "|" + pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 

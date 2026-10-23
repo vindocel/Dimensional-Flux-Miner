@@ -1,8 +1,6 @@
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": {
-    "item": "minecraft:nether_quartz_ore"
-  },
+  "ingredient": "minecraft:nether_quartz_ore",
   "result": {
     "id": "minecraft:quartz"
   },

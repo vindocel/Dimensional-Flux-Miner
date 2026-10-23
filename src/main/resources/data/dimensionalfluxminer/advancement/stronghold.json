@@ -11,7 +11,7 @@
   },
   "criteria": {
     "followed_the_eye": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "reinforced_eye_used" } },
-    "inside_stronghold": { "trigger": "minecraft:location", "conditions": { "player": { "location": { "structures": "minecraft:stronghold" } } } }
+    "inside_stronghold": { "trigger": "minecraft:location", "conditions": { "player": { "type": "minecraft:entity_properties", "entity": "this", "predicate": { "minecraft:location": { "structures": "minecraft:stronghold" } } } } }
   },
   "requirements": [ [ "followed_the_eye" ], [ "inside_stronghold" ] ]
 }

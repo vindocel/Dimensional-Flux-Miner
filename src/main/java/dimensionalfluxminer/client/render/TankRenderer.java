@@ -8,19 +8,24 @@ import dimensionalfluxminer.tank.DimensionalTankBlockEntity;
 import dimensionalfluxminer.tank.TankCode;
 import dimensionalfluxminer.tank.TankKind;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.FluidModel;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Dynamic parts of the Dimensional Tanks, drawn behind the cut-outs of the static model: the liquid volume of each
@@ -28,8 +33,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * liquid of A and of B. Coordinates are those of the final models (0..16, native front north), rotated with the
  * facing around the block center.
  */
-public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEntity> {
-    private static final ResourceLocation SOLID = DimensionalFluxMiner.id("block/dimensional_tank/solid_white");
+public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEntity, TankRenderer.State> {
+    private static final Identifier SOLID = DimensionalFluxMiner.id("block/dimensional_tank/solid_white");
     /** Lid stripe of an empty chamber. */
     private static final int EMPTY_STRIPE = 0xFF7A7A7A;
 
@@ -90,75 +95,104 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
     public TankRenderer(BlockEntityRendererProvider.Context context) {
     }
 
+    /** What a frame needs of the tank, read on the client thread before drawing. */
+    public static class State extends BlockEntityRenderState {
+        TankKind kind = TankKind.SINGLE;
+        Direction facing = Direction.NORTH;
+        FluidStack[] chambers = new FluidStack[0];
+        TankCode code = TankCode.DEFAULT;
+    }
+
     @Override
-    public void render(DimensionalTankBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
-        Layout layout = be.kind() == TankKind.DUAL ? DUAL : SINGLE;
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(DimensionalTankBlockEntity be, State state, float partialTicks, Vec3 cameraPosition,
+                                   ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(be, state, partialTicks, cameraPosition, breakProgress);
+        state.kind = be.kind();
+        state.facing = be.facing();
+        state.chambers = new FluidStack[be.kind().chambers()];
+        for (int i = 0; i < state.chambers.length; i++) {
+            state.chambers[i] = be.chamber(i).copy();
+        }
+        state.code = be.code();
+    }
+
+    @Override
+    public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
+        Layout layout = state.kind == TankKind.DUAL ? DUAL : SINGLE;
+        int light = state.lightCoords;
         pose.pushPose();
         pose.translate(0.5F, 0, 0.5F);
-        pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(be.facing())));
+        pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
         pose.translate(-0.5F, 0, -0.5F);
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
+        collector.submitCustomGeometry(pose, RenderTypes.translucentMovingBlock(), (last, translucent) -> draw(state, layout, light, last, translucent));
+        pose.popPose();
+    }
 
-        VertexConsumer translucent = buffers.getBuffer(Sheets.translucentCullBlockSheet());
+    private static void draw(State state, Layout layout, int light, PoseStack.Pose last, VertexConsumer translucent) {
         TextureAtlasSprite solid = sprite(SOLID);
         for (int i = 0; i < layout.chambers().length; i++) {
-            FluidStack stack = be.chamber(i);
+            FluidStack stack = i < state.chambers.length ? state.chambers[i] : FluidStack.EMPTY;
             Chamber chamber = layout.chambers()[i];
             if (stack.isEmpty()) {
                 if (i < layout.stripes().length) {
-                    stripe(pose, translucent, layout.stripes()[i], solid, EMPTY_STRIPE, light);
+                    stripe(last, translucent, layout.stripes()[i], solid, EMPTY_STRIPE, light);
                 }
                 continue;
             }
             float fraction = Mth.clamp(stack.getAmount() / (float) TankKind.CHAMBER_CAPACITY, 0, 1);
-            IClientFluidTypeExtensions fluid = IClientFluidTypeExtensions.of(stack.getFluid());
-            TextureAtlasSprite still = sprite(fluid.getStillTexture(stack));
-            int color = fluid.getTintColor(stack);
+            FluidModel fluid = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(stack.getFluid().defaultFluidState());
+            TextureAtlasSprite still = fluid.stillMaterial().sprite();
+            int color = fluid.fluidTintSource() != null ? fluid.fluidTintSource().colorAsStack(stack) : 0xFFFFFFFF;
             int fluidLight = fluidLight(stack, light);
             float[] v = chamber.volume();
             float top = v[1] + fraction * (v[4] - v[1]);
             if (top > v[1]) {
-                box(pose, translucent, v[0], v[1], v[2], v[3], top, v[5], still, color, fluidLight);
+                box(last, translucent, v[0], v[1], v[2], v[3], top, v[5], still, color, fluidLight);
             }
             // Gauge and lid stripe: the liquid's own color as a flat fill (average of its texture times its tint).
             int flat = FluidColors.color(still, color);
             float[] g = chamber.gauge();
             float gaugeTop = g[1] + fraction * (g[3] - g[1]);
             if (gaugeTop > g[1]) {
-                face(pose, translucent, Direction.NORTH, g[0], g[1], g[4], g[2], gaugeTop, g[4], solid, flat, fluidLight);
+                face(last, translucent, Direction.NORTH, g[0], g[1], g[4], g[2], gaugeTop, g[4], solid, flat, fluidLight);
             }
             if (i < layout.stripes().length) {
-                stripe(pose, translucent, layout.stripes()[i], solid, flat, fluidLight);
+                stripe(last, translucent, layout.stripes()[i], solid, flat, fluidLight);
             }
         }
 
         // The dimensional address, left to right as seen from the front; it stays visible with empty chambers.
-        TankCode code = be.code();
+        TankCode code = state.code;
         for (int p = 0; p < TankCode.POSITIONS; p++) {
             float[] f = layout.code()[p];
             int color = 0xFF000000 | code.get(p).getTextureDiffuseColor();
-            face(pose, translucent, Direction.NORTH, f[0], f[1], f[4], f[2], f[3], f[4], solid, color, light);
+            face(last, translucent, Direction.NORTH, f[0], f[1], f[4], f[2], f[3], f[4], solid, color, light);
             float[] l = layout.lidCode()[p];
-            face(pose, translucent, Direction.UP, l[0], LID_CODE_Y, l[1], l[2], LID_CODE_Y, l[3], solid, color, light);
+            face(last, translucent, Direction.UP, l[0], LID_CODE_Y, l[1], l[2], LID_CODE_Y, l[3], solid, color, light);
         }
-        pose.popPose();
     }
 
-    private static void stripe(PoseStack pose, VertexConsumer consumer, float[] s, TextureAtlasSprite sprite, int color, int light) {
+    private static void stripe(PoseStack.Pose pose, VertexConsumer consumer, float[] s, TextureAtlasSprite sprite, int color, int light) {
         face(pose, consumer, Direction.UP, s[0], STRIPE_Y, s[1], s[2], STRIPE_Y, s[3], sprite, color, light);
     }
 
-    private static TextureAtlasSprite sprite(ResourceLocation id) {
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(id);
+    private static TextureAtlasSprite sprite(Identifier id) {
+        return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).getSprite(id);
     }
 
     /** Liquids that glow (lava) light themselves. */
     private static int fluidLight(FluidStack stack, int light) {
         int own = stack.getFluid().getFluidType().getLightLevel(stack);
-        return own <= 0 ? light : LightTexture.pack(Math.max(LightTexture.block(light), own), LightTexture.sky(light));
+        return own <= 0 ? light : LightCoordsUtil.pack(Math.max(LightCoordsUtil.block(light), own), LightCoordsUtil.sky(light));
     }
 
-    private static void box(PoseStack pose, VertexConsumer consumer, float x0, float y0, float z0, float x1, float y1, float z1,
+    private static void box(PoseStack.Pose pose, VertexConsumer consumer, float x0, float y0, float z0, float x1, float y1, float z1,
                             TextureAtlasSprite sprite, int color, int light) {
         for (Direction direction : Direction.values()) {
             face(pose, consumer, direction, x0, y0, z0, x1, y1, z1, sprite, color, light);
@@ -169,7 +203,7 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
      * One face of the box (model units) facing {@code direction}, counter-clockwise seen from outside. The sprite is
      * laid at one model unit per texel, so it repeats its own pixels instead of stretching them.
      */
-    private static void face(PoseStack pose, VertexConsumer consumer, Direction direction, float x0, float y0, float z0, float x1, float y1,
+    private static void face(PoseStack.Pose last, VertexConsumer consumer, Direction direction, float x0, float y0, float z0, float x1, float y1,
                              float z1, TextureAtlasSprite sprite, int color, int light) {
         float[][] corners = switch (direction) {
             case DOWN -> new float[][] {{x0, y0, z1}, {x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}};
@@ -179,7 +213,6 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
             case WEST -> new float[][] {{x0, y1, z0}, {x0, y0, z0}, {x0, y0, z1}, {x0, y1, z1}};
             case EAST -> new float[][] {{x1, y1, z1}, {x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}};
         };
-        PoseStack.Pose last = pose.last();
         for (float[] c : corners) {
             float u;
             float v;

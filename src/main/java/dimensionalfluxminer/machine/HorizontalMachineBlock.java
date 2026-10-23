@@ -3,7 +3,9 @@ package dimensionalfluxminer.machine;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
 import dimensionalfluxminer.content.Waterlogging;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.core.BlockPos;
@@ -55,10 +57,10 @@ public abstract class HorizontalMachineBlock extends BaseEntityBlock implements 
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos,
-                                     BlockPos neighborPos) {
-        Waterlogging.tick(state, level, pos);
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
+                                     BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+        Waterlogging.tick(state, level, ticks, pos);
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
     @Override
@@ -82,26 +84,18 @@ public abstract class HorizontalMachineBlock extends BaseEntityBlock implements 
         if (type != blockEntityType()) {
             return null;
         }
-        return level.isClientSide
+        return level.isClientSide()
                 ? (BlockEntityTicker<T>) (BlockEntityTicker<AbstractMachineBlockEntity>) AbstractMachineBlockEntity::clientTick
                 : (BlockEntityTicker<T>) (BlockEntityTicker<AbstractMachineBlockEntity>) AbstractMachineBlockEntity::serverTick;
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof AbstractMachineBlockEntity machine) {
             serverPlayer.openMenu(machine, pos);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof AbstractMachineBlockEntity machine) {
-            machine.dropContents();
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
+        return InteractionResult.SUCCESS;
     }
 
     @Override

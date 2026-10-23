@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -33,8 +32,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * Performance benchmark of the hot paths (opt-in: runs only with the environment variable {@code DFM_BENCHMARK=1}, and
@@ -42,8 +39,6 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * thread, and the work really done (attempts, FE, DM, columns, items), so a faster build can be checked for doing exactly
  * the same work.
  */
-@GameTestHolder(DimensionalFluxMiner.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class BenchmarkGameTests {
     private static final long PLENTY = 1_000_000_000_000L;
 

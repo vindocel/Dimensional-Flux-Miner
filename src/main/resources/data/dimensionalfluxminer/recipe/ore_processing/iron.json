@@ -1,8 +1,6 @@
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": {
-    "tag": "c:ores/iron"
-  },
+  "ingredient": "#c:ores/iron",
   "result_tag": "c:raw_materials/iron",
   "base_count": 2,
   "efficiency_upgrade_count": 3

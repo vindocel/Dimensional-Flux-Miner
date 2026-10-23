@@ -7,15 +7,9 @@
     "SGS"
   ],
   "key": {
-    "S": {
-      "item": "dimensionalfluxminer:ingot_steel"
-    },
-    "G": {
-      "item": "minecraft:glass"
-    },
-    "B": {
-      "item": "minecraft:blaze_rod"
-    }
+    "S": "dimensionalfluxminer:ingot_steel",
+    "G": "minecraft:glass",
+    "B": "minecraft:blaze_rod"
   },
   "result": {
     "id": "dimensionalfluxminer:reinforced_structural_glass",

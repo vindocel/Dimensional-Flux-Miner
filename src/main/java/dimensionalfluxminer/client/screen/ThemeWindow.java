@@ -1,8 +1,9 @@
 package dimensionalfluxminer.client.screen;
 
+import net.minecraft.client.renderer.RenderPipelines;
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -50,7 +51,7 @@ final class ThemeWindow extends DfmScreen.Window {
     }
 
     @Override
-    protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         var pos = screen.machinePos();
         int rowWidth = 3 * CELL + 2 * CELL_GAP;
         int cellsX = x + (width - rowWidth) / 2;
@@ -97,12 +98,12 @@ final class ThemeWindow extends DfmScreen.Window {
         }
     }
 
-    private void label(GuiGraphics g, int x, int y, Component text) {
+    private void label(GuiGraphicsExtractor g, int x, int y, Component text) {
         screen.fitted(g, text, x + 6, y, width - 12, GuiTheme.subheading(), 1.0F, true);
     }
 
     /** Volume of this machine's sound: - [10 segments] + */
-    private void volume(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    private void volume(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         var pos = screen.machinePos();
         int volume = GuiThemes.volume(pos);
         Component level = volume == 0 ? Component.translatable("gui.dimensionalfluxminer.theme.volume.mute")
@@ -139,18 +140,18 @@ final class ThemeWindow extends DfmScreen.Window {
     }
 
     /** One choice, drawn like a filter family: a slot holding its color, checked when selected. */
-    private void cell(GuiGraphics g, int cx, int cy, int color, boolean selected, String nameKey, int mouseX, int mouseY, Runnable choose) {
+    private void cell(GuiGraphicsExtractor g, int cx, int cy, int color, boolean selected, String nameKey, int mouseX, int mouseY, Runnable choose) {
         screen.slot(g, selected ? DfmScreen.SlotKind.OUTPUT : DfmScreen.SlotKind.NORMAL, cx, cy);
         g.fill(cx + 1, cy + 1, cx + CELL - 1, cy + CELL - 1, color);
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 200);
+        g.pose().pushMatrix();
+        g.pose().translate(0, 0);
         if (selected) {
-            g.blitSprite(DfmScreen.CHECK, cx, cy, CELL, CELL);
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, DfmScreen.CHECK, cx, cy, CELL, CELL);
         }
         if (screen.hovered(cx + 1, cy + 1, 16, 16, mouseX, mouseY)) {
             g.fill(cx + 1, cy + 1, cx + CELL - 1, cy + CELL - 1, 0x80FFFFFF);
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
         Component name = Component.translatable(nameKey);
         screen.fitted(g, name, cx - CELL_GAP / 2, cy + CELL + 3, CELL + CELL_GAP, selected ? GuiTheme.heading() : GuiTheme.subheading(),
                 0.8F, true);

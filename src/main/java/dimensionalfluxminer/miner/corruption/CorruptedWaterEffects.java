@@ -1,5 +1,6 @@
 package dimensionalfluxminer.miner.corruption;
 
+import net.minecraft.world.entity.EntityTypes;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmTags;
@@ -57,14 +58,14 @@ public final class CorruptedWaterEffects {
             }
             return;
         }
-        if (living.getType().is(DfmTags.Entities.CORRUPTED_WATER_HEAL_BLACKLIST)
+        if (living.getType().builtInRegistryHolder().is(DfmTags.Entities.CORRUPTED_WATER_HEAL_BLACKLIST)
                 || living.getHealth() >= living.getMaxHealth()) {
             return;
         }
-        if (living.getType().is(DfmTags.Entities.CORRUPTED_WATER_HEART_HEAL)) {
+        if (living.getType().builtInRegistryHolder().is(DfmTags.Entities.CORRUPTED_WATER_HEART_HEAL)) {
             if (time % HEART_HEAL_INTERVAL == 0) {
                 living.heal(HEART_HEAL);
-                if (living.level() instanceof ServerLevel level && living.getType() == EntityType.WARDEN) {
+                if (living.level() instanceof ServerLevel level && living.getType() == EntityTypes.WARDEN) {
                     // Whoever watches a Warden being healed by the blight earns it a new best friend.
                     DfmAdvancements.awardNearby(level, living.position(), DfmAdvancements.NEARBY, DfmAdvancements.WARDEN_HEALED,
                             player -> player.hasLineOfSight(living));
@@ -76,6 +77,6 @@ public final class CorruptedWaterEffects {
     }
 
     private static DamageSource damageSource(LivingEntity living) {
-        return new DamageSource(living.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(DAMAGE_TYPE));
+        return new DamageSource(living.level().registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(DAMAGE_TYPE));
     }
 }

@@ -1,7 +1,6 @@
 {
   "parent": "minecraft:block/cross",
   "ambientocclusion": false,
-  "render_type": "minecraft:cutout",
   "textures": {
     "cross": "dimensionalfluxminer:block/corruption/corrupted_grass_plant",
     "particle": "dimensionalfluxminer:block/corruption/corrupted_grass_plant"

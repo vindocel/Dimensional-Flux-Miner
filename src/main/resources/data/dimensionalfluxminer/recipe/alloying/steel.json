@@ -2,21 +2,15 @@
   "type": "dimensionalfluxminer:alloying",
   "ingredients": [
     {
-      "ingredient": {
-        "tag": "c:dusts/iron"
-      },
+      "ingredient": "#c:dusts/iron",
       "count": 1
     },
     {
-      "ingredient": {
-        "tag": "c:dusts/coal"
-      },
+      "ingredient": "#c:dusts/coal",
       "count": 1
     },
     {
-      "ingredient": {
-        "item": "dimensionalfluxminer:grain_calcite"
-      },
+      "ingredient": "dimensionalfluxminer:grain_calcite",
       "count": 1
     }
   ],

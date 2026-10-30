@@ -7,7 +7,8 @@ import net.neoforged.fml.ModList;
 
 /**
  * Opens this mod's recipe categories in the installed recipe viewer (machine progress areas are clickable). The
- * viewer-specific bridges are only touched when that viewer is loaded. EMI has no 26.x build yet, so only JEI here.
+ * viewer-specific bridges are only touched when that viewer is loaded. EMI and REI have no 26.x build yet, so only JEI
+ * here (the 1.21.1 line picks EMI, then REI, then JEI).
  */
 public final class RecipeViewers {
     public static final Identifier CRUSHING = DimensionalFluxMiner.id("crushing");

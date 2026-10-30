@@ -47,6 +47,7 @@ public final class DimensionalFluxMiner {
         DfmMenus.MENUS.register(modBus);
         modBus.addListener(DfmDataMaps::register);
         modBus.addListener(DfmBlockEntities::registerCapabilities);
+        modBus.addListener(DfmCreativeTab::addToVanillaTabs);
         modBus.addListener(DfmNetwork::register);
         dimensionalfluxminer.gametest.DfmGameTests.register(modBus);
         dimensionalfluxminer.compat.Ae2Compat.register(modBus);

@@ -8,8 +8,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 
 /**
- * Icons of the machine screens, in the icon color the player picked: blue ({@code icon/<name>}) or purple
- * ({@code icon_purple/<name>}); each reads on both the light and the dark screens. Drawn at its own pixel size (read from
+ * Icons of the machine screens, in the icon color the player picked ({@link IconColor}: {@code icon/<name>},
+ * {@code icon_purple/<name>} or {@code icon_white/<name>}); each reads on both the light and the dark screens. Drawn at its own pixel size (read from
  * the GUI atlas).
  */
 enum GuiIcon {
@@ -27,27 +27,42 @@ enum GuiIcon {
     REDSTONE_OFF,
     REDSTONE_ON,
     REUSE,
-    SETTINGS,
+    /** Drawn 1 px lower: the drawing sits high in its image. */
+    SETTINGS(1),
     SIDE_CONFIG,
     SMELTING,
     SMELTING_ALLOY,
     SMELTING_ALLOY_FURNACE,
     SORTING,
     STATS,
-    UPGRADE;
+    /** Drawn 1 px lower: the drawing sits high in its image. */
+    UPGRADE(1);
 
-    private final Identifier blue = DimensionalFluxMiner.id("icon/" + name().toLowerCase(java.util.Locale.ROOT));
-    private final Identifier purple = DimensionalFluxMiner.id("icon_purple/" + name().toLowerCase(java.util.Locale.ROOT));
+    /** Pixels the icon is drawn below the center. */
+    private final int nudgeY;
+
+    GuiIcon() {
+        this(0);
+    }
+
+    GuiIcon(int nudgeY) {
+        this.nudgeY = nudgeY;
+    }
+
+    /** Sprite of each icon color, in {@link IconColor} order. */
+    private final Identifier[] sprites = java.util.Arrays.stream(IconColor.values())
+            .map(color -> DimensionalFluxMiner.id(color.folder() + "/" + name().toLowerCase(java.util.Locale.ROOT)))
+            .toArray(Identifier[]::new);
 
     /** Draws the icon centered in a {@code w} x {@code h} area at (x, y), shrunk only when it does not fit. */
     void drawCentered(GuiGraphicsExtractor g, int x, int y, int w, int h) {
-        Identifier sprite = GuiTheme.purple() ? purple : blue;
+        Identifier sprite = sprites[GuiTheme.icons().ordinal()];
         TextureAtlasSprite atlasSprite = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.GUI).getSprite(sprite);
         int width = atlasSprite.contents().width();
         int height = atlasSprite.contents().height();
         float scale = Math.min(1.0F, Math.min(w / (float) width, h / (float) height));
         g.pose().pushMatrix();
-        g.pose().translate(x + (w - width * scale) / 2.0F, y + (h - height * scale) / 2.0F);
+        g.pose().translate(x + (w - width * scale) / 2.0F, y + nudgeY + (h - height * scale) / 2.0F);
         g.pose().scale(scale, scale);
         g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 0, 0, width, height);
         g.pose().popMatrix();

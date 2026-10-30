@@ -30,12 +30,12 @@ enum MachineBarsComponent implements IBlockComponentProvider {
         }
         long energy = data.getLongOr(DfmJadePlugin.ENERGY, 0L);
         long capacity = Math.max(1, data.getLongOr(DfmJadePlugin.CAPACITY, 0L));
-        // The energy fill follows the icon color the player picked for this machine (blue or purple).
+        // The energy fill follows the icon color the player picked for this machine (blue, or purple with purple icons).
         net.minecraft.core.BlockPos machine = data.contains(DfmJadePlugin.MACHINE)
                 ? net.minecraft.core.BlockPos.of(data.getLongOr(DfmJadePlugin.MACHINE, 0L)) : accessor.getPosition();
         tooltip.add(MachineBarElement.energy(energy / (double) capacity,
                 Component.literal(DfmScreen.compact(energy) + " / " + DfmScreen.fe(capacity)),
-                dimensionalfluxminer.client.screen.GuiThemes.purple(machine)));
+                dimensionalfluxminer.client.screen.GuiThemes.icons(machine)));
         if (data.contains(DfmJadePlugin.XP)) {
             double xp = data.getDoubleOr(DfmJadePlugin.XP, 0.0);
             long millibuckets = Math.round(xp * MB_PER_XP);

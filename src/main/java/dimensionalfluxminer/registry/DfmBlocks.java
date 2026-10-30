@@ -49,6 +49,9 @@ public final class DfmBlocks {
             props -> new DimensionalTankBlock(TankKind.SINGLE, props), () -> machineCasing().noOcclusion());
     public static final DeferredBlock<DimensionalTankBlock> DIMENSIONAL_DUAL_TANK = BLOCKS.registerBlock("dimensional_dual_tank",
             props -> new DimensionalTankBlock(TankKind.DUAL, props), () -> machineCasing().noOcclusion());
+    /** Creative only (no recipe): one chamber of endless liquid, no channels. */
+    public static final DeferredBlock<DimensionalTankBlock> CREATIVE_DIMENSIONAL_TANK = BLOCKS.registerBlock("creative_dimensional_tank",
+            props -> new DimensionalTankBlock(TankKind.CREATIVE, props), () -> machineCasing().noOcclusion());
 
     // Materials
     public static final DeferredBlock<Block> SLAG_AGGREGATE = BLOCKS.registerSimpleBlock("slag_aggregate",

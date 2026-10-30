@@ -22,9 +22,10 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main.java {
-    // EMI and Polymorph have no 26.x build yet; their optional integrations come back when they do.
+    // EMI, REI and Polymorph have no 26.x build yet; their optional integrations come back when they do.
     exclude('dimensionalfluxminer/compat/emi/**')
     exclude('dimensionalfluxminer/compat/polymorph/**')
+    exclude('dimensionalfluxminer/compat/rei/**')
 }
 
 sourceSets.main.resources {
@@ -71,6 +72,11 @@ configurations {
 
 repositories {
     // Optional recipe viewer integrations (compile-only APIs; nothing is bundled).
+    maven {
+        name = 'Shedaniel'
+        url = 'https://maven.shedaniel.me/'
+        content { includeGroup 'me.shedaniel'; includeGroup 'dev.architectury'; includeGroup 'me.shedaniel.cloth' }
+    }
     maven {
         name = 'TerraformersMC'
         url = 'https://maven.terraformersmc.com/'

@@ -15,15 +15,14 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 ---
 
-## 🆕 New in 0.2.6
+## 🆕 New in 0.2.8
 
-- 🌙 **Light or dark screens**: a Settings tab on every machine picks the screen color, the icon color and the sound volume.
-- 🎨 **Redrawn screens**: new icons, a flat panel set into the frame and separate Auto-Input / Auto-Eject buttons.
-- 💡 **Glowing panels** on the Crusher and the Electric Furnace while they have energy.
-- 🔀 **Polymorph**: pick the result when an item has more than one recipe.
-- 🧪 **Cognition**: the Experience Obelisk takes Liquid Experience.
-- 🚫 Mobs no longer spawn on the machines and tanks.
-
+- 🛢️ **Creative Dimensional Tank**: endless liquid for building and testing, one per liquid in the creative tab.
+- 🪣 **Tank items carry their liquid**: use one on a tank to fill it, or switch on bucket mode to pour and pick up liquids.
+- 🧹 **Empty button** on the tanks' code window clears a channel.
+- ⚪ **White icons** by default, new buttons and glass read-outs on every screen.
+- 💧 **Liquid gauges** on the tank screens, and the liquid now fills the tanks up to the glass.
+- ⚡ **Applied Energistics 2**: the machines and the Miner's energy ports draw AE from an ME network they touch.
 ---
 
 ## ✨ Highlights
@@ -161,9 +160,9 @@ Forge your first **Pure Steel** and the guide is yours. The book opens in your h
 
 | | |
 |---|---|
-| Minecraft | 1.21.1 |
-| Loader | NeoForge 21.1.255+ |
-| Java | 21 |
+| Minecraft | 26.3 |
+| Loader | NeoForge 26.3.0.95+ |
+| Java | 25 |
 | Required mods | none |
 
 ---

@@ -114,7 +114,7 @@ public final class TankChannels extends SavedData {
         for (int i = 0; i < list.size(); i++) {
             CompoundTag entry = list.getCompoundOrEmpty(i);
             TankKind kind = TankKind.byId(entry.getStringOr("kind", ""));
-            if (kind == null) {
+            if (kind == null || kind.creative()) {
                 continue;
             }
             Channel channel = data.channel(kind, TankCode.load(entry.getCompoundOrEmpty("code")));

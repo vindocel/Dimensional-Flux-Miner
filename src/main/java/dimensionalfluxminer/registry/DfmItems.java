@@ -41,6 +41,9 @@ public final class DfmItems {
             props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_TANK.get(), props), () -> new Item.Properties().useBlockDescriptionPrefix());
     public static final DeferredItem<DimensionalTankItem> DIMENSIONAL_DUAL_TANK = ITEMS.registerItem("dimensional_dual_tank",
             props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), props), () -> new Item.Properties().useBlockDescriptionPrefix());
+    public static final DeferredItem<DimensionalTankItem> CREATIVE_DIMENSIONAL_TANK = ITEMS.registerItem("creative_dimensional_tank",
+            props -> new DimensionalTankItem(DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get(), props),
+            () -> new Item.Properties().useBlockDescriptionPrefix().rarity(net.minecraft.world.item.Rarity.EPIC));
 
     // Cores and upgrade
     public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", () -> new Item.Properties().rarity(Rarity.RARE));

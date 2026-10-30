@@ -21,9 +21,9 @@ import net.neoforged.fml.loading.FMLPaths;
 /**
  * The player's own settings of the machines, kept on this computer (never sent to the server, so every player has them
  * their way): {@code config/dimensionalfluxminer-themes.json}. The look of the screens, screen color (light / dark) and
- * icon color (blue / purple):
+ * icon color ({@link IconColor}: white by default, blue or purple):
  * <ul>
- *     <li>{@code applyToAll} (shared by every machine): every screen uses {@code allDark} and {@code allPurple};</li>
+ *     <li>{@code applyToAll} (shared by every machine): every screen uses {@code allDark} and {@code allIcons};</li>
  *     <li>otherwise each machine uses its own choices, and a machine never chosen uses the shared ones, so turning
  *     {@code applyToAll} off changes nothing on screen until a machine gets its own choice.</li>
  * </ul>
@@ -37,9 +37,9 @@ public final class GuiThemes {
     private static boolean loaded;
     private static boolean applyToAll = true;
     private static boolean allDark;
-    private static boolean allPurple;
+    private static IconColor allIcons = IconColor.WHITE;
     private static final Map<String, Boolean> MACHINES = new LinkedHashMap<>();
-    private static final Map<String, Boolean> ACCENTS = new LinkedHashMap<>();
+    private static final Map<String, IconColor> ACCENTS = new LinkedHashMap<>();
     private static final Map<String, Integer> VOLUMES = new LinkedHashMap<>();
 
     private GuiThemes() {
@@ -87,22 +87,22 @@ public final class GuiThemes {
         save();
     }
 
-    /** Icon color of the machine at {@code pos}: purple, otherwise the default blue. */
-    public static boolean purple(BlockPos pos) {
+    /** Icon color of the machine at {@code pos} (white by default). */
+    public static IconColor icons(BlockPos pos) {
         load();
         if (applyToAll) {
-            return allPurple;
+            return allIcons;
         }
-        return ACCENTS.getOrDefault(key(pos), allPurple);
+        return ACCENTS.getOrDefault(key(pos), allIcons);
     }
 
     /** Chooses the icon color for this machine, or for every machine while {@link #applyToAll} is on. */
-    static void chooseAccent(BlockPos pos, boolean purple) {
+    static void chooseAccent(BlockPos pos, IconColor color) {
         load();
         if (applyToAll) {
-            allPurple = purple;
+            allIcons = color;
         } else {
-            ACCENTS.put(key(pos), purple);
+            ACCENTS.put(key(pos), color);
         }
         save();
     }
@@ -115,14 +115,14 @@ public final class GuiThemes {
     static void setApplyToAll(BlockPos pos, boolean value) {
         load();
         boolean currentDark = dark(pos);
-        boolean currentPurple = purple(pos);
+        IconColor currentIcons = icons(pos);
         applyToAll = value;
         if (value) {
             allDark = currentDark;
-            allPurple = currentPurple;
+            allIcons = currentIcons;
         } else {
             MACHINES.put(key(pos), currentDark);
-            ACCENTS.put(key(pos), currentPurple);
+            ACCENTS.put(key(pos), currentIcons);
         }
         save();
     }
@@ -163,12 +163,17 @@ public final class GuiThemes {
             }
             applyToAll = !json.has("applyToAll") || json.get("applyToAll").getAsBoolean();
             allDark = json.has("allDark") && json.get("allDark").getAsBoolean();
-            allPurple = json.has("allPurple") && json.get("allPurple").getAsBoolean();
+            if (json.has("allIcons")) {
+                allIcons = IconColor.byId(json.get("allIcons").getAsString());
+            } else if (json.has("allPurple") && json.get("allPurple").getAsBoolean()) {
+                // Files from before the white icons kept only purple or not; not purple is the default (white) now.
+                allIcons = IconColor.PURPLE;
+            }
             if (json.has("machines")) {
                 json.getAsJsonObject("machines").entrySet().forEach(e -> MACHINES.put(e.getKey(), "dark".equals(e.getValue().getAsString())));
             }
             if (json.has("accents")) {
-                json.getAsJsonObject("accents").entrySet().forEach(e -> ACCENTS.put(e.getKey(), "purple".equals(e.getValue().getAsString())));
+                json.getAsJsonObject("accents").entrySet().forEach(e -> ACCENTS.put(e.getKey(), IconColor.byId(e.getValue().getAsString())));
             }
             if (json.has("volumes")) {
                 json.getAsJsonObject("volumes").entrySet().forEach(e -> VOLUMES.put(e.getKey(), Math.max(0, Math.min(100, e.getValue().getAsInt()))));
@@ -182,12 +187,12 @@ public final class GuiThemes {
         JsonObject json = new JsonObject();
         json.addProperty("applyToAll", applyToAll);
         json.addProperty("allDark", allDark);
-        json.addProperty("allPurple", allPurple);
+        json.addProperty("allIcons", allIcons.id());
         JsonObject machines = new JsonObject();
         MACHINES.forEach((key, dark) -> machines.addProperty(key, dark ? "dark" : "light"));
         json.add("machines", machines);
         JsonObject accents = new JsonObject();
-        ACCENTS.forEach((key, purple) -> accents.addProperty(key, purple ? "purple" : "blue"));
+        ACCENTS.forEach((key, color) -> accents.addProperty(key, color.id()));
         json.add("accents", accents);
         JsonObject volumes = new JsonObject();
         VOLUMES.forEach(volumes::addProperty);

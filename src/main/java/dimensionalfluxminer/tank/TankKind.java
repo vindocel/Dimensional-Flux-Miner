@@ -1,9 +1,13 @@
 package dimensionalfluxminer.tank;
 
-/** Dimensional Tank variants: one chamber or two independent chambers (A = index 0, B = index 1). */
+/**
+ * Dimensional Tank variants: one chamber or two independent chambers (A = index 0, B = index 1). The creative tank has
+ * one chamber of endless liquid, kept in the block itself: it has no channel.
+ */
 public enum TankKind {
     SINGLE("single", 1),
-    DUAL("dual", 2);
+    DUAL("dual", 2),
+    CREATIVE("creative", 1);
 
     /** Capacity of each chamber, in mB. */
     public static final int CHAMBER_CAPACITY = 128_000;
@@ -22,6 +26,15 @@ public enum TankKind {
 
     public int chambers() {
         return chambers;
+    }
+
+    public boolean creative() {
+        return this == CREATIVE;
+    }
+
+    /** Capacity of each chamber: the creative tank shows its liquid as always full. */
+    public int capacity() {
+        return creative() ? Integer.MAX_VALUE : CHAMBER_CAPACITY;
     }
 
     public static TankKind byId(String id) {

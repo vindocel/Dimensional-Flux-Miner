@@ -42,6 +42,9 @@ public class DfmEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
+        // Creative tanks holding different liquids are different entries.
+        registry.setDefaultComparison(EmiStack.of(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get()),
+                dev.emi.emi.api.stack.Comparison.compareComponents());
         // Machine items are drawn by the screen, not in vanilla slots: R / U work on them through this provider. It is
         // generic because EMI matches class providers on the exact screen class (each machine has its own subclass).
         // Not clickable: mouse clicks stay with the screen, which takes and places the items.
@@ -49,6 +52,14 @@ public class DfmEmiPlugin implements EmiPlugin {
                 ? machine.machineItemAt(x, y).map(item -> new EmiStackInteraction(EmiStack.of(item.stack()), null, false))
                         .orElse(EmiStackInteraction.EMPTY)
                 : EmiStackInteraction.EMPTY);
+        // The side tabs and the open windows (also while dragged) are kept free of EMI's lists.
+        registry.addGenericExclusionArea((screen, consumer) -> {
+            if (screen instanceof DfmScreen<?> machine) {
+                for (var area : machine.outsideAreas()) {
+                    consumer.accept(new dev.emi.emi.api.widget.Bounds(area.getX(), area.getY(), area.getWidth(), area.getHeight()));
+                }
+            }
+        });
         registry.addCategory(CRUSHING);
         registry.addCategory(SMELTING);
         registry.addCategory(ALLOYING);

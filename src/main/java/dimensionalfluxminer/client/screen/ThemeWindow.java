@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 /**
  * Settings window of a machine screen, only on this player's computer:
  * <ul>
- *     <li>the color of the screen, light or dark, and the color of the icons, blue or purple, each picked like a
+ *     <li>the color of the screen, light or dark, and the color of the icons, white (default), blue or purple, each picked like a
  *     family of the Miner's filter; the "reuse" switch beside them (one switch shared by every machine) applies both
  *     colors to all machines;</li>
  *     <li>the volume of this machine's sound, 0 to 100 % in steps of 10 (100 % until changed; 0 is mute), always this
@@ -53,16 +53,17 @@ final class ThemeWindow extends DfmScreen.Window {
     @Override
     protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         var pos = screen.machinePos();
-        int rowWidth = 3 * CELL + 2 * CELL_GAP;
+        int rowWidth = 4 * CELL + 3 * CELL_GAP;
         int cellsX = x + (width - rowWidth) / 2;
         int secondX = cellsX + CELL + CELL_GAP;
 
-        // Row titles centered over their two choices (the reuse switch sits in the third column, between the rows).
-        int pairX = cellsX - CELL_GAP / 2;
+        // Row titles centered over their choices (the reuse switch sits in the fourth column, between the rows).
+        int labelX = cellsX - CELL_GAP / 2;
         int pairWidth = 2 * CELL + 2 * CELL_GAP;
+        int tripleWidth = 3 * CELL + 3 * CELL_GAP;
 
         // Screen color: Light and Dark.
-        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.color"), pairX, y + COLOR_LABEL_Y, pairWidth,
+        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.color"), labelX, y + COLOR_LABEL_Y, pairWidth,
                 GuiTheme.subheading(), 1.0F, true);
         boolean dark = GuiThemes.dark(pos);
         cell(g, cellsX, y + COLOR_CELLS_Y, GuiTheme.LIGHT_PANEL, !dark, "gui.dimensionalfluxminer.theme.light", mouseX, mouseY,
@@ -70,18 +71,18 @@ final class ThemeWindow extends DfmScreen.Window {
         cell(g, secondX, y + COLOR_CELLS_Y, GuiTheme.DARK_PANEL, dark, "gui.dimensionalfluxminer.theme.dark", mouseX, mouseY,
                 () -> GuiThemes.choose(pos, true));
 
-        // Icon color: Blue and Purple.
-        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.icons"), pairX, y + ICON_LABEL_Y, pairWidth,
+        // Icon color: White, Blue and Purple.
+        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.icons"), labelX, y + ICON_LABEL_Y, tripleWidth,
                 GuiTheme.subheading(), 1.0F, true);
-        boolean purple = GuiThemes.purple(pos);
-        cell(g, cellsX, y + ICON_CELLS_Y, GuiTheme.BLUE_ICONS, !purple, "gui.dimensionalfluxminer.theme.blue", mouseX, mouseY,
-                () -> GuiThemes.chooseAccent(pos, false));
-        cell(g, secondX, y + ICON_CELLS_Y, GuiTheme.PURPLE_ICONS, purple, "gui.dimensionalfluxminer.theme.purple", mouseX, mouseY,
-                () -> GuiThemes.chooseAccent(pos, true));
+        IconColor icons = GuiThemes.icons(pos);
+        for (IconColor color : IconColor.values()) {
+            cell(g, cellsX + color.ordinal() * (CELL + CELL_GAP), y + ICON_CELLS_Y, color.preview(), color == icons,
+                    "gui.dimensionalfluxminer.theme." + color.id(), mouseX, mouseY, () -> GuiThemes.chooseAccent(pos, color));
+        }
 
         // The switch that applies both colors to every machine, between the two rows.
         boolean all = GuiThemes.applyToAll();
-        int reuseX = cellsX + 2 * (CELL + CELL_GAP);
+        int reuseX = cellsX + 3 * (CELL + CELL_GAP);
         int reuseY = y + (COLOR_CELLS_Y + ICON_CELLS_Y) / 2;
         screen.imageButton(g, reuseX, reuseY, CELL, GuiIcon.REUSE, true, all, mouseX, mouseY, () -> {
             GuiThemes.setApplyToAll(pos, !all);
@@ -121,7 +122,7 @@ final class ThemeWindow extends DfmScreen.Window {
                     GuiThemes.setVolume(pos, volume - 100 / STEPS);
                     return -1;
                 }, null, () -> help);
-        int lit = GuiTheme.purple() ? GuiTheme.PURPLE_ICONS : DfmScreen.SCREEN_TEXT;
+        int lit = GuiTheme.icons().volumeLit();
         for (int i = 0; i < STEPS; i++) {
             int sx = barX + i * (SEGMENT_W + SEGMENT_GAP);
             int step = (i + 1) * 100 / STEPS;

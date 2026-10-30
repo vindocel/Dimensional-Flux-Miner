@@ -1,6 +1,7 @@
 package dimensionalfluxminer.tank;
 
 import dimensionalfluxminer.machine.transfer.FluidTanks;
+import dimensionalfluxminer.machine.transfer.TagStacks;
 import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.access.ItemAccess;
@@ -50,6 +52,9 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * {@link TankChannels}, never here, so every tank with the same kind and code (in any dimension) sees and changes the
  * same content. No energy, no processing. Each face carries the liquid of one chamber (Side Configuration) and the
  * liquids have their own Auto Input and Auto Eject (default OFF); capabilities stay available with both OFF.
+ * <p>
+ * The creative tank has no channel and no code: it keeps one liquid in the block and gives it without end
+ * ({@link CreativeFluidHandler}).
  */
 public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.TagBlockEntity implements MenuProvider {
     /** {@code BUTTON_CODE_BASE + position * 16 + dye color id}: picks the color of one code position. */
@@ -61,6 +66,11 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
      * personal one turns public again and gives the item back.
      */
     public static final int BUTTON_PERSONAL = 3200;
+    /**
+     * {@code BUTTON_CLEAR + chamber}: empties that chamber. On a single or dual tank the liquid of the channel is
+     * deleted for every tank with the code; the creative tank forgets its liquid.
+     */
+    public static final int BUTTON_CLEAR = 3300;
     /** Client updates of the liquids at most every this many ticks. */
     private static final int SYNC_INTERVAL = 2;
 
@@ -77,21 +87,29 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     /** Client: the chambers last received from the server. */
     private FluidStack[] clientChambers;
     private final Map<Direction, FluidTanks> handlers = new EnumMap<>(Direction.class);
+    /** Creative tank: its endless liquid (amount = capacity), and a version bumped on every change. */
+    private FluidStack creativeFluid = FluidStack.EMPTY;
+    private int creativeVersion;
 
-    /** The chambers of the channel, put back if a transaction of another block that changed them is cancelled. */
+    /** The chambers of the channel (and the creative liquid), put back if a transaction of another block that changed them is cancelled. */
     private final Transfer.Journal<Object[]> journal = new Transfer.Journal<>(() -> {
         TankChannels.Channel c = channel();
         FluidStack[] copy = new FluidStack[c == null ? 0 : c.chambers()];
         for (int i = 0; i < copy.length; i++) {
             copy[i] = c.get(i).copy();
         }
-        return new Object[] {c, copy};
+        return new Object[] {c, copy, creativeFluid.copy()};
     }, snapshot -> {
         if (snapshot[0] instanceof TankChannels.Channel c) {
             FluidStack[] copy = (FluidStack[]) snapshot[1];
             for (int i = 0; i < copy.length; i++) {
                 c.set(i, copy[i]);
             }
+        }
+        FluidStack creative = (FluidStack) snapshot[2];
+        if (!FluidStack.matches(creative, creativeFluid)) {
+            creativeFluid = creative;
+            creativeVersion++;
         }
     });
 
@@ -148,9 +166,9 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         setChanged();
     }
 
-    /** Points the tank at another channel. The content of both channels stays where it is. */
+    /** Points the tank at another channel. The content of both channels stays where it is. The creative tank has no channel. */
     public void setCode(TankCode code) {
-        if (code.equals(this.code)) {
+        if (kind.creative() || code.equals(this.code)) {
             return;
         }
         boolean sameChannel = code.sameChannel(this.code);
@@ -169,7 +187,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
      * stack is not the personal item.
      */
     public boolean makePersonal(Player player, ItemStack source) {
-        if (code.personal() || !source.is(dimensionalfluxminer.DfmConfig.tankPersonalItem())) {
+        if (kind.creative() || code.personal() || !source.is(dimensionalfluxminer.DfmConfig.tankPersonalItem())) {
             return false;
         }
         setCode(code.withOwner(player));
@@ -201,9 +219,9 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         return true;
     }
 
-    /** Server: the channel of this tank (null on the client or outside a server). */
+    /** Server: the channel of this tank (null on the client, outside a server or for the creative tank). */
     public TankChannels.Channel channel() {
-        if (channel == null && level != null && !level.isClientSide() && level.getServer() != null) {
+        if (channel == null && !kind.creative() && level != null && !level.isClientSide() && level.getServer() != null) {
             channel = TankChannels.get(level.getServer()).channel(kind, code);
         }
         return channel;
@@ -214,13 +232,45 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         if (level != null && level.isClientSide()) {
             return index < clientChambers.length ? clientChambers[index] : FluidStack.EMPTY;
         }
+        if (kind.creative()) {
+            return index == 0 ? creativeFluid : FluidStack.EMPTY;
+        }
         TankChannels.Channel c = channel();
         return c == null ? FluidStack.EMPTY : c.get(index);
     }
 
     /** Full access to one chamber (both directions), as used by buckets and the screen. */
     public FluidTanks chamberHandler(int index) {
-        return new ChamberFluidHandler(this::channel, index, true, true);
+        return kind.creative() ? CreativeFluidHandler.forPlayer(this) : new ChamberFluidHandler(this::channel, index, true, true);
+    }
+
+    /** Creative tank: makes {@code fluid} its endless liquid (empty forgets it). */
+    public void setCreativeFluid(FluidStack fluid) {
+        if (!kind.creative()) {
+            return;
+        }
+        FluidStack next = fluid.isEmpty() ? FluidStack.EMPTY : fluid.copyWithAmount(kind.capacity());
+        if (FluidStack.matches(next, creativeFluid)) {
+            return;
+        }
+        creativeFluid = next;
+        creativeVersion++;
+        setChanged();
+    }
+
+    /** Version of the content: the channel's, or the creative tank's own; -1 when unknown. */
+    private int contentVersion() {
+        if (kind.creative()) {
+            return creativeVersion;
+        }
+        TankChannels.Channel c = channel();
+        return c == null ? -1 : c.version();
+    }
+
+    /** Handler of a face or of the automation: on the creative tank, liquid from outside is voided while it is empty. */
+    private FluidTanks handler(int chamber, java.util.function.BooleanSupplier fills, boolean drains) {
+        return kind.creative() ? new CreativeFluidHandler(() -> chamber(0), null, fills, drains)
+                : new ChamberFluidHandler(this::channel, chamber, fills, drains);
     }
 
     public SideRoute route(RelativeFace face) {
@@ -270,10 +320,10 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         if (be.autoInputFluid || be.autoEjectFluid) {
             be.automation();
         }
-        TankChannels.Channel c = be.channel();
+        int version = be.contentVersion();
         long now = level.getGameTime();
-        if (c != null && c.version() != be.syncedVersion && now - be.lastSync >= SYNC_INTERVAL) {
-            be.syncedVersion = c.version();
+        if (version >= 0 && version != be.syncedVersion && now - be.lastSync >= SYNC_INTERVAL) {
+            be.syncedVersion = version;
             be.lastSync = now;
             be.syncToClients();
             be.updateLight();
@@ -302,7 +352,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
             if (neighbor == null) {
                 continue;
             }
-            FluidTanks own = new ChamberFluidHandler(this::channel, chamber, true, true);
+            FluidTanks own = handler(chamber, () -> true, true);
             if (in) {
                 FluidTanks.move(own, neighbor, Integer.MAX_VALUE);
             }
@@ -330,8 +380,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         }
         boolean fills = route.fillsFluid();
         boolean drains = route.drainsFluid();
-        return handlers.computeIfAbsent(side, s -> new ChamberFluidHandler(this::channel, route.fluidChamber(),
-                () -> fills && !(drains && autoEjectFluid), drains));
+        return handlers.computeIfAbsent(side, s -> handler(route.fluidChamber(), () -> fills && !(drains && autoEjectFluid), drains));
     }
 
     private void onSidesChanged() {
@@ -357,7 +406,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
         @Override
         public int getTankCapacity(int tank) {
-            return TankKind.CHAMBER_CAPACITY;
+            return kind.capacity();
         }
 
         @Override
@@ -395,6 +444,22 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
     /** Applies a validated GUI button press on the server. */
     public boolean handleButton(Player player, int id) {
+        if (kind.creative() && (id == BUTTON_PERSONAL || id >= BUTTON_CODE_BASE && id < BUTTON_CODE_BASE + TankCode.POSITIONS * 16)) {
+            // No channels on the creative tank.
+            return false;
+        }
+        if (id >= BUTTON_CLEAR && id < BUTTON_CLEAR + kind.chambers()) {
+            int chamber = id - BUTTON_CLEAR;
+            if (chamber(chamber).isEmpty()) {
+                return false;
+            }
+            if (kind.creative()) {
+                setCreativeFluid(FluidStack.EMPTY);
+            } else {
+                channel().set(chamber, FluidStack.EMPTY);
+            }
+            return true;
+        }
         if (id >= BUTTON_CODE_BASE && id < BUTTON_CODE_BASE + TankCode.POSITIONS * 16) {
             int position = (id - BUTTON_CODE_BASE) / 16;
             DyeColor color = DyeColor.byId((id - BUTTON_CODE_BASE) % 16);
@@ -502,7 +567,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         tag.putString("kind", kind.id());
         tag.put("code", code.save());
         tag.put("chambers", writeChambers(registries));
-        tag.putInt("capacity", TankKind.CHAMBER_CAPACITY);
+        tag.putInt("capacity", kind.capacity());
         tag.putBoolean("auto_input_fluid", autoInputFluid);
         tag.putBoolean("auto_eject_fluid", autoEjectFluid);
         tag.put("sides", sides.save());
@@ -533,6 +598,9 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         tag.put("sides", sides.save());
         tag.putBoolean("auto_input_fluid", autoInputFluid);
         tag.putBoolean("auto_eject_fluid", autoEjectFluid);
+        if (!creativeFluid.isEmpty()) {
+            tag.put("creative_fluid", TagStacks.save(registries, creativeFluid));
+        }
     }
 
     @Override
@@ -542,6 +610,14 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         sides.load(tag.getCompoundOrEmpty("sides"));
         autoInputFluid = tag.getBooleanOr("auto_input_fluid", false);
         autoEjectFluid = tag.getBooleanOr("auto_eject_fluid", false);
+        creativeFluid = FluidStack.EMPTY;
+        if (kind.creative()) {
+            creativeFluid = tag.getCompound("creative_fluid").map(t -> TagStacks.parseFluid(registries, t)).orElse(FluidStack.EMPTY);
+            if (!creativeFluid.isEmpty()) {
+                creativeFluid = creativeFluid.copyWithAmount(kind.capacity());
+            }
+        }
+        creativeVersion++;
         channel = null;
         handlers.clear();
     }
@@ -549,6 +625,13 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     protected void applyImplicitComponents(net.minecraft.core.component.DataComponentGetter input) {
         super.applyImplicitComponents(input);
+        if (kind.creative()) {
+            SimpleFluidContent fluid = input.get(DfmDataComponents.CREATIVE_TANK_FLUID.get());
+            if (fluid != null) {
+                setCreativeFluid(fluid.copy());
+            }
+            return;
+        }
         TankCode stored = input.get(DfmDataComponents.TANK_CODE.get());
         if (stored != null) {
             code = stored;
@@ -559,6 +642,12 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
+        if (kind.creative()) {
+            if (!creativeFluid.isEmpty()) {
+                components.set(DfmDataComponents.CREATIVE_TANK_FLUID.get(), SimpleFluidContent.copyOf(creativeFluid.copyWithAmount(1)));
+            }
+            return;
+        }
         // Anarchy mode: a broken personal tank comes back public (the block drops the personal item apart).
         components.set(DfmDataComponents.TANK_CODE.get(), dimensionalfluxminer.DfmConfig.tankAnarchyMode() ? code.withoutOwner() : code);
     }
@@ -566,6 +655,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     public void removeComponentsFromTag(net.minecraft.world.level.storage.ValueOutput output) {
         output.discard("code");
+        output.discard("creative_fluid");
     }
 
     // ---------------------------------------------------------------- client sync

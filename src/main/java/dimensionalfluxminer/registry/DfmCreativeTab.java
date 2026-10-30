@@ -31,6 +31,8 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.ELECTRIC_FURNACE.get());
                 output.accept(DfmItems.DIMENSIONAL_TANK.get());
                 output.accept(DfmItems.DIMENSIONAL_DUAL_TANK.get());
+                output.accept(DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
+                output.acceptAll(dimensionalfluxminer.tank.CreativeTanks.filledForEveryFluid(params.holders()));
                 output.accept(DfmItems.ENDER_EYE_REINFORCED.get());
                 output.accept(DfmItems.INGOT_STEEL.get());
                 output.accept(DfmItems.GRAIN_CALCITE.get());
@@ -48,6 +50,24 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.CORRUPTED_WATER_BUCKET.get());
             })
             .build());
+
+    /**
+     * The creative tanks also go into Tools and Utilities, right after the milk bucket: the search tab lists the vanilla
+     * tabs first, so searching a liquid shows them just after its bucket.
+     */
+    public static void addToVanillaTabs(net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() != net.minecraft.world.item.CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            return;
+        }
+        java.util.List<ItemStack> tanks = new java.util.ArrayList<>();
+        tanks.add(new ItemStack(DfmItems.CREATIVE_DIMENSIONAL_TANK.get()));
+        tanks.addAll(dimensionalfluxminer.tank.CreativeTanks.filledForEveryFluid(event.getParameters().holders()));
+        ItemStack previous = new ItemStack(net.minecraft.world.item.Items.MILK_BUCKET);
+        for (ItemStack tank : tanks) {
+            event.insertAfter(previous, tank, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            previous = tank;
+        }
+    }
 
     /**
      * Tab icon: the Electric Furnace shown processing (lit). Custom model data 1 selects the active model in the item

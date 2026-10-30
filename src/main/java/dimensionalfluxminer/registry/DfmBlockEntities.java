@@ -32,11 +32,14 @@ public final class DfmBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DimensionalTankBlockEntity>> DIMENSIONAL_TANK =
             BLOCK_ENTITIES.register("dimensional_tank", () -> new BlockEntityType<>(DimensionalTankBlockEntity::new,
-                    DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get()));
+                    DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get()));
 
     /** The mod's slot, energy and tank views, as NeoForge transfer handlers (see {@code machine.transfer.Transfer}). */
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, DIMENSIONAL_TANK.get(), (be, side) -> Transfer.exposeFluids(be.fluidFor(side), be.journal()));
+        // Single and creative tank items are fluid containers (used on a tank they fill it); the dual one is not.
+        event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> dimensionalfluxminer.tank.DimensionalTankItem.fluidHandler(access),
+                DfmItems.DIMENSIONAL_TANK.get(), DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
         // The terminal has no port of its own: only its null side (read-only views for information tools) answers.
         event.registerBlockEntity(Capabilities.Item.BLOCK, MINER_CONTROLLER.get(), (be, side) -> Transfer.exposeItems(be.itemPort(be.getBlockPos(), side), be.journal()));
         event.registerBlockEntity(Capabilities.Energy.BLOCK, MINER_CONTROLLER.get(), (be, side) -> Transfer.exposeEnergy(be.energyPort(be.getBlockPos(), side), be.journal()));

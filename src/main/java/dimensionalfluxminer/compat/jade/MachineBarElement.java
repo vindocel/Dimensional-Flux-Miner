@@ -2,6 +2,7 @@ package dimensionalfluxminer.compat.jade;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.render.FluidSprites;
+import dimensionalfluxminer.client.screen.IconColor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -21,8 +22,6 @@ import snownee.jade.api.ui.ResizeableElement;
  */
 final class MachineBarElement extends ResizeableElement {
     private static final Identifier ENERGY_FRAME = DimensionalFluxMiner.id("textures/gui/energy/energy_empty.png");
-    private static final Identifier ENERGY_SHEET = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet.png");
-    private static final Identifier ENERGY_SHEET_PURPLE = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet_purple.png");
     private static final int ENERGY_FRAME_LENGTH = 72;
     private static final int ENERGY_BORDER = 3;
     private static final int ENERGY_FILL_LENGTH = 66;
@@ -42,14 +41,14 @@ final class MachineBarElement extends ResizeableElement {
     private final Component text;
     /** Null for the energy bar. */
     private final Fluid fluid;
-    /** Energy fill in purple (the player's icon color for this machine) instead of blue. */
-    private final boolean purple;
+    /** Energy fill in the player's icon color for this machine; null for the fluid bars. */
+    private final Identifier energySheet;
 
-    private MachineBarElement(double fraction, Component text, Fluid fluid, boolean purple) {
+    private MachineBarElement(double fraction, Component text, Fluid fluid, Identifier energySheet) {
         this.fraction = Mth.clamp(fraction, 0, 1);
         this.text = text;
         this.fluid = fluid;
-        this.purple = purple;
+        this.energySheet = energySheet;
         int width = Minecraft.getInstance().font.width(text) + 2 * TEXT_PADDING;
         // The fields themselves: Jade's size(...) returns a sized wrapper and leaves this element at 0 x 0.
         this.width = Mth.clamp(width, MIN_LENGTH, MAX_LENGTH);
@@ -58,12 +57,12 @@ final class MachineBarElement extends ResizeableElement {
         flexGrow(1);
     }
 
-    static MachineBarElement energy(double fraction, Component text, boolean purple) {
-        return new MachineBarElement(fraction, text, null, purple);
+    static MachineBarElement energy(double fraction, Component text, IconColor icons) {
+        return new MachineBarElement(fraction, text, null, icons.energySheet());
     }
 
     static MachineBarElement fluid(Fluid fluid, double fraction, Component text) {
-        return new MachineBarElement(fraction, text, fluid, false);
+        return new MachineBarElement(fraction, text, fluid, null);
     }
 
     /** The bar takes the free width of the tooltip. */
@@ -107,7 +106,7 @@ final class MachineBarElement extends ResizeableElement {
         int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
         for (int drawn = 0; drawn < filled; drawn += ENERGY_FILL_LENGTH) {
             int piece = Math.min(ENERGY_FILL_LENGTH, filled - drawn);
-            g.blit(RenderPipelines.GUI_TEXTURED, purple ? ENERGY_SHEET_PURPLE : ENERGY_SHEET, ENERGY_BORDER, ENERGY_BORDER + area - drawn - piece, 0,
+            g.blit(RenderPipelines.GUI_TEXTURED, energySheet, ENERGY_BORDER, ENERGY_BORDER + area - drawn - piece, 0,
                     frame * ENERGY_FILL_LENGTH + ENERGY_FILL_LENGTH - piece, ENERGY_FILL_THICKNESS, piece,
                     ENERGY_FILL_THICKNESS, ENERGY_FILL_LENGTH * ENERGY_FRAMES);
         }

@@ -13,10 +13,10 @@ import net.minecraft.resources.Identifier;
 /** Standard tabs of the single-block machines and small drawing helpers shared by their screens. */
 final class MachineTabs {
     /**
-     * Tab rows from the top of the panel, one button (18 px) plus a 2 px gap apart, so stacked tabs share one holder
-     * with their buttons close together; the bottom row follows the panel height.
+     * Tab rows from the top of the panel, one button (18 px) plus a 4 px gap apart, so stacked tabs share one holder
+     * with their buttons a little apart; the bottom row follows the panel height.
      */
-    static final int ROW_PITCH = 20;
+    static final int ROW_PITCH = 22;
     static final int TOP_Y = 6;
     static final int ROW_2 = TOP_Y + ROW_PITCH;
     static final int ROW_3 = TOP_Y + 2 * ROW_PITCH;

@@ -1,7 +1,7 @@
 package dimensionalfluxminer.client.screen;
 
 import net.minecraft.client.renderer.RenderPipelines;
-import com.mojang.blaze3d.systems.RenderSystem;
+import dimensionalfluxminer.client.render.FluidColors;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
@@ -14,12 +14,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.DyeColor;
@@ -30,13 +31,20 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * Dimensional Tank: one reservoir (single) or two (dual, laid out as on the block's front: B on the left, A on the
  * right) with the liquid, amount and capacity of each chamber, and the three-color code. Clicking a reservoir with a
  * bucket or fluid container fills or empties that chamber. Tabs: Side Configuration and the code window (left). No
- * energy, Rate, upgrade or redstone.
+ * energy, Rate, upgrade or redstone. The creative tank shows its endless liquid and, in place of the code (it has no
+ * channels), a button that empties it.
  */
 public class TankScreen extends DfmScreen<TankMenu> {
+    /** Room kept for each chamber's gauge (the layout around it is measured on it); the gauge is centered in it. */
     private static final int RESERVOIR_W = 30;
     private static final int RESERVOIR_H = 66;
+    /** Chamber letter of the dual tank, light on the gauge's dark interior. */
+    private static final int LETTER = 0xFFE8EDEB;
     private static final int RESERVOIR_Y = 18;
     private static final int SWATCH = 12;
+    /** Read-out window beside the gauges, and the liquid square before each liquid name in it. */
+    private static final int INFO_H = 50;
+    private static final int LIQUID = 7;
 
     private final TankKind kind;
     private final SideConfigWindow sideWindow;
@@ -79,29 +87,45 @@ public class TankScreen extends DfmScreen<TankMenu> {
     protected void renderMain(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         FluidStack[] chambers = chambers();
         int focusedChamber = isWindowOpen(sideWindow) ? sideWindow.focusedRoute().fluidChamber() : -1;
-        List<Component> lines = new ArrayList<>();
         int infoX;
         int infoW;
+        int top = y + RESERVOIR_Y;
         if (kind == TankKind.DUAL) {
             // As seen on the block: B on the left, A on the right.
-            reservoir(g, x + 8, y + RESERVOIR_Y, chambers[1], 1, focusedChamber == 1, mouseX, mouseY);
-            reservoir(g, x + 138, y + RESERVOIR_Y, chambers[0], 0, focusedChamber == 0, mouseX, mouseY);
-            infoX = x + 44;
-            infoW = 88;
-            for (int i : new int[] {1, 0}) {
-                lines.add(Component.translatable("gui.dimensionalfluxminer.tank.chamber_short", chamberLetter(i), fluidName(chambers[i])));
-                lines.add(Component.literal("  ").append(amountLine(chambers[i])));
+            reservoir(g, x + 8, top, chambers[1], 1, focusedChamber == 1, mouseX, mouseY);
+            reservoir(g, x + 138, top, chambers[0], 0, focusedChamber == 0, mouseX, mouseY);
+            infoX = x + 42;
+            infoW = 92;
+            innerScreen(g, infoX, top, infoW, INFO_H);
+            // One half of the glass per chamber, split by a faint line.
+            g.fill(infoX + 4, top + INFO_H / 2, infoX + infoW - 4, top + INFO_H / 2 + 1, 0x30FFFFFF);
+            int[] order = {1, 0};
+            for (int k = 0; k < order.length; k++) {
+                int i = order[k];
+                int rowY = top + 5 + k * 23;
+                liquidLine(g, Component.translatable("gui.dimensionalfluxminer.tank.chamber_short", chamberLetter(i), fluidName(chambers[i])),
+                        chambers[i], infoX + 4, rowY, infoW - 8);
+                screenLines(g, List.of(amountLine(chambers[i])), infoX + 4 + LIQUID + 3, rowY + 10, infoW - 8 - LIQUID - 3, 10);
             }
         } else {
-            reservoir(g, x + 20, y + RESERVOIR_Y, chambers[0], 0, focusedChamber == 0, mouseX, mouseY);
-            infoX = x + 58;
-            infoW = 98;
-            lines.add(fluidName(chambers[0]));
-            lines.add(amountLine(chambers[0]));
-            lines.add(Component.translatable("gui.dimensionalfluxminer.tank.percent", percent(chambers[0])));
+            reservoir(g, x + 16, top, chambers[0], 0, focusedChamber == 0, mouseX, mouseY);
+            infoX = x + 54;
+            infoW = 114;
+            innerScreen(g, infoX, top, infoW, INFO_H);
+            liquidLine(g, fluidName(chambers[0]), chambers[0], infoX + 4, top + 6, infoW - 8);
+            Component second = kind.creative()
+                    ? Component.translatable(chambers[0].isEmpty() ? "gui.dimensionalfluxminer.creative_tank.void"
+                            : "gui.dimensionalfluxminer.creative_tank.endless")
+                    : Component.translatable("gui.dimensionalfluxminer.tank.percent", percent(chambers[0]));
+            screenLines(g, List.of(amountLine(chambers[0]), second), infoX + 4, top + 20, infoW - 8, 12);
         }
-        innerScreen(g, infoX, y + RESERVOIR_Y, infoW, lines.size() * 10 + 6);
-        screenLines(g, lines, infoX + 4, y + RESERVOIR_Y + 4, infoW - 8, 10);
+
+        if (kind.creative()) {
+            creativeRow(g, x, y, infoX, infoW, chambers[0], mouseX, mouseY);
+            MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
+            themeTab(g, x, y, MachineTabs.ROW_2, mouseX, mouseY);
+            return;
+        }
 
         // The code, left to right as on the panel; clicking it opens the code window.
         int codeY = y + RESERVOIR_Y + RESERVOIR_H - SWATCH;
@@ -118,6 +142,34 @@ public class TankScreen extends DfmScreen<TankMenu> {
 
         MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
         themeTab(g, x, y, MachineTabs.ROW_2, mouseX, mouseY);
+    }
+
+    /** Creative tank, in the code's place: channels are off, and a button forgets the liquid. */
+    private void creativeRow(GuiGraphicsExtractor g, int x, int y, int infoX, int infoW, FluidStack stack, int mouseX, int mouseY) {
+        int rowY = y + RESERVOIR_Y + RESERVOIR_H - SWATCH - 2;
+        int buttonW = 52;
+        int buttonX = infoX + infoW - buttonW;
+        fitted(g, Component.translatable("gui.dimensionalfluxminer.creative_tank.no_channels"), infoX, rowY + 4, buttonX - infoX - 4,
+                GuiTheme.subheading(), 1.0F, false);
+        Component label = Component.translatable("gui.dimensionalfluxminer.creative_tank.clear");
+        button(g, buttonX, rowY, buttonW, 16, label, !stack.isEmpty(), mouseX, mouseY,
+                () -> DimensionalTankBlockEntity.BUTTON_CLEAR, null, () -> List.of(label,
+                        Component.translatable("gui.dimensionalfluxminer.creative_tank.clear.help").withStyle(ChatFormatting.GRAY)));
+    }
+
+    /** A lamp in the liquid's color (off while empty) followed by a line of screen text about it. */
+    private void liquidLine(GuiGraphicsExtractor g, Component text, FluidStack stack, int x, int y, int maxWidth) {
+        GlassViewport.lamp(g, x, y, LIQUID, liquidColor(stack));
+        screenLines(g, List.of(text), x + LIQUID + 3, y, maxWidth - LIQUID - 3, 10);
+    }
+
+    /** Flat color of the liquid, the same as the level shown on the block ({@link FluidColors}); -1 while empty. */
+    private static int liquidColor(FluidStack stack) {
+        if (stack.isEmpty()) {
+            return -1;
+        }
+        TextureAtlasSprite sprite = dimensionalfluxminer.client.render.FluidSprites.still(stack.getFluid());
+        return FluidColors.color(sprite, dimensionalfluxminer.client.render.FluidSprites.tint(stack)) & 0xFFFFFF;
     }
 
     private List<Component> codeTooltip(TankCode code) {
@@ -149,6 +201,9 @@ public class TankScreen extends DfmScreen<TankMenu> {
     }
 
     private Component amountLine(FluidStack stack) {
+        if (kind.creative()) {
+            return Component.translatable(stack.isEmpty() ? "gui.dimensionalfluxminer.tank.empty" : "gui.dimensionalfluxminer.creative_tank.infinite");
+        }
         return Component.translatable("gui.dimensionalfluxminer.tank.amount", compact(stack.getAmount()), compact(capacity()));
     }
 
@@ -157,71 +212,42 @@ public class TankScreen extends DfmScreen<TankMenu> {
     }
 
     /**
-     * Reservoir of one chamber, drawn like a large item slot (dark top and left edge, white bottom and right edge, the
-     * slot's gray inside): the liquid fills from the bottom with its own sprite and color, and dark marks on the left
-     * show every eighth, with a line across the whole reservoir at half.
+     * Gauge of one chamber ({@link FluidGauge}, like the energy bar of the machines), centered in the room kept for it:
+     * the liquid fills it from the bottom with its own texture and color under a moving reflection.
      */
-    private void reservoir(GuiGraphicsExtractor g, int x, int y, FluidStack stack, int chamber, boolean highlighted, int mouseX, int mouseY) {
-        int dark = GuiTheme.gray(0xFF373737);
-        int light = GuiTheme.gray(0xFFFFFFFF);
-        int mid = GuiTheme.gray(0xFF8B8B8B);
-        int w = RESERVOIR_W;
-        int h = RESERVOIR_H;
-        g.fill(x, y, x + w - 1, y + 1, dark);
-        g.fill(x, y, x + 1, y + h - 1, dark);
-        g.fill(x + 1, y + h - 1, x + w, y + h, light);
-        g.fill(x + w - 1, y + 1, x + w, y + h, light);
-        g.fill(x + w - 1, y, x + w, y + 1, mid);
-        g.fill(x, y + h - 1, x + 1, y + h, mid);
-        int ix = x + 1;
-        int iy = y + 1;
-        int iw = w - 2;
-        int ih = h - 2;
-        g.fill(ix, iy, ix + iw, iy + ih, mid);
-        int filled = stack.isEmpty() ? 0 : Math.max(1, (int) Math.round(ih * Mth.clamp(stack.getAmount() / (double) capacity(), 0, 1)));
-        if (filled > 0) {
-            fluid(g, stack, ix, iy + ih - filled, iw, filled);
-        }
-        for (int mark = 1; mark < 8; mark++) {
-            int my = iy + ih - ih * mark / 8;
-            // Short marks start at the left edge and reach almost half the reservoir; the half mark crosses it.
-            g.fill(ix, my, ix + (mark == 4 ? iw : iw * 2 / 5), my + 1, dark);
-        }
+    private void reservoir(GuiGraphicsExtractor g, int areaX, int areaY, FluidStack stack, int chamber, boolean highlighted, int mouseX, int mouseY) {
+        int x = areaX + (RESERVOIR_W - FluidGauge.WIDTH) / 2;
+        int y = areaY;
+        int w = FluidGauge.WIDTH;
+        int h = FluidGauge.HEIGHT;
+        FluidGauge.draw(g, x, y, stack, capacity());
+        int ix = x + FluidGauge.FRAME;
+        int iy = y + FluidGauge.FRAME;
+        int iw = w - 2 * FluidGauge.FRAME;
+        int ih = h - 2 * FluidGauge.FRAME;
         if (kind == TankKind.DUAL) {
-            fitted(g, chamberLetter(chamber), ix + iw / 2, iy + 2, iw / 2, GuiTheme.title(), 0.8F, true);
+            fitted(g, chamberLetter(chamber), ix, iy + 2, iw, LETTER, 0.8F, true);
         }
         if (highlighted) {
-            MachineTabs.outline(g, x - 1, y - 1, RESERVOIR_W + 2, RESERVOIR_H + 2, sideWindow.focusedRoute().color());
+            MachineTabs.outline(g, x - 1, y - 1, w + 2, h + 2, sideWindow.focusedRoute().color());
         }
-        if (hovered(x, y, RESERVOIR_W, RESERVOIR_H, mouseX, mouseY)) {
+        if (hovered(x, y, w, h, mouseX, mouseY)) {
             g.fill(ix, iy, ix + iw, iy + ih, 0x30FFFFFF);
         }
-        hotspot(x, y, RESERVOIR_W, RESERVOIR_H,
+        hotspot(x, y, w, h,
                 () -> menu.getCarried().isEmpty() ? -1 : DimensionalTankBlockEntity.BUTTON_CONTAINER + chamber, null, () -> {
                     List<Component> lines = new ArrayList<>();
                     if (kind == TankKind.DUAL) {
                         lines.add(Component.translatable("gui.dimensionalfluxminer.tank.chamber", chamberLetter(chamber)));
                     }
                     lines.add(fluidName(stack));
-                    lines.add(Component.translatable("gui.dimensionalfluxminer.tank.amount_exact",
+                    lines.add(kind.creative() ? amountLine(stack).copy().withStyle(ChatFormatting.GRAY)
+                            : Component.translatable("gui.dimensionalfluxminer.tank.amount_exact",
                             String.format(Locale.ROOT, "%,d", stack.getAmount()), String.format(Locale.ROOT, "%,d", capacity()))
                             .withStyle(ChatFormatting.GRAY));
                     lines.add(Component.translatable("gui.dimensionalfluxminer.tank.container_hint").withStyle(ChatFormatting.DARK_GRAY));
                     return lines;
                 }, 0);
-    }
-
-    /** Tiles the liquid's still sprite (16 x 16 pieces, cut at the edges), tinted with its color. */
-    private void fluid(GuiGraphicsExtractor g, FluidStack stack, int x, int y, int w, int h) {
-        TextureAtlasSprite sprite = dimensionalfluxminer.client.render.FluidSprites.still(stack.getFluid());
-        int tint = dimensionalfluxminer.client.render.FluidSprites.tint(stack);
-        g.enableScissor(x, y, x + w, y + h);
-        for (int ty = y + h - 16; ty > y - 16; ty -= 16) {
-            for (int tx = x; tx < x + w; tx += 16) {
-                g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, tx, ty, 16, 16, tint);
-            }
-        }
-        g.disableScissor();
     }
 
     /**
@@ -253,6 +279,10 @@ public class TankScreen extends DfmScreen<TankMenu> {
         private static final int CELL = 16;
         private final TankScreen tank;
         private int selected;
+        /** Chamber whose Empty button was clicked once (a second click within {@link #CONFIRM_MS} empties it), or -1. */
+        private int armed = -1;
+        private long armedAt;
+        private static final long CONFIRM_MS = 3000;
 
         CodeWindow(TankScreen screen) {
             super(screen, "tank.code", 156);
@@ -266,12 +296,13 @@ public class TankScreen extends DfmScreen<TankMenu> {
 
         @Override
         public int height() {
-            return 126;
+            return 144;
         }
 
         @Override
         protected void onClose() {
             selected = 0;
+            armed = -1;
         }
 
         @Override
@@ -320,6 +351,33 @@ public class TankScreen extends DfmScreen<TankMenu> {
                                     : "gui.dimensionalfluxminer.tank.public.help").withStyle(ChatFormatting.GRAY),
                             Component.translatable(personal ? "gui.dimensionalfluxminer.tank.personal.remove"
                                     : "gui.dimensionalfluxminer.tank.public.make", itemName).withStyle(ChatFormatting.DARK_GRAY)));
+            // Empty the channel (one button per chamber on the dual tank, B on the left as on the block). Two clicks: the
+            // liquid is deleted for every tank with this code.
+            FluidStack[] chambers = tank.chambers();
+            int[] order = tank.kind == TankKind.DUAL ? new int[] {1, 0} : new int[] {0};
+            int gap = 4;
+            int buttonW = (width - 12 - gap * (order.length - 1)) / order.length;
+            if (armed >= 0 && net.minecraft.util.Util.getMillis() - armedAt > CONFIRM_MS) {
+                armed = -1;
+            }
+            for (int k = 0; k < order.length; k++) {
+                int chamber = order[k];
+                boolean confirm = armed == chamber;
+                Component clearLabel = confirm ? Component.translatable("gui.dimensionalfluxminer.tank.clear.confirm")
+                        : tank.kind == TankKind.DUAL ? Component.translatable("gui.dimensionalfluxminer.tank.clear.chamber", chamberLetter(chamber))
+                        : Component.translatable("gui.dimensionalfluxminer.creative_tank.clear");
+                screen.button(g, x + 6 + k * (buttonW + gap), y + 112, buttonW, 14, clearLabel,!chambers[chamber].isEmpty(), mouseX, mouseY, () -> {
+                    if (armed == chamber && net.minecraft.util.Util.getMillis() - armedAt <= CONFIRM_MS) {
+                        armed = -1;
+                        return DimensionalTankBlockEntity.BUTTON_CLEAR + chamber;
+                    }
+                    armed = chamber;
+                    armedAt = net.minecraft.util.Util.getMillis();
+                    return -1;
+                }, null, () -> List.of(clearLabel,
+                        Component.translatable("gui.dimensionalfluxminer.tank.clear.help").withStyle(ChatFormatting.GRAY),
+                        Component.translatable("gui.dimensionalfluxminer.tank.clear.twice").withStyle(ChatFormatting.DARK_GRAY)));
+            }
             screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.tank.code.kind_note"), x + 4, y + height() - 12, width - 8,
                     GuiTheme.subheading(), 0.8F, true);
         }

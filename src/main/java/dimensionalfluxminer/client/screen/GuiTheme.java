@@ -19,13 +19,10 @@ public final class GuiTheme {
     /** Panel color of each look, for the previews of the theme window. */
     static final int LIGHT_PANEL = 0xFFBEBEBE;
     static final int DARK_PANEL = 0xFF3D3D3D;
-    /** Icon colors, for the previews of the settings window. */
-    static final int BLUE_ICONS = 0xFF20C8D1;
-    static final int PURPLE_ICONS = 0xFF9366DE;
 
     private static boolean dark;
-    /** Icons of the screen being drawn: purple, otherwise blue. */
-    private static boolean purple;
+    /** Icon color of the screen being drawn. */
+    private static IconColor icons = IconColor.WHITE;
     private static int chromeDepth;
 
     private GuiTheme() {
@@ -47,12 +44,26 @@ public final class GuiTheme {
         return dark;
     }
 
-    static void setPurple(boolean value) {
-        purple = value;
+    /**
+     * Draws {@code drawing} with the light or dark look for a page another mod shows (a recipe viewer with its own dark
+     * theme), then puts the previous look back; the player's choices of the machine screens are never touched.
+     */
+    public static void withDark(boolean value, Runnable drawing) {
+        boolean before = dark;
+        dark = value;
+        try {
+            drawing.run();
+        } finally {
+            dark = before;
+        }
     }
 
-    static boolean purple() {
-        return purple;
+    static void setIcons(IconColor value) {
+        icons = value;
+    }
+
+    static IconColor icons() {
+        return icons;
     }
 
     /** Draws {@code drawing} as screen chrome: darkened in the dark look, unchanged in the light one. */
@@ -86,15 +97,32 @@ public final class GuiTheme {
             return;
         }
         boolean before = dark;
-        boolean beforePurple = purple;
+        IconColor beforeIcons = icons;
         dark = GuiThemes.dark(machine.machinePos());
-        purple = GuiThemes.purple(machine.machinePos());
+        icons = GuiThemes.icons(machine.machinePos());
         try {
             chrome(drawing);
         } finally {
             dark = before;
-            purple = beforePurple;
+            icons = beforeIcons;
         }
+    }
+
+    /**
+     * A color drawn in code for a control (buttons): in the dark look neutral colors darken like the gray textures,
+     * while saturated ones keep their color (the more saturated, the less they darken).
+     */
+    static int chromeColor(int argb) {
+        if (!dark) {
+            return argb;
+        }
+        int r = (argb >> 16) & 0xFF;
+        int g = (argb >> 8) & 0xFF;
+        int b = argb & 0xFF;
+        float chroma = (Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b))) / 255.0F;
+        float t = Math.max(0, Math.min(1, (chroma - 0.12F) / (0.35F - 0.12F)));
+        float factor = DARKNESS + (1 - DARKNESS) * t * t * (3 - 2 * t);
+        return (argb & 0xFF000000) | Math.round(r * factor) << 16 | Math.round(g * factor) << 8 | Math.round(b * factor);
     }
 
     /** A gray drawn in code (bevels, reservoir insides), taken to the dark palette like the textures. */

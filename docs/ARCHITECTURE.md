@@ -17,8 +17,11 @@ these layers keep it and the saves unchanged on the new API:
   instance; each batch is a test environment that moves the world spawn away while it runs.
 - Recipes are a registry read before item components exist: results are `ItemStackTemplate`s. Clients get the
   mod's recipe types from the server (`OnDatapackSyncEvent`, `recipe.Recipes`).
-- EMI and Polymorph have no 26.x build: `compat/emi` and `compat/polymorph` stay in the tree but are left out of the
-  compile (`build.gradle`). KubeJS compiles against its 26.1.2 API.
+- EMI, REI and Polymorph have no 26.x build: `compat/emi`, `compat/rei` and `compat/polymorph` stay in the tree but
+  are left out of the compile (`build.gradle`). KubeJS compiles against its 26.1.2 API.
+- Tank items as fluid containers go through `ItemAccess` (`tank.TankItemFluidHandler.forAccess`); the creative tank
+  item's icon is a special model renderer (`client.render.CreativeTankItemRenderer`).
+
 ## Packages
 
 Everything lives under `src/main/java/dimensionalfluxminer`.
@@ -42,9 +45,9 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) and `Waterlogging`, shared by every waterloggable machine, tank and Miner part |
 | `advancement` | Custom advancement trigger |
 | `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
-| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded) |
+| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `rei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded) |
 | `mixin` | Corrupted Water particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
-| `client` | Renderers, screens, the guide, sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI and Jade plugins are client side and may use it |
+| `client` | Renderers, screens, the guide, sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI, REI and Jade plugins are client side and may use it |
 
 **Light / dark screens** (`client/screen`): `GuiTheme` holds the look of the screen being drawn. Gray parts are drawn
 inside `GuiTheme.chrome` (panel background, slots, button backgrounds, machine artwork, energy frame); in the dark
@@ -104,10 +107,11 @@ reuse its Side Configuration button ids and the `SideConfigWindow` (one FLUID ta
 | Class | Responsibility |
 |---|---|
 | `TankChannels` | `SavedData` of the Overworld (one per save, seen from every dimension): the chambers of each channel, keyed by tank kind + code; empty channels are not saved |
-| `TankCode`, `TankKind` | The three ordered dye colors (stable names, never RGB) and the single / dual kinds with the chamber capacity |
+| `TankCode`, `TankKind` | The three ordered dye colors (stable names, never RGB) and the single / dual / creative kinds with the chamber capacity |
 | `DimensionalTankBlockEntity` | An endpoint: code, sides, liquid automation, the channel it points at; syncs the chambers to clients when the channel's version changes (at most every 2 ticks), whichever endpoint changed it |
 | `ChamberFluidHandler` | One chamber as a fluid tank (one liquid with its components, simulate never changes anything); looks the channel up on each call, so a code change takes effect at once |
 | `DimensionalTankBlock`, `DimensionalTankItem`, `TankMenu` | Facing, buckets on the block (the clicked half picks the dual chamber), the code kept on the item (`tank_code` data component, copied by the loot table) |
+| `CreativeFluidHandler`, `CreativeTanks` | Creative tank: no channel, the liquid lives in the block entity (`creative_fluid`) and on the item (`creative_tank_fluid`); draining never lowers it, a player's liquid picks it while empty, pipes are voided while empty and refused while full. `CreativeTanks` builds one filled item per source liquid (creative tab, REI entries) |
 
 `client/screen/TankScreen` (reservoirs and code window) and `client/render/TankRenderer` (liquid, gauges and lid stripes
 in the liquid's flat color from `FluidColors`, code on the front and lid panels, at the coordinates of the final models) draw the dynamic parts behind the static model's cut-outs.
@@ -195,7 +199,7 @@ are part of the save format; the extracted classes write the same keys as before
 | `MinerGameTests`, `MatterGameTests`, `ProgressionGameTests` | Formation, cycle, DM, filter, profiles, the void, corruption |
 | `CrusherGameTests`, `ElectricFurnaceGameTests` | Recipes, slots, modes, XP, side configuration |
 | `EnergyGameTests`, `ThroughputGameTests` | FE per operation, Rate 1–10, buffers, tick acceleration |
-| `TankGameTests` | Channels by kind and ordered code, dual chambers kept apart, code change and breaking keep the liquid, liquid automation |
+| `TankGameTests` | Channels by kind and ordered code, dual chambers kept apart, code change and breaking keep the liquid, liquid automation, creative tank (endless, void, no channels, item/save, one per liquid) |
 | `ProtectionGameTests` | Config protections and claims (a test claim system, and FTB Chunks when present in `run/mods`) |
 | `OptimizationGameTests` | Every optimisation gives exactly the result of the plain code |
 | `ContentGameTests` | Recipes and advancements load, Corrupted Water and plants, Pure Steel, the guide recipe |

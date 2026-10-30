@@ -333,7 +333,8 @@ public final class TankGameTests {
     /** Tanks, machines and Miner parts hold water, so under water it surrounds them instead of stopping at their edge. */
     @GameTest(template = "empty_small")
     public static void modBlocksHoldWater(GameTestHelper helper) {
-        Block[] blocks = {DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.MECHANICAL_CRUSHER.get(),
+        Block[] blocks = {DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get(),
+                DfmBlocks.MECHANICAL_CRUSHER.get(),
                 DfmBlocks.ELECTRIC_FURNACE.get(), DfmBlocks.MINER_TERMINAL.get(), DfmBlocks.STEEL_CHASSIS.get(), DfmBlocks.DIMENSIONAL_PORT.get(),
                 DfmBlocks.REINFORCED_STRUCTURAL_GLASS.get(), DfmBlocks.VENTILATION_UNIT.get(), DfmBlocks.QUANTUM_CORE.get()};
         for (int i = 0; i < blocks.length; i++) {
@@ -348,7 +349,8 @@ public final class TankGameTests {
     /** No hostile mob spawns on top of a machine, tank or Miner part (loose or formed). */
     @GameTest(template = "empty_small")
     public static void noMobSpawnsOnModBlocks(GameTestHelper helper) {
-        Block[] blocks = {DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.MECHANICAL_CRUSHER.get(),
+        Block[] blocks = {DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get(),
+                DfmBlocks.MECHANICAL_CRUSHER.get(),
                 DfmBlocks.ELECTRIC_FURNACE.get(), DfmBlocks.MINER_TERMINAL.get(), DfmBlocks.STEEL_CHASSIS.get(), DfmBlocks.DIMENSIONAL_PORT.get(),
                 DfmBlocks.REINFORCED_STRUCTURAL_GLASS.get(), DfmBlocks.VENTILATION_UNIT.get(), DfmBlocks.QUANTUM_CORE.get()};
         for (int i = 0; i < blocks.length; i++) {
@@ -377,6 +379,187 @@ public final class TankGameTests {
         helper.assertTrue(face(helper, be, RelativeFace.BACK).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0, "no input there");
         helper.assertTrue(be.configureSide(RelativeFace.BACK, SideRoute.NONE), "none");
         helper.assertTrue(face(helper, be, RelativeFace.BACK) == null, "no route, no handler");
+        helper.succeed();
+    }
+
+    // ---------------------------------------------------------------- creative tank
+
+    private static DimensionalTankBlockEntity placeCreative(GameTestHelper helper, BlockPos pos, Direction facing) {
+        helper.setBlock(pos, DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, facing));
+        return TestSupport.blockEntity(helper, pos);
+    }
+
+    /** A liquid poured in by a player becomes endless: draining gives what is asked and never lowers it. */
+    @GameTest(template = "empty_small")
+    public static void creativeTankGivesEndlessLiquid(GameTestHelper helper) {
+        DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
+        helper.assertTrue(be.kind() == TankKind.CREATIVE && be.chamber(0).isEmpty(), "starts empty");
+        helper.assertTrue(be.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.SIMULATE) == BUCKET && be.chamber(0).isEmpty(),
+                "a simulated fill picks nothing");
+        helper.assertTrue(be.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == BUCKET, "a bucket picks the liquid");
+        helper.assertTrue(be.chamber(0).is(Fluids.WATER) && be.chamber(0).getAmount() == Integer.MAX_VALUE, "water, always full");
+        FluidTanks back = face(helper, be, RelativeFace.BACK);
+        for (int i = 0; i < 3; i++) {
+            helper.assertTrue(back.drain(64 * BUCKET, FluidTanks.FluidAction.EXECUTE).getAmount() == 64 * BUCKET, "drained " + i);
+        }
+        helper.assertTrue(back.drain(lava(BUCKET), FluidTanks.FluidAction.EXECUTE).isEmpty(), "only its own liquid comes out");
+        helper.assertTrue(be.chamber(0).getAmount() == Integer.MAX_VALUE, "never runs out");
+        helper.assertTrue(be.chamberHandler(0).fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0
+                && back.fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0, "a full creative tank takes nothing in");
+        FluidTanks view = Transfer.fluids(helper.getLevel(), be.getBlockPos(), null);
+        helper.assertTrue(view != null && view.getTanks() == 1 && view.getTankCapacity(0) == Integer.MAX_VALUE, "one endless chamber");
+        helper.succeed();
+    }
+
+    /** Empty, the creative tank swallows what pipes and automation send, and keeps nothing. */
+    @GameTest(template = "empty_small")
+    public static void emptyCreativeTankVoidsPipes(GameTestHelper helper) {
+        DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
+        FluidTanks back = face(helper, be, RelativeFace.BACK);
+        helper.assertTrue(back.fill(lava(50 * BUCKET), FluidTanks.FluidAction.EXECUTE) == 50 * BUCKET, "accepted");
+        helper.assertTrue(be.chamber(0).isEmpty(), "and gone");
+        helper.assertTrue(back.drain(BUCKET, FluidTanks.FluidAction.EXECUTE).isEmpty(), "nothing to drain");
+        helper.succeed();
+    }
+
+    /** No code, no personal channel: the buttons are refused and nothing is used up; the clear button forgets the liquid. */
+    @GameTest(template = "empty_small")
+    public static void creativeTankHasNoChannels(GameTestHelper helper) {
+        DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
+        helper.assertTrue(be.channel() == null, "no channel");
+        helper.assertFalse(be.handleButton(null, DimensionalTankBlockEntity.BUTTON_CODE_BASE + DyeColor.RED.getId()), "no code");
+        be.setCode(code(DyeColor.RED, DyeColor.RED, DyeColor.RED));
+        helper.assertTrue(be.code().equals(TankCode.DEFAULT), "the code never changes");
+        net.minecraft.world.entity.player.Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        net.minecraft.world.item.ItemStack diamond = new net.minecraft.world.item.ItemStack(dimensionalfluxminer.DfmConfig.tankPersonalItem());
+        helper.assertFalse(be.makePersonal(player, diamond), "no personal code");
+        helper.assertTrue(diamond.getCount() == 1, "the personal item is not used");
+        helper.assertFalse(be.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR), "nothing to clear");
+        be.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        helper.assertTrue(be.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR) && be.chamber(0).isEmpty(), "cleared");
+        helper.assertFalse(DfmBlocks.DIMENSIONAL_TANK.get().defaultBlockState().is(DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get()), "a block of its own");
+        helper.succeed();
+    }
+
+    /** The item and the save keep the liquid; placing the item gives the tank that liquid. */
+    @GameTest(template = "empty_small")
+    public static void creativeTankKeepsItsLiquid(GameTestHelper helper) {
+        DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
+        be.chamberHandler(0).fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        var stored = be.collectComponents().get(DfmDataComponents.CREATIVE_TANK_FLUID.get());
+        helper.assertTrue(stored != null && stored.copy().is(Fluids.LAVA), "the item gets the lava");
+        helper.assertTrue(be.collectComponents().get(DfmDataComponents.TANK_CODE.get()) == null, "and no code");
+        CompoundTag saved = be.saveWithoutMetadata(helper.getLevel().registryAccess());
+        DimensionalTankBlockEntity again = placeCreative(helper, SECOND, Direction.NORTH);
+        TestSupport.load(again, saved, helper.getLevel().registryAccess());
+        helper.assertTrue(again.chamber(0).is(Fluids.LAVA) && again.chamber(0).getAmount() == Integer.MAX_VALUE, "loaded");
+        helper.assertTrue(again.lightLevel() == 15, "lava lights the area");
+        helper.succeed();
+    }
+
+    /** One filled creative tank per source liquid of the game, each a different stack. */
+    @GameTest(template = "empty_small")
+    public static void creativeTanksForEveryLiquid(GameTestHelper helper) {
+        var stacks = dimensionalfluxminer.tank.CreativeTanks.filledForEveryFluid(helper.getLevel().registryAccess());
+        java.util.Set<net.minecraft.world.level.material.Fluid> fluids = new java.util.HashSet<>();
+        for (var stack : stacks) {
+            var content = stack.get(DfmDataComponents.CREATIVE_TANK_FLUID.get());
+            helper.assertTrue(content != null && !content.isEmpty(), "every stack holds a liquid");
+            helper.assertTrue(fluids.add(content.copy().getFluid()), "once per liquid");
+        }
+        helper.assertTrue(fluids.contains(Fluids.WATER) && fluids.contains(Fluids.LAVA), "water and lava");
+        helper.assertFalse(fluids.contains(Fluids.FLOWING_WATER) || fluids.contains(Fluids.EMPTY), "only sources");
+        helper.succeed();
+    }
+
+    /** Auto Eject fills the neighbor without a per-tick limit and the creative tank stays full. */
+    @GameTest(template = "empty_small")
+    public static void creativeTankEjectsWithoutEnd(GameTestHelper helper) {
+        DimensionalTankBlockEntity creative = placeCreative(helper, new BlockPos(2, 1, 1), Direction.NORTH);
+        DimensionalTankBlockEntity to = place(helper, new BlockPos(2, 1, 2), TankKind.SINGLE, Direction.EAST,
+                code(DyeColor.MAGENTA, DyeColor.BROWN, DyeColor.MAGENTA));
+        creative.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        helper.assertTrue(creative.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID), "Auto Eject on");
+        helper.runAfterDelay(3, () -> {
+            helper.assertTrue(to.chamber(0).is(Fluids.WATER) && to.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "the neighbor is full");
+            helper.assertTrue(creative.chamber(0).getAmount() == Integer.MAX_VALUE, "still endless");
+            helper.succeed();
+        });
+    }
+
+    // ---------------------------------------------------------------- bucket mode
+
+    /** The item's fluid capability, reached through the stack itself (null without one). */
+    private static FluidTanks itemFluids(net.minecraft.world.item.ItemStack stack) {
+        return Transfer.fluids(net.neoforged.neoforge.transfer.access.ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM));
+    }
+
+    private static net.minecraft.world.item.ItemStack bucketMode(net.minecraft.world.item.ItemStack stack) {
+        stack.set(DfmDataComponents.TANK_BUCKET_MODE.get(), true);
+        return stack;
+    }
+
+    /** Single and creative tank items are fluid containers in any mode (they fill tanks); the dual tank never. */
+    @GameTest(template = "empty_small")
+    public static void tankItemIsAContainerInAnyMode(GameTestHelper helper) {
+        var single = new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.DIMENSIONAL_TANK.get());
+        helper.assertTrue(itemFluids(single) != null, "a container with bucket mode off");
+        helper.assertTrue(itemFluids(bucketMode(single)) != null, "and on");
+        var dual = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.DIMENSIONAL_DUAL_TANK.get()));
+        helper.assertTrue(itemFluids(dual) == null, "never the dual tank");
+        var creative = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get()));
+        helper.assertTrue(itemFluids(creative) != null, "the creative tank too");
+        helper.succeed();
+    }
+
+    /** A single tank item in bucket mode is its channel: what it takes or gives is the channel's liquid. */
+    @GameTest(template = "empty_small")
+    public static void tankItemUsesItsChannel(GameTestHelper helper) {
+        TankCode code = code(DyeColor.CYAN, DyeColor.GRAY, DyeColor.CYAN);
+        DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, code);
+        var stack = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.DIMENSIONAL_TANK.get()));
+        stack.set(DfmDataComponents.TANK_CODE.get(), code);
+        FluidTanks item = itemFluids(stack);
+        helper.assertTrue(item.fill(water(5 * BUCKET), FluidTanks.FluidAction.EXECUTE) == 5 * BUCKET, "filled");
+        helper.assertTrue(be.chamber(0).getAmount() == 5 * BUCKET, "the tank of the same code sees it");
+        // Pouring one bucket on the ground takes it out of the channel.
+        BlockPos ground = helper.absolutePos(new BlockPos(3, 1, 1));
+        var handler = net.neoforged.neoforge.transfer.access.ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM);
+        helper.assertTrue(!net.neoforged.neoforge.transfer.fluid.FluidUtil.tryPlaceFluid(handler, null, helper.getLevel(), ground, true, null).isEmpty(),
+                "poured");
+        helper.assertTrue(helper.getLevel().getFluidState(ground).is(Fluids.WATER), "water on the ground");
+        helper.assertTrue(be.chamber(0).getAmount() == 4 * BUCKET, "one bucket less");
+        helper.succeed();
+    }
+
+    /** A creative tank item never runs out and fills another tank completely in one go. */
+    @GameTest(template = "empty_small")
+    public static void creativeTankItemFillsATank(GameTestHelper helper) {
+        DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, code(DyeColor.PINK, DyeColor.GRAY, DyeColor.PINK));
+        var empty = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get()));
+        FluidTanks picker = itemFluids(empty);
+        helper.assertTrue(picker.fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE) == BUCKET, "an empty creative item picks its liquid");
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemFluidHandler.creativeFluid(empty).is(Fluids.LAVA), "kept on the item");
+        var stack = bucketMode(dimensionalfluxminer.tank.CreativeTanks.filled(Fluids.WATER));
+        FluidTanks item = itemFluids(stack);
+        var moved = FluidTanks.move(face(helper, be, RelativeFace.BACK), item, Integer.MAX_VALUE);
+        helper.assertTrue(moved.getAmount() == TankKind.CHAMBER_CAPACITY && be.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "full at once");
+        helper.assertTrue(item.getFluidInTank(0).getAmount() == Integer.MAX_VALUE, "still endless");
+        helper.succeed();
+    }
+
+    /** Empty deletes a chamber's liquid from the channel, for every tank with the code; the other chamber stays. */
+    @GameTest(template = "empty_small")
+    public static void emptyButtonClearsTheChannel(GameTestHelper helper) {
+        TankCode code = code(DyeColor.LIGHT_BLUE, DyeColor.YELLOW, DyeColor.LIGHT_BLUE);
+        DimensionalTankBlockEntity first = place(helper, FIRST, TankKind.DUAL, code);
+        DimensionalTankBlockEntity second = place(helper, SECOND, TankKind.DUAL, code);
+        first.chamberHandler(0).fill(water(3 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        first.chamberHandler(1).fill(lava(2 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        helper.assertTrue(second.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR + 1), "B emptied");
+        helper.assertTrue(first.chamber(1).isEmpty() && first.chamber(0).getAmount() == 3 * BUCKET, "only B, on every tank of the code");
+        helper.assertFalse(first.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR + 1), "nothing left in B");
+        helper.assertFalse(first.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR + 2), "no third chamber");
         helper.succeed();
     }
 }

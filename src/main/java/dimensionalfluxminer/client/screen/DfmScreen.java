@@ -38,16 +38,11 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     public static final int HEADING = 0xFF202020;
     public static final int SUBHEADING = 0xFF787878;
     public static final int SCREEN_TEXT = 0xFF52D9DB;
-    /** Text of the terminal screens with the purple icon color. */
-    public static final int SCREEN_TEXT_PURPLE = 0xFFB592FF;
     public static final int SCREEN_WARN = 0xFFFFD04A;
     public static final int SCREEN_ERROR = 0xFFFF5A5A;
     public static final int BUTTON_TEXT = 0xFFFFFFFF;
     public static final int BUTTON_TEXT_INACTIVE = 0xFFA0A0A0;
     public static final int TAB_DEFAULT = 0xFFFFFFFF;
-    public static final int TAB_ENERGY = dimensionalfluxminer.machine.side.SideRoute.ENERGY_INPUT.color();
-    public static final int TAB_ITEM = 0xFFCFCFCF;
-    public static final int TAB_FLUID = 0xFF366BD0;
     public static final int TAB_REDSTONE = 0xFFC9071F;
 
     protected static final int TAB_SIZE = 26;
@@ -55,12 +50,16 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     /** Button of a left tab inside its ear (a right tab mirrors it). */
     private static final int TAB_BUTTON_LEFT = 5;
     private static final int TAB_BUTTON_TOP = 4;
+    /** Material tabs of the side configuration windows (Items, Energy, Fluids...): a larger button in a wider ear. */
+    static final int MATERIAL_TAB_INNER = 22;
+    static final int MATERIAL_TAB_SIZE = MATERIAL_TAB_INNER + TAB_SIZE - TAB_INNER;
+    /** Rows of the material tabs: the button plus a 4 px gap. */
+    static final int MATERIAL_TAB_PITCH = MATERIAL_TAB_INNER + 4;
     protected static final int WINDOW_BAR = 18;
     /** Depth of the first window and between stacked windows (items and counts inside need ~350). */
     private static final int WINDOW_Z = 400;
     private static final int WINDOW_Z_STEP = 400;
 
-    static final ResourceLocation SCREEN = sprite("panel/screen");
     static final ResourceLocation BUTTON_DISABLED = sprite("button/disabled");
     static final ResourceLocation BUTTON_NORMAL = sprite("button/normal");
     static final ResourceLocation BUTTON_HIGHLIGHTED = sprite("button/highlighted");
@@ -70,20 +69,17 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     private static final int CLOSE_SIZE = SMALL_BUTTON;
     /** Window title area starts after the close button. */
     private static final int TITLE_START = 18;
-    /** Energy bar frame (14 x 72) and shimmering fill sheet (42 frames of 8 x 66, one every 100 ms). */
+    /** Energy bar frame (14 x 72); the shimmering fill sheet (42 frames of 8 x 66, one every 100 ms) is the icon color's. */
     static final ResourceLocation ENERGY_EMPTY = DimensionalFluxMiner.id("textures/gui/energy/energy_empty.png");
-    static final ResourceLocation ENERGY_SHEET = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet.png");
-    /** The same shimmering fill in purple, for the purple icon color. */
-    static final ResourceLocation ENERGY_SHEET_PURPLE = DimensionalFluxMiner.id("textures/gui/energy/energy_shimmer_sheet_purple.png");
 
-    /** Text color of the terminal screens: light blue, or a light purple with the purple icon color. */
+    /** Text color of the terminal screens, following the icon color (light blue, or light purple with purple icons). */
     public static int screenText() {
-        return GuiTheme.purple() ? SCREEN_TEXT_PURPLE : SCREEN_TEXT;
+        return GuiTheme.icons().screenText();
     }
 
     /** Energy fill of the icon color of the screen being drawn. */
     static ResourceLocation energySheet() {
-        return GuiTheme.purple() ? ENERGY_SHEET_PURPLE : ENERGY_SHEET;
+        return GuiTheme.icons().energySheet();
     }
     static final int ENERGY_FRAME_HEIGHT = 72;
     static final int ENERGY_FILL_HEIGHT = 66;
@@ -113,7 +109,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     private static final int RATE_STRIP_WIDTH = 8;
     private static final long RATE_BLINK_MS = 500;
     static final GuiIcon ICON_REDSTONE_LOW = GuiIcon.REDSTONE_LOW;
-    static final ResourceLocation WARNING_TAB = sprite("tab/warning_left");
+    static final ResourceLocation WARNING_SIGN = sprite("tab/warning_sign");
 
     /** Last position of each window (relative to the panel), kept while the game runs. */
     private static final Map<String, int[]> LAST_POSITIONS = new HashMap<>();
@@ -223,12 +219,14 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         // The look applies to this screen only: recipe viewers and tooltips drawn after it stay as they are.
         GuiTheme.setDark(GuiThemes.dark(menu.pos()));
-        GuiTheme.setPurple(GuiThemes.purple(menu.pos()));
+        GuiTheme.setIcons(GuiThemes.icons(menu.pos()));
+        pendingAreas.clear();
         try {
             renderThemed(graphics, mouseX, mouseY, partialTick);
+            outsideAreas = List.copyOf(pendingAreas);
         } finally {
             GuiTheme.setDark(false);
-            GuiTheme.setPurple(false);
+            GuiTheme.setIcons(IconColor.WHITE);
         }
     }
 
@@ -412,6 +410,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             drawing = w;
             RenderSystem.enableBlend();
             MetalFrame.panel(g, x, y, w.width, h);
+            pendingAreas.add(new net.minecraft.client.renderer.Rect2i(x, y, w.width, h));
             closeButton(g, x + 6, y + 6, mouseX, mouseY, w);
             // The title uses the bar between the close button and the window's own top-right button, if any.
             int titleEnd = x + w.width - Math.max(6, w.titlePadEnd());
@@ -647,8 +646,9 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         g.renderItemDecorations(font, prototype, x, y, compact(count));
     }
 
+    /** Read-out window (status, contents, automation): a glass viewport, see {@link GlassViewport}. */
     protected void innerScreen(GuiGraphics g, int x, int y, int w, int h) {
-        g.blitSprite(SCREEN, x, y, w, h);
+        GlassViewport.draw(g, x, y, w, h);
     }
 
     /** Lines of screen text (scale 0.8), one every {@code pitch} pixels starting at {@code y}. */
@@ -706,7 +706,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             closeWindow(window);
             return -1;
         }, null, null);
-        buttonBackground(g, x, y, CLOSE_SIZE, CLOSE_SIZE, true, hover);
+        ButtonArt.draw(g, x, y, CLOSE_SIZE, CLOSE_SIZE, true, hover, false);
         GuiIcon.CLOSE.drawCentered(g, x, y, CLOSE_SIZE, CLOSE_SIZE);
     }
 
@@ -731,11 +731,6 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     }
 
 
-    private void buttonBackground(GuiGraphics g, int x, int y, int w, int h, boolean active, boolean lit) {
-        RenderSystem.enableBlend();
-        GuiTheme.chrome(() -> g.blitSprite(!active ? BUTTON_DISABLED : lit ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL, x, y, w, h));
-    }
-
     /** Text button. Inactive buttons are drawn dark and ignore clicks. */
     protected void button(GuiGraphics g, int x, int y, int w, int h, Component label, boolean active, int mouseX, int mouseY,
                           IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
@@ -747,7 +742,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                                 int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, w, h, mouseX, mouseY);
         buttonHotspot(x, y, w, h, active ? left : null, active ? right : null, tooltip);
-        buttonBackground(g, x, y, w, h, active, hover || lit);
+        ButtonArt.draw(g, x, y, w, h, active, hover, lit);
         int textWidth = font.width(label);
         float s = textWidth > w - 4 ? (w - 4) / (float) textWidth : 1.0F;
         g.pose().pushPose();
@@ -759,14 +754,13 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
 
     /**
      * Square button with an icon of {@code iconW} x {@code iconH} drawn at its own pixel size, centered. A
-     * {@code pressed} button keeps the dark (sunk) background but stays clickable: it is a push-on / push-off switch.
+     * {@code pressed} button keeps the switched-on background and stays clickable: it is a push-on / push-off switch.
      */
     protected void iconButton(GuiGraphics g, int x, int y, int size, GuiIcon icon, boolean pressed,
                               int mouseX, int mouseY, IntSupplier left, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, left, null, tooltip);
-        RenderSystem.enableBlend();
-        GuiTheme.chrome(() -> g.blitSprite(pressed ? BUTTON_DISABLED : hover ? BUTTON_HIGHLIGHTED : BUTTON_NORMAL, x, y, size, size));
+        ButtonArt.draw(g, x, y, size, size, true, hover, pressed);
         icon.drawCentered(g, x, y, size, size);
     }
 
@@ -804,21 +798,20 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                                int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, active ? left : null, active ? right : null, tooltip);
-        buttonBackground(g, x, y, size, size, active, hover || lit);
+        ButtonArt.draw(g, x, y, size, size, active, hover, lit);
         icon.drawCentered(g, x, y, size, size);
     }
 
-    /** Square button whose background is tinted with {@code color} (null keeps the plain button). */
+    /** Square button whose light border is marked with {@code color} (null keeps the plain button). */
     protected void colorButton(GuiGraphics g, int x, int y, int size, Integer color, boolean active, int mouseX, int mouseY,
                                IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, active ? left : null, active ? right : null, tooltip);
         if (color != null) {
-            int tint = buttonTint(color);
-            g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, 1.0F);
+            ButtonArt.drawMarked(g, x, y, size, size, active, hover, buttonTint(color));
+        } else {
+            ButtonArt.draw(g, x, y, size, size, active, hover, false);
         }
-        buttonBackground(g, x, y, size, size, active, hover);
-        g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     /** Button tint: the color with saturation -0.1 and value +0.1. */
@@ -869,17 +862,34 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     protected void iconTab(GuiGraphics g, int x, int y, boolean leftSide, int color, GuiIcon icon, int iconSize, boolean enabled,
                            boolean lit, boolean warning, int mouseX, int mouseY, IntSupplier left, IntSupplier right,
                            Supplier<List<Component>> tooltip) {
-        int[] inner = tabFrame(g, x, y, leftSide, color, enabled, lit, warning, mouseX, mouseY, left, right, tooltip);
+        int[] inner = tabFrame(g, x, y, TAB_INNER, leftSide, color, enabled, lit, warning, mouseX, mouseY, left, right, tooltip);
         int offset = (TAB_INNER - iconSize) / 2;
         tabContents.add(() -> icon.drawCentered(g, inner[0] + offset, inner[1] + offset, iconSize, iconSize));
     }
 
+    /**
+     * Material tab of a side configuration window ({@link #MATERIAL_TAB_SIZE} wide, button of
+     * {@link #MATERIAL_TAB_INNER}); its icon keeps its own pixel size, centered, and no color ring (the icon tells the
+     * material). A disabled tab is the open one.
+     */
+    void materialTab(GuiGraphics g, int x, int y, boolean leftSide, GuiIcon icon, boolean enabled, int mouseX, int mouseY,
+                     IntSupplier left, Supplier<List<Component>> tooltip) {
+        int[] inner = tabFrame(g, x, y, MATERIAL_TAB_INNER, leftSide, TAB_DEFAULT, enabled, false, false, mouseX, mouseY, left, null, tooltip);
+        tabContents.add(() -> icon.drawCentered(g, inner[0], inner[1], MATERIAL_TAB_INNER, MATERIAL_TAB_INNER));
+    }
+
     /** Problems tab (26 x 26, left side): lists what keeps the machine from running. */
     protected void warningTab(GuiGraphics g, int x, int y, List<Component> problems) {
-        ears.add(new Ear(x, y, TAB_SIZE, true));
-        // The striped sign of the warning sprite (with its sunken edge) sits where the button of the other tabs is.
-        tabContents.add(() -> g.blitSprite(WARNING_TAB, TAB_SIZE, TAB_SIZE, 3, 3, x + TAB_BUTTON_LEFT - 1, y + TAB_BUTTON_TOP - 1,
-                TAB_INNER + 3, TAB_INNER + 3));
+        ears.add(new Ear(x, y, TAB_SIZE, TAB_SIZE, true));
+        // Square glass where the other tabs have their button, with the yellow warning sign (no hazard ring: that one
+        // marks the Redstone tab).
+        int bx = x + TAB_BUTTON_LEFT;
+        int by = y + TAB_BUTTON_TOP;
+        tabContents.add(() -> {
+            GlassViewport.button(g, bx, by, TAB_INNER);
+            RenderSystem.enableBlend();
+            g.blitSprite(WARNING_SIGN, bx + (TAB_INNER - 10) / 2, by + (TAB_INNER - 10) / 2, 10, 10);
+        });
         hotspot(x, y, TAB_SIZE, TAB_SIZE, null, null, () -> {
             List<Component> lines = new ArrayList<>();
             lines.add(Component.translatable("gui.dimensionalfluxminer.problems").withStyle(net.minecraft.ChatFormatting.YELLOW));
@@ -894,27 +904,40 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      * Holder and button background of a tab; returns the button's top-left corner. The holder is only noted here and
      * the button drawn later ({@link #drawTabs}), so tabs stacked next to each other share one holder.
      */
-    private int[] tabFrame(GuiGraphics g, int x, int y, boolean leftSide, int color, boolean enabled, boolean lit, boolean warning,
-                           int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
-        ears.add(new Ear(x, y, TAB_SIZE, leftSide));
+    private int[] tabFrame(GuiGraphics g, int x, int y, int button, boolean leftSide, int color, boolean enabled, boolean lit,
+                           boolean warning, int mouseX, int mouseY, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
+        int size = button + TAB_SIZE - TAB_INNER;
+        ears.add(new Ear(x, y, size, size, leftSide));
         // Centered on the metal between the outer bevel and the panel's inner line.
-        int bx = x + (leftSide ? TAB_BUTTON_LEFT : TAB_SIZE - TAB_BUTTON_LEFT - TAB_INNER);
+        int bx = x + (leftSide ? TAB_BUTTON_LEFT : size - TAB_BUTTON_LEFT - button);
         int by = y + TAB_BUTTON_TOP;
-        boolean hover = hovered(bx, by, TAB_INNER, TAB_INNER, mouseX, mouseY);
-        buttonHotspot(bx, by, TAB_INNER, TAB_INNER, enabled ? left : null, enabled ? right : null, tooltip);
+        boolean hover = hovered(bx, by, button, button, mouseX, mouseY);
+        buttonHotspot(bx, by, button, button, enabled ? left : null, enabled ? right : null, tooltip);
         tabContents.add(() -> {
             RenderSystem.enableBlend();
             // The tab's color (or the hazard dashes of a related problem) lights a ring around the button.
             if (warning || color != TAB_DEFAULT) {
-                MetalFrame.ring(g, bx, by, TAB_INNER, color, warning);
+                MetalFrame.ring(g, bx, by, button, color, warning);
             }
-            buttonBackground(g, bx, by, TAB_INNER, TAB_INNER, enabled, hover || lit);
+            ButtonArt.draw(g, bx, by, button, button, enabled, hover, lit);
         });
         return new int[] {bx, by};
     }
 
-    /** A tab holder noted while drawing: {@code height} tall, on the left or right edge. */
-    private record Ear(int x, int y, int height, boolean left) {
+    /** Areas drawn outside the panel in the last frame: tab holders and open windows (screen coordinates). */
+    private List<net.minecraft.client.renderer.Rect2i> outsideAreas = List.of();
+    private final List<net.minecraft.client.renderer.Rect2i> pendingAreas = new ArrayList<>();
+
+    /**
+     * What this screen draws outside its panel (side tabs and the open windows with their tabs), so the recipe viewers
+     * (JEI, EMI, REI) move their lists out of the way, also while a window is dragged.
+     */
+    public List<net.minecraft.client.renderer.Rect2i> outsideAreas() {
+        return outsideAreas;
+    }
+
+    /** A tab holder noted while drawing: {@code width} wide and {@code height} tall, on the left or right edge. */
+    private record Ear(int x, int y, int width, int height, boolean left) {
     }
 
     private final List<Ear> ears = new ArrayList<>();
@@ -930,23 +953,29 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         sorted.sort(java.util.Comparator.comparing(Ear::left).thenComparingInt(Ear::x).thenComparingInt(Ear::y));
         Ear block = null;
         for (Ear ear : sorted) {
-            if (block != null && block.left() == ear.left() && block.x() == ear.x() && ear.y() <= block.y() + block.height() + 2) {
-                block = new Ear(block.x(), block.y(), Math.max(block.height(), ear.y() + ear.height() - block.y()), block.left());
+            if (block != null && block.left() == ear.left() && block.x() == ear.x() && block.width() == ear.width()
+                    && ear.y() <= block.y() + block.height() + 2) {
+                block = new Ear(block.x(), block.y(), block.width(), Math.max(block.height(), ear.y() + ear.height() - block.y()), block.left());
                 continue;
             }
             if (block != null) {
-                MetalFrame.ear(g, block.x(), block.y(), TAB_SIZE, block.height(), block.left());
+                drawEar(g, block);
             }
             block = ear;
         }
         if (block != null) {
-            MetalFrame.ear(g, block.x(), block.y(), TAB_SIZE, block.height(), block.left());
+            drawEar(g, block);
         }
         for (Runnable content : tabContents) {
             content.run();
         }
         ears.clear();
         tabContents.clear();
+    }
+
+    private void drawEar(GuiGraphics g, Ear block) {
+        MetalFrame.ear(g, block.x(), block.y(), block.width(), block.height(), block.left());
+        pendingAreas.add(new net.minecraft.client.renderer.Rect2i(block.x(), block.y(), block.width(), block.height()));
     }
 
     /** Tab that opens {@code window}; disabled while the window is open. */
@@ -993,7 +1022,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
      */
     protected void rateTab(GuiGraphics g, int x, int y, boolean leftSide, int rate, int nextId, int previousId, int mouseX, int mouseY,
                            Supplier<List<Component>> details) {
-        int[] inner = tabFrame(g, x, y, leftSide, TAB_DEFAULT, true, false, false, mouseX, mouseY, () -> nextId, () -> previousId, () -> {
+        int[] inner = tabFrame(g, x, y, TAB_INNER, leftSide, TAB_DEFAULT, true, false, false, mouseX, mouseY, () -> nextId, () -> previousId, () -> {
             List<Component> lines = new ArrayList<>();
             lines.add(Component.translatable("gui.dimensionalfluxminer.rate.tooltip", rate));
             lines.addAll(details.get());

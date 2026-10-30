@@ -15,7 +15,9 @@ public final class TankInteraction {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (event.getEntity().isSecondaryUseActive()
                 && event.getLevel().getBlockState(event.getPos()).getBlock() instanceof DimensionalTankBlock
-                && FluidUtil.getFluidHandler(event.getItemStack()).isPresent()) {
+                && FluidUtil.getFluidHandler(event.getItemStack()).isPresent()
+                // Sneaking with a tank item places it (against the tank) instead.
+                && !(event.getItemStack().getItem() instanceof DimensionalTankItem)) {
             event.setUseBlock(TriState.TRUE);
         }
     }

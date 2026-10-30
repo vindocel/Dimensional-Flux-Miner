@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.2.8 (since 0.2.7)
+
+### ✨ Added
+
+- ⚪ **White icons, the new default**: the machine screens now show white icons unless you pick **Blue** or
+  **Purple** in the Settings window. The energy bar, the volume bar and the terminal text stay blue with white icons.
+  Settings saved with Purple keep Purple; everything else starts on White.
+- 📕 **REI support** (optional): the same Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) pages as
+  in EMI and JEI, drawn with the machines' own elements; clicking a machine's work chamber opens them, and R / U work
+  on the items inside machine slots. The pages follow REI's light or dark theme (slots, energy and heat parts darken
+  with it). With EMI installed, EMI is used; with REI and JEI, REI.
+- 🪟 **Recipe viewers make room**: the side tabs and the open windows of the machine screens (also while you drag a
+  window over them) push EMI, JEI and REI's item lists out of the way instead of being covered.
+- 🛢️ **Creative Dimensional Tank** (creative mode only, no recipe): one chamber of endless liquid for building and
+  testing. The creative tab and EMI, JEI and REI list one already filled with each liquid of the game; pouring a
+  liquid into an empty one picks it. Buckets, pipes and Auto Eject take as much as they want and it never runs out;
+  while empty it voids what pipes send. It has no channels (no code, no personal code): sneak and use it with an
+  empty hand, or press **Empty** on its screen, to empty it. Breaking it keeps the liquid on the item. In the
+  inventory and the recipe viewers its icon shows the liquid inside.
+- 🪣 **Tank items carry their liquid** (Dimensional Tank and Creative Dimensional Tank, not the dual tank): used on a
+  tank, in any mode, the item fills it with as much as fits (the channel's liquid, or the endless creative one; a
+  creative tank fills a whole Dimensional Tank at once). **Bucket mode** (sneak and use the item in the air to switch
+  it): the item is not placed, it pours its liquid on the ground one bucket at a time (sneaking always pours) and picks
+  up the liquid source you look at. Sneaking with a tank item against a tank places it.
+- 🧹 **Empty a channel**: the code window of the Dimensional Tank and the Dual Dimensional Tank has an **Empty** button
+  (one per chamber on the dual tank) that deletes the channel's liquid for every tank with that code. It takes two
+  clicks, so it is not pressed by accident.
+- 🔎 The creative tanks are also in the Tools and Utilities tab, right after the milk bucket, so searching a liquid in
+  the creative inventory shows them right after its bucket.
+
+### 🔄 Changed
+
+- 🔘 **New buttons**: every button of the machine screens (tabs, windows, side configuration) has a new look: dark
+  outline that turns cyan under the mouse, light border and slate inside; a switched-on button (toggle on, open tab) is gray and sunk, like
+  one that cannot be used. The dark screens darken them too. With purple icons the outline under the mouse is purple.
+- 🗂️ **Side configuration tabs stay in place**: every material tab (Items, Energy, Fluids...) is always shown in its own
+  spot, the open one grayed like the tab of an open window, instead of the open tab disappearing (on the Miner the Energy tab used to turn
+  into the Items tab).
+- 🪟 **Glass read-outs**: the black terminal boxes of the screens (Miner status, tank contents, the automation line
+  of the side windows, the Miner's filter and the info windows) are now glass viewports in the screen's own metal,
+  sunk into the panel with rounded corners, a navy glass (dark purple with purple icons) and a faint diagonal
+  reflection like the liquid gauges. The Miner's read-out has a status lamp (green while mining, orange when stopped,
+  blinking amber while waiting, blinking red without a Core) and the tank read-outs are larger, with a small lamp in
+  each stored liquid's color beside its name (unlit while empty). The Problems tab shows its yellow warning sign on a
+  matching glass button, lined up with the other tab buttons.
+- 💧 **Dimensional Tank gauges**: each chamber is now shown as a liquid gauge that matches the energy bar: a framed
+  bar with level marks, the liquid in its own texture and color, and a moving reflection over it.
+- The material tabs of the side configuration windows are larger and no longer have a colored ring (the icon tells
+  the material).
+- Stacked side tabs have a little more room between their buttons, and the Upgrades and Settings icons sit 1 px
+  lower, centered on their buttons.
+- 🛢️ **Liquid fills the tanks to the glass**: the liquid inside the Dimensional Tanks (single and dual) now reaches the
+  windows instead of floating in the middle with a gap around it.
+
 ## 0.2.7 (since 0.2.6)
 
 ### 🔄 Changed

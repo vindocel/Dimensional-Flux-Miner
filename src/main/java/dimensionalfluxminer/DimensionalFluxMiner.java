@@ -47,6 +47,7 @@ public final class DimensionalFluxMiner {
         DfmMenus.MENUS.register(modBus);
         modBus.addListener(DfmDataMaps::register);
         modBus.addListener(DfmBlockEntities::registerCapabilities);
+        modBus.addListener(DfmCreativeTab::addToVanillaTabs);
         modBus.addListener(DfmNetwork::register);
 
         container.registerConfig(ModConfig.Type.SERVER, DfmConfig.SPEC);

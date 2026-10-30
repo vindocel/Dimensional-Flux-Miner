@@ -26,7 +26,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Side Configuration window (156 x 135): one tab per transmission on its left edge, the six faces as 22 px buttons
+ * Side Configuration window (156 x 135): one tab per transmission on its left edge, each always in its own place (the
+ * current one drawn gray and sunk, like the tab of an open window), the six faces as 22 px buttons
  * (top / left-front-right / back-bottom) tinted with the route color, the automation button of the current tab and
  * the batch button (every side to the next/previous route, Shift clears every transmission). Left click selects the
  * next route of a face, right click the previous one.
@@ -142,15 +143,6 @@ final class SideConfigWindow extends DfmScreen.Window {
         return config;
     }
 
-    static int color(Transmission t) {
-        return switch (t) {
-            case ITEM -> DfmScreen.TAB_ITEM;
-            case ENERGY -> DfmScreen.TAB_ENERGY;
-            case REDSTONE -> DfmScreen.TAB_REDSTONE;
-            case EXPERIENCE, FLUID -> DfmScreen.TAB_FLUID;
-        };
-    }
-
     static GuiIcon icon(Transmission t) {
         return switch (t) {
             case ITEM -> DfmScreen.ICON_ITEMS;
@@ -168,15 +160,12 @@ final class SideConfigWindow extends DfmScreen.Window {
 
         for (int i = 0; i < transmissions.size(); i++) {
             Transmission t = transmissions.get(i);
-            if (t == current) {
-                continue;
-            }
             boolean left = i < 4;
-            screen.tab(g, left ? x - DfmScreen.TAB_SIZE : x + width, y + 2 + MachineTabs.ROW_PITCH * (i % 4), left, color(t), icon(t), true,
-                    mouseX, mouseY, () -> {
+            screen.materialTab(g, left ? x - DfmScreen.MATERIAL_TAB_SIZE : x + width, y + 2 + DfmScreen.MATERIAL_TAB_PITCH * (i % 4), left,
+                    icon(t), t != current, mouseX, mouseY, () -> {
                         current = t;
                         return -1;
-                    }, null, () -> List.of(Component.translatable(t.translationKey())));
+                    }, () -> List.of(Component.translatable(t.translationKey())));
         }
 
         AutomationTab tabAutomation = automation.get(current);
@@ -253,7 +242,9 @@ final class SideConfigWindow extends DfmScreen.Window {
         }
         int base = AbstractMachineBlockEntity.BUTTON_SIDE_BASE + face.ordinal() * 16 + current.ordinal() * 2;
         ItemStack neighbor = neighbors[face.ordinal()];
-        screen.colorButton(g, x, y, SIDE, enabled ? route.color() & 0xFFFFFF : null, enabled, mouseX, mouseY,
+        // A face without a route is a plain button (like the Miner's), never a flat light gray one.
+        Integer tint = enabled && route != SideRoute.NONE ? Integer.valueOf(route.color() & 0xFFFFFF) : null;
+        screen.colorButton(g, x, y, SIDE, tint, enabled, mouseX, mouseY,
                 fixed ? () -> -1 : () -> base, fixed ? () -> -1 : () -> base + 1, () -> {
                     List<Component> lines = new ArrayList<>();
                     lines.add(Component.translatable(face.translationKey()));

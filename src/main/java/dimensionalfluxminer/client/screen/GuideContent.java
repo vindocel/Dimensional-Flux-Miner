@@ -185,12 +185,13 @@ final class GuideContent {
         Builder b = new Builder("tanks");
         b.item(DfmItems.DIMENSIONAL_TANK, "about").crafting("dimensional_tank");
         b.heading("dual").item(DfmItems.DIMENSIONAL_DUAL_TANK, "dual").crafting("dimensional_dual_tank");
-        b.heading("code").text("code").text("code_change");
+        b.heading("code").text("code").text("code_change").text("clear");
         b.heading("personal").text("personal");
-        b.heading("buckets").text("buckets");
+        b.heading("buckets").text("buckets").text("bucket_mode");
         b.heading("pipes").text("pipes").text("pipes_dual");
         b.heading("display").text("display");
         b.tip("break");
+        b.heading("creative").item(DfmItems.CREATIVE_DIMENSIONAL_TANK, "creative");
         return b.chapter(DfmItems.DIMENSIONAL_TANK);
     }
 

@@ -31,7 +31,8 @@ import net.neoforged.neoforge.fluids.FluidUtil;
  * Dimensional Tank block (single or dual). Right click with a filled bucket or fluid container empties it into a
  * chamber, with an empty one takes the liquid out (on the dual tank, the half of the block that was clicked: the right
  * side of the front, or the right face, is A; the left is B). The personal item makes the code personal, sneaking with
- * an empty hand makes it public again; anything else opens the screen.
+ * an empty hand makes it public again; anything else opens the screen. The creative tank has no code: sneaking with an
+ * empty hand forgets its liquid.
  */
 public class DimensionalTankBlock extends BaseEntityBlock implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
     private final TankKind kind;
@@ -61,11 +62,16 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return kind == TankKind.DUAL ? DUAL_CODEC : SINGLE_CODEC;
+        return switch (kind) {
+            case DUAL -> DUAL_CODEC;
+            case CREATIVE -> CREATIVE_CODEC;
+            default -> SINGLE_CODEC;
+        };
     }
 
     private static final MapCodec<DimensionalTankBlock> SINGLE_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.SINGLE, p));
     private static final MapCodec<DimensionalTankBlock> DUAL_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.DUAL, p));
+    private static final MapCodec<DimensionalTankBlock> CREATIVE_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.CREATIVE, p));
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -120,7 +126,7 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         // The personal item (a diamond by default) on a public tank gives it a channel of its own for this player.
-        if (stack.is(dimensionalfluxminer.DfmConfig.tankPersonalItem()) && !tank.code().personal()) {
+        if (!kind.creative() && stack.is(dimensionalfluxminer.DfmConfig.tankPersonalItem()) && !tank.code().personal()) {
             if (!level.isClientSide) {
                 tank.makePersonal(player, stack);
             }
@@ -133,8 +139,31 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
             return ItemInteractionResult.SUCCESS;
         }
         int chamber = chamberAt(state.getValue(BlockStateProperties.HORIZONTAL_FACING), hit.getLocation().subtract(Vec3.atLowerCornerOf(pos)));
+        if (stack.getItem() instanceof DimensionalTankItem item) {
+            return tankItemOn(stack, item, tank, chamber);
+        }
         return FluidUtil.interactWithFluidHandler(player, hand, tank.chamberHandler(chamber))
                 ? ItemInteractionResult.CONSUME : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    /**
+     * A single or creative tank item on a tank (any mode): it empties into the chamber as much as fits; only when nothing goes in does
+     * it fill from the chamber. A single tank on a tank of its own channel does nothing.
+     */
+    private ItemInteractionResult tankItemOn(ItemStack stack, DimensionalTankItem item, DimensionalTankBlockEntity tank, int chamber) {
+        net.neoforged.neoforge.fluids.capability.IFluidHandlerItem itemHandler = DimensionalTankItem.fluidHandler(stack);
+        if (itemHandler == null) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        if (item.kind() == kind && !kind.creative()
+                && stack.getOrDefault(dimensionalfluxminer.registry.DfmDataComponents.TANK_CODE.get(), TankCode.DEFAULT).sameChannel(tank.code())) {
+            return ItemInteractionResult.CONSUME;
+        }
+        net.neoforged.neoforge.fluids.capability.IFluidHandler chamberHandler = tank.chamberHandler(chamber);
+        if (FluidUtil.tryFluidTransfer(chamberHandler, itemHandler, Integer.MAX_VALUE, true).isEmpty()) {
+            FluidUtil.tryFluidTransfer(itemHandler, chamberHandler, Integer.MAX_VALUE, true);
+        }
+        return ItemInteractionResult.CONSUME;
     }
 
     /** Chamber under a point of the block (0..1 coordinates): on the dual tank A is the half with the lower model X. */
@@ -155,8 +184,11 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof DimensionalTankBlockEntity tank) {
-            // Sneaking with an empty hand makes a personal tank public again (the personal item comes back).
-            if (!player.isShiftKeyDown() || !tank.makePublic(player)) {
+            // Sneaking with an empty hand makes a personal tank public again (the personal item comes back), and empties
+            // the creative tank.
+            if (player.isShiftKeyDown() && kind.creative()) {
+                tank.setCreativeFluid(net.neoforged.neoforge.fluids.FluidStack.EMPTY);
+            } else if (!player.isShiftKeyDown() || !tank.makePublic(player)) {
                 serverPlayer.openMenu(tank, pos);
             }
         }

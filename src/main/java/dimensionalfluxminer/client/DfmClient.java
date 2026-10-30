@@ -169,6 +169,17 @@ public final class DfmClient {
                 return renderer;
             }
         }, DfmItems.GUIDE_BOOK.get());
+        event.registerItem(new IClientItemExtensions() {
+            private dimensionalfluxminer.client.render.CreativeTankItemRenderer renderer;
+
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) {
+                    renderer = new dimensionalfluxminer.client.render.CreativeTankItemRenderer();
+                }
+                return renderer;
+            }
+        }, DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {

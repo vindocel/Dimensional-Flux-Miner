@@ -105,12 +105,16 @@ final class MinerSideWindow extends DfmScreen.Window {
         boolean stabilized = "STABILIZED".equals(d.getString("core"));
         boolean items = current == Transmission.ITEM;
 
-        Transmission other = items ? Transmission.ENERGY : Transmission.ITEM;
-        screen.tab(g, x - DfmScreen.TAB_SIZE, y + 2, true, SideConfigWindow.color(other), SideConfigWindow.icon(other), true, mouseX, mouseY,
-                () -> {
-                    current = other;
-                    return -1;
-                }, null, () -> List.of(Component.translatable(other.translationKey())));
+        // Items and Energy tabs, each always in its own place; the current one is gray and sunk, like the tab of an open window.
+        Transmission[] tabs = {Transmission.ITEM, Transmission.ENERGY};
+        for (int i = 0; i < tabs.length; i++) {
+            Transmission t = tabs[i];
+            screen.materialTab(g, x - DfmScreen.MATERIAL_TAB_SIZE, y + 2 + DfmScreen.MATERIAL_TAB_PITCH * i, true,
+                    SideConfigWindow.icon(t), t != current, mouseX, mouseY, () -> {
+                        current = t;
+                        return -1;
+                    }, () -> List.of(Component.translatable(t.translationKey())));
+        }
 
         // Screen: the automation of the item ports, or the energy mode.
         screen.innerScreen(g, x + 38, y + 22, 80, 12);

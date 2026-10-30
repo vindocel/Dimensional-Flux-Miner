@@ -35,6 +35,8 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
     private static final int TERMINAL_W = 104;
     private static final int TERMINAL_H = 55;
     private static final int ENERGY_Y = TERMINAL_Y + TERMINAL_H + 2;
+    private static final int LAMP_RUNNING = 0xFF5BE37A;
+    private static final int LAMP_STOPPED = 0xFFFF8A2E;
     private static final int BUTTONS_X = 12;
     private static final int BUTTON_SIZE = 18;
     /** Power and Filter stacked left of the terminal. */
@@ -67,9 +69,12 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
     protected void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
         CompoundTag d = data();
 
-        // Terminal: status, core, limit and the Dimensional Matter buffer.
+        // Terminal: status (with its lamp on the right), core, limit and the Dimensional Matter buffer.
         innerScreen(g, x + TERMINAL_X, y + TERMINAL_Y, TERMINAL_W, TERMINAL_H);
-        screenLines(g, screenText(d), x + TERMINAL_X + 4, y + TERMINAL_Y + 5, TERMINAL_W - 8, 12);
+        List<Component> lines = screenText(d);
+        screenLines(g, lines.subList(0, 1), x + TERMINAL_X + 4, y + TERMINAL_Y + 5, TERMINAL_W - 8 - GlassViewport.LED - 4, 12);
+        screenLines(g, lines.subList(1, lines.size()), x + TERMINAL_X + 4, y + TERMINAL_Y + 17, TERMINAL_W - 8, 12);
+        statusLamp(g, d, x + TERMINAL_X + TERMINAL_W - 4 - GlassViewport.LED, y + TERMINAL_Y + 6);
         hotspot(x + TERMINAL_X, y + TERMINAL_Y, TERMINAL_W, TERMINAL_H, null, null, () -> metrics(d), 0);
 
         // Energy bar under the terminal, as wide as it.
@@ -163,6 +168,22 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
             if (isWindowOpen(window)) {
                 closeWindow(window);
             }
+        }
+    }
+
+    /**
+     * Lamp of the terminal: steady green while mining, steady orange when stopped by the player or by redstone,
+     * slow amber blink while waiting on something, fast red blink while the machine cannot work (no Core, broken
+     * structure).
+     */
+    private static void statusLamp(GuiGraphics g, CompoundTag d, int x, int y) {
+        String core = d.getString("core");
+        MinerStatus status = core.isEmpty() || "NONE".equals(core) ? MinerStatus.CORE_MISSING : parseStatus(d.getString("status"));
+        switch (status) {
+            case RUNNING -> GlassViewport.led(g, x, y, LAMP_RUNNING, 0);
+            case MANUAL_STOP, REDSTONE_HALT -> GlassViewport.led(g, x, y, LAMP_STOPPED, 0);
+            case CORE_MISSING, MULTIBLOCK_INVALID -> GlassViewport.led(g, x, y, SCREEN_ERROR, 400);
+            default -> GlassViewport.led(g, x, y, SCREEN_WARN, 800);
         }
     }
 

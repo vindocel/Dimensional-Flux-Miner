@@ -36,10 +36,14 @@ public final class DfmBlockEntities {
     @SuppressWarnings("DataFlowIssue")
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DimensionalTankBlockEntity>> DIMENSIONAL_TANK =
             BLOCK_ENTITIES.register("dimensional_tank", () -> BlockEntityType.Builder.of(DimensionalTankBlockEntity::new,
-                    DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get()).build(null));
+                    DfmBlocks.DIMENSIONAL_TANK.get(), DfmBlocks.DIMENSIONAL_DUAL_TANK.get(),
+                    DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get()).build(null));
 
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, DIMENSIONAL_TANK.get(), DimensionalTankBlockEntity::fluidFor);
+        // Single and creative tank items are fluid containers (used on a tank they fill it); the dual one is not.
+        event.registerItem(Capabilities.FluidHandler.ITEM, (stack, context) -> dimensionalfluxminer.tank.DimensionalTankItem.fluidHandler(stack),
+                DfmItems.DIMENSIONAL_TANK.get(), DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
         // The terminal has no port of its own: only its null side (read-only views for information tools) answers.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, MINER_CONTROLLER.get(), (be, side) -> be.itemPort(be.getBlockPos(), side));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, MINER_CONTROLLER.get(), (be, side) -> be.energyPort(be.getBlockPos(), side));

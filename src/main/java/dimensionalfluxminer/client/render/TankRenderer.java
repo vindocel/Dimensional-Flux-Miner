@@ -32,6 +32,8 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
     private static final ResourceLocation SOLID = DimensionalFluxMiner.id("block/dimensional_tank/solid_white");
     /** Lid stripe of an empty chamber. */
     private static final int EMPTY_STRIPE = 0xFF7A7A7A;
+    /** Code fields of the creative tank, which has no channel. */
+    private static final int NO_CODE = 0xFF2B2B2B;
 
     /** A chamber: liquid volume (x0, y0, z0, x1, yMax, z1) and gauge fill (x0, y0, x1, yMax, z) at 100%. */
     private record Chamber(float[] volume, float[] gauge) {
@@ -47,13 +49,19 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
     /** The lid code panel's face is at Y 16.03; its fields are drawn just under it, above the lid (Y 16). */
     private static final float LID_CODE_Y = 16.02F;
 
-    /** Top of the liquid at 100%: just under the window's upper edge. */
-    private static final float LIQUID_TOP = 13.25F;
+    /** Top of the liquid at 100%: at the windows' upper edge. */
+    private static final float LIQUID_TOP = 13.45F;
+    /**
+     * The liquid reaches the glass: the inner faces of the windows are at 1.2625 and 14.7375; a hair inside them so the
+     * liquid never flickers through the glass.
+     */
+    private static final float GLASS_MIN = 1.27F;
+    private static final float GLASS_MAX = 14.73F;
     private static final float GAUGE_BOTTOM = 4.213889F;
     private static final float GAUGE_TOP = 12.436111F;
 
     private static final Layout SINGLE = new Layout(
-            new Chamber[] {new Chamber(new float[] {2.3F, 2.5F, 2.3F, 13.7F, LIQUID_TOP, 13.7F},
+            new Chamber[] {new Chamber(new float[] {GLASS_MIN, 2.5F, GLASS_MIN, GLASS_MAX, LIQUID_TOP, GLASS_MAX},
                     new float[] {12.8125F, GAUGE_BOTTOM, 13.154167F, GAUGE_TOP, 0.7385F})},
             new float[][] {
                     {4.496875F, 3.0625F, 5.153125F, 4.6875F, 0.1885F},
@@ -68,9 +76,9 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
 
     private static final Layout DUAL = new Layout(
             new Chamber[] {
-                    new Chamber(new float[] {2.3F, 2.5F, 2.3F, 7.65F, LIQUID_TOP, 13.7F},
+                    new Chamber(new float[] {GLASS_MIN, 2.5F, GLASS_MIN, 7.65F, LIQUID_TOP, GLASS_MAX},
                             new float[] {2.845833F, GAUGE_BOTTOM, 3.1875F, GAUGE_TOP, 0.7385F}),
-                    new Chamber(new float[] {8.35F, 2.5F, 2.3F, 13.7F, LIQUID_TOP, 13.7F},
+                    new Chamber(new float[] {8.35F, 2.5F, GLASS_MIN, GLASS_MAX, LIQUID_TOP, GLASS_MAX},
                             new float[] {12.8125F, GAUGE_BOTTOM, 13.154167F, GAUGE_TOP, 0.7385F})},
             new float[][] {
                     {8.546875F, 3.0625F, 9.203125F, 4.6875F, 0.2385F},
@@ -98,11 +106,33 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(be.facing())));
         pose.translate(-0.5F, 0, -0.5F);
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
+        FluidStack[] chambers = new FluidStack[layout.chambers().length];
+        for (int i = 0; i < chambers.length; i++) {
+            chambers[i] = be.chamber(i);
+        }
+        contents(pose, buffers, layout, chambers, be.kind().capacity(), be.kind().creative() ? null : be.code(), light);
+        pose.popPose();
+    }
 
+    /**
+     * Creative tank item: the liquid it holds, drawn as in the block (the item renderer draws the tank model over it).
+     * Block space 0..1, front north.
+     */
+    public static void renderCreativeItem(FluidStack stack, PoseStack pose, MultiBufferSource buffers, int light) {
+        pose.pushPose();
+        pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
+        contents(pose, buffers, SINGLE, new FluidStack[] {stack.copyWithAmount(TankKind.CREATIVE.capacity())}, TankKind.CREATIVE.capacity(),
+                null, light);
+        pose.popPose();
+    }
+
+    /** Liquids, gauges, lid stripes and code fields in model units; a null code (creative tank) leaves the fields dark. */
+    private static void contents(PoseStack pose, MultiBufferSource buffers, Layout layout, FluidStack[] chambers, int capacity, TankCode code,
+                                 int light) {
         VertexConsumer translucent = buffers.getBuffer(Sheets.translucentCullBlockSheet());
         TextureAtlasSprite solid = sprite(SOLID);
         for (int i = 0; i < layout.chambers().length; i++) {
-            FluidStack stack = be.chamber(i);
+            FluidStack stack = chambers[i];
             Chamber chamber = layout.chambers()[i];
             if (stack.isEmpty()) {
                 if (i < layout.stripes().length) {
@@ -110,7 +140,7 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
                 }
                 continue;
             }
-            float fraction = Mth.clamp(stack.getAmount() / (float) TankKind.CHAMBER_CAPACITY, 0, 1);
+            float fraction = Mth.clamp(stack.getAmount() / (float) capacity, 0, 1);
             IClientFluidTypeExtensions fluid = IClientFluidTypeExtensions.of(stack.getFluid());
             TextureAtlasSprite still = sprite(fluid.getStillTexture(stack));
             int color = fluid.getTintColor(stack);
@@ -132,16 +162,15 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
             }
         }
 
-        // The dimensional address, left to right as seen from the front; it stays visible with empty chambers.
-        TankCode code = be.code();
+        // The dimensional address, left to right as seen from the front; it stays visible with empty chambers. The
+        // creative tank has no channel: its fields stay dark.
         for (int p = 0; p < TankCode.POSITIONS; p++) {
             float[] f = layout.code()[p];
-            int color = 0xFF000000 | code.get(p).getTextureDiffuseColor();
+            int color = code == null ? NO_CODE : 0xFF000000 | code.get(p).getTextureDiffuseColor();
             face(pose, translucent, Direction.NORTH, f[0], f[1], f[4], f[2], f[3], f[4], solid, color, light);
             float[] l = layout.lidCode()[p];
             face(pose, translucent, Direction.UP, l[0], LID_CODE_Y, l[1], l[2], LID_CODE_Y, l[3], solid, color, light);
         }
-        pose.popPose();
     }
 
     private static void stripe(PoseStack pose, VertexConsumer consumer, float[] s, TextureAtlasSprite sprite, int color, int light) {

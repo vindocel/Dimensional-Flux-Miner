@@ -4,9 +4,9 @@
 
 ![Banner — the Dimensional Flux Miner working at night](https://cdn.modrinth.com/data/vTLvFHBt/images/917b8bd0c0b8449d1632273cf8827692c8456144.png)
 
-The **Dimensional Flux Miner** tunes into the frequency of the dimension it stands in and makes that dimension's ores **appear out of nothing** — without opening a single hole in your world. Feed it energy and Dimensional Matter, choose how fast it runs, and watch the ores pour out.
+The **Dimensional Flux Miner** makes the ores of the dimension it stands in **appear out of nothing**, without opening a single hole in your world. Feed it energy and Dimensional Matter, pick a speed and collect the ores.
 
-Two support machines get you there: the **Mechanical Crusher** and the **Electric Furnace**. And an animated **Dimensional Flux Guide** explains everything, in game.
+Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimensional Tanks** and an animated **Dimensional Flux Guide** that explains everything in game.
 
 > ## 🌐 Showcase
 > See every machine, the Dimensional Death and the guide in action on the **[Dimensional Flux Miner showcase](https://vindocel.github.io/Showcase-DFM/)**.
@@ -15,16 +15,14 @@ Two support machines get you there: the **Mechanical Crusher** and the **Electri
 
 ---
 
-## 🆕 New in 0.2.2 — the first stable release
+## 🆕 New in 0.2.6
 
-- 🚀 **Ad Astra planets**: the Basic core never drains planets or orbits; there the Stabilized core takes each planet's own stone, sands and soils as matter.
-- 👻 **Assembly preview with real blocks**: hold the Miner Terminal to see the whole machine as see-through blocks; once placed, the missing parts stay visible until the machine forms.
-- 🟫 **More matter in the Overworld**: grass blocks (0.2 DM), sand and red sand (0.3 DM) and every terracotta (0.5 DM).
-- 🔗 **Logistics Networks on the Electric Furnace**: node sides feed all three lanes or one lane each in the alloy modes.
-- 📖 **A more complete guide**: new chapters *Automation and logistics* and *Why did my machine stop?*, plus pages on cores, the Drain, the filter, Liquid Experience and claim protections.
-- ⚙️ The Dimensional Crusher is now the **Mechanical Crusher**, and the energy faces of every Side Configuration are light blue, like the energy bar.
-
-> ⚠️ **Updating an older world?** Crushers from older versions disappear (craft them again), and Miners built with the old middle layer come apart when the world loads: their items drop and the parts are ready to be rebuilt (the four middle corners are now Steel Chassis).
+- 🌙 **Light or dark screens**: a Settings tab on every machine picks the screen color, the icon color and the sound volume.
+- 🎨 **Redrawn screens**: new icons, a flat panel set into the frame and separate Auto-Input / Auto-Eject buttons.
+- 💡 **Glowing panels** on the Crusher and the Electric Furnace while they have energy.
+- 🔀 **Polymorph**: pick the result when an item has more than one recipe.
+- 🧪 **Cognition**: the Experience Obelisk takes Liquid Experience.
+- 🚫 Mobs no longer spawn on the machines and tanks.
 
 ---
 
@@ -32,12 +30,13 @@ Two support machines get you there: the **Mechanical Crusher** and the **Electri
 
 | | |
 |---|---|
-| ⛏️ **A miner that never digs** | A 3×3×3 multiblock that manifests the ores that really generate in its dimension, each according to its rarity. Overworld, Nether, End and modded dimensions. |
-| ⚡ **No speed upgrades to craft** | Every machine has a **speed selector from 1 to 10**. Your power generation is the only limit: the same machine follows you from the first ingot to the last dragon. |
-| ⚙️ **Double your ores** | The Crusher turns every ore into 2 raw ores (3 with the upgrade). Ores from any mod. |
-| 🔥 **Electric smelting and alloys** | Three lanes, a raw ore bonus, alloys like steel, and your XP stored as Liquid Experience. |
-| ☠️ **Dimensional Death** | Mining has a price. Drain the land and it rots forever… or choose the clean way. |
-| 📖 **An animated guide** | A real 3D book that opens in your hand and turns its pages as you read. |
+| ⛏️ **A miner that never digs** | A 3×3×3 multiblock that makes the ores of its dimension, each with its natural rarity. Modded dimensions included. |
+| ⚡ **Speed 1 to 10** | No speed upgrades to craft. Your power generation is the only limit. |
+| ⚙️ **Double your ores** | The Crusher turns every ore into 2 raw ores (3 with the upgrade). |
+| 🔥 **Electric smelting and alloys** | Three lanes, a raw ore bonus and alloys like steel. |
+| 🛢️ **Liquids across dimensions** | Tanks with the same color code share the same liquid, anywhere. |
+| ☠️ **Dimensional Death** | Drain the land and it rots forever… or choose the clean way. |
+| 📖 **An animated guide** | A 3D book that opens in your hand. |
 
 ![From first ingot to last dragon — the three machines](https://cdn.modrinth.com/data/vTLvFHBt/images/06f8b36da6a8aed474a51200535e719fc0aa1a08.png)
 
@@ -47,25 +46,21 @@ Two support machines get you there: the **Mechanical Crusher** and the **Electri
 
 ![The Miner built and running](https://cdn.modrinth.com/data/vTLvFHBt/images/3867eb48460e63fe5ee32b1504b555ada8f026ec.png)
 
-Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-click it, and it places every missing part from your inventory for you, showing each one as a see-through block where it goes. Just hold the Terminal to preview the whole machine before you place it.
+Place the **Miner Terminal** and right-click it: it builds the other 26 parts from your inventory. Hold the Terminal to preview the machine before placing it.
 
 ![Assembly outlines](https://cdn.modrinth.com/data/vTLvFHBt/images/afa92fe1ff35853ba3bff1ceabe6e772a7131a4a.png)
 
-### 💎 Choose your core
-
-| Core | How it gets its matter |
+| Core | Where the matter comes from |
 |---|---|
-| 🌀 **Basic Dimensional Core** | Stretches invisible roots for 300 blocks and harvests the dimensional energy of the land, column by column. Powerful… but the drained land falls to the **Dimensional Death**. |
-| 💉 **Stabilized Dimensional Core** | Feed it the stone and ores of its own dimension and it turns them into matter on the spot. **The landscape stays untouched** — and that chest full of cobblestone is finally good for something. The only core that works in the Nether, the End and on Ad Astra's planets. |
+| 🌀 **Basic Dimensional Core** | Drains the land around it (up to 300 blocks). Fast, but the land falls to the **Dimensional Death**. |
+| 💉 **Stabilized Dimensional Core** | Turns stone and ores you feed it into matter. **The land stays untouched.** The only core that works in the Nether and the End. |
 
 ![Dimensional Drain — the Basic core harvesting the land](https://cdn.modrinth.com/data/vTLvFHBt/images/12b3789219fb58fc190a6169361f0ac17443c9a7.png)
 
-### 🎛️ In control
-
-- 🔌 A power button — it never starts by itself, and redstone can stop it but never wake it.
-- 🖥️ A terminal screen that tells you exactly what is holding production back.
-- 🧲 A filter to keep only the ores you want.
-- 🔁 Nine configurable ports on its base, with Auto Input / Auto Eject to the chests touching them.
+- 🔌 Starts only with its power button; redstone can stop it.
+- 🖥️ The screen says what is holding production back.
+- 🧲 A filter keeps only the ores you want.
+- 🔁 Nine configurable ports with Auto Input / Auto Eject.
 
 ![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/f4728923e251dc0e79b6900931f045c11c921096.png)
 
@@ -73,11 +68,9 @@ Twenty-seven parts, one single purpose. Place the **Miner Terminal**, right-clic
 
 ## ⚙️ Mechanical Crusher
 
-Steel jaws that grind any precious stone into grains.
-
-- 🪨 **Every ore gives double** — triple with the Efficiency Upgrade.
-- 🧂 Ingots, raw ores and gems of any mod become dust; metal dusts smelt back into ingots.
-- 📦 Items dropped on top go in by themselves; full side configuration for pipes.
+- 🪨 Every ore gives **double**, triple with the Efficiency Upgrade.
+- 🧂 Ingots, raw ores and gems become dust; metal dusts smelt back into ingots.
+- 📦 Items dropped on top go in by themselves.
 
 ![Crusher working](https://cdn.modrinth.com/data/vTLvFHBt/images/cf0fef0b9b2c7ab6da479d3c3317f3c7d6b7bf49.png)
 
@@ -87,21 +80,15 @@ Steel jaws that grind any precious stone into grains.
 
 ## 🔥 Electric Furnace
 
-A furnace without flame: three lanes of electric heat that smelt and join metals.
+Three electric lanes that smelt and make alloys.
 
 ![Electric Furnace at work](https://cdn.modrinth.com/data/vTLvFHBt/images/31a0bbbfad129b5557a3eacdbeafc5e0c22ffa3c.png)
 
-| Mode | |
-|---|---|
-| **Furnace Only** | three independent furnaces |
-| **Alloy + Furnace** | makes the alloy when the lanes hold one, otherwise smelts each lane |
-| **Alloy Only** | alloys only, like **steel** (with slag as a byproduct) |
-
+- 🔀 Three modes: **Furnace Only**, **Alloy + Furnace** and **Alloy Only** (like **steel**).
 - 🎁 **Raw ore bonus**: 2 raw → 3 ingots (1 raw → 2 with the upgrade).
-- ✨ Your XP is kept as **Liquid Experience** — pipe it out, or break the machine and collect the orbs.
-- 🧪 Also runs the alloy recipes of **EnderIO** and **Oritech** when they are installed.
+- ✨ Your XP is stored as **Liquid Experience**.
 
-> 💡 **Crusher + Electric Furnace together**: 1 ore → **3** ingots, up to **6** with both upgrades. A common furnace gives you 1.
+> 💡 **Crusher + Electric Furnace**: 1 ore → **3** ingots, up to **6** with both upgrades.
 
 ![Electric Furnace modes](https://cdn.modrinth.com/data/vTLvFHBt/images/0107ff9cf8884147a10f7a37cca67b6eaa3790b8.png)
 
@@ -109,25 +96,29 @@ A furnace without flame: three lanes of electric heat that smelt and join metals
 
 ---
 
-## ⚡ Speed 1–10: your power, your pace
+## 🛢️ Dimensional Tanks
 
-There is no speed upgrade to craft. Pick a speed on any machine; each level up asks for more energy and works faster in the same proportion. Idle machines spend nothing.
+Fill a tank at home, drain it in the Nether. Tanks with the same **three-color code** share the same liquid, in any dimension.
+
+![Dimensional Tanks](https://cdn.modrinth.com/data/vTLvFHBt/images/d5d195b620b8977cfdd212247133484c44c1e163.png)
+
+- 🛢️ **Dimensional Tank**: one chamber of 128 000 mB. **Dual Dimensional Tank**: two chambers, two liquids.
+- 🎨 Pick the code on the screen out of 16 colors. A **diamond** makes it private.
+- 🔧 Buckets, pipes and Auto Input / Auto Eject. No energy needed.
+
+---
+
+## ⚡ Speed 1–10
+
+Pick a speed on any machine: each level uses more energy and works faster in the same proportion. Idle machines use nothing.
 
 | Machine | Speed 1 | Speed 10 |
 |---|---|---|
 | ⛏️ Miner | 2 500 FE/t · 0.25 ores/s | 12 800 000 FE/t · **1 280 ores/s** |
 | ⚙️ Crusher | 100 FE/t · 1 item / 10 s | 1 280 000 FE/t · **1 280 items/s** |
-| 🔥 Electric Furnace (3 lanes) | 250 FE/t · 0.1 items/s per lane | 3 200 000 FE/t · **1 280 items/s per lane, 3 840 in total** |
+| 🔥 Electric Furnace | 250 FE/t · 0.1 items/s per lane | 3 200 000 FE/t · **1 280 items/s per lane** |
 
-Every operation costs the same energy at every speed: 200 000 FE per Miner attempt, 20 000 FE per crushed item, 50 000 / 3 FE per smelted item and 30 000 FE per alloy. All costs are configurable on the server.
-
-**✨ Dimensional Efficiency Upgrade** — one per machine. *It costs a dragon, an enchanted apple and a piece of your soul.*
-
-| | |
-|---|---|
-| ⚙️ Crusher | half the energy, 3 products per ore |
-| 🔥 Electric Furnace | half the energy, raw bonus 1 → 2 |
-| ⛏️ Miner | up to +0.2 Dimensional Matter per item injected; filtered ores come back as matter |
+**✨ Dimensional Efficiency Upgrade**: one per machine, half the energy and more output. *It costs a dragon, an enchanted apple and a piece of your soul.*
 
 > 🔋 This mod generates **no energy**. Bring your generators from any other mod.
 
@@ -137,11 +128,11 @@ Every operation costs the same energy at every speed: 200 000 FE per Miner attem
 
 ![Dimensional Death — the corrupted land](https://cdn.modrinth.com/data/vTLvFHBt/images/a660705648fb7769d1ee441925f932f0afac7c4b.png)
 
-Dimensional energy is the glue that holds the world together. Where the Basic core harvests it, the land falls apart.
+Where the Basic core drains the land, it falls apart.
 
-- 🟣 Dirt, grass and stone darken; terracotta turns into **Corrupted Terracotta**; sand and gravel turn into **Corrupted Sediment**; flowers become wither roses.
-- 💧 **Corrupted Water** turns purple and sinks, layer by layer. No land plant drinks from it — only sea life endures. *No, it is not grape juice.*
-- 🧟 It hurts players and peaceful creatures and **heals hostile ones**. You would not want to face a drowned bathed in it.
+- 🟣 Dirt, stone, sand and terracotta darken and corrupt; flowers become wither roses.
+- 💧 **Corrupted Water** turns purple and spreads down. *No, it is not grape juice.*
+- 🧟 It hurts players and peaceful creatures and **heals hostile ones**.
 
 > 🌿 Want to mine without hurting the land? Use the **Stabilized Dimensional Core**.
 
@@ -151,14 +142,10 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ![An animated book — the guide open in hand](https://cdn.modrinth.com/data/vTLvFHBt/images/a46b9283e9e4fd374a90703761ec03dd05a32fb1.png)
 
-![The whole mod, in game — the guide's pages](https://cdn.modrinth.com/data/vTLvFHBt/images/cd5e51e5d8f59683ba740bc0df94cb63004bc8a2.png)
+Forge your first **Pure Steel** and the guide is yours. The book opens in your hand and turns its pages as you read.
 
-Forge your first **Pure Steel** and it is yours. Use it and the book **opens in your hand**, stays half open while you read, and **turns a page in your hand** every time you turn one on screen.
-
-- 📄 Real pages with a clickable table of contents and page-turn animations.
-- 🧊 An interactive **3D view of the Miner** — rotate it, go layer by layer, highlight each part.
+- 🧊 An interactive **3D view of the Miner**, layer by layer.
 - 🧾 Recipes, speed tables and matter values read live from your server.
-- 🔎 Items named in the text show their icon when you hover them.
 
 ![Every chapter, explained](https://cdn.modrinth.com/data/vTLvFHBt/images/5d68ff65cc6cb1cba2400eceff0b2172cbbdcb29.png)
 
@@ -166,22 +153,7 @@ Forge your first **Pure Steel** and it is yours. Use it and the book **opens in 
 
 ## 🏆 Advancements
 
-**20 advancements**, from your first Crusher to… well, you will see. Two of them are secret, and one of those pays very well.
-
----
-
-## 🔌 Compatibility
-
-- 🔧 Any pipe or cable mod (standard NeoForge item, energy and fluid capabilities on every face).
-- 📘 **EMI** and **JEI**: recipe categories for every machine; click a machine's chamber to see its recipes, R / U work on items inside machines.
-- 🔍 **Jade**: machine energy bars, items and stored XP.
-- 🔗 **Logistics Networks**: nodes set the Miner's ports and the machines' sides by themselves.
-- ⏩ Tick accelerators: the machines run every extra cycle they are given — at full energy cost.
-- 🌍 Ores and dusts of other mods through the common tags.
-- 🚀 **Ad Astra**: the Miner works on every planet with the Stabilized core.
-- 🛡️ **FTB Chunks** and **Open Parties and Claims**: Dimensional Death never touches someone else's claim.
-- 📜 **KubeJS** (optional): server options, recipes, Matter values, Resource Profiles and tags from a script.
-- 🌐 English and Brazilian Portuguese.
+**20 advancements**, two of them secret.
 
 ---
 
@@ -199,13 +171,13 @@ Forge your first **Pure Steel** and it is yours. Use it and the book **opens in 
 ## ❓ FAQ
 
 **Does it break blocks in my world?**
-No. The Miner never digs. Only the Basic core's drain changes the land (Dimensional Death); the Stabilized core never touches it.
+No. Only the Basic core changes the land (Dimensional Death).
 
 **Which ores does it make?**
-The ones that really generate in the dimension where it stands, modded ores included, each with its natural rarity. A filter lets you keep only what you want.
+The ones that generate in its dimension, modded ores included.
 
 **Does it need a specific energy mod?**
-No. Any mod that produces Forge Energy (FE) works.
+No. Any Forge Energy (FE) source works.
 
 **Can I use it in a modpack?**
 Yes.

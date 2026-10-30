@@ -2,6 +2,10 @@ package dimensionalfluxminer.machine;
 
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
+import dimensionalfluxminer.content.Waterlogging;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,25 +26,39 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
 
-/** Base block of the single-block machines: horizontal facing plus the off/idle/active state. */
-public abstract class HorizontalMachineBlock extends BaseEntityBlock {
+/** Base block of the single-block machines: horizontal facing plus the off/idle/active state; waterloggable. */
+public abstract class HorizontalMachineBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
     protected HorizontalMachineBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any()
                 .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
-                .setValue(DfmStateProperties.MACHINE_STATE, MachineState.OFF));
+                .setValue(DfmStateProperties.MACHINE_STATE, MachineState.OFF)
+                .setValue(BlockStateProperties.WATERLOGGED, false));
     }
 
     protected abstract BlockEntityType<? extends AbstractMachineBlockEntity> blockEntityType();
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.HORIZONTAL_FACING, DfmStateProperties.MACHINE_STATE);
+        builder.add(BlockStateProperties.HORIZONTAL_FACING, DfmStateProperties.MACHINE_STATE, BlockStateProperties.WATERLOGGED);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite());
+        return Waterlogging.placed(defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING,
+                context.getHorizontalDirection().getOpposite()), context);
+    }
+
+    @Override
+    protected FluidState getFluidState(BlockState state) {
+        return Waterlogging.fluid(state);
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos,
+                                     BlockPos neighborPos) {
+        Waterlogging.tick(state, level, pos);
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
     @Override

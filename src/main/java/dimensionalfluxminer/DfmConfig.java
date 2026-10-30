@@ -108,6 +108,14 @@ public final class DfmConfig {
                     "queried. \"deny\": no corruption anywhere until it works again (safe default). \"ignore\": treat it as not installed.")
             .define("corruption.claimFailurePolicy", "deny", o -> "deny".equals(o) || "ignore".equals(o));
 
+    public static final ModConfigSpec.ConfigValue<String> TANK_PERSONAL_ITEM = BUILDER
+            .comment("Dimensional Tanks: item that turns a tank's code into a personal one (a channel of its own for the player",
+                    "who used it). Using the tank empty-handed while sneaking makes it public again and gives the item back.")
+            .define("tank.personalItem", "minecraft:diamond", o -> o instanceof String s && ResourceLocation.tryParse(s) != null);
+    public static final ModConfigSpec.BooleanValue TANK_ANARCHY_MODE = BUILDER
+            .comment("Dimensional Tanks: a broken personal tank drops as a public one, plus the personal item.")
+            .define("tank.anarchyMode", false);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     /** An administrative rectangle of one dimension (block coordinates, inclusive). */
@@ -334,6 +342,17 @@ public final class DfmConfig {
     }
 
     /** Recipe types of other mods run as alloys by the Electric Furnace. */
+    /** Item that makes a Dimensional Tank personal (diamond unless configured; an unknown id falls back to it). */
+    public static net.minecraft.world.item.Item tankPersonalItem() {
+        ResourceLocation id = ResourceLocation.tryParse(value(TANK_PERSONAL_ITEM));
+        var item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+        return item == null || item == net.minecraft.world.item.Items.AIR ? net.minecraft.world.item.Items.DIAMOND : item;
+    }
+
+    public static boolean tankAnarchyMode() {
+        return value(TANK_ANARCHY_MODE);
+    }
+
     public static List<ResourceLocation> externalAlloyTypes() {
         List<? extends String> ids = value(ELECTRIC_FURNACE_EXTERNAL_ALLOY_TYPES);
         return ids.stream().map(ResourceLocation::tryParse).filter(java.util.Objects::nonNull).toList();

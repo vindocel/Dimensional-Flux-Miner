@@ -35,13 +35,15 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
     private static final int TERMINAL_W = 104;
     private static final int TERMINAL_H = 55;
     private static final int ENERGY_Y = TERMINAL_Y + TERMINAL_H + 2;
+    private static final int LAMP_RUNNING = 0xFF5BE37A;
+    private static final int LAMP_STOPPED = 0xFFFF8A2E;
     private static final int BUTTONS_X = 12;
     private static final int BUTTON_SIZE = 18;
     /** Power and Filter stacked left of the terminal. */
     private static final int BUTTON_STEP = BUTTON_SIZE + 2;
-    private static final ResourceLocation POWER_ON = sprite("power_controls/power_on");
-    private static final ResourceLocation POWER_OFF = sprite("power_controls/power_off");
-    private static final ResourceLocation FILTER = sprite("power_controls/filter");
+    private static final GuiIcon POWER_ON = GuiIcon.POWER_ON;
+    private static final GuiIcon POWER_OFF = GuiIcon.POWER_OFF;
+    private static final GuiIcon FILTER = GuiIcon.FILTER;
 
     private final FilterWindow filterWindow = new FilterWindow();
     private final MinerSideWindow sideWindow;
@@ -67,9 +69,12 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
     protected void renderMain(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
         CompoundTag d = data();
 
-        // Terminal: status, core, limit and the Dimensional Matter buffer.
+        // Terminal: status (with its lamp on the right), core, limit and the Dimensional Matter buffer.
         innerScreen(g, x + TERMINAL_X, y + TERMINAL_Y, TERMINAL_W, TERMINAL_H);
-        screenLines(g, screenText(d), x + TERMINAL_X + 4, y + TERMINAL_Y + 5, TERMINAL_W - 8, 12);
+        List<Component> lines = screenText(d);
+        screenLines(g, lines.subList(0, 1), x + TERMINAL_X + 4, y + TERMINAL_Y + 5, TERMINAL_W - 8 - GlassViewport.LED - 4, 12);
+        screenLines(g, lines.subList(1, lines.size()), x + TERMINAL_X + 4, y + TERMINAL_Y + 17, TERMINAL_W - 8, 12);
+        statusLamp(g, d, x + TERMINAL_X + TERMINAL_W - 4 - GlassViewport.LED, y + TERMINAL_Y + 6);
         hotspot(x + TERMINAL_X, y + TERMINAL_Y, TERMINAL_W, TERMINAL_H, null, null, () -> metrics(d), 0);
 
         // Energy bar under the terminal, as wide as it.
@@ -86,13 +91,13 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
         // Power (a push switch: sunk while the machine is on) and Filter, left of the terminal.
         boolean run = d.getBoolean("run");
         // The icon shows the action of the next click: the gray symbol to turn off while on, the cyan one to turn on while off.
-        iconButton(g, x + BUTTONS_X, y + TERMINAL_Y, BUTTON_SIZE, run ? POWER_OFF : POWER_ON, 18, 18, run,
+        iconButton(g, x + BUTTONS_X, y + TERMINAL_Y, BUTTON_SIZE, run ? POWER_OFF : POWER_ON, run,
                 mouseX, mouseY, locked ? () -> -1 : () -> MinerControllerBlockEntity.BUTTON_RUN, () -> locked ? lockedTooltip() : List.of(
                         Component.translatable(run ? "gui.dimensionalfluxminer.miner.power.on" : "gui.dimensionalfluxminer.miner.power.off"),
                         Component.translatable("gui.dimensionalfluxminer.miner.run.tooltip").withStyle(ChatFormatting.GRAY)));
         // Filter (sunk while some families are selected).
         int selected = selectedCount(d);
-        iconButton(g, x + BUTTONS_X, y + TERMINAL_Y + BUTTON_STEP, BUTTON_SIZE, FILTER, 11, 10, selected > 0, mouseX, mouseY, () -> {
+        iconButton(g, x + BUTTONS_X, y + TERMINAL_Y + BUTTON_STEP, BUTTON_SIZE, FILTER, selected > 0, mouseX, mouseY, () -> {
             if (!locked) {
                 openWindow(filterWindow);
             }
@@ -126,6 +131,8 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
 
         // Left tabs like the other machines: Side Configuration on top (locked without a Core), Details under it.
         MachineTabs.details(this, g, x, y, true, MachineTabs.ROW_2, detailsWindow, mouseX, mouseY);
+        // The look of the screen can be changed even without a Core.
+        themeTab(g, x, y, MachineTabs.ROW_3, mouseX, mouseY);
         if (locked) {
             return;
         }
@@ -164,6 +171,22 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
         }
     }
 
+    /**
+     * Lamp of the terminal: steady green while mining, steady orange when stopped by the player or by redstone,
+     * slow amber blink while waiting on something, fast red blink while the machine cannot work (no Core, broken
+     * structure).
+     */
+    private static void statusLamp(GuiGraphics g, CompoundTag d, int x, int y) {
+        String core = d.getString("core");
+        MinerStatus status = core.isEmpty() || "NONE".equals(core) ? MinerStatus.CORE_MISSING : parseStatus(d.getString("status"));
+        switch (status) {
+            case RUNNING -> GlassViewport.led(g, x, y, LAMP_RUNNING, 0);
+            case MANUAL_STOP, REDSTONE_HALT -> GlassViewport.led(g, x, y, LAMP_STOPPED, 0);
+            case CORE_MISSING, MULTIBLOCK_INVALID -> GlassViewport.led(g, x, y, SCREEN_ERROR, 400);
+            default -> GlassViewport.led(g, x, y, SCREEN_WARN, 800);
+        }
+    }
+
     private List<Component> screenText(CompoundTag d) {
         Component matter = Component.translatable("gui.dimensionalfluxminer.miner.dm.terminal",
                 dmValue(d.getLong("dm")), dmValue(MatterValues.BUFFER_UNITS));
@@ -177,7 +200,7 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
         MinerStatus status = parseStatus(d.getString("status"));
         String limit = d.getString("limit").isEmpty() ? "NONE" : d.getString("limit");
         return List.of(
-                Component.translatable(status.key()).withColor((status == MinerStatus.RUNNING ? SCREEN_TEXT : SCREEN_WARN) & 0xFFFFFF),
+                Component.translatable(status.key()).withColor((status == MinerStatus.RUNNING ? screenText() : SCREEN_WARN) & 0xFFFFFF),
                 Component.translatable("gui.dimensionalfluxminer.miner.core." + core.toLowerCase(Locale.ROOT)),
                 limitLine(limit),
                 matter);
@@ -280,17 +303,17 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
             ListTag families = d.getList("families", Tag.TAG_COMPOUND);
             innerScreen(g, px + 6, py + 18, width - 12, 12);
             fitted(g, Component.translatable(selectedCount(d) == 0 ? "gui.dimensionalfluxminer.miner.filter.state_off"
-                    : "gui.dimensionalfluxminer.miner.filter.state_on"), px + 9, py + 21, width - 18, SCREEN_TEXT, 0.8F, false);
+                    : "gui.dimensionalfluxminer.miner.filter.state_on"), px + 9, py + 21, width - 18, screenText(), 0.8F, false);
             // Search box.
             boxX = px + 6;
             boxY = py + 34;
             innerScreen(g, boxX, boxY, width - 12, 12);
             if (query.isEmpty() && !focused) {
                 fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.search"), boxX + 3, boxY + 3, width - 18,
-                        SUBHEADING, 0.8F, false);
+                        GuiTheme.subheading(), 0.8F, false);
             } else {
                 boolean caret = focused && (net.minecraft.Util.getMillis() / 500) % 2 == 0;
-                fitted(g, Component.literal(query + (caret ? "_" : "")), boxX + 3, boxY + 3, width - 18, SCREEN_TEXT, 0.8F, false);
+                fitted(g, Component.literal(query + (caret ? "_" : "")), boxX + 3, boxY + 3, width - 18, screenText(), 0.8F, false);
             }
             hotspot(boxX, boxY, width - 12, 12, () -> -1, () -> {
                 query = "";
@@ -331,10 +354,10 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
             }
             if (families.isEmpty()) {
                 fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.empty_profile"), px + 6, py + GRID_TOP + 5,
-                        width - 12, SUBHEADING, 1.0F, true);
+                        width - 12, GuiTheme.subheading(), 1.0F, true);
             } else if (shown.isEmpty()) {
                 fitted(g, Component.translatable("gui.dimensionalfluxminer.miner.filter.no_match"), px + 6, py + GRID_TOP + 5,
-                        width - 12, SUBHEADING, 1.0F, true);
+                        width - 12, GuiTheme.subheading(), 1.0F, true);
             }
             button(g, px + 6, py + height() - 22, width - 12, 16, Component.translatable("gui.dimensionalfluxminer.miner.filter.clear"),
                     selectedCount(d) > 0, mouseX, mouseY, () -> MinerControllerBlockEntity.BUTTON_FILTER_CLEAR, null, null);

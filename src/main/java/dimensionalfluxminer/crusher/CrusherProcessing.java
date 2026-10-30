@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -54,6 +55,69 @@ public final class CrusherProcessing {
      * @param ore    true when the result follows the ore-processing yield (2 / 3 with upgrade)
      */
     public record Resolution(ItemStack result, boolean ore) {
+    }
+
+    /**
+     * Same as {@link #resolve(Level, ItemStack, boolean)}, but the explicit recipe {@code chosen} (when not null and
+     * still accepting the input) replaces the default one.
+     */
+    public static Optional<Resolution> resolve(Level level, ItemStack input, boolean efficiencyUpgrade, ResourceLocation chosen) {
+        if (chosen != null) {
+            for (Option option : options(level, input, efficiencyUpgrade)) {
+                if (option.id().equals(chosen)) {
+                    return Optional.of(option.resolution());
+                }
+            }
+        }
+        return resolve(level, input, efficiencyUpgrade);
+    }
+
+    /** One explicit recipe that accepts an input and what it makes. */
+    public record Option(ResourceLocation id, Resolution resolution) {
+    }
+
+    /**
+     * Every explicit recipe ({@code crushing}, then {@code ore_crushing}) that accepts the input, the default one first;
+     * recipes making the same result are listed once. Empty when the default result does not come from a recipe (tags,
+     * Resource Profile, dusts): there is nothing to choose from then.
+     */
+    public static List<Option> options(Level level, ItemStack input, boolean efficiencyUpgrade) {
+        if (input.isEmpty() || input.is(DfmItems.EFFICIENCY_UPGRADE.get())) {
+            return List.of();
+        }
+        SingleRecipeInput recipeInput = new SingleRecipeInput(input.copyWithCount(1));
+        var manager = level.getRecipeManager();
+        List<Option> options = new ArrayList<>();
+        Optional<RecipeHolder<CrushingRecipe>> crushing = manager.getRecipeFor(DfmRecipes.CRUSHING.get(), recipeInput, level);
+        Optional<RecipeHolder<OreCrushingRecipe>> ore = manager.getRecipeFor(DfmRecipes.ORE_CRUSHING.get(), recipeInput, level);
+        if (crushing.isEmpty() && (ore.isEmpty() || ore.get().value().product().isEmpty())) {
+            return List.of();
+        }
+        crushing.ifPresent(h -> addOption(options, h.id(), new Resolution(h.value().result().copy(), false)));
+        for (RecipeHolder<CrushingRecipe> h : manager.getRecipesFor(DfmRecipes.CRUSHING.get(), recipeInput, level)) {
+            addOption(options, h.id(), new Resolution(h.value().result().copy(), false));
+        }
+        ore.ifPresent(h -> addOre(options, h, efficiencyUpgrade));
+        for (RecipeHolder<OreCrushingRecipe> h : manager.getRecipesFor(DfmRecipes.ORE_CRUSHING.get(), recipeInput, level)) {
+            addOre(options, h, efficiencyUpgrade);
+        }
+        return options;
+    }
+
+    private static void addOre(List<Option> options, RecipeHolder<OreCrushingRecipe> holder, boolean efficiencyUpgrade) {
+        ItemStack product = holder.value().product();
+        if (!product.isEmpty()) {
+            addOption(options, holder.id(), new Resolution(product.copyWithCount(holder.value().yield(efficiencyUpgrade)), true));
+        }
+    }
+
+    private static void addOption(List<Option> options, ResourceLocation id, Resolution resolution) {
+        for (Option known : options) {
+            if (known.id().equals(id) || ItemStack.matches(known.resolution().result(), resolution.result())) {
+                return;
+            }
+        }
+        options.add(new Option(id, resolution));
     }
 
     public static Optional<Resolution> resolve(Level level, ItemStack input, boolean efficiencyUpgrade) {

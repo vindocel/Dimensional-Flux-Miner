@@ -11,7 +11,6 @@ All files are under `src/main/resources/assets/dimensionalfluxminer/textures/gui
 
 | File in this mod | Original file |
 | --- | --- |
-| `panel/background.png` | `gui/base.png` |
 | `button/disabled.png`, `button/normal.png` | `gui/button.png` |
 | `slot/normal.png` | `gui/slot/normal.png` |
 | `slot/output.png` | `gui/slot/output.png` |
@@ -21,8 +20,8 @@ All files are under `src/main/resources/assets/dimensionalfluxminer/textures/gui
 | `icon/side_config.png` (modified) | `gui/configuration.png` |
 | `icon/upgrade.png` (modified) | `gui/upgrade.png` |
 | `icon/sorting.png` (modified) | `gui/sorting.png` |
-| `button/clear_sides.png` (modified) | `gui/button/clear_sides.png` |
-| `button/auto_eject.png` (modified) | `gui/button/auto_eject.png` |
+| `icon/clear_sides.png` (modified) | `gui/button/clear_sides.png` |
+| `icon/auto_eject.png` (modified) | `gui/button/auto_eject.png` |
 
 The tab colors, text colors and route colors used by the screens follow the same project's GUI color maps.
 

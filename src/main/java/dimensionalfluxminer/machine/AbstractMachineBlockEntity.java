@@ -69,6 +69,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     public static final int BUTTON_AUTO_IO_PREVIOUS = 2301;
     /** Fluid automation: Auto Eject of fluids on / off (fluids have no Auto Input). */
     public static final int BUTTON_AUTO_EJECT_FLUID = 2302;
+    /** Liquid automation of the Dimensional Tanks: OFF -> Auto Input -> Auto Eject -> Input + Eject (and back). */
+    public static final int BUTTON_AUTO_FLUID_NEXT = 2303;
+    public static final int BUTTON_AUTO_FLUID_PREVIOUS = 2304;
+    /** Auto Input of a liquid that enters and leaves (tanks): on / off on its own. */
+    public static final int BUTTON_AUTO_INPUT_FLUID = 2305;
 
     protected final DynamicEnergyBuffer energyBuffer = new DynamicEnergyBuffer(0);
     protected final MachineEnergyStorage energy = new MachineEnergyStorage(energyBuffer, this::setChanged);
@@ -101,6 +106,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     /** Whether the last logical cycle advanced work (drives ACTIVE). */
     protected boolean workedThisTick;
     private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
+    private final FullSpeedStreak fullSpeed = new FullSpeedStreak(FullSpeedStreak.REQUIRED_TICKS);
     /** The machine stays ACTIVE for half a second after the work pauses, so short gaps do not flicker it. */
     private static final int ACTIVE_LINGER_TICKS = 10;
     private int activeLinger;
@@ -112,6 +118,10 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     /** Network node item inputs sharing the dedicated lanes; rebuilt from the nodes, not saved. */
     private final NodeInputLanes nodeLanes = new NodeInputLanes();
     private int nodeLanesProfile = -1;
+    /** Cables pulling from / pushing into the configurable item faces ({@link CablePortItemHandler}). */
+    private final CableActivity cableActivity = new CableActivity(RelativeFace.VALUES.length);
+    /** ITEM faces whose route an active cable sets (bit per {@link RelativeFace}); not saved. */
+    private int cableSides;
 
     protected AbstractMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, SideRules rules) {
         super(type, pos, state);
@@ -238,21 +248,93 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             autoEjectFluidCycle();
         }
         if (normalCall && gameTime % 10 == 0) {
-            scanNetworkNodes();
+            scanAutomaticSides();
+        }
+        // "Redline": speed 10 at full production (status "running" = all the FE it asked for) for ten seconds in a row.
+        if (normalCall && fullSpeed.record(gameTime, rate == RateScale.MAX_LEVEL && workedThisTick && "running".equals(status))) {
+            reportNearby(DfmAdvancements.MAX_SPEED);
         }
         updateMachineState();
     }
 
     /**
-     * Logistics Networks nodes on this block: the side each enabled channel uses gets the route it needs (a sending
-     * item channel an item output, a receiving one an item input, both an input/output, a receiving energy channel
-     * energy, a sending fluid channel the experience output) and is locked in the Side Configuration while the node
-     * is there. The node keeps its own look.
+     * Routes set from outside, every 10 ticks: first the Logistics Networks nodes on this block, then any cable that
+     * keeps pulling from or pushing into a configurable item face. A face set this way is locked in the Side
+     * Configuration while the node is there or the cable stays active.
      */
-    private void scanNetworkNodes() {
-        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel) || !LogisticsNetworksCompat.loaded()) {
+    private void scanAutomaticSides() {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
             return;
         }
+        int[] locks = new int[Transmission.VALUES.length];
+        boolean routes = LogisticsNetworksCompat.loaded() && scanNetworkNodes(serverLevel, locks);
+        routes |= scanCables(locks);
+        boolean locksChanged = false;
+        for (Transmission transmission : Transmission.VALUES) {
+            locksChanged |= sides.setLocks(transmission, locks[transmission.ordinal()]);
+        }
+        if (routes) {
+            onSidesChanged();
+        } else if (locksChanged) {
+            setChanged();
+        }
+    }
+
+    /**
+     * Cables, as on the Miner ports: a face a cable keeps pulling items from gets an item output, one a cable keeps
+     * pushing items into an item input (both: input/output); what the face already did stays. The face is locked
+     * while the cable stays active ({@link CableActivity#ACTIVE_TICKS}) and freed after it stops; the route stays.
+     * Faces a network node holds are left to the node. Returns whether a route changed.
+     */
+    private boolean scanCables(int[] locks) {
+        long now = level.getGameTime();
+        int profile = itemProfile();
+        int cables = 0;
+        boolean routes = false;
+        for (RelativeFace face : RelativeFace.VALUES) {
+            int i = face.ordinal();
+            boolean pull = cableActivity.pulling(i, now);
+            boolean push = cableActivity.pushing(i, now);
+            if (!pull && !push || (locks[Transmission.ITEM.ordinal()] & (1 << i)) != 0 || !cableSensing(face)) {
+                continue;
+            }
+            SideRoute current = sides.get(face, Transmission.ITEM, profile);
+            boolean ok = (!pull || current.extractsItems()) && (!push || current.insertsItems());
+            if (!ok) {
+                boolean extracts = pull || current.extractsItems();
+                boolean inserts = push || current.insertsItems();
+                SideRoute wanted = extracts && inserts ? SideRoute.ITEM_INPUT_OUTPUT_ALL
+                        : extracts ? SideRoute.ITEM_OUTPUT : SideRoute.ITEM_INPUT_ALL;
+                ok = sides.set(face, Transmission.ITEM, profile, wanted)
+                        || sides.set(face, Transmission.ITEM, profile, SideRoute.ITEM_INPUT_OUTPUT_ALL);
+                routes |= ok;
+            }
+            if (ok) {
+                cables |= 1 << i;
+            }
+        }
+        locks[Transmission.ITEM.ordinal()] |= cables;
+        cableSides = cables;
+        return routes;
+    }
+
+    /** ITEM faces whose route an active cable sets (bit per {@link RelativeFace}). */
+    public int cableSides() {
+        return cableSides;
+    }
+
+    /** Whether the face notices cables: its ITEM route can be changed (two or more routes in the current profile). */
+    private boolean cableSensing(RelativeFace face) {
+        return sides.rules().allowed(face, Transmission.ITEM, itemProfile()).size() >= 2;
+    }
+
+    /**
+     * Logistics Networks nodes on this block: the side each enabled channel uses gets the route it needs (a sending
+     * item channel an item output, a receiving one an item input, both an input/output, a receiving energy channel
+     * energy, a sending fluid channel the experience output) and is locked in {@code locks} while the node is there.
+     * The node keeps its own look. Returns whether a route changed.
+     */
+    private boolean scanNetworkNodes(net.minecraft.server.level.ServerLevel serverLevel, int[] locks) {
         int faces = RelativeFace.VALUES.length;
         boolean[] pull = new boolean[faces];
         boolean[] push = new boolean[faces];
@@ -277,7 +359,6 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             }
         }
         int profile = itemProfile();
-        int[] locks = new int[Transmission.VALUES.length];
         boolean routes = false;
         // Receiving item faces of a profile with dedicated input lanes (Electric Furnace Alloy) share the lanes between them.
         if (profile != nodeLanesProfile) {
@@ -315,15 +396,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             routes |= nodeRoute(face, power[i], Transmission.ENERGY, SideRoute.ENERGY_INPUT, locks);
             routes |= nodeRoute(face, fluidOut[i], Transmission.EXPERIENCE, SideRoute.XP_OUTPUT, locks);
         }
-        boolean locksChanged = false;
-        for (Transmission transmission : Transmission.VALUES) {
-            locksChanged |= sides.setLocks(transmission, locks[transmission.ordinal()]);
-        }
-        if (routes) {
-            onSidesChanged();
-        } else if (locksChanged) {
-            setChanged();
-        }
+        return routes;
     }
 
     /** ITEM route of every face in {@code profile}, indexed by face ordinal. */
@@ -434,18 +507,43 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     // ---------------------------------------------------------------- capabilities
 
     /**
-     * Item handler exposed on a world side, or null when that side has no item route. The {@code null} side is a
+     * Item handler exposed on a world side. A configurable face always has one, whatever its route, so cables can be
+     * noticed ({@link CablePortItemHandler}); a fixed face only when it has an item route. The {@code null} side is a
      * read-only view of every input and output (information tools such as Jade).
      */
     public IItemHandler itemHandlerFor(Direction side) {
         if (side == null) {
             return ReadOnlyViews.items(createItemHandler(SideRoute.ITEM_INPUT_OUTPUT_ALL));
         }
-        SideRoute route = route(side, Transmission.ITEM);
-        if (route == SideRoute.NONE) {
+        RelativeFace face = RelativeFace.of(facing(), side);
+        boolean sensing = cableSensing(face);
+        if (!sensing && route(face, Transmission.ITEM) == SideRoute.NONE) {
             return null;
         }
-        return itemHandlers.computeIfAbsent(side, s -> createItemHandler(route(s, Transmission.ITEM)));
+        return itemHandlers.computeIfAbsent(side, s -> {
+            SideRoute route = route(face, Transmission.ITEM);
+            return sensing ? cablePort(face, route) : createItemHandler(route);
+        });
+    }
+
+    /** The face's route handler plus probe slots for what the route lacks. */
+    private IItemHandler cablePort(RelativeFace face, SideRoute route) {
+        SideRoute probe = route == SideRoute.NONE ? SideRoute.ITEM_INPUT_OUTPUT_ALL
+                : route.insertsItems() && !route.extractsItems() ? SideRoute.ITEM_OUTPUT
+                : route.extractsItems() && !route.insertsItems() ? SideRoute.ITEM_INPUT_ALL
+                : null;
+        int i = face.ordinal();
+        return new CablePortItemHandler(createItemHandler(route), probe != null ? createItemHandler(probe) : null,
+                () -> {
+                    if (level != null) {
+                        cableActivity.notePull(i, level.getGameTime());
+                    }
+                },
+                () -> {
+                    if (level != null) {
+                        cableActivity.notePush(i, level.getGameTime());
+                    }
+                });
     }
 
     protected abstract IItemHandler createItemHandler(SideRoute route);
@@ -483,13 +581,6 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
 
     // ---------------------------------------------------------------- menu actions
 
-    /** Applies a validated GUI button press on the server. */
-    private void reportMaxSpeed(Player player) {
-        if (rate == RateScale.MAX_LEVEL && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-            DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
-        }
-    }
-
     /** Players near the machine see its advancement events (it has no owner), at most once every few seconds. */
     protected void reportNearby(String event) {
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && advancements.ready(event, serverLevel.getGameTime())) {
@@ -497,6 +588,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         }
     }
 
+    /** Applies a validated GUI button press on the server. */
     public boolean handleButton(Player player, int id) {
         if (id == BUTTON_RATE_DOWN || id == BUTTON_RATE_UP) {
             int next = RateScale.clampLevel(rate + (id == BUTTON_RATE_UP ? 1 : -1));
@@ -505,13 +597,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             }
             rate = next;
             setChanged();
-            reportMaxSpeed(player);
             return true;
         }
         if (id == BUTTON_RATE_CYCLE || id == BUTTON_RATE_CYCLE_BACK) {
             rate = RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE);
             setChanged();
-            reportMaxSpeed(player);
             return true;
         }
         if (id == BUTTON_REDSTONE_NEXT || id == BUTTON_REDSTONE_PREVIOUS) {
@@ -619,6 +709,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
             locks[transmission.ordinal()] = sides.locks(transmission);
         }
         tag.putIntArray("node_sides", locks);
+        tag.putInt("cable_sides", cableSides);
         tag.putInt("node_lanes", nodeLanes.mask());
     }
 

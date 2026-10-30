@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "dimensionalfluxminer:block/dimensional_dual_tank"
+    },
+    "facing=east": {
+      "model": "dimensionalfluxminer:block/dimensional_dual_tank",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "dimensionalfluxminer:block/dimensional_dual_tank",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "dimensionalfluxminer:block/dimensional_dual_tank",
+      "y": 270
+    }
+  }
+}

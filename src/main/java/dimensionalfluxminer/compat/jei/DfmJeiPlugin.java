@@ -4,6 +4,7 @@ import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.screen.CrusherLayout;
 import dimensionalfluxminer.client.screen.ElectricFurnaceLayout;
 import dimensionalfluxminer.compat.RecipeViewerData;
+import dimensionalfluxminer.compat.RecipeViewers;
 import dimensionalfluxminer.crusher.CrusherProcessing;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.registry.DfmBlocks;
@@ -32,12 +33,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
  * JEI integration: Crushing, Electric Furnace furnace mode and Alloying (the Electric Furnace recipes use the machine's
- * own processing element). Skipped when EMI is installed, which has its own plugin.
+ * own processing element). Skipped when EMI or REI is installed, which have their own plugins.
  */
 @JeiPlugin
 public class DfmJeiPlugin implements IModPlugin {
@@ -53,12 +53,33 @@ public class DfmJeiPlugin implements IModPlugin {
     private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
 
     private static boolean enabled() {
-        return !ModList.get().isLoaded("emi");
+        return !RecipeViewers.emi() && !RecipeViewers.rei();
     }
 
     @Override
     public ResourceLocation getPluginUid() {
         return DimensionalFluxMiner.id("jei_plugin");
+    }
+
+    /** Creative tanks holding different liquids are different entries. */
+    @Override
+    public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration registration) {
+        registration.registerSubtypeInterpreter(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get(),
+                new mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter<net.minecraft.world.item.ItemStack>() {
+                    @Override
+                    public Object getSubtypeData(net.minecraft.world.item.ItemStack stack,
+                            mezz.jei.api.ingredients.subtypes.UidContext context) {
+                        return stack.get(dimensionalfluxminer.registry.DfmDataComponents.CREATIVE_TANK_FLUID.get());
+                    }
+
+                    @Override
+                    public String getLegacyStringSubtypeInfo(net.minecraft.world.item.ItemStack stack,
+                            mezz.jei.api.ingredients.subtypes.UidContext context) {
+                        var content = stack.get(dimensionalfluxminer.registry.DfmDataComponents.CREATIVE_TANK_FLUID.get());
+                        return content == null || content.isEmpty() ? ""
+                                : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(content.getFluid()).toString();
+                    }
+                });
     }
 
     @Override
@@ -91,7 +112,10 @@ public class DfmJeiPlugin implements IModPlugin {
         registration.addRecipes(ALLOYING, RecipeViewerData.alloying(level.getRecipeManager()));
     }
 
-    /** Machine items are drawn by the screen, not in vanilla slots: R / U work on them through this handler. */
+    /**
+     * Machine items are drawn by the screen, not in vanilla slots: R / U work on them through this handler. The side tabs
+     * and the open windows (also while dragged) are kept free of JEI's lists.
+     */
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         if (!enabled()) {
@@ -103,6 +127,11 @@ public class DfmJeiPlugin implements IModPlugin {
                                                                                               DfmScreen<?> screen, double mouseX, double mouseY) {
                 return screen.machineItemAt(mouseX, mouseY)
                         .flatMap(item -> factory.createBuilder(item.stack()).buildWithArea(item.x(), item.y(), 16, 16));
+            }
+
+            @Override
+            public List<net.minecraft.client.renderer.Rect2i> getGuiExtraAreas(DfmScreen<?> screen) {
+                return screen.outsideAreas();
             }
         });
     }

@@ -10,8 +10,10 @@ import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmItems;
 import dimensionalfluxminer.furnace.ElectricFurnaceBlockEntity;
 import dimensionalfluxminer.furnace.ElectricFurnaceMode;
+import dimensionalfluxminer.recipe.RecipeChoices;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
@@ -59,6 +61,38 @@ public final class ElectricFurnaceGameTests {
             // Blasting raw iron gives 0.7 XP per input; the bonus never multiplies XP.
             helper.assertTrue(be.experience().milli() == 2800, "XP milli " + be.experience().milli());
         });
+    }
+
+    /**
+     * Recipe choice: the blast furnace + furnace pair of raw iron is one option (no button for it), an unknown recipe
+     * is refused, and the choices survive a save; nothing is saved without a choice.
+     */
+    @GameTest(template = "empty_small")
+    public static void recipeChoiceOffersOnlyRealAlternatives(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.input(0).insert(new ItemStack(Items.RAW_IRON), 1, false);
+        var offer = be.recipeOffer();
+        helper.assertTrue(offer.isPresent(), "raw iron has a furnace recipe");
+        var options = offer.get().options();
+        helper.assertTrue(options.getFirst().result().is(Items.IRON_INGOT), "the default iron ingot comes first");
+        helper.assertTrue(options.stream().filter(o -> ItemStack.matches(o.result(), new ItemStack(Items.IRON_INGOT))).count() == 1,
+                "blast furnace and furnace iron ingot listed once");
+        helper.assertFalse(be.chooseRecipe(DimensionalFluxMiner.id("not_a_recipe")), "unknown recipe refused");
+        helper.assertTrue(be.chooseRecipe(options.getFirst().id()), "an offered recipe is accepted");
+
+        RecipeChoices choices = new RecipeChoices();
+        choices.choose(new ItemStack(Items.RAW_IRON), options.getFirst().id());
+        CompoundTag saved = new CompoundTag();
+        choices.save(saved);
+        RecipeChoices loaded = new RecipeChoices();
+        loaded.load(saved);
+        CompoundTag again = new CompoundTag();
+        loaded.save(again);
+        helper.assertTrue(saved.contains("recipe_choices") && saved.equals(again), "choices survive a save");
+        CompoundTag none = new CompoundTag();
+        new RecipeChoices().save(none);
+        helper.assertTrue(none.isEmpty(), "nothing saved without a choice");
+        helper.succeed();
     }
 
     @GameTest(template = "empty_small")
@@ -332,6 +366,31 @@ public final class ElectricFurnaceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty_small", timeoutTicks = 200)
+    public static void cablesSetTheItemRoutesAndKeepWhatTheFaceDid(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setRate(1);
+        be.setMode(ElectricFurnaceMode.NORMAL);
+        be.output(0).insert(new ItemStack(Items.IRON_INGOT), 8, false);
+        helper.assertTrue(be.configureSide(RelativeFace.RIGHT, Transmission.ITEM, SideRoute.ITEM_INPUT_ALL), "input by hand");
+        var level = helper.getLevel();
+        BlockPos abs = helper.absolutePos(MACHINE);
+        // A cable pulling from an empty face and one pulling from the input face; a pipe pushing into another empty face.
+        CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.LEFT.toDirection(be.facing())));
+        CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.RIGHT.toDirection(be.facing())));
+        helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+                new ItemStack(Items.RAW_IRON)) == 0, "nothing enters before the route");
+        helper.runAfterDelay(20, () -> {
+            helper.assertTrue(be.route(RelativeFace.LEFT, Transmission.ITEM) == SideRoute.ITEM_OUTPUT, "pulled face: output");
+            helper.assertTrue(be.route(RelativeFace.RIGHT, Transmission.ITEM) == SideRoute.ITEM_INPUT_OUTPUT_ALL, "input kept, output added");
+            helper.assertTrue(be.route(RelativeFace.BACK, Transmission.ITEM) == SideRoute.ITEM_INPUT_ALL, "pushed face: input");
+            helper.assertTrue(be.route(RelativeFace.UP, Transmission.ITEM) == SideRoute.NONE, "untouched face stays empty");
+            helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+                    new ItemStack(Items.RAW_IRON)) == 1, "the pipe now feeds the furnace");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = "empty_small")
     public static void liquidExperienceIsAVirtualView(GameTestHelper helper) {
         ElectricFurnaceBlockEntity be = place(helper);
@@ -398,6 +457,28 @@ public final class ElectricFurnaceGameTests {
         be.loadWithComponents(be.saveWithoutMetadata(registries), registries);
         var data = menuData(helper, be);
         helper.assertTrue(data.getBoolean("auto_eject") && !data.getBoolean("auto_eject_fluid"), "new saves keep each setting");
+        helper.succeed();
+    }
+
+    /** With Cognition present: its Experience Obelisk takes Liquid Experience from the Electric Furnace. */
+    @GameTest(template = "empty_small")
+    public static void cognitionObeliskAcceptsLiquidExperience(GameTestHelper helper) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("cognition")) {
+            helper.succeed();
+            return;
+        }
+        var obelisk = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.parse("cognition:experience_obelisk"));
+        BlockPos pos = new BlockPos(1, 1, 1);
+        helper.setBlock(pos, obelisk.defaultBlockState());
+        IFluidHandler handler = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(pos), null);
+        for (Direction side : Direction.values()) {
+            if (handler == null) {
+                handler = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(pos), side);
+            }
+        }
+        helper.assertTrue(handler != null, "the obelisk has a fluid handler");
+        int filled = handler.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 200), IFluidHandler.FluidAction.SIMULATE);
+        helper.assertTrue(filled == 200, "the obelisk takes Liquid Experience, filled " + filled);
         helper.succeed();
     }
 

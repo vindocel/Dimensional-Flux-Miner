@@ -1,5 +1,7 @@
+# Ka of the terminal: the animated panel glows at full brightness while the machine has energy (idle and active models
+# set emissive_ambient; the off model does not).
 newmtl terminal
-Ka 0.0 0.0 0.0
+Ka 1.0 1.0 1.0
 Kd 1.0 1.0 1.0
 Ks 0.0 0.0 0.0
 d 1.0

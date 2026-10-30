@@ -40,7 +40,9 @@ public final class MachineSounds {
         if (current != null && !current.isStopped()) {
             return;
         }
-        MachineLoopSound sound = new MachineLoopSound(event, position, active);
+        // The player's volume for this machine (Settings tab of its screen), read every tick.
+        MachineLoopSound sound = new MachineLoopSound(event, position, active,
+                () -> dimensionalfluxminer.client.screen.GuiThemes.volume(key.getBlockPos()) / 100.0);
         PLAYING.put(key, sound);
         Minecraft.getInstance().getSoundManager().play(sound);
     }

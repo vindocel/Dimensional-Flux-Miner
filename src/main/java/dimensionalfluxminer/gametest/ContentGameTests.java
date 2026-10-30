@@ -44,7 +44,7 @@ public final class ContentGameTests {
     }
 
     /**
-     * 14 crafting + 3 crushing + 10 ore_crushing + 2 alloying = 29 definitions, plus the compatibility recipes of the
+     * 16 crafting + 3 crushing + 10 ore_crushing + 2 alloying = 31 definitions, plus the compatibility recipes of the
      * mods present: Malum (5 ore_crushing), Forbidden Arcanus (2 ore_crushing) and Create (1 alloying).
      */
     @GameTest(template = "empty_small")
@@ -62,7 +62,7 @@ public final class ContentGameTests {
         var mods = net.neoforged.fml.ModList.get();
         int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0);
         int expectedAlloying = 2 + (mods.isLoaded("create") ? 1 : 0);
-        helper.assertTrue(crafting == 14, "crafting recipes: " + crafting);
+        helper.assertTrue(crafting == 16, "crafting recipes: " + crafting);
         helper.assertTrue(crushing == 3, "crushing recipes: " + crushing);
         helper.assertTrue(ore == expectedOre, "ore_crushing recipes: " + ore + ", expected " + expectedOre);
         helper.assertTrue(alloying == expectedAlloying, "alloying recipes: " + alloying + ", expected " + expectedAlloying);

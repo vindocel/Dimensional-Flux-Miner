@@ -60,6 +60,9 @@ public final class DfmClient {
         ClientHooks.assemblyHighlight = MinerAssemblyHighlight::show;
         // Using the guide opens the book in the hand first; the screen follows once it is open.
         ClientHooks.openGuide = GuideBookAnimation::requestOpen;
+        if (net.neoforged.fml.ModList.get().isLoaded("polymorph")) {
+            dimensionalfluxminer.compat.polymorph.PolymorphClientCompat.register();
+        }
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GuideBookAnimation::onClientTick);
         // Script values of the configuration belong to the server just left.
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
@@ -76,11 +79,19 @@ public final class DfmClient {
         });
     }
 
+    /** Shader of the dark look of the machine screens (reloaded with the resource packs). */
+    @SubscribeEvent
+    static void onRegisterShaders(net.neoforged.neoforge.client.event.RegisterShadersEvent event) throws java.io.IOException {
+        event.registerShader(new net.minecraft.client.renderer.ShaderInstance(event.getResourceProvider(), DimensionalFluxMiner.id("dark_gui"),
+                com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX), dimensionalfluxminer.client.screen.GuiTheme::setShader);
+    }
+
     @SubscribeEvent
     static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(DfmMenus.CRUSHER.get(), CrusherScreen::new);
         event.register(DfmMenus.ELECTRIC_FURNACE.get(), ElectricFurnaceScreen::new);
         event.register(DfmMenus.MINER.get(), dimensionalfluxminer.client.screen.MinerScreen::new);
+        event.register(DfmMenus.DIMENSIONAL_TANK.get(), dimensionalfluxminer.client.screen.TankScreen::new);
     }
 
     @SubscribeEvent
@@ -88,6 +99,7 @@ public final class DfmClient {
         event.registerBlockEntityRenderer(DfmBlockEntities.MECHANICAL_CRUSHER.get(), CrusherRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.ELECTRIC_FURNACE.get(), ElectricFurnaceRenderer::new);
         event.registerBlockEntityRenderer(DfmBlockEntities.MINER_CONTROLLER.get(), dimensionalfluxminer.client.render.MinerRenderer::new);
+        event.registerBlockEntityRenderer(DfmBlockEntities.DIMENSIONAL_TANK.get(), dimensionalfluxminer.client.render.TankRenderer::new);
     }
 
     /** The purple water particles behave exactly like the vanilla ones, with their own sprites. */
@@ -112,6 +124,38 @@ public final class DfmClient {
         }
     }
 
+    /** Connected textures on the loose Steel Chassis, glass and ventilation sides (every block state of each). */
+    @SubscribeEvent
+    static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+        ResourceLocation chassis = DimensionalFluxMiner.id("block/parts/steel_chassis");
+        ResourceLocation glass = DimensionalFluxMiner.id("block/dimensional_flux_miner/structural_glass_containment");
+        ResourceLocation vent = DimensionalFluxMiner.id("block/parts/ventilation_side");
+        connect(event, DfmBlocks.STEEL_CHASSIS.get(), all(chassis), true);
+        connect(event, DfmBlocks.REINFORCED_STRUCTURAL_GLASS.get(), all(glass), true);
+        // Vents side by side make one long grille, as on the back of the Miner; stacked rows keep their plates.
+        connect(event, DfmBlocks.VENTILATION_UNIT.get(), java.util.Map.of(net.minecraft.core.Direction.NORTH, vent,
+                net.minecraft.core.Direction.SOUTH, vent, net.minecraft.core.Direction.EAST, vent, net.minecraft.core.Direction.WEST, vent), false);
+    }
+
+    private static java.util.Map<net.minecraft.core.Direction, ResourceLocation> all(ResourceLocation texture) {
+        java.util.Map<net.minecraft.core.Direction, ResourceLocation> map = new java.util.EnumMap<>(net.minecraft.core.Direction.class);
+        for (net.minecraft.core.Direction face : net.minecraft.core.Direction.values()) {
+            map.put(face, texture);
+        }
+        return map;
+    }
+
+    private static void connect(ModelEvent.ModifyBakingResult event, net.minecraft.world.level.block.Block block,
+                                java.util.Map<net.minecraft.core.Direction, ResourceLocation> textures, boolean vertical) {
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            var key = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(state);
+            var model = event.getModels().get(key);
+            if (model != null) {
+                event.getModels().put(key, new dimensionalfluxminer.client.render.ConnectedTextureModel(model, block, textures, vertical));
+            }
+        }
+    }
+
     @SubscribeEvent
     static void onClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new IClientItemExtensions() {
@@ -125,6 +169,17 @@ public final class DfmClient {
                 return renderer;
             }
         }, DfmItems.GUIDE_BOOK.get());
+        event.registerItem(new IClientItemExtensions() {
+            private dimensionalfluxminer.client.render.CreativeTankItemRenderer renderer;
+
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) {
+                    renderer = new dimensionalfluxminer.client.render.CreativeTankItemRenderer();
+                }
+                return renderer;
+            }
+        }, DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {

@@ -255,9 +255,10 @@ public final class ThroughputGameTests {
             be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT);
             IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(MACHINE),
                     RelativeFace.BACK.toDirection(be.facing()));
-            helper.assertTrue(handler.getSlots() == ElectricFurnaceBlockEntity.LANES, "one slot per output");
+            // One slot per output first; the cable probe slots of the inputs come after them.
+            helper.assertTrue(handler.getSlots() > ElectricFurnaceBlockEntity.LANES, "one slot per output, then the probe slots");
             int taken = 0;
-            for (int slot = 0; slot < handler.getSlots(); slot++) {
+            for (int slot = 0; slot < ElectricFurnaceBlockEntity.LANES; slot++) {
                 helper.assertTrue(handler.getSlotLimit(slot) == 64 && handler.getStackInSlot(slot).getCount() <= 64, "slot " + slot + " holds 64 at most");
                 taken += handler.extractItem(slot, 64, false).getCount();
             }

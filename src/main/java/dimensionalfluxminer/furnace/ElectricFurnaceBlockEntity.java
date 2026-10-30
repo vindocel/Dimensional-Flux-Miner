@@ -14,6 +14,7 @@ import dimensionalfluxminer.machine.side.Transmission;
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.recipe.AlloyRecipeInput;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
+import dimensionalfluxminer.recipe.RecipeChoices;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ import net.neoforged.neoforge.fluids.FluidUtil;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
-public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity {
+public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity implements RecipeChoices.Host {
     public static final int LANES = 3;
     /** Rate 10: operations of one lane per logical tick (furnace items, or standard alloy executions). */
     public static final int RATE_TEN_OPERATIONS_PER_LANE = 64;
@@ -84,7 +85,8 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity {
     private ElectricFurnaceMode mode = ElectricFurnaceMode.ALL;
     private boolean autoSplit;
 
-    private final ElectricFurnaceRecipes recipes = new ElectricFurnaceRecipes(LANES);
+    private final RecipeChoices recipeChoices = new RecipeChoices();
+    private final ElectricFurnaceRecipes recipes = new ElectricFurnaceRecipes(LANES, recipeChoices);
 
     /** Ingredients shown inside the chamber (client render data). */
     private List<ItemStack> chamber = List.of();
@@ -198,6 +200,44 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity {
 
     private Optional<AlloyingRecipe> alloy(AlloyRecipeInput input) {
         return recipes.alloy(level, input);
+    }
+
+    @Override
+    public RecipeChoices recipeChoices() {
+        return recipeChoices;
+    }
+
+    /**
+     * In the modes with the furnace: the first lane whose item has more than one furnace recipe (the choice applies to
+     * every lane holding that item), otherwise the first lane with a furnace recipe, which has nothing to choose.
+     */
+    @Override
+    public Optional<RecipeChoices.Offer> recipeOffer() {
+        if (level == null || !mode.canSmelt()) {
+            return Optional.empty();
+        }
+        RecipeChoices.Offer single = null;
+        for (ItemQueue lane : inputs) {
+            if (lane.isEmpty()) {
+                continue;
+            }
+            ItemStack in = lane.firstPrototype().copyWithCount(1);
+            List<RecipeChoices.Option> options = ElectricFurnaceRecipes.options(level, in).stream()
+                    .map(h -> new RecipeChoices.Option(h.id(), h.value().getResultItem(level.registryAccess()).copy()))
+                    .toList();
+            if (options.size() > 1) {
+                return Optional.of(new RecipeChoices.Offer(in, options));
+            }
+            if (single == null && !options.isEmpty()) {
+                single = new RecipeChoices.Offer(in, options);
+            }
+        }
+        return Optional.ofNullable(single);
+    }
+
+    @Override
+    public void recipeChoicesChanged() {
+        setChanged();
     }
 
     /** Raw -> Ingot of the same material with a single result, the only case eligible for the bulk yield. */
@@ -860,6 +900,7 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity {
         }
         tag.putDouble("alloy_progress", alloyWork.progress());
         tag.putLong("xp_milli", experience.milli());
+        recipeChoices.save(tag);
     }
 
     @Override
@@ -882,6 +923,7 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity {
         mergeLegacyOutput(tag.getList("alloy_main", Tag.TAG_COMPOUND), registries);
         mergeLegacyOutput(tag.getList("alloy_byproduct", Tag.TAG_COMPOUND), registries);
         experience.setMilli(tag.getLong("xp_milli"));
+        recipeChoices.load(tag);
     }
 
     /** Items of old separate alloy outputs that found no room in the output slots; dropped with the block. */

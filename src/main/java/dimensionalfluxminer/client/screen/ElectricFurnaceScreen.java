@@ -40,6 +40,9 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
     private static final int ENERGY_X = 7;
     /** The energy bar shares its middle with the burners. */
     private static final int ENERGY_Y = ELEMENT_Y + ElectricFurnaceLayout.BURNER_CENTER - ENERGY_FRAME_HEIGHT / 2;
+    /** Recipe-selection button (16 x 16, optional integration): right of the element, level with the outputs. */
+    public static final int RECIPE_BUTTON_X = ELEMENT_X + ElectricFurnaceLayout.WIDTH + 4;
+    public static final int RECIPE_BUTTON_Y = ELEMENT_Y + ElectricFurnaceLayout.OUTPUT_Y + 1;
 
     private static int[] offset(int[] xs) {
         int[] out = new int[xs.length];
@@ -172,7 +175,7 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
                 List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLong("power"))),
                         Component.translatable("gui.dimensionalfluxminer.rate.speed_lane", number(d.getDouble("lane_speed") * 20))),
                 mouseX, mouseY);
-        ResourceLocation modeIcon = switch (variant) {
+        GuiIcon modeIcon = switch (variant) {
             case FURNACE -> ICON_SMELTING;
             case ALLOY -> ICON_SMELTING_ALLOY;
             case ALL -> ICON_SMELTING_ALLOY_FURNACE;
@@ -186,6 +189,7 @@ public class ElectricFurnaceScreen extends DfmScreen<ElectricFurnaceMenu> {
                 () -> ElectricFurnaceBlockEntity.BUTTON_AUTO_SPLIT, null, () -> List.of(
                         Component.translatable("gui.dimensionalfluxminer.auto_split", MachineText.onOff(split)),
                         Component.translatable("gui.dimensionalfluxminer.auto_split.help").withStyle(ChatFormatting.GRAY)));
+        themeTab(g, x, y, MachineTabs.ROW_4, mouseX, mouseY);
         MachineTabs.redstone(this, g, x, y, d, mouseX, mouseY);
         MachineTabs.problems(this, g, x, y, d);
 

@@ -19,6 +19,9 @@ public final class DfmMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<dimensionalfluxminer.miner.MinerMenu>> MINER = MENUS.register("dimensional_flux_miner",
             () -> IMenuTypeExtension.create(dimensionalfluxminer.miner.MinerMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<dimensionalfluxminer.tank.TankMenu>> DIMENSIONAL_TANK = MENUS.register("dimensional_tank",
+            () -> IMenuTypeExtension.create(dimensionalfluxminer.tank.TankMenu::new));
+
     private DfmMenus() {
     }
 }

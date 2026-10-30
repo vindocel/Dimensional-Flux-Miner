@@ -27,6 +27,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 - [⛏️ Dimensional Flux Miner](#%EF%B8%8F-dimensional-flux-miner)
 - [⚙️ Mechanical Crusher](#%EF%B8%8F-mechanical-crusher)
 - [🔥 Electric Furnace](#-electric-furnace)
+- [🛢️ Dimensional Tanks](#%EF%B8%8F-dimensional-tanks)
 - [⚡ Speed and the Efficiency Upgrade](#-speed-and-the-efficiency-upgrade)
 - [☠️ Dimensional Death](#%EF%B8%8F-dimensional-death)
 - [🏆 Advancements](#-advancements)
@@ -45,9 +46,11 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 | ⛏️ **Dimensional Flux Miner** | A 3×3×3 multiblock that turns energy (FE) and **Dimensional Matter (DM)** into the ores that really generate in its dimension, without breaking a single block of the world. |
 | ⚙️ **Mechanical Crusher** | Doubles your ores (triples them with the upgrade) and grinds ingots, raw ores and gems into dust. |
 | 🔥 **Electric Furnace** | A three-lane electric furnace that also makes alloys, with a raw-ore bonus and stored experience. |
+| 🛢️ **Dimensional Tanks** | Liquid tanks paired by a three-color code: every tank with the same code, in any dimension, holds the same liquid. |
 | ⚡ **Speed 1–10** | No speed upgrades to craft: every machine has a speed selector, limited only by your power generation. One machine from early game to end game. |
 | ☠️ **Dimensional Death** | The price of the Basic core's drain: the land, the water and the life around it rot forever. |
 | 📖 **Dimensional Flux Guide** | An animated book with the whole mod explained, in game. |
+| 🌙 **Light or dark screens** | A Settings tab on every machine screen (left side) switches it between light and dark, for one machine or all of them; only your own game changes. |
 
 | | |
 |---|---|
@@ -79,7 +82,7 @@ Your first **Pure Steel** earns you the guide (through the "Forged in the Flux" 
 - 📄 **Real pages**: the presentation and the clickable **contents** open the book; every chapter starts on a left page and the pages flow one after another, with a page-turn animation and sound. The violet ribbon goes back to the contents.
 - 🧊 **Interactive 3D Miner**: rotate the assembly, look at one layer at a time, switch between loose parts and the formed machine, hover a part to isolate it.
 - 🧾 **Live data**: crafting recipes come from the server, the speed tables and matter values follow the server configuration and datapacks.
-- 🔎 Item tooltips everywhere and buttons that open the machine recipes in EMI / JEI. The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
+- 🔎 Item tooltips everywhere and buttons that open the machine recipes in EMI / JEI / REI. The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
 
 All text lives in the language files (`guide.dimensionalfluxminer.*`), in English and Brazilian Portuguese.
 
@@ -187,6 +190,27 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 
 ---
 
+## 🛢️ Dimensional Tanks
+
+| Tank | Chambers |
+|---|---|
+| **Dimensional Tank** | one chamber of **128 000 mB** |
+| **Dual Dimensional Tank** | two separate chambers of **128 000 mB** each: **A** (right side of the front) and **B** (left side) |
+| **Creative Dimensional Tank** | creative mode only: one chamber of endless liquid, no channels |
+
+- 🎨 **Dimensional Code**: three of 16 colors on the front panel, picked on the screen (no dye needed) and read left to right; the order counts. Every tank with the same kind and code, in any dimension, shows and moves the same liquid, with the others loaded or not. A single and a dual tank never share, even with the same colors; dual tanks share A with A and B with B.
+- 🧹 The code window has an **Empty** button (one per chamber on the dual tank, two clicks to confirm) that deletes the channel's liquid for every tank with that code.
+- 🔁 Changing the code (click the code on the screen) points the tank at another channel: no liquid moves, is copied or is lost. A broken tank keeps its code on the item, and the liquid stays in the channel.
+- 💎 **Personal codes**: a diamond on the tank makes its code a channel of its own for you, apart from the public one with the same colors; sneak and use it with an empty hand to make it public again (the diamond comes back).
+- 🪣 Buckets and fluid containers: right click the block with a filled one to empty it, with an empty one to take the liquid out (on the dual tank, the right side is A and the left side is B), or click the reservoir on the screen.
+- 🔧 Pipes: every face but the front carries liquid; the single tank starts as input/output on all of them, the dual tank with A on the right side and B on the left. Each face serves one chamber only, and a full chamber never spills into the other. Liquids have their own Auto Input and Auto Eject in the Side Configuration.
+- 🪣 A single (or creative) tank item used on another tank fills it with its liquid. **Bucket mode** (sneak and use the item in the air): it pours its liquid on the ground and picks up liquid sources instead of being placed.
+- ⚡ No energy.
+- ♾️ **Creative Dimensional Tank** (creative only, for building and testing): the creative tab and the recipe viewers have one filled with each liquid of the game. It never runs out, voids what pipes send while empty and has no code; sneak and use it with an empty hand (or press Empty on its screen) to empty it.
+- 🧰 Recipes: tank = 4 Dimensional Steel Chassis + 2 Dimensional Ports + 2 Reinforced Eyes of Ender + 1 Reinforced Structural Glass; dual tank = 2 Dimensional Tanks + 4 Reinforced Eyes of Ender + 2 Pure Steel + 1 Dimensional Steel Chassis.
+
+---
+
 ## ⚡ Speed and the Efficiency Upgrade
 
 There is **no speed upgrade to craft**. Every machine has a **speed selector from 1 to 10** (the tab with colored strips): every operation costs the same energy at every level, so a higher level works faster and asks for more FE/t in the same proportion, with no discount and no penalty. Your power generation is the only limit, so the same machine follows you from the first ingot to the last dragon. A machine only spends the energy of the work it really does.
@@ -236,7 +260,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 | 🧱 | Piece by Piece | form the Miner |
 | 💎 | First Extraction | receive the first ore from the Miner |
 | 🧲 | Ore Surgeon | discard an ore with the filter |
-| 🌡️ | Redline *(challenge)* | set any machine to speed 10 |
+| 🌡️ | Redline *(challenge)* | run any machine at speed 10 and full production for 10 seconds in a row |
 | ⏱️ | A Thousand per Second *(challenge)* | keep 1 000+ operations per second for 5 seconds |
 | ✨ | Absolute Efficiency *(challenge)* | craft the Efficiency Upgrade |
 | 🧹 | Neat Freak | make DM by Matter Injection |
@@ -251,9 +275,11 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ## 🔌 Compatibility
 
-- 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face.
-- 📘 **EMI / JEI** (optional): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots.
+- 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face. A cable that keeps pulling items from a face (or pushing into it) sets that face's item route by itself, on the Miner's ports, the Crusher and the Electric Furnace.
+- 📘 **EMI / JEI / REI** (optional): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots. The side tabs and open windows push the item lists out of the way.
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
+- 🧪 **Cognition**: the Experience Obelisk takes the Electric Furnace's Liquid Experience directly.
+- 🔀 **Polymorph** (optional): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
 - 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Electric Furnace work through the common tags.
 
@@ -262,7 +288,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 - **Tick acceleration**: the energy buffer stays 10 × the FE/t of the speed, but the energy input also accepts what the extra cycles of one game time use, so a source that refills once per game time keeps an accelerated machine at full power. A machine whose accelerated cycles worked in the last tick always shows as powered and running. Covered by GameTests and observed in game with Soul Surge.
 - **Claims**: corruption respects **FTB Chunks** and **Open Parties and Claims** when they are installed (optional, no dependency). The Basic Core only corrupts unclaimed land or claims where the Miner's owner may build (team members in FTB Chunks; the claim's own access rules in Open Parties and Claims); a claim of someone else, or a check that fails, is never corrupted and gives no DM. A column is checked as a whole before anything changes, and Corrupted Water never flows or sinks across a claim border. Server config: `corruption.enabled`, `corruption.blockedDimensions`, `corruption.respectSpawnProtection`, `corruption.protectedRegions` and `corruption.claimFailurePolicy` (`deny` by default). Tested with FTB Chunks 2101.1.22; the Open Parties and Claims adapter follows its public API but was not run against the mod.
-- **Recipe viewers**: with both installed, only the EMI plugin runs. The Electric Furnace categories use the machine's own processing element.
+- **Recipe viewers**: with more than one installed, only one plugin runs: EMI first, then REI, then JEI. The Electric Furnace categories use the machine's own processing element.
 - **Jade**: every machine answers the no-face (`null` side) capability query with read-only views; text too long for a bar slides from side to side. Taking Electric Furnace results by hand collects the stored XP, as from a vanilla furnace.
 - **Alloys of other mods**: recipe types listed in `electric_furnace.externalAlloyRecipeTypes` (default `enderio:alloy_smelting`, `oritech:foundry`) are read through their own codecs: 1–3 counted item ingredients, item results (a second result becomes the byproduct), experience and time. Recipes with fluids or more ingredients are skipped, and so are plain furnace copies. No other mod is needed to build or run.
 - **Resource Profiles**: vein size defaults to 8 when a mod's ore feature does not declare it; mods that add no ores contribute nothing.

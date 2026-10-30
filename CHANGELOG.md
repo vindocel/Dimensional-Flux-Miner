@@ -1,6 +1,190 @@
 # Changelog
 
-## 0.2.3 — unreleased (since 0.2.2)
+## 0.2.8 (since 0.2.7)
+
+### ✨ Added
+
+- ⚪ **White icons, the new default**: the machine screens now show white icons unless you pick **Blue** or
+  **Purple** in the Settings window. The energy bar, the volume bar and the terminal text stay blue with white icons.
+  Settings saved with Purple keep Purple; everything else starts on White.
+- 📕 **REI support** (optional): the same Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) pages as
+  in EMI and JEI, drawn with the machines' own elements; clicking a machine's work chamber opens them, and R / U work
+  on the items inside machine slots. The pages follow REI's light or dark theme (slots, energy and heat parts darken
+  with it). With EMI installed, EMI is used; with REI and JEI, REI.
+- 🪟 **Recipe viewers make room**: the side tabs and the open windows of the machine screens (also while you drag a
+  window over them) push EMI, JEI and REI's item lists out of the way instead of being covered.
+- 🛢️ **Creative Dimensional Tank** (creative mode only, no recipe): one chamber of endless liquid for building and
+  testing. The creative tab and EMI, JEI and REI list one already filled with each liquid of the game; pouring a
+  liquid into an empty one picks it. Buckets, pipes and Auto Eject take as much as they want and it never runs out;
+  while empty it voids what pipes send. It has no channels (no code, no personal code): sneak and use it with an
+  empty hand, or press **Empty** on its screen, to empty it. Breaking it keeps the liquid on the item. In the
+  inventory and the recipe viewers its icon shows the liquid inside.
+- 🪣 **Tank items carry their liquid** (Dimensional Tank and Creative Dimensional Tank, not the dual tank): used on a
+  tank, in any mode, the item fills it with as much as fits (the channel's liquid, or the endless creative one; a
+  creative tank fills a whole Dimensional Tank at once). **Bucket mode** (sneak and use the item in the air to switch
+  it): the item is not placed, it pours its liquid on the ground one bucket at a time (sneaking always pours) and picks
+  up the liquid source you look at. Sneaking with a tank item against a tank places it.
+- 🧹 **Empty a channel**: the code window of the Dimensional Tank and the Dual Dimensional Tank has an **Empty** button
+  (one per chamber on the dual tank) that deletes the channel's liquid for every tank with that code. It takes two
+  clicks, so it is not pressed by accident.
+- 🔎 The creative tanks are also in the Tools and Utilities tab, right after the milk bucket, so searching a liquid in
+  the creative inventory shows them right after its bucket.
+
+### 🔄 Changed
+
+- 🔘 **New buttons**: every button of the machine screens (tabs, windows, side configuration) has a new look: dark
+  outline that turns cyan under the mouse, light border and slate inside; a switched-on button (toggle on, open tab) is gray and sunk, like
+  one that cannot be used. The dark screens darken them too. With purple icons the outline under the mouse is purple.
+- 🗂️ **Side configuration tabs stay in place**: every material tab (Items, Energy, Fluids...) is always shown in its own
+  spot, the open one grayed like the tab of an open window, instead of the open tab disappearing (on the Miner the Energy tab used to turn
+  into the Items tab).
+- 🪟 **Glass read-outs**: the black terminal boxes of the screens (Miner status, tank contents, the automation line
+  of the side windows, the Miner's filter and the info windows) are now glass viewports in the screen's own metal,
+  sunk into the panel with rounded corners, a navy glass (dark purple with purple icons) and a faint diagonal
+  reflection like the liquid gauges. The Miner's read-out has a status lamp (green while mining, orange when stopped,
+  blinking amber while waiting, blinking red without a Core) and the tank read-outs are larger, with a small lamp in
+  each stored liquid's color beside its name (unlit while empty). The Problems tab shows its yellow warning sign on a
+  matching glass button, lined up with the other tab buttons.
+- 💧 **Dimensional Tank gauges**: each chamber is now shown as a liquid gauge that matches the energy bar: a framed
+  bar with level marks, the liquid in its own texture and color, and a moving reflection over it.
+- The material tabs of the side configuration windows are larger and no longer have a colored ring (the icon tells
+  the material).
+- Stacked side tabs have a little more room between their buttons, and the Upgrades and Settings icons sit 1 px
+  lower, centered on their buttons.
+- 🛢️ **Liquid fills the tanks to the glass**: the liquid inside the Dimensional Tanks (single and dual) now reaches the
+  windows instead of floating in the middle with a gap around it.
+
+## 0.2.7 (since 0.2.6)
+
+### 🔄 Changed
+
+- 🌡️ **Redline is a real challenge now**: setting speed 10 is no longer enough. A machine at speed 10 must run 10
+  seconds in a row at full production, with all the energy (and, on the Miner, the Dimensional Matter) it needs and
+  without stopping; a shortage or a stop starts the count again.
+
+## 0.2.6 (since 0.2.5)
+
+### ✨ Added
+
+- 🔀 **Polymorph support** (optional, the mod still works without it): when an item put in the **Mechanical
+  Crusher** or the **Electric Furnace** has more than one recipe with different results, a button near the outputs
+  lists them and you pick which one the machine makes. The pick is remembered for that item on that machine (saved
+  with the world, also used for items brought by pipes and automation) until you pick another.
+  - Crusher: every `crushing` and `ore_crushing` recipe that accepts the item is offered; items handled only by tags
+    (ores, ingots to dusts) have nothing to choose. Without a pick the result is the same as before.
+  - Electric Furnace: blast furnace and furnace recipes are offered together, and the usual pair that makes the same
+    result counts once, so plain ores show no button. The pick applies to every lane holding the item; the button
+    shows the first lane that has something to choose. Alloys are not covered.
+  - New compatibility box "Polymorph" in the guide's Automation chapter.
+- 🌙 **Dark screens**: a new **Settings** tab on the left of the Crusher, Electric Furnace, Miner and Dimensional
+  Tank screens picks the screen color, **Light** (default) or **Dark**, changing on the spot. Only the gray parts
+  darken (panel, slots, buttons, the machines' artwork); items, liquids and the screens keep their colors. All the
+  screen icons were redrawn by hand in one color that reads on both looks, and the Polymorph recipe button follows
+  the screen's color too.
+  - The window close button has its own icon now.
+  - Side tabs stacked on the same edge form one metal block with their buttons inside, instead of one block per
+    tab.
+  - The panel of every machine screen and window is flat now, without Minecraft's white and black bevel, and joined
+    to the metal frame by a single line.
+  - With **Dark Mode Everywhere** installed, it no longer darkens or recolors this mod's screens: they already have
+    their own dark look.
+  - **Apply to all machines** (on by default, one switch shared by every machine): the color you pick is used
+    everywhere. Turned off, each machine keeps its own color, and the machine you turn it off on keeps the color it
+    shows.
+  - **Machine volume** in the same Settings window: 0 to 100 % in steps of 10 (100 % by default, 0 mutes), for each
+    machine on its own; it changes the running sound of the Crusher, Electric Furnace and Miner. The silent
+    Dimensional Tanks have no volume.
+  - **Icon color**: the icons of the screens can be **Blue** (default) or **Purple**, picked in the same window. With
+    Purple the energy bar is purple too, with the same shimmer, on the machine screens and in Jade, and the text of the
+    terminal screens turns light purple.
+  - The apply-to-all switch is a small button with its own icon beside the colors; it applies the screen color and
+    the icon color (never the volume).
+  - It is a choice of each player, saved on their computer (`config/dimensionalfluxminer-themes.json`), never on
+    the server or in the world.
+
+### 🔄 Changed
+
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
+- 💡 **Glowing panels**: the animated screen on the front of the Crusher and the Electric Furnace glows, like a
+  LED panel, while the machine has energy, idle or working (only the screen, not the whole front, and no light around
+  it); without energy it stays dark.
+- 🔁 **Auto Input and Auto Eject are two buttons now**: in the Side Configuration (Crusher, Electric Furnace, Miner
+  and Dimensional Tanks) the single button that cycled off, input, eject and both became two small switches at the
+  top of the window, **Auto-Input** and **Auto-Eject**, each turned on and off by itself and lit while on. Liquid
+  Experience, which only leaves the machine, keeps only Auto-Eject. Saved settings are kept.
+
+### 🐛 Fixed
+
+- 🧪 **Cognition**: the Experience Obelisk now takes the Electric Furnace's Liquid Experience out of the box (same
+  20 mB per experience point); nothing to configure.
+- 🚫 Hostile mobs could spawn on top of the Crusher, the Electric Furnace, the Dimensional Tanks and the Miner's parts;
+  no mob spawns on any of them now.
+
+## 0.2.5 (since 0.2.4)
+
+### ✨ Added
+
+- 🛢️ **Dimensional Tanks** (*Tanque Dimensional* and *Tanque Dimensional Duplo*), with no energy.
+  - Recipes: the tank takes 4 Dimensional Steel Chassis, 2 Dimensional Ports, 2 Reinforced Eyes of Ender and 1
+    Reinforced Structural Glass; the dual tank 2 Dimensional Tanks, 4 Reinforced Eyes of Ender, 2 Pure Steel and 1
+    Dimensional Steel Chassis.
+  - The **Dimensional Tank** holds **128 000 mB** of one liquid; the **Dual Dimensional Tank** has two separate
+    chambers of 128 000 mB, **A** (right side of the front) and **B** (left side), each with its own liquid.
+  - **Paired by code:** three of 16 colors (no dye needed) on the front panel, read left to right (the order counts), chosen in
+    the code window (click the code on the screen). Every tank with the same kind and code shares one channel in the whole save, across
+    dimensions and without the other tanks loaded. A single and a dual tank never share; dual tanks share A with A and B
+    with B. New tanks start public, on white, white, white.
+  - **Personal codes:** a diamond on the tank (or on the cursor, with the code window's button) makes its code personal, a
+    channel of its own for that player apart from the public one with the same colors; sneaking with an empty hand (or
+    the same button) makes it public again and gives the diamond back. New server options `tank.personalItem`
+    (default `minecraft:diamond`) and `tank.anarchyMode` (default `false`: a broken personal tank drops as a public one
+    plus the diamond), also settable by KubeJS.
+  - The liquid lives in the channel, not in the tank: changing the code moves, copies and deletes nothing, and a broken
+    tank keeps its code on the item (shown in its tooltip), so placing it again reconnects it.
+  - Buckets and fluid containers on the block: a filled one empties into the tank, an empty one takes the liquid out;
+    on the dual tank the right side (right face or the right half of the front) is A and the left is B. Also on the
+    screen's reservoir. Pipes: every face except the front, one chamber per face, a new **Liquids** tab in the Side
+    Configuration with its own Auto Input / Auto Eject (default OFF). A full chamber never spills into the other one.
+    While Auto Eject is on, an input + output face only gives (pipe networks no longer bounce the last mB back in).
+    Buckets work while sneaking too.
+  - The block shows the liquid of each chamber and, in the liquid's own color, its gauge and (on the dual tank) the
+    two lid stripes of A and B. The code is shown twice: on the front panel and on a matching panel on the lid.
+    Glowing liquids such as lava light the area from inside the tank (the brightest chamber counts).
+  - New guide chapter **Dimensional Tanks** (after "Automation and logistics"): recipes, the code, personal codes,
+    buckets, pipes and how to read the block.
+- 🧱 **Connected textures** on the loose Steel Chassis, Reinforced Structural Glass and the sides of the Ventilation
+  Unit: blocks of the same kind side by side lose the frame where they touch and read as one surface, framed only
+  around the outside. Glass blocks side by side also hide the faces between them.
+
+### 🔄 Changed
+
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
+- 🌊 **Under water, the water now surrounds the mod's blocks** instead of stopping at their edge like a wall: the
+  Crusher, the Electric Furnace, the Dimensional Tanks and every Miner part (the formed Miner too) can hold water, like
+  a slab. Blocks placed in water keep it; worlds from before load with dry blocks, as they were.
+
+## 0.2.4 (since 0.2.3)
+
+### ✨ Added
+
+- 🔌 **Smart faces on the Crusher and the Electric Furnace**, as on the Miner's ports: any cable or pipe that keeps
+  pulling items from a face gets an **Item Output** there, and one that keeps pushing items in gets an **Item Input**.
+  What the face already did is kept (an input face that a cable pulls from becomes input/output). The face is locked
+  in the Side Configuration while the cable stays active ("Set by the cable pulling or pushing here") and is freed a few
+  seconds after it stops; the route stays. A Logistics Networks node still comes first, and the Crusher's top stays a
+  fixed input. Every configurable face now offers an item handler even with no route, so cables find it; it gives and
+  takes nothing until the face gets its route. The cable timing is now shared code with the Miner, which works as
+  before.
+
+### 🔄 Changed
+
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
+- 🌐 The mod's **Website** button now opens the [showcase site](https://vindocel.github.io/Showcase-DFM/).
+
+## 0.2.3 (since 0.2.2)
 
 ### ✨ Added
 
@@ -10,6 +194,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🔥 **The Alloy Smelter is now the Electric Furnace** (*Fornalha Elétrica*): an electric furnace that also has the
   alloy modes. ⚠️ **Breaks older worlds:** the ID changed to `dimensionalfluxminer:electric_furnace` and the old
   `alloy_smelter` is gone, so smelters placed or kept in older worlds disappear (with their items); craft them again.
@@ -68,6 +254,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🧱 **Miner middle layer.** The four corners of the middle layer are now Steel Chassis instead of Ventilation Units
   (6 Steel Chassis and 5 Ventilation Units in total). ⚠️ Miners built with the previous layout come apart when the
   world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
@@ -148,6 +336,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - 🧱 **New Miner assembly.** The bottom layer has 7 Dimensional Ports around a Steel Chassis (and the terminal); the
   middle layer has glass on both sides and a Steel Chassis at the back. ⚠️ Miners built with the old layout come apart
   when the world loads: their items drop and the blocks return to loose parts, ready to be rebuilt.
@@ -194,6 +384,8 @@
 
 ### 🐛 Fixed
 
+- 🧪 **Cognition**: the Experience Obelisk now takes the Electric Furnace's Liquid Experience out of the box (same
+  20 mB per experience point); nothing to configure.
 - Alloy Smelter speed: speed 10 is **64 operations per lane per tick** (192 for the three furnace lanes, 64 standard
   alloys), no longer 192 per lane. Speed 10 uses 3 200 000 FE/t smelting with three lanes and 1 920 000 FE/t on alloys.
 - Alloy Smelter slots hold at most **64 items** each, inputs and outputs alike, like every other machine slot.
@@ -247,6 +439,8 @@
 
 ### 🔄 Changed
 
+- 📖 **Guide reviewed**: shorter, more direct texts, repeated information removed (the Miner's redstone is explained
+  once, in Automation and logistics) and the steel recipe now says it needs a mode with alloys.
 - ⚡ **New energy costs.** Miner: 2 500 FE/t at speed 1 up to 5 000 000 FE/t at speed 10; speeds 1–5 follow the
   geometric scale and speeds 6–9 cost double, so running fast is paid for (production per speed is unchanged).
   Crusher: 1 500 → 1 000 000 FE/t. Alloy Smelter: 2 500 → 2 000 000 FE/t. Existing worlds keep the values in their
@@ -266,6 +460,8 @@
 
 ### 🐛 Fixed
 
+- 🧪 **Cognition**: the Experience Obelisk now takes the Electric Furnace's Liquid Experience out of the box (same
+  20 mB per experience point); nothing to configure.
 - The Matter Input no longer takes ores of another dimension: an ore only becomes DM in a dimension where that exact ore
   generates (Overworld diamond ore is refused in the Nether), through the port and through the automatic input alike.
 - A newly built Miner no longer lights up and plays its power-on sound before it receives any energy.

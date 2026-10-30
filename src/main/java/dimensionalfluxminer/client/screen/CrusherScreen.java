@@ -28,6 +28,9 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
     private static final int ENERGY_Y = 13;
     private static final int OUT_X = CrusherLayout.PIPE_END;
     private static final int OUT_Y = (CrusherLayout.HEIGHT - 36) / 2;
+    /** Recipe-selection button (16 x 16, optional integration): centered above the output slots. */
+    public static final int RECIPE_BUTTON_X = MECH_X + OUT_X + 10;
+    public static final int RECIPE_BUTTON_Y = MECH_Y + OUT_Y - 22;
 
     private final SideConfigWindow sideWindow;
     private final MachineWindows.UpgradeWindow upgradeWindow;
@@ -123,6 +126,7 @@ public class CrusherScreen extends DfmScreen<CrusherMenu> {
         MachineTabs.rate(this, g, x, y, d, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE, AbstractMachineBlockEntity.BUTTON_RATE_CYCLE_BACK,
                 List.of(Component.translatable("gui.dimensionalfluxminer.rate.consumption", fe(d.getLong("power"))),
                         Component.translatable("gui.dimensionalfluxminer.rate.speed", number(d.getDouble("ops") * 20))), mouseX, mouseY);
+        themeTab(g, x, y, MachineTabs.ROW_3, mouseX, mouseY);
         MachineTabs.redstone(this, g, x, y, d, mouseX, mouseY);
         MachineTabs.problems(this, g, x, y, d);
 

@@ -30,6 +30,7 @@ public class DfmJadePlugin implements IWailaPlugin {
     static final String ENERGY = "energy";
     static final String CAPACITY = "capacity";
     static final String XP = "stored_xp";
+    static final String MACHINE = "machine_pos";
 
     @Override
     public void register(IWailaCommonRegistration registration) {
@@ -67,6 +68,10 @@ public class DfmJadePlugin implements IWailaPlugin {
             }
             if (be instanceof ElectricFurnaceBlockEntity furnace) {
                 data.putDouble(XP, furnace.experience().xp());
+            }
+            if (be != null && data.contains(ENERGY)) {
+                // The machine the bar belongs to (the Miner's controller for any of its parts): its icon color is the player's.
+                data.putLong(MACHINE, be.getBlockPos().asLong());
             }
         }
 

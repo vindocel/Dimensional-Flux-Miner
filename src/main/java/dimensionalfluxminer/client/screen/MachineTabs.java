@@ -12,11 +12,15 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Standard tabs of the single-block machines and small drawing helpers shared by their screens. */
 final class MachineTabs {
-    /** Tab rows, 28 px apart from the top of the panel; the bottom row follows the panel height. */
+    /**
+     * Tab rows from the top of the panel, one button (18 px) plus a 4 px gap apart, so stacked tabs share one holder
+     * with their buttons a little apart; the bottom row follows the panel height.
+     */
+    static final int ROW_PITCH = 22;
     static final int TOP_Y = 6;
-    static final int ROW_2 = 34;
-    static final int ROW_3 = 62;
-    static final int ROW_4 = 90;
+    static final int ROW_2 = TOP_Y + ROW_PITCH;
+    static final int ROW_3 = TOP_Y + 2 * ROW_PITCH;
+    static final int ROW_4 = TOP_Y + 3 * ROW_PITCH;
 
     private MachineTabs() {
     }
@@ -60,7 +64,7 @@ final class MachineTabs {
 
     static void redstoneTab(DfmScreen<?> s, GuiGraphics g, int x, int y, RedstoneMode mode, boolean halted, int nextId, int previousId,
                             int mouseX, int mouseY) {
-        ResourceLocation icon = switch (mode) {
+        GuiIcon icon = switch (mode) {
             case IGNORED -> DfmScreen.ICON_REDSTONE_OFF;
             case HIGH -> DfmScreen.ICON_REDSTONE_ON;
             case LOW -> DfmScreen.ICON_REDSTONE_LOW;

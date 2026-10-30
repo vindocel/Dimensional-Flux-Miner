@@ -70,6 +70,11 @@ configurations {
 repositories {
     // Optional recipe viewer integrations (compile-only APIs; nothing is bundled).
     maven {
+        name = 'Shedaniel'
+        url = 'https://maven.shedaniel.me/'
+        content { includeGroup 'me.shedaniel'; includeGroup 'dev.architectury'; includeGroup 'me.shedaniel.cloth' }
+    }
+    maven {
         name = 'TerraformersMC'
         url = 'https://maven.terraformersmc.com/'
         content { includeGroup 'dev.emi' }
@@ -94,8 +99,11 @@ repositories {
 
 dependencies {
     compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+    compileOnly "dev.architectury:architectury-neoforge:${architectury_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     compileOnly "maven.modrinth:jade:${jade_version}"
+    compileOnly "maven.modrinth:polymorph:${polymorph_version}"
     compileOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") { transitive = false }
     compileOnly("dev.latvian.mods:rhino:${rhino_version}") { transitive = false }
 

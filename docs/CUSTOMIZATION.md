@@ -33,7 +33,8 @@ the player-facing overview in the [README](../README.md).
    - [2.2 Mechanical Crusher](#22-mechanical-crusher)
    - [2.3 Electric Furnace](#23-electric-furnace)
    - [2.4 Dimensional Death](#24-dimensional-death)
-   - [2.5 Complete example](#25-complete-example)
+   - [2.5 Dimensional Tanks](#25-dimensional-tanks)
+   - [2.6 Complete example](#26-complete-example)
 
 **Part II: Datapacks**
 
@@ -129,6 +130,8 @@ wrong type is corrected back to its default and a warning is written to the log.
 | `corruption.respectSpawnProtection` | true / false | `true` | n/a | n/a |
 | `corruption.protectedRegions` | list of `"<dimension>,<x1>,<z1>,<x2>,<z2>"` | `[]` | n/a | n/a |
 | `corruption.claimFailurePolicy` | `"deny"` or `"ignore"` | `"deny"` | n/a | n/a |
+| `tank.personalItem` | item ID | `"minecraft:diamond"` | n/a | n/a |
+| `tank.anarchyMode` | true / false | `false` | n/a | n/a |
 
 ### How the ten speed levels work
 
@@ -346,7 +349,22 @@ Which blocks and creatures are affected is controlled by tags, see [7](#7-dimens
 > [!NOTE]
 > Turning the corruption off or protecting an area never reverts land that is already corrupted.
 
-### 2.5 Complete example
+### 2.5 Dimensional Tanks
+
+| Key | What it does |
+|---|---|
+| `tank.personalItem` | Item that makes a tank's code personal (a channel of its own for the player who used it, apart from the public one with the same colors). Sneaking and using the tank with an empty hand makes it public again and gives the item back. An unknown ID falls back to the diamond |
+| `tank.anarchyMode` | `true`: a broken personal tank drops as a public tank plus the personal item. `false` (default): the item keeps the owner |
+
+```toml
+[tank]
+	personalItem = "minecraft:diamond"
+	anarchyMode = false
+```
+
+**Not configurable:** the capacity of 128 000 mB per chamber and the 16 colors of the code.
+
+### 2.6 Complete example
 
 The full file with its default values:
 
@@ -377,6 +395,10 @@ The full file with its default values:
 	respectSpawnProtection = true
 	protectedRegions = []
 	claimFailurePolicy = "deny"
+
+[tank]
+	personalItem = "minecraft:diamond"
+	anarchyMode = false
 ```
 
 To go back to the defaults, delete the file (or the line) and NeoForge writes it again with the default values.

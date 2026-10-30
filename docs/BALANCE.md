@@ -166,11 +166,24 @@ Claims: with FTB Chunks or Open Parties and Claims installed, only unclaimed lan
 build are corrupted (team members in FTB Chunks, the claim's access rules in Open Parties and Claims). Corrupted Water
 never flows or sinks across a claim border, into a protected region, or where corruption is off.
 
+## Dimensional Tanks
+
+| | Value |
+|---|---|
+| Single tank | 1 chamber of 128 000 mB |
+| Dual tank | 2 chambers of 128 000 mB each (A and B) |
+| Energy | none |
+| Auto Input / Auto Eject | no per-tick limit: as much as the neighbor gives or takes |
+| Recipe (tank) | 4 Dimensional Steel Chassis, 2 Dimensional Ports, 2 Reinforced Eyes of Ender, 1 Reinforced Structural Glass |
+| Recipe (dual tank) | 2 Dimensional Tanks, 4 Reinforced Eyes of Ender, 2 Pure Steel, 1 Dimensional Steel Chassis |
+
 ## Other server settings
 
 | Key | Default | Effect |
 |---|---|---|
 | `electric_furnace.externalAlloyRecipeTypes` | `enderio:alloy_smelting`, `oritech:foundry` | Recipe types of other mods run as alloys (1–3 counted item ingredients, item results) |
+| `tank.personalItem` | `minecraft:diamond` | Item that makes a Dimensional Tank's code personal |
+| `tank.anarchyMode` | `false` | A broken personal tank drops as a public one plus the personal item |
 
 ## Compatibility
 

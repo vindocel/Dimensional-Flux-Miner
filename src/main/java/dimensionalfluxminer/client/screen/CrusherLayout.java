@@ -48,17 +48,19 @@ public final class CrusherLayout {
 
     /** The mechanism background; {@code width} crops it ({@link #WIDTH} for the whole artwork). */
     public static void drawMechanism(GuiGraphics g, int x, int y, int width) {
-        g.blit(MECHANISM, x, y, 0, 0, width, HEIGHT, WIDTH, HEIGHT);
+        GuiTheme.chrome(() -> g.blit(MECHANISM, x, y, 0, 0, width, HEIGHT, WIDTH, HEIGHT));
     }
 
     /** The mill: still while idle, turning (one frame every 100 ms) while the machine really processes. */
     public static void drawMill(GuiGraphics g, int x, int y, boolean turning) {
-        if (turning) {
-            int frame = (int) ((Util.getMillis() / MILL_FRAME_MS) % MILL_FRAMES);
-            g.blit(MILL_SHEET, x + MILL_X, y + MILL_Y, 0, frame * MILL_H, MILL_W, MILL_H, MILL_W, MILL_H * MILL_FRAMES);
-        } else {
-            g.blit(MILL, x + MILL_X, y + MILL_Y, 0, 0, MILL_W, MILL_H, MILL_W, MILL_H);
-        }
+        int frame = (int) ((Util.getMillis() / MILL_FRAME_MS) % MILL_FRAMES);
+        GuiTheme.chrome(() -> {
+            if (turning) {
+                g.blit(MILL_SHEET, x + MILL_X, y + MILL_Y, 0, frame * MILL_H, MILL_W, MILL_H, MILL_W, MILL_H * MILL_FRAMES);
+            } else {
+                g.blit(MILL, x + MILL_X, y + MILL_Y, 0, 0, MILL_W, MILL_H, MILL_W, MILL_H);
+            }
+        });
     }
 
     /**

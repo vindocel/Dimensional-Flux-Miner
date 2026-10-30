@@ -3,6 +3,8 @@ package dimensionalfluxminer.miner;
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmTags;
+import dimensionalfluxminer.machine.CableActivity;
+import dimensionalfluxminer.machine.FullSpeedStreak;
 import dimensionalfluxminer.machine.LogicalTickCounter;
 import dimensionalfluxminer.machine.ThroughputStreak;
 import dimensionalfluxminer.machine.NeighborTransfer;
@@ -45,7 +47,6 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
@@ -120,6 +121,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public static final long TRASH_TO_TREASURE_COBBLESTONE = 10_000;
     private final DfmAdvancements.Throttle advancements = new DfmAdvancements.Throttle();
     private final ThroughputStreak throughput = new ThroughputStreak(THOUSAND_PER_SECOND, THOUSAND_PER_SECOND_SECONDS);
+    /** "Redline": ticks in a row at speed 10 and full production; {@link #fullSpeedCycle} is the last normal cycle's result. */
+    private final FullSpeedStreak fullSpeed = new FullSpeedStreak(FullSpeedStreak.REQUIRED_TICKS);
+    private boolean fullSpeedCycle;
 
     /** "Thousand per second": at least this many rolls per second... */
     public static final double THOUSAND_PER_SECOND = 1000.0;
@@ -192,20 +196,13 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     private int energyConnected;
     private int[] nodeColors = new int[MinerPorts.Face.VALUES.length];
     /** A cable that pulled from / pushed into a face this recently still counts as using it. */
-    public static final int CABLE_ACTIVE_TICKS = 100;
+    public static final int CABLE_ACTIVE_TICKS = CableActivity.ACTIVE_TICKS;
     private final PortHandler[] portHandlers = new PortHandler[MinerPorts.Face.VALUES.length];
-    private final long[] pullSeen = never();
-    private final long[] pushSeen = never();
+    private final CableActivity cableActivity = new CableActivity(MinerPorts.Face.VALUES.length);
     private int cableOutput = -1;
     private int cableMatter = -1;
     /** Faces whose role a cable sets (for the Side Configuration). */
     private int cableFaces;
-
-    private static long[] never() {
-        long[] seen = new long[MinerPorts.Face.VALUES.length];
-        java.util.Arrays.fill(seen, Long.MIN_VALUE / 2);
-        return seen;
-    }
     /** The structure was checked against the current layout since loading (a machine of an older layout comes apart). */
     private boolean layoutVerified;
 
@@ -390,7 +387,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     public MinerVisualStage visualStage() {
         return visualStage;
     }
-
     public int loadPercent() {
         return loadPercent;
     }
@@ -604,13 +600,13 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     private void notePull(MinerPorts.Face face) {
         if (level != null) {
-            pullSeen[face.ordinal()] = level.getGameTime();
+            cableActivity.notePull(face.ordinal(), level.getGameTime());
         }
     }
 
     private void notePush(MinerPorts.Face face) {
         if (level != null) {
-            pushSeen[face.ordinal()] = level.getGameTime();
+            cableActivity.notePush(face.ordinal(), level.getGameTime());
         }
     }
 
@@ -700,8 +696,8 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         }
         // Cables: the face that keeps being pulled from / pushed into, unless a node already holds that role.
         long now = level.getGameTime();
-        cableOutput = activeFace(pullSeen, cableOutput, now);
-        cableMatter = stabilized ? activeFace(pushSeen, cableMatter, now) : -1;
+        cableOutput = cableActivity.activeFace(true, cableOutput, now);
+        cableMatter = stabilized ? cableActivity.activeFace(false, cableMatter, now) : -1;
         int cables = 0;
         if (out < 0 && cableOutput >= 0) {
             out = cableOutput;
@@ -721,23 +717,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             nodeColors = colors;
             syncToClients();
         }
-    }
-
-    /**
-     * The face a cable is using for one role: the current holder while its cable stays active, otherwise the face
-     * used most recently within {@link #CABLE_ACTIVE_TICKS}, or -1.
-     */
-    private static int activeFace(long[] seen, int holder, long now) {
-        if (holder >= 0 && now - seen[holder] <= CABLE_ACTIVE_TICKS) {
-            return holder;
-        }
-        int best = -1;
-        for (int i = 0; i < seen.length; i++) {
-            if (now - seen[i] <= CABLE_ACTIVE_TICKS && (best < 0 || seen[i] > seen[best])) {
-                best = i;
-            }
-        }
-        return best;
     }
 
     /** Color (ARGB, 0 = none) of the network node frame drawn on each face. */
@@ -961,6 +940,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
         if (status == MinerStatus.WAITING_FOR_ENERGY && workedRecently()) {
             status = MinerStatus.RUNNING;
         }
+        if (level != null && fullSpeed.record(level.getGameTime(), rate == RateScale.MAX_LEVEL && fullSpeedCycle)) {
+            report(DfmAdvancements.MAX_SPEED);
+        }
         updateVisual();
     }
 
@@ -984,6 +966,9 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
 
     private void cycle(boolean realTick) {
         processing = false;
+        if (realTick) {
+            fullSpeedCycle = false;
+        }
         if (!formed || !(level instanceof ServerLevel serverLevel)) {
             status = MinerStatus.MULTIBLOCK_INVALID;
             return;
@@ -1083,6 +1068,10 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             animationStartTick = serverLevel.getGameTime();
         }
         status = stop != null && executed == 0 ? stop : MinerStatus.RUNNING;
+        // Full production: all the FE of the level, no matter shortage and nothing lost to a full output.
+        if (realTick) {
+            fullSpeedCycle = available >= levelPower && stop == null && !missed && plan.workDone() > 0;
+        }
         if (attempts.producedOre()) {
             report(DfmAdvancements.FIRST_ORE);
         }
@@ -1307,9 +1296,6 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
             }
             case BUTTON_RATE_CYCLE, BUTTON_RATE_CYCLE_BACK -> {
                 setRate(RateScale.cycleLevel(rate, id == BUTTON_RATE_CYCLE));
-                if (rate == RateScale.MAX_LEVEL && player instanceof ServerPlayer serverPlayer) {
-                    DfmAdvancements.award(serverPlayer, DfmAdvancements.MAX_SPEED);
-                }
                 return true;
             }
             case BUTTON_AUTO_INPUT -> {

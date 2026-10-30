@@ -21,7 +21,7 @@ final class MachineText {
     /** Status line for the inner screens. */
     static Component statusLine(CompoundTag d) {
         int color = switch (d.getString("status")) {
-            case "running" -> DfmScreen.SCREEN_TEXT;
+            case "running" -> DfmScreen.screenText();
             case "output_blocked", "redstone_halt", "no_energy" -> DfmScreen.SCREEN_ERROR;
             default -> DfmScreen.SCREEN_WARN;
         };

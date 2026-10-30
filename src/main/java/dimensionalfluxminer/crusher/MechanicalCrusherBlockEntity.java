@@ -15,6 +15,7 @@ import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
+import dimensionalfluxminer.recipe.RecipeChoices;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.items.IItemHandler;
 
-public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity {
+public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity implements RecipeChoices.Host {
     /** Throughput endpoints: Rate 1 = 1 operation / 200 ticks, Rate 10 = 64 operations per logical tick. */
     public static final double MIN_OPERATIONS_PER_TICK = 0.005;
     public static final double MAX_OPERATIONS_PER_TICK = 64.0;
@@ -65,9 +66,12 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity {
     private final WorkAccumulator work = new WorkAccumulator();
     private final ThroughputStreak throughput = new ThroughputStreak(1000.0, 5);
 
+    private final RecipeChoices recipeChoices = new RecipeChoices();
+
     private ItemStack cachedInput = ItemStack.EMPTY;
     private boolean cachedUpgrade;
     private RecipeManager cachedRecipes;
+    private int cachedChoices;
     private Optional<CrusherProcessing.Resolution> cachedResolution = Optional.empty();
 
     /** Item currently being ground; synced to clients only for the grinding particles. */
@@ -129,13 +133,38 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity {
         }
         boolean upgrade = hasEfficiencyUpgrade();
         RecipeManager recipes = level.getRecipeManager();
-        if (!ItemStack.isSameItemSameComponents(stack, cachedInput) || upgrade != cachedUpgrade || recipes != cachedRecipes) {
+        if (!ItemStack.isSameItemSameComponents(stack, cachedInput) || upgrade != cachedUpgrade || recipes != cachedRecipes
+                || recipeChoices.version() != cachedChoices) {
             cachedInput = stack.copyWithCount(1);
             cachedUpgrade = upgrade;
             cachedRecipes = recipes;
-            cachedResolution = CrusherProcessing.resolve(level, cachedInput, upgrade);
+            cachedChoices = recipeChoices.version();
+            cachedResolution = CrusherProcessing.resolve(level, cachedInput, upgrade, recipeChoices.chosen(cachedInput));
         }
         return cachedResolution;
+    }
+
+    @Override
+    public RecipeChoices recipeChoices() {
+        return recipeChoices;
+    }
+
+    /** The item in the input slot and every explicit recipe that accepts it. */
+    @Override
+    public Optional<RecipeChoices.Offer> recipeOffer() {
+        if (level == null || input.isEmpty()) {
+            return Optional.empty();
+        }
+        ItemStack in = input.firstPrototype().copyWithCount(1);
+        List<RecipeChoices.Option> options = CrusherProcessing.options(level, in, hasEfficiencyUpgrade()).stream()
+                .map(o -> new RecipeChoices.Option(o.id(), o.resolution().result()))
+                .toList();
+        return options.isEmpty() ? Optional.empty() : Optional.of(new RecipeChoices.Offer(in, options));
+    }
+
+    @Override
+    public void recipeChoicesChanged() {
+        setChanged();
     }
 
     /** Insertion strategy shared by pipes, Auto-Input, top pickup and the GUI: only valid process inputs. */
@@ -346,6 +375,7 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity {
         tag.put("output", output.save(registries));
         // Progress already paid for survives a save and reload.
         tag.putDouble("work_progress", work.progress());
+        recipeChoices.save(tag);
     }
 
     @Override
@@ -354,6 +384,7 @@ public class MechanicalCrusherBlockEntity extends AbstractMachineBlockEntity {
         input.load(tag.getList("input", Tag.TAG_COMPOUND), registries);
         output.load(tag.getList("output", Tag.TAG_COMPOUND), registries);
         work.setProgress(tag.getDouble("work_progress"));
+        recipeChoices.load(tag);
     }
 
     @Override

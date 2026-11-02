@@ -1,6 +1,6 @@
 package dimensionalfluxminer.gametest;
 
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import dimensionalfluxminer.machine.transfer.FluidTanks;
 import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.DimensionalFluxMiner;
@@ -357,13 +357,13 @@ public final class TankGameTests {
             BlockPos pos = new BlockPos(i % 4, 1, i / 4);
             helper.setBlock(pos, blocks[i].defaultBlockState());
             var state = helper.getBlockState(pos);
-            for (var type : java.util.List.of(net.minecraft.world.entity.EntityTypes.ZOMBIE, net.minecraft.world.entity.EntityTypes.CREEPER,
-                    net.minecraft.world.entity.EntityTypes.SPIDER)) {
+            for (var type : java.util.List.of(net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.CREEPER,
+                    net.minecraft.world.entity.EntityType.SPIDER)) {
                 helper.assertFalse(state.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), type), type + " spawns on " + blocks[i]);
             }
             if (state.hasProperty(dimensionalfluxminer.content.DfmStateProperties.FORMED)) {
                 var formed = state.setValue(dimensionalfluxminer.content.DfmStateProperties.FORMED, true);
-                helper.assertFalse(formed.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), net.minecraft.world.entity.EntityTypes.ZOMBIE),
+                helper.assertFalse(formed.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), net.minecraft.world.entity.EntityType.ZOMBIE),
                         "zombie spawns on formed " + blocks[i]);
             }
         }

@@ -8,18 +8,22 @@
         {
           "type": "minecraft:item",
           "name": "dimensionalfluxminer:dimensional_dual_tank",
-          "modifier": {
-            "type": "minecraft:copy_components",
-            "source": "block_entity",
-            "include": [
-              "dimensionalfluxminer:tank_code"
-            ]
-          }
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "source": "block_entity",
+              "include": [
+                "dimensionalfluxminer:tank_code"
+              ]
+            }
+          ]
         }
       ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/dimensional_dual_tank"

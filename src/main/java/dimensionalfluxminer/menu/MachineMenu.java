@@ -204,7 +204,7 @@ public abstract class MachineMenu<T extends BlockEntity> extends AbstractContain
             }
         }
         if (!player.getInventory().add(stack)) {
-            player.drop(stack, false, net.minecraft.util.Prediction.SERVER_ONLY);
+            player.drop(stack, false);
         }
     }
 }

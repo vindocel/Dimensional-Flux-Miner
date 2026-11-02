@@ -94,7 +94,7 @@ public class ElectricFurnaceRenderer implements BlockEntityRenderer<ElectricFurn
             }
             pose.pushPose();
             pose.translate(p.x, p.y, p.z);
-            pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(facing)));
+            pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(facing)));
             pose.translate(0, 0, (depth - SCALE_Z) / 2.0F);
             pose.scale(SCALE_XY, SCALE_XY, depth);
             item.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);

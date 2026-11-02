@@ -12,7 +12,7 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
@@ -42,25 +42,33 @@ public final class GuideStructureRenderer extends PictureInPictureRenderer<Guide
         }
     }
 
+    public GuideStructureRenderer(MultiBufferSource.BufferSource buffers) {
+        super(buffers);
+    }
+
     @Override
     public Class<State> getRenderStateClass() {
         return State.class;
     }
 
     @Override
-    protected void renderToTexture(State state, PoseStack pose, SubmitNodeCollector collector) {
-        Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_3D);
+    protected void renderToTexture(State state, PoseStack pose) {
+        var dispatcher = Minecraft.getInstance().gameRenderer.getFeatureRenderDispatcher();
+        var collector = dispatcher.getSubmitNodeStorage();
+        Minecraft.getInstance().gameRenderer.getLighting().setupFor(Lighting.Entry.ITEMS_3D);
         // The picture's Y grows downward and its Z is flipped: a half turn on X puts the world's up on top.
-        pose.rotate(Axis.XP.rotationDegrees(180));
-        pose.rotate(Axis.XP.rotationDegrees(state.pitch()));
-        pose.rotate(Axis.YP.rotationDegrees(state.yaw()));
+        pose.mulPose(Axis.XP.rotationDegrees(180));
+        pose.mulPose(Axis.XP.rotationDegrees(state.pitch()));
+        pose.mulPose(Axis.YP.rotationDegrees(state.yaw()));
         if (state.formed()) {
             // The formed model's origin is the block under the core; its native front is north.
             pose.pushPose();
-            pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(Direction.SOUTH)));
+            pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(Direction.SOUTH)));
             pose.translate(-0.5, -1.5, -0.5);
             ModelRendering.render(pose, collector, ModelRendering.model(FORMED), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             pose.popPose();
+            dispatcher.renderAllFeatures();
+            bufferSource.endBatch();
             return;
         }
         RandomSource random = RandomSource.create(42L);
@@ -81,6 +89,8 @@ public final class GuideStructureRenderer extends PictureInPictureRenderer<Guide
                     BlockModelRenderState.EMPTY_TINTS, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
             pose.popPose();
         }
+        dispatcher.renderAllFeatures();
+        bufferSource.endBatch();
     }
 
     /** The structure is centered in the picture. */

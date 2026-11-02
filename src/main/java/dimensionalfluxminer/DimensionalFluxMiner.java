@@ -53,7 +53,7 @@ public final class DimensionalFluxMiner {
         dimensionalfluxminer.compat.Ae2Compat.register(modBus);
 
         // Same file name as before the SYNCED type, so existing worlds keep their settings.
-        container.registerConfig(ModConfig.Type.SYNCED, DfmConfig.SPEC, MOD_ID + "-server.toml");
+        container.registerConfig(ModConfig.Type.SERVER, DfmConfig.SPEC, MOD_ID + "-server.toml");
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Loading.class, DfmConfig::onConfigChanged);
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Reloading.class, DfmConfig::onConfigChanged);
         modBus.addListener(net.neoforged.fml.event.config.ModConfigEvent.Unloading.class, DfmConfig::onConfigChanged);

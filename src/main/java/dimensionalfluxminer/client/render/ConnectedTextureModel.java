@@ -228,8 +228,8 @@ public final class ConnectedTextureModel extends DelegateBlockStateModel {
             uvs[i] = UVPair.pack(sprite.getU(su / 16), sprite.getV(tv / 16));
         }
         BakedQuad.MaterialInfo info = full.materialInfo();
-        BakedQuad.MaterialInfo material = new BakedQuad.MaterialInfo(sprite, info.layer(), info.itemRenderType(), info.itemGlintRenderType(),
-                info.itemGlintSpecialRenderType(), info.tintIndex(), info.shadeDirectionOverride(), info.lightEmission(), info.ambientOcclusion());
+        BakedQuad.MaterialInfo material = new BakedQuad.MaterialInfo(sprite, info.layer(), info.itemRenderType(),
+                info.tintIndex(), info.shade(), info.lightEmission(), info.ambientOcclusion());
         return new BakedQuad(positions[0], positions[1], positions[2], positions[3], uvs[0], uvs[1], uvs[2], uvs[3],
                 full.direction(), material, full.bakedNormals(), full.bakedColors());
     }

@@ -96,8 +96,8 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         state.front = front;
         state.origin = core.below().subtract(be.getBlockPos());
         // Sample the light at the center and in front of the terminal; the controller block itself may be dark.
-        int coreLight = LightCoordsUtil.getLightCoords(be.getLevel(), core);
-        int frontLight = LightCoordsUtil.getLightCoords(be.getLevel(), be.getBlockPos().relative(front));
+        int coreLight = net.minecraft.client.renderer.LevelRenderer.getLightCoords(be.getLevel(), core);
+        int frontLight = net.minecraft.client.renderer.LevelRenderer.getLightCoords(be.getLevel(), be.getBlockPos().relative(front));
         state.fullLight = LightCoordsUtil.pack(
                 Math.max(LightCoordsUtil.block(light), Math.max(LightCoordsUtil.block(coreLight), LightCoordsUtil.block(frontLight))),
                 Math.max(LightCoordsUtil.sky(light), Math.max(LightCoordsUtil.sky(coreLight), LightCoordsUtil.sky(frontLight))));
@@ -147,7 +147,7 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         pose.translate(state.origin.getX(), state.origin.getY(), state.origin.getZ());
         pose.pushPose();
         pose.translate(0.5, 0, 0.5);
-        pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
+        pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
         pose.translate(-0.5, 0, -0.5);
         ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay);
         pose.popPose();
@@ -159,7 +159,7 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
             float tilt = state.tilt;
             pose.pushPose();
             pose.translate(PIVOT.x, PIVOT.y, PIVOT.z);
-            pose.rotate(Axis.YP.rotationDegrees(movingPoseY(front)));
+            pose.mulPose(Axis.YP.rotationDegrees(movingPoseY(front)));
             renderMoving(pose, collector, model("outer", stage), 35 * tilt, angle, 20 * tilt, 1.0F, fullLight, overlay);
             renderMoving(pose, collector, model("inner", stage), -25 * tilt, -2 * angle, 45 * tilt, 1.0F, fullLight, overlay);
             if (stage.hasCore()) {
@@ -174,9 +174,9 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
     private static void renderMoving(PoseStack pose, SubmitNodeCollector collector, Identifier model, float rx, float ry, float rz,
                                      float scale, int light, int overlay) {
         pose.pushPose();
-        pose.rotate(Axis.ZP.rotationDegrees(rz));
-        pose.rotate(Axis.YP.rotationDegrees(ry));
-        pose.rotate(Axis.XP.rotationDegrees(rx));
+        pose.mulPose(Axis.ZP.rotationDegrees(rz));
+        pose.mulPose(Axis.YP.rotationDegrees(ry));
+        pose.mulPose(Axis.XP.rotationDegrees(rx));
         pose.scale(scale, scale, scale);
         ModelRendering.render(pose, collector, ModelRendering.model(model), light, overlay);
         pose.popPose();

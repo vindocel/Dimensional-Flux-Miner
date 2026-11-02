@@ -1,7 +1,7 @@
 package dimensionalfluxminer.content;
 
 import dimensionalfluxminer.advancement.DfmAdvancements;
-import net.minecraft.advancements.triggers.CriteriaTriggers;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -55,7 +55,7 @@ public class ReinforcedEnderEyeItem extends Item {
                 level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDER_EYE_LAUNCH, SoundSource.NEUTRAL, 1.0F, pitch);
                 stack.consume(1, player);
                 player.awardStat(Stats.ITEM_USED.get(this));
-                player.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+                player.swing(hand, true);
                 return InteractionResult.SUCCESS;
             }
         }

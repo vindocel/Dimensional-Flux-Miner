@@ -52,9 +52,8 @@ public class DfmJeiPlugin implements IModPlugin {
     private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
     private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
 
-    /** EMI and REI have no 26.x build: JEI always lists the recipes on this line. */
     private static boolean enabled() {
-        return true;
+        return !RecipeViewers.emi() && !RecipeViewers.rei();
     }
 
     @Override

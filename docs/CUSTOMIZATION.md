@@ -9,10 +9,10 @@ it, but you should know how to edit a text file and how to put a folder inside a
 
 | | |
 |---|---|
-| Minecraft | 1.21.1 |
-| NeoForge | 21.1.255 |
+| Minecraft | 26.1.2 |
+| NeoForge | 26.1.2.126 |
 | Mod ID | `dimensionalfluxminer` |
-| Datapack format | `48` |
+| Datapack format | `101` |
 
 Other references: gameplay numbers in [BALANCE.md](BALANCE.md), code layout in [ARCHITECTURE.md](ARCHITECTURE.md),
 the player-facing overview in the [README](../README.md).
@@ -426,12 +426,13 @@ My_DFM_Datapack/
         └── tags/
 ```
 
-`pack.mcmeta` for Minecraft 1.21.1 (data pack format `48`):
+`pack.mcmeta` for Minecraft 26.1.2 (data pack format `101`, declared with `min_format` and `max_format`):
 
 ```json
 {
   "pack": {
-    "pack_format": 48,
+    "min_format": 101,
+    "max_format": 101,
     "description": "My Dimensional Flux Miner tweaks"
   }
 }
@@ -894,7 +895,7 @@ with the upgrade) applies only when the input is in `c:raw_materials/<m>` and th
 
 | Field | Required | Type | Meaning |
 |---|---|---|---|
-| `ingredient` | Yes | Ingredient (`{"item": ...}`, `{"tag": ...}` or a list of them) | The ore |
+| `ingredient` | Yes | Ingredient (`"namespace:item"`, `"#namespace:tag"` or a list of item IDs) | The ore |
 | `result` | One of the two | Item stack (`{"id": ...}`) | A fixed product. Its `count` is ignored: the counts below decide |
 | `result_tag` | One of the two | Item tag ID | The product is the first item of the tag, so it follows whatever mod provides it |
 | `base_count` | No | Integer ≥ 1 | Products per ore without the upgrade. Default `2` |
@@ -912,7 +913,7 @@ until a mod fills the tag.
     { "type": "neoforge:mod_loaded", "modid": "create" }
   ],
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": { "tag": "c:ores/zinc" },
+  "ingredient": "#c:ores/zinc",
   "result_tag": "c:raw_materials/zinc",
   "base_count": 2,
   "efficiency_upgrade_count": 3
@@ -925,7 +926,7 @@ until a mod fills the tag.
 ```json
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": { "tag": "c:ores/diamond" },
+  "ingredient": "#c:ores/diamond",
   "result": { "id": "minecraft:diamond" },
   "base_count": 1,
   "efficiency_upgrade_count": 2
@@ -961,9 +962,9 @@ is not defined, so avoid overlaps.
 {
   "type": "dimensionalfluxminer:alloying",
   "ingredients": [
-    { "ingredient": { "item": "minecraft:blackstone" }, "count": 1 },
-    { "ingredient": { "tag": "c:nuggets/gold" }, "count": 4 },
-    { "ingredient": { "item": "minecraft:magma_cream" }, "count": 1 }
+    { "ingredient": "minecraft:blackstone", "count": 1 },
+    { "ingredient": "#c:nuggets/gold", "count": 4 },
+    { "ingredient": "minecraft:magma_cream", "count": 1 }
   ],
   "result": { "id": "minecraft:gilded_blackstone", "count": 1 },
   "byproduct": { "id": "minecraft:gold_nugget", "count": 1, "chance": 0.25 },
@@ -986,7 +987,7 @@ This recipe has 4 work units (its largest count), so with the default settings o
 ```json
 {
   "type": "dimensionalfluxminer:crushing",
-  "ingredient": { "item": "minecraft:blaze_rod" },
+  "ingredient": "minecraft:blaze_rod",
   "result": { "id": "minecraft:blaze_powder", "count": 3 }
 }
 ```
@@ -1012,7 +1013,7 @@ The recipe does nothing while the tag is empty. Add the same condition the mod u
     { "type": "neoforge:not", "value": { "type": "neoforge:tag_empty", "tag": "c:ingots/tin" } }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": { "item": "dimensionalfluxminer:dust_tin" },
+  "ingredient": "dimensionalfluxminer:dust_tin",
   "result_tag": "c:ingots/tin",
   "experience": 0.7,
   "cookingtime": 100
@@ -1247,7 +1248,7 @@ Everything below uses standard Minecraft and NeoForge data. KubeJS scripts can d
 - items: `create:zinc_ore`;
 - blocks: `create:limestone`;
 - dimensions: `minecraft:the_nether`, `allthemodium:the_other`;
-- tags: `#c:ores/zinc` in data maps, `"tag": "c:ores/zinc"` in ingredients, `c:raw_materials/zinc` in `result_tag`.
+- tags: `#c:ores/zinc` in data maps, `"#c:ores/zinc"` in ingredients, `c:raw_materials/zinc` in `result_tag`.
 
 **When the other mod may be missing:**
 
@@ -1391,7 +1392,8 @@ My_DFM_Datapack/
 ```json
 {
   "pack": {
-    "pack_format": 48,
+    "min_format": 101,
+    "max_format": 101,
     "description": "My modpack's Dimensional Flux Miner tweaks"
   }
 }
@@ -1423,9 +1425,9 @@ My_DFM_Datapack/
 {
   "type": "dimensionalfluxminer:alloying",
   "ingredients": [
-    { "ingredient": { "item": "minecraft:blackstone" }, "count": 1 },
-    { "ingredient": { "tag": "c:nuggets/gold" }, "count": 4 },
-    { "ingredient": { "item": "minecraft:magma_cream" }, "count": 1 }
+    { "ingredient": "minecraft:blackstone", "count": 1 },
+    { "ingredient": "#c:nuggets/gold", "count": 4 },
+    { "ingredient": "minecraft:magma_cream", "count": 1 }
   ],
   "result": { "id": "minecraft:gilded_blackstone", "count": 1 },
   "byproduct": { "id": "minecraft:gold_nugget", "count": 1, "chance": 0.25 },
@@ -1498,7 +1500,7 @@ configuration file and the datapacks of this guide do. Without it, nothing chang
 
 | | |
 |---|---|
-| KubeJS | 2101.7 or newer (NeoForge 1.21.1) |
+| KubeJS | 26.1.2-8.0.8 or newer (NeoForge 26.1.2) |
 | Where | `kubejs/server_scripts/<any name>.js` in the instance or server folder |
 | Apply | `/reload`, or restart |
 | Errors | `logs/kubejs/server.log`, with the file and line |

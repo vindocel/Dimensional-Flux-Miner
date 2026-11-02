@@ -11,28 +11,32 @@
             {
               "type": "minecraft:item",
               "name": "dimensionalfluxminer:corrupted_grass",
-              "condition": {
-                "type": "minecraft:match_tool",
-                "predicate": {
-                  "predicates": {
-                    "minecraft:enchantments": [
-                      {
-                        "enchantments": "minecraft:silk_touch",
-                        "levels": {
-                          "min": 1
+              "conditions": [
+                {
+                  "condition": "minecraft:match_tool",
+                  "predicate": {
+                    "predicates": {
+                      "minecraft:enchantments": [
+                        {
+                          "enchantments": "minecraft:silk_touch",
+                          "levels": {
+                            "min": 1
+                          }
                         }
-                      }
-                    ]
+                      ]
+                    }
                   }
                 }
-              }
+              ]
             },
             {
               "type": "minecraft:item",
               "name": "dimensionalfluxminer:corrupted_dirt",
-              "condition": {
-                "type": "minecraft:survives_explosion"
-              }
+              "conditions": [
+                {
+                  "condition": "minecraft:survives_explosion"
+                }
+              ]
             }
           ]
         }

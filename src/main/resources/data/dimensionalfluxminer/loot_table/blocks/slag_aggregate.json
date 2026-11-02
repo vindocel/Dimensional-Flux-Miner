@@ -10,9 +10,11 @@
           "name": "dimensionalfluxminer:slag_aggregate"
         }
       ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/slag_aggregate"

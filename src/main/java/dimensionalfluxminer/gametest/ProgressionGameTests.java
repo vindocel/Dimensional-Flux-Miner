@@ -283,7 +283,7 @@ public final class ProgressionGameTests {
                 && !endTerrain.contains(net.minecraft.world.level.block.Blocks.DEEPSLATE.defaultBlockState()), "End terrain is end stone");
         // A vein listing a variant per stone keeps only the variant of the stone that is there.
         var ops = net.minecraft.resources.RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, helper.getLevel().registryAccess());
-        var gold = helper.getLevel().registryAccess().lookupOrThrow(Registries.FEATURE)
+        var gold = helper.getLevel().registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE)
                 .getValue(Identifier.withDefaultNamespace("ore_gold"));
         var shape = ProfileBuilder.oreShape(gold, ops).orElseThrow();
         var onStone = shape.replacing(Set.of(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState())).targets();

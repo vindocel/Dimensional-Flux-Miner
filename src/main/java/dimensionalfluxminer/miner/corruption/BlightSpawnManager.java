@@ -147,7 +147,7 @@ public final class BlightSpawnManager {
             }
         }
         WeightedList<MobSpawnSettings.SpawnerData> entries = level.getChunkSource().getGenerator()
-                .getMobsAt(level, level.structureManager(), MobCategory.MONSTER, pos);
+                .getMobsAt(level.getBiome(pos), level.structureManager(), MobCategory.MONSTER, pos);
         MobSpawnSettings.SpawnerData entry = entries.getRandom(random).orElse(null);
         if (entry == null || entry.type().builtInRegistryHolder().is(DfmTags.Entities.BLIGHT_SPAWN_BLACKLIST)) {
             return;

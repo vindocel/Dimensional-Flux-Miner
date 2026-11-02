@@ -10,9 +10,11 @@
           "name": "dimensionalfluxminer:miner_terminal"
         }
       ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
     }
   ],
   "random_sequence": "dimensionalfluxminer:blocks/miner_terminal"

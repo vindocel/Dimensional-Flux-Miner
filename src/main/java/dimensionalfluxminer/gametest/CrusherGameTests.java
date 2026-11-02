@@ -334,11 +334,11 @@ public final class CrusherGameTests {
         // Every ore feature, vanilla or with its own configuration type from another mod, yields its target blocks.
         var registries = helper.getLevel().registryAccess();
         var ops = net.minecraft.resources.RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, registries);
-        var features = registries.lookupOrThrow(net.minecraft.core.registries.Registries.FEATURE);
+        var features = registries.lookupOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE);
         int checked = 0;
         for (var entry : features.listElements().toList()) {
             var feature = entry.value();
-            boolean declaresTargets = net.minecraft.world.level.levelgen.feature.Feature.DIRECT_CODEC.encodeStart(ops, feature).result()
+            boolean declaresTargets = net.minecraft.world.level.levelgen.feature.ConfiguredFeature.DIRECT_CODEC.encodeStart(ops, feature).result()
                     .filter(json -> json instanceof com.google.gson.JsonObject root
                             && (root.get("config") instanceof com.google.gson.JsonObject nested ? nested : root).get("targets") instanceof com.google.gson.JsonArray targets && !targets.isEmpty()
                             && targets.get(0) instanceof com.google.gson.JsonObject first && first.has("state"))

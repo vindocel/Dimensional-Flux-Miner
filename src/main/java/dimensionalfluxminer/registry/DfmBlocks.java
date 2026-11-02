@@ -33,7 +33,7 @@ public final class DfmBlocks {
     public static final DeferredBlock<MinerPartBlock> REINFORCED_STRUCTURAL_GLASS = BLOCKS.registerBlock("reinforced_structural_glass", MinerPartBlock::new,
             () -> BlockBehaviour.Properties.of().mapColor(MapColor.NONE).strength(3.0F, 1200.0F).sound(SoundType.GLASS)
                     .requiresCorrectToolForDrops().noOcclusion().isValidSpawn(Blocks::never).isRedstoneConductor((s, l, p) -> false)
-                    .isSuffocating((s, l, p) -> false).isViewBlocking((s, l, p, a) -> false).pushReaction(PushReaction.IMMOVEABLE));
+                    .isSuffocating((s, l, p) -> false).isViewBlocking((s, l, p) -> false).pushReaction(PushReaction.BLOCK));
     public static final DeferredBlock<MinerPortBlock> DIMENSIONAL_PORT = BLOCKS.registerBlock("dimensional_port", MinerPortBlock::new, DfmBlocks::assemblyPart);
     public static final DeferredBlock<MinerPartBlock> QUANTUM_CORE = BLOCKS.registerBlock("quantum_core", MinerPartBlock::new, DfmBlocks::assemblyPart);
     public static final DeferredBlock<MinerTerminalBlock> MINER_TERMINAL = BLOCKS.registerBlock("miner_terminal", MinerTerminalBlock::new, DfmBlocks::assemblyPart);
@@ -86,13 +86,13 @@ public final class DfmBlocks {
             CorruptedWaterPlants.TallSeagrass::new, () -> BlockBehaviour.Properties.ofFullCopy(Blocks.TALL_SEAGRASS).overrideLootTable(Blocks.TALL_SEAGRASS.getLootTable()));
     public static final DeferredBlock<CorruptedGrassPlantBlock> CORRUPTED_GRASS_PLANT = BLOCKS.registerBlock("corrupted_grass_plant", CorruptedGrassPlantBlock::new,
             () -> BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).replaceable().noCollision().instabreak()
-                    .sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XYZ).ignitedByLava().pushReaction(PushReaction.POPPED));
+                    .sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XYZ).ignitedByLava().pushReaction(PushReaction.DESTROY));
     public static final DeferredBlock<LiquidBlock> CORRUPTED_WATER = BLOCKS.registerBlock("corrupted_water",
             props -> new LiquidBlock(DfmFluids.CORRUPTED_WATER.get(), props), () -> BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.COLOR_PURPLE));
 
     /** Assembly parts cannot be moved by pistons, so a formed machine can only change by being broken. */
     private static BlockBehaviour.Properties assemblyPart() {
-        return machineCasing().pushReaction(PushReaction.IMMOVEABLE);
+        return machineCasing().pushReaction(PushReaction.BLOCK);
     }
 
     /** Machines, tanks and Miner parts: metal blocks no mob ever spawns on. */

@@ -57,7 +57,7 @@ public class CrusherRenderer implements BlockEntityRenderer<MechanicalCrusherBlo
         }
         pose.pushPose();
         pose.translate(0.5, 0, 0.5);
-        pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
+        pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
         pose.translate(-0.5, 0, -0.5);
         roller(pose, collector, ROLLER_LEFT, 8 - 2.625, -state.angle, state.lightCoords);
         roller(pose, collector, ROLLER_RIGHT, 8 + 2.625, state.angle + 90.0F, state.lightCoords);
@@ -67,7 +67,7 @@ public class CrusherRenderer implements BlockEntityRenderer<MechanicalCrusherBlo
     private static void roller(PoseStack pose, SubmitNodeCollector collector, Identifier model, double pivotX, float degrees, int light) {
         pose.pushPose();
         pose.translate(pivotX / 16.0, 10.375 / 16.0, 0.5);
-        pose.rotate(Axis.ZP.rotationDegrees(degrees));
+        pose.mulPose(Axis.ZP.rotationDegrees(degrees));
         ModelRendering.render(pose, collector, ModelRendering.model(model), light, OverlayTexture.NO_OVERLAY);
         pose.popPose();
     }

@@ -89,7 +89,7 @@ public final class Recipes {
             default -> {
             }
         }
-        ContextMap context = ContextMap.builder().set(SlotDisplayContext.REGISTRIES, registries).buildAndValidate(SlotDisplayContext.CONTEXT);
+        ContextMap context = new ContextMap.Builder().withParameter(SlotDisplayContext.REGISTRIES, registries).create(SlotDisplayContext.CONTEXT);
         for (RecipeDisplay display : recipe.display()) {
             ItemStack result = display.result().resolveForFirstStack(context);
             if (!result.isEmpty()) {

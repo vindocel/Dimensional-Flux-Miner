@@ -12,6 +12,7 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
@@ -114,8 +115,12 @@ public final class MinerAssemblyHighlight {
             pose.pushPose();
             pose.translate(mark.pos().getX() - camera.x, mark.pos().getY() - camera.y, mark.pos().getZ() - camera.z);
             if (mark.alpha() <= 0) {
-                collector.submitShapeOutline(pose, Shapes.create(new AABB(BlockPos.ZERO).deflate(INSET)), RenderTypes.lines(),
-                        0xE6000000 | OCCUPIED, 2.0F, true);
+                collector.submitCustomGeometry(pose, RenderTypes.lines(), (last, consumer) -> {
+                    PoseStack shapePose = new PoseStack();
+                    shapePose.last().set(last);
+                    ShapeRenderer.renderShape(shapePose, consumer, Shapes.create(new AABB(BlockPos.ZERO).deflate(INSET)), 0, 0, 0,
+                            0xE6000000 | OCCUPIED, 2.0F);
+                });
             } else {
                 ghost(pose, collector, mark.state(), mark.alpha());
             }

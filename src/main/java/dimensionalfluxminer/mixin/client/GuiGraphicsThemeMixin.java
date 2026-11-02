@@ -1,6 +1,6 @@
 package dimensionalfluxminer.mixin.client;
 
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dimensionalfluxminer.client.screen.GuiTheme;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(GuiGraphicsExtractor.class)
 public abstract class GuiGraphicsThemeMixin {
     @ModifyVariable(method = {
-            "innerBlit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lcom/mojang/renderpearl/api/textures/GpuTextureView;Lcom/mojang/renderpearl/api/textures/GpuSampler;IIIIFFFFI)V",
+            "innerBlit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lcom/mojang/blaze3d/textures/GpuTextureView;Lcom/mojang/blaze3d/textures/GpuSampler;IIIIFFFFI)V",
             "innerTiledBlit"}, at = @At("HEAD"), argsOnly = true)
     private RenderPipeline dimensionalfluxminer$themePipeline(RenderPipeline pipeline) {
         return GuiTheme.pipeline(pipeline);

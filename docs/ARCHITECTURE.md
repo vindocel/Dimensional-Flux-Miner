@@ -3,9 +3,9 @@
 How the code of Dimensional Flux Miner is organised, where each rule lives and how to work on it safely.
 Gameplay numbers are in [BALANCE.md](BALANCE.md); releases are in [RELEASING.md](RELEASING.md).
 
-## Minecraft 26.3 line
+## Minecraft 26.1.2 line
 
-This branch builds Minecraft 26.3 (NeoForge 26.3.0.95, Java 25). The gameplay code is the same as on the 1.21.1 line;
+This branch builds Minecraft 26.1.2 (NeoForge 26.1.2.126, Java 25). The gameplay code is the same as on the 1.21.1 line;
 these layers keep it and the saves unchanged on the new API:
 
 - `machine.transfer`: the machines keep their slot, energy and tank classes (`ItemSlots`, `SlotStorage`,
@@ -17,8 +17,12 @@ these layers keep it and the saves unchanged on the new API:
   instance; each batch is a test environment that moves the world spawn away while it runs.
 - Recipes are a registry read before item components exist: results are `ItemStackTemplate`s. Clients get the
   mod's recipe types from the server (`OnDatapackSyncEvent`, `recipe.Recipes`).
-- EMI, REI and Polymorph have no 26.x build: `compat/emi`, `compat/rei` and `compat/polymorph` stay in the tree but
-  are left out of the compile (`build.gradle`). KubeJS compiles against its 26.1.2 API.
+- EMI and Polymorph have no 26.1.2 build: `compat/emi` and `compat/polymorph` stay in the tree but are left out of
+  the compile (`build.gradle`). JEI, REI (`compat/rei`, recipe viewer order EMI, REI, JEI), Jade, AE2 and KubeJS are
+  compile-only.
+- Data uses this version's formats: loot tables with `conditions` / `functions`, datapack format 101 with
+  `min_format` / `max_format`, string ingredients. GameTests run in `run/mc-26.1.2/gametest` (only this mod, like CI)
+  and `runGameTestCompat` in `run/mc-26.1.2/gametest-compat` (a copy of the optional mods in its `mods` folder).
 - Tank items as fluid containers go through `ItemAccess` (`tank.TankItemFluidHandler.forAccess`); the creative tank
   item's icon is a special model renderer (`client.render.CreativeTankItemRenderer`).
 

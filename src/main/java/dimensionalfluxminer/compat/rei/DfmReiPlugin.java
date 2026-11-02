@@ -32,7 +32,6 @@ import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.forge.REIPluginClient;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -58,12 +57,6 @@ public final class DfmReiPlugin implements REIClientPlugin {
     private static final int PADDING = 4;
     /** Crushing preview: one operation every 4 s. */
     private static final long PREVIEW_MS = 4000;
-
-    /** Creative tanks holding different liquids are different entries. */
-    @Override
-    public void registerItemComparators(me.shedaniel.rei.api.common.entry.comparison.ItemComparatorRegistry registry) {
-        registry.registerComponents(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
-    }
 
     /** One creative tank per liquid, right after the empty one (and only once, whatever REI took from the creative tab). */
     @Override
@@ -111,9 +104,9 @@ public final class DfmReiPlugin implements REIClientPlugin {
             }
             registry.add(new Page(CRUSHING, List.of(EntryIngredients.ofItemStacks(display.inputs())), List.of(output), null, 0));
         }
-        for (RecipeViewerData.FurnaceDisplay display : RecipeViewerData.electricFurnaceSmelting(level.getRecipeManager(),
+        for (RecipeViewerData.FurnaceDisplay display : RecipeViewerData.electricFurnaceSmelting(dimensionalfluxminer.recipe.Recipes.map(level),
                 level.registryAccess())) {
-            List<ItemStack> inputs = List.of(display.input().getItems()).stream().map(s -> s.copyWithCount(display.inputCount())).toList();
+            List<ItemStack> inputs = List.of(dimensionalfluxminer.recipe.Recipes.stacks(display.input())).stream().map(s -> s.copyWithCount(display.inputCount())).toList();
             EntryIngredient output = EntryIngredients.of(display.output());
             if (display.bulk()) {
                 output = withLine(output, RecipeViewerData.bulkLine());
@@ -121,16 +114,16 @@ public final class DfmReiPlugin implements REIClientPlugin {
             registry.add(new Page(SMELTING, List.of(EntryIngredients.ofItemStacks(inputs)), List.of(output), display.id(),
                     display.cookTicks() * 50L));
         }
-        for (RecipeHolder<AlloyingRecipe> holder : RecipeViewerData.alloying(level.getRecipeManager())) {
+        for (RecipeHolder<AlloyingRecipe> holder : RecipeViewerData.alloying(dimensionalfluxminer.recipe.Recipes.map(level))) {
             AlloyingRecipe recipe = holder.value();
             List<EntryIngredient> inputs = new ArrayList<>();
             for (SizedIngredient sized : recipe.ingredients()) {
-                inputs.add(EntryIngredients.ofItemStacks(List.of(sized.getItems())));
+                inputs.add(EntryIngredients.ofItemStacks(sized.ingredient().items().map(item -> new ItemStack(item, sized.count())).toList()));
             }
             List<EntryIngredient> outputs = new ArrayList<>();
             outputs.add(EntryIngredients.of(recipe.result()));
             recipe.byproduct().ifPresent(b -> outputs.add(withLine(EntryIngredients.of(b.stack()), RecipeViewerData.chanceLine(b.chance()))));
-            registry.add(new Page(ALLOYING, inputs, outputs, holder.id(), recipe.processingTicks() * 50L));
+            registry.add(new Page(ALLOYING, inputs, outputs, holder.id().identifier(), recipe.processingTicks() * 50L));
         }
     }
 
@@ -186,6 +179,12 @@ public final class DfmReiPlugin implements REIClientPlugin {
         public Optional<Identifier> getDisplayLocation() {
             return Optional.ofNullable(location);
         }
+
+        /** Pages are rebuilt on the client from the synced recipes; they never go over the network. */
+        @Override
+        public me.shedaniel.rei.api.common.display.DisplaySerializer<?> getSerializer() {
+            return null;
+        }
     }
 
     private record Category(CategoryIdentifier<Page> id, String name, ItemStack icon, int width, int height)
@@ -223,7 +222,7 @@ public final class DfmReiPlugin implements REIClientPlugin {
             widgets.add(Widgets.createRecipeBase(bounds));
             // The element (slot frames, energy and heat parts included) follows REI's light or dark theme, read on
             // every draw so switching it in REI applies at once.
-            widgets.add(Widgets.createDrawableWidget((GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) ->
+            widgets.add(Widgets.createDrawableWidget((g, mouseX, mouseY, delta) ->
                     GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () -> {
                         if (id == CRUSHING) {
                             CrusherLayout.drawMechanism(g, x, y, CrusherLayout.WIDTH);

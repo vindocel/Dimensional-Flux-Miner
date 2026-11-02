@@ -54,7 +54,7 @@ public class GuideBookRenderer implements SpecialModelRenderer<GuideBookAnimatio
         pose.pushPose();
         // The parts are modeled lying on the table with the cover up; stand the book up with the cover to the front.
         pose.translate(0.5, 0.5, 0.5);
-        pose.rotate(Axis.XP.rotationDegrees(90));
+        pose.mulPose(Axis.XP.rotationDegrees(90));
         pose.translate(-CLOSED_HALF_WIDTH / 16.0 * (1.0F - p.openness()), 0, 0);
         pose.translate(-0.5, -0.5, -0.5);
         part(pose, collector, BACK_COVER, 0, 0, light, overlay);
@@ -76,7 +76,7 @@ public class GuideBookRenderer implements SpecialModelRenderer<GuideBookAnimatio
     private static void part(PoseStack pose, SubmitNodeCollector collector, Identifier model, float angle, float drop, int light, int overlay) {
         pose.pushPose();
         pose.translate(0.5, 0.5 + drop / 16.0, 0.5);
-        pose.rotate(Axis.ZP.rotationDegrees(angle));
+        pose.mulPose(Axis.ZP.rotationDegrees(angle));
         pose.translate(-0.5, -0.5, -0.5);
         ModelRendering.render(pose, collector, ModelRendering.model(model), light, overlay);
         pose.popPose();

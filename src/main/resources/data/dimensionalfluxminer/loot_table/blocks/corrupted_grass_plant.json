@@ -8,12 +8,14 @@
         {
           "type": "minecraft:item",
           "name": "dimensionalfluxminer:corrupted_grass_plant",
-          "condition": {
-            "type": "minecraft:match_tool",
-            "predicate": {
-              "items": "minecraft:shears"
+          "conditions": [
+            {
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "items": "minecraft:shears"
+              }
             }
-          }
+          ]
         }
       ]
     }

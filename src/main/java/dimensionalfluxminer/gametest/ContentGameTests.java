@@ -175,7 +175,7 @@ public final class ContentGameTests {
 
     private static void assertReward(GameTestHelper helper, ServerAdvancementManager advancements, String advancement, String lootTable) {
         ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, DimensionalFluxMiner.id(lootTable));
-        helper.assertTrue(advancements.get(DimensionalFluxMiner.id(advancement)).value().rewards().loot().stream().anyMatch(table -> table.is(key)),
+        helper.assertTrue(advancements.get(DimensionalFluxMiner.id(advancement)).value().rewards().loot().stream().anyMatch(table -> table.equals(key)),
                 advancement + " does not reward " + lootTable);
         helper.assertTrue(helper.getLevel().getServer().reloadableRegistries().getLootTable(key) != LootTable.EMPTY,
                 "loot table missing: " + lootTable);

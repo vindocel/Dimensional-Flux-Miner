@@ -480,7 +480,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             closeWindow(windows.getLast());
             return true;
         }
-        if (!windows.isEmpty() && windows.getLast().keyPressed(event.key(), event.keycode(), event.modifiers())) {
+        if (!windows.isEmpty() && windows.getLast().keyPressed(event.key(), event.scancode(), event.modifiers())) {
             return true;
         }
         return super.keyPressed(event);

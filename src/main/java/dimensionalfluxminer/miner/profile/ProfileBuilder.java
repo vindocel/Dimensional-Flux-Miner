@@ -34,15 +34,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraft.world.level.levelgen.material.rule.MaterialRule;
+import net.minecraft.world.level.levelgen.SurfaceRules;
 import net.minecraft.world.level.levelgen.structure.templatesystem.AlwaysTrueTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RandomBlockMatchTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RandomBlockStateMatchTest;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.levelgen.feature.AbstractOreFeature;
-import net.minecraft.world.level.levelgen.feature.BlockReplacement;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
@@ -207,37 +207,24 @@ public final class ProfileBuilder {
         Set<BlockState> blocks = new HashSet<>();
         blocks.add(settings.defaultBlock());
         RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, registries);
-        collectRule(settings.materialRule().value(), registries, ops, blocks, new HashSet<>());
+        SurfaceRules.RuleSource.CODEC.encodeStart(ops, settings.surfaceRule()).result()
+                .ifPresent(json -> collectStates(json, ops, blocks));
         blocks.removeIf(BlockState::isAir);
         return blocks;
     }
 
-    private static void collectRule(MaterialRule rule, net.minecraft.core.HolderLookup.Provider registries,
-                                    RegistryOps<JsonElement> ops, Set<BlockState> blocks, Set<Identifier> visited) {
-        MaterialRule.DIRECT_CODEC.encodeStart(ops, rule).result()
-                .ifPresent(json -> collectStates(json, registries, ops, blocks, visited));
-    }
-
-    /** Every {@code result_state} of a material rule; rules named by id (registered rules) are read too. */
-    private static void collectStates(JsonElement json, net.minecraft.core.HolderLookup.Provider registries,
-                                      RegistryOps<JsonElement> ops, Set<BlockState> blocks, Set<Identifier> visited) {
+    /** Every {@code result_state} of a surface rule. */
+    private static void collectStates(JsonElement json, RegistryOps<JsonElement> ops, Set<BlockState> blocks) {
         if (json instanceof JsonObject obj) {
             for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
                 if (e.getKey().equals("result_state")) {
                     BlockState.CODEC.parse(ops, e.getValue()).result().ifPresent(blocks::add);
                 } else {
-                    collectStates(e.getValue(), registries, ops, blocks, visited);
+                    collectStates(e.getValue(), ops, blocks);
                 }
             }
         } else if (json instanceof JsonArray array) {
-            array.forEach(element -> collectStates(element, registries, ops, blocks, visited));
-        } else if (json instanceof JsonPrimitive primitive && primitive.isString()) {
-            Identifier id = Identifier.tryParse(primitive.getAsString());
-            if (id != null && visited.add(id)) {
-                registries.lookup(Registries.MATERIAL_RULE)
-                        .flatMap(rules -> rules.get(ResourceKey.create(Registries.MATERIAL_RULE, id)))
-                        .ifPresent(holder -> collectRule(holder.value(), registries, ops, blocks, visited));
-            }
+            array.forEach(element -> collectStates(element, ops, blocks));
         }
     }
 
@@ -259,7 +246,7 @@ public final class ProfileBuilder {
             return state == null || terrain.contains(state);
         }
         RandomSource random = RandomSource.create(0);
-        return terrain.stream().anyMatch(s -> rule.test(s, net.minecraft.core.BlockPos.ZERO, random));
+        return terrain.stream().anyMatch(s -> rule.test(s, random));
     }
 
     /**
@@ -361,19 +348,19 @@ public final class ProfileBuilder {
     }
 
     /**
-     * Vanilla ore features ({@link AbstractOreFeature}) are read directly. Other ore features (for example ore types
+     * Vanilla {@link OreConfiguration}s are read directly. Other ore features (for example ore types
      * with their own codec) are read from their serialized form: every {@code targets[].state} entry is an ore block,
      * and a numeric {@code size} is the vein size ({@link #DEFAULT_VEIN_SIZE} when the size lives elsewhere, such as in a
-     * mod config). The fields sit at the top level or, in older formats, in {@code config}.
+     * mod config). The fields sit in {@code config} or at the top level.
      */
-    public static Optional<OreShape> oreShape(Feature feature, RegistryOps<JsonElement> ops) {
-        if (feature instanceof AbstractOreFeature ore) {
-            return Optional.of(new OreShape(ore.targetStates().stream().map(BlockReplacement::state).toList(),
-                    ore.targetStates().stream().map(BlockReplacement::target).toList(), ore.size()));
+    public static Optional<OreShape> oreShape(ConfiguredFeature<?, ?> feature, RegistryOps<JsonElement> ops) {
+        if (feature.config() instanceof OreConfiguration ore) {
+            return Optional.of(new OreShape(ore.targetStates.stream().map(t -> t.state).toList(),
+                    ore.targetStates.stream().map(t -> t.target).toList(), ore.size));
         }
         JsonElement json;
         try {
-            json = Feature.DIRECT_CODEC.encodeStart(ops, feature).getOrThrow();
+            json = ConfiguredFeature.DIRECT_CODEC.encodeStart(ops, feature).getOrThrow();
         } catch (RuntimeException e) {
             return Optional.empty();
         }

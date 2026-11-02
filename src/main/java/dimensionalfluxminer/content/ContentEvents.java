@@ -7,7 +7,7 @@ import net.minecraft.world.entity.projectile.EyeOfEnder;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.neoforge.event.LootTableLoadEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 
@@ -37,7 +37,7 @@ public final class ContentEvents {
         if (UPGRADE_LOOT_TABLES.contains(event.getName())) {
             event.getTable().addPool(LootPool.lootPool()
                     .name("dimensionalfluxminer_efficiency_upgrade")
-                    .setRolls(ContextIntProviders.exactly(1))
+                    .setRolls(ConstantValue.exactly(1))
                     .when(LootItemRandomChanceCondition.randomChance(UPGRADE_CHANCE))
                     .add(LootItem.lootTableItem(DfmItems.EFFICIENCY_UPGRADE.get()))
                     .build());

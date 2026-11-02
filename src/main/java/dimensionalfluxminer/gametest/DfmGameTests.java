@@ -73,7 +73,7 @@ public final class DfmGameTests {
                 Holder<TestEnvironmentDefinition<?>> environment = environments.computeIfAbsent(batch,
                         name -> event.registerEnvironment(DimensionalFluxMiner.id("batch/" + name), new SpawnAway(name)));
                 Identifier id = id(method);
-                TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(environment, Level.OVERWORLD,
+                TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(environment,
                         DimensionalFluxMiner.id(test.template()), test.timeoutTicks(), test.setupTicks(), test.required(),
                         Rotation.NONE, false, 1, 1, test.skyAccess(), 0);
                 event.registerTest(id, new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id), data));

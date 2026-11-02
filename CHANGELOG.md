@@ -2,6 +2,12 @@
 
 ## 0.2.8 (since 0.2.7)
 
+### 🧱 Minecraft 26.1.2
+
+- 🆙 **Ported to Minecraft 26.1.2** (NeoForge 26.1.2.126, Java 25), with every feature of the 26.3 line. JEI and REI are
+  the recipe viewers (REI first when both are installed); EMI and Polymorph have no 26.1.2 version yet. Jade, Applied
+  Energistics 2 and KubeJS use their 26.1.2 versions.
+
 ### 🧱 Minecraft 26.3
 
 - Everything below also comes to the 26.3 line, except the REI and EMI parts: neither has a 26.x version yet, so JEI

@@ -1,6 +1,6 @@
 package dimensionalfluxminer.gametest;
 
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import dimensionalfluxminer.machine.transfer.EnergyStore;
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.Transfer;
@@ -913,8 +913,8 @@ public final class MinerGameTests {
     @GameTest(template = "empty_large", skyAccess = true)
     public static void terracottaAndCalciteCorrupt(GameTestHelper helper) {
         var level = helper.getLevel();
-        helper.setBlock(new BlockPos(1, 1, 1), Blocks.GLAZED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.WHITE));
-        helper.setBlock(new BlockPos(1, 2, 1), Blocks.DYED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.RED));
+        helper.setBlock(new BlockPos(1, 1, 1), Blocks.WHITE_GLAZED_TERRACOTTA);
+        helper.setBlock(new BlockPos(1, 2, 1), Blocks.RED_TERRACOTTA);
         helper.setBlock(new BlockPos(1, 3, 1), Blocks.TERRACOTTA);
         helper.setBlock(new BlockPos(3, 1, 1), Blocks.DIORITE);
         helper.setBlock(new BlockPos(3, 2, 1), Blocks.DRIPSTONE_BLOCK);
@@ -1010,7 +1010,7 @@ public final class MinerGameTests {
                 helper.setBlock(new BlockPos(x, 2, z), DfmBlocks.CORRUPTED_WATER.get());
             }
         }
-        Spider spider = helper.spawn(EntityTypes.SPIDER, new BlockPos(4, 1, 4));
+        Spider spider = helper.spawn(EntityType.SPIDER, new BlockPos(4, 1, 4));
         spider.setHealth(4.0F);
         helper.succeedWhen(() -> helper.assertTrue(spider.getHealth() > 4.0F, "monster healed in corrupted water"));
     }
@@ -1077,7 +1077,7 @@ public final class MinerGameTests {
                 helper.setBlock(new BlockPos(x, 2, z), DfmBlocks.CORRUPTED_WATER.get());
             }
         }
-        var cow = helper.spawn(EntityTypes.COW, new BlockPos(4, 1, 4));
+        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 1, 4));
         float full = cow.getMaxHealth();
         helper.succeedWhen(() -> {
             helper.assertTrue(cow.isInWater(), "corrupted water counts as water (splash, swimming, sounds)");
@@ -1109,7 +1109,7 @@ public final class MinerGameTests {
                 }
             }
         }
-        var drowned = helper.spawn(EntityTypes.DROWNED, new BlockPos(4, 1, 4));
+        var drowned = helper.spawn(EntityType.DROWNED, new BlockPos(4, 1, 4));
         drowned.setPersistenceRequired();
         drowned.setAirSupply(0);
         // Out of air, a mob that drowns loses air below 0 and takes drowning damage after 20 ticks; a drowned does not.
@@ -1133,7 +1133,7 @@ public final class MinerGameTests {
                 }
             }
         }
-        var warden = helper.spawn(EntityTypes.WARDEN, new BlockPos(4, 1, 4));
+        var warden = helper.spawn(EntityType.WARDEN, new BlockPos(4, 1, 4));
         // The test server has no player: without this the Warden may despawn in the middle of the test.
         warden.setPersistenceRequired();
         // Spawned without the normal spawn setup, a Warden has no dig cooldown and digs away (vanilla) almost at once.

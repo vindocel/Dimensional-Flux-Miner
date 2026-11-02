@@ -138,7 +138,7 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         int light = state.lightCoords;
         pose.pushPose();
         pose.translate(0.5F, 0, 0.5F);
-        pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
+        pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
         pose.translate(-0.5F, 0, -0.5F);
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
         collector.submitCustomGeometry(pose, RenderTypes.translucentMovingBlock(),

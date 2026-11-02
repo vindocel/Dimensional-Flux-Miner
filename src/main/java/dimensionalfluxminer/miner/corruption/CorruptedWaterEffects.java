@@ -1,6 +1,6 @@
 package dimensionalfluxminer.miner.corruption;
 
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmFluids;
 import dimensionalfluxminer.registry.DfmTags;
@@ -65,7 +65,7 @@ public final class CorruptedWaterEffects {
         if (living.getType().builtInRegistryHolder().is(DfmTags.Entities.CORRUPTED_WATER_HEART_HEAL)) {
             if (time % HEART_HEAL_INTERVAL == 0) {
                 living.heal(HEART_HEAL);
-                if (living.level() instanceof ServerLevel level && living.getType() == EntityTypes.WARDEN) {
+                if (living.level() instanceof ServerLevel level && living.getType() == EntityType.WARDEN) {
                     // Whoever watches a Warden being healed by the blight earns it a new best friend.
                     DfmAdvancements.awardNearby(level, living.position(), DfmAdvancements.NEARBY, DfmAdvancements.WARDEN_HEALED,
                             player -> player.hasLineOfSight(living));

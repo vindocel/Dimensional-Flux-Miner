@@ -161,8 +161,8 @@ Forge your first **Pure Steel** and the guide is yours. The book opens in your h
 
 | | |
 |---|---|
-| Minecraft | 26.3 |
-| Loader | NeoForge 26.3.0.95+ |
+| Minecraft | 26.1.2 |
+| Loader | NeoForge 26.1.2.126+ |
 | Java | 25 |
 | Required mods | none |
 

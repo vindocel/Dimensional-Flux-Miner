@@ -44,7 +44,7 @@ public final class MatterGameTests {
                 new Case(Items.RED_SAND, overworld, 3, 5),
                 new Case(Items.GRASS_BLOCK, overworld, 2, 4),
                 new Case(Items.TERRACOTTA, overworld, 5, 7),
-                new Case(Items.DYED_TERRACOTTA.pick(net.minecraft.world.item.DyeColor.CYAN), overworld, 5, 7),
+                new Case(Items.CYAN_TERRACOTTA, overworld, 5, 7),
                 new Case(Items.STONE, overworld, 5, 7),
                 new Case(Items.OBSIDIAN, overworld, 10, 12),
                 new Case(Items.OBSIDIAN, nether, 10, 12),

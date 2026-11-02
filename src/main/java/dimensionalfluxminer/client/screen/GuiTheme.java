@@ -1,6 +1,6 @@
 package dimensionalfluxminer.client.screen;
 
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import net.minecraft.client.renderer.RenderPipelines;
 

@@ -77,7 +77,7 @@ public final class TagResultCooking {
     }
 
     private static List<RecipeDisplay> display(AbstractCookingRecipe recipe, TagKey<Item> tag, Item station) {
-        SlotDisplay result = BuiltInRegistries.ITEM.get(tag).<SlotDisplay>map(SlotDisplay.TagSlotDisplay::new).orElse(SlotDisplay.Empty.INSTANCE);
+        SlotDisplay result = BuiltInRegistries.ITEM.get(tag).isPresent() ? new SlotDisplay.TagSlotDisplay(tag) : SlotDisplay.Empty.INSTANCE;
         return List.of(new FurnaceRecipeDisplay(recipe.input().display(), SlotDisplay.AnyFuel.INSTANCE, result,
                 new SlotDisplay.ItemSlotDisplay(station), recipe.cookingTime(), recipe.experience()));
     }

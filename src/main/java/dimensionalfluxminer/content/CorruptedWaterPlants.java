@@ -9,7 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.GrowingPlantHeadBlock;
 import net.minecraft.world.level.block.KelpBlock;
 import net.minecraft.world.level.block.KelpPlantBlock;
@@ -94,12 +93,12 @@ public final class CorruptedWaterPlants {
         }
 
         @Override
-        public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state, BonemealSource source) {
+        public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state) {
             return isCorruptedWaterSource(level.getBlockState(pos.above()));
         }
 
         @Override
-        public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
+        public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
             BlockState lower = DfmBlocks.CORRUPTED_TALL_SEAGRASS.get().defaultBlockState();
             BlockState upper = lower.setValue(TallSeagrassBlock.HALF, DoubleBlockHalf.UPPER);
             BlockPos above = pos.above();

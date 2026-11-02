@@ -1,5 +1,6 @@
 package dimensionalfluxminer.tank;
 
+import com.mojang.serialization.MapCodec;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -36,6 +37,10 @@ import dimensionalfluxminer.machine.transfer.Transfer;
  * empty hand forgets its liquid.
  */
 public class DimensionalTankBlock extends BaseEntityBlock implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
+    private static final MapCodec<DimensionalTankBlock> SINGLE_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.SINGLE, p));
+    private static final MapCodec<DimensionalTankBlock> DUAL_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.DUAL, p));
+    private static final MapCodec<DimensionalTankBlock> CREATIVE_CODEC = simpleCodec(p -> new DimensionalTankBlock(TankKind.CREATIVE, p));
+
     private final TankKind kind;
 
     public DimensionalTankBlock(TankKind kind, Properties properties) {
@@ -56,6 +61,15 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
                                      BlockState neighborState, net.minecraft.util.RandomSource random) {
         dimensionalfluxminer.content.Waterlogging.tick(state, level, ticks, pos);
         return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return switch (kind) {
+            case DUAL -> DUAL_CODEC;
+            case CREATIVE -> CREATIVE_CODEC;
+            default -> SINGLE_CODEC;
+        };
     }
 
     public TankKind kind() {

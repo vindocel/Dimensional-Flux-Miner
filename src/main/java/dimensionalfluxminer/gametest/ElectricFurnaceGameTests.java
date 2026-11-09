@@ -362,6 +362,8 @@ public final class ElectricFurnaceGameTests {
             helper.assertTrue(handler.extractItem(slot, 64, true).isEmpty(), "dedicated lane never outputs items");
         }
         helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, left) != null, "energy coexists");
+        helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, null) == null,
+                "no unsided energy view");
         helper.assertTrue(helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, abs, left) != null, "xp coexists");
         helper.succeed();
     }

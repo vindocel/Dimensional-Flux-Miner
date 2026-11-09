@@ -2,6 +2,12 @@
 
 ## 0.2.8 (since 0.2.7)
 
+### Minecraft 1.21.1
+
+- Redesigned machine settings with labeled color buttons and an Apply to All Machines switch.
+- Standardized the active and idle terminal animation frames at 64 × 64 while preserving the original artwork.
+- Prevented duplicate Jade energy bars from overlay providers that query energy without a face.
+
 ### ✨ Added
 
 - ⚪ **White icons, the new default**: the machine screens now show white icons unless you pick **Blue** or

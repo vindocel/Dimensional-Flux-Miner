@@ -164,6 +164,9 @@ server scripts load, before the datapacks are read. Each event lands in a layer 
 
 ## Saves and compatibility
 
+Public energy handlers require a configured face. The Jade plugin reads the machines' internal buffers for its
+energy bars, so generic unsided energy queries do not produce a second bar.
+
 Block, item and block entity IDs never change: `ingot_steel` keeps its ID although the item is now Pure Steel. NBT keys
 are part of the save format; the extracted classes write the same keys as before (`output`, `dm`, `work_progress`,
 `lane_progressN`, `alloy_progress`, `energy_debt`). When a key has to change, read the old one too.

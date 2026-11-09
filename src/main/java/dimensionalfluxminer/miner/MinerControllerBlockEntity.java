@@ -611,16 +611,13 @@ public class MinerControllerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /**
-     * Energy capability of a face: every face by default, only the hand-picked ones once the player chose some. The
-     * {@code null} side of every miner block is a read-only view of the energy buffer (Jade).
+     * Energy capability of a face: every face by default, only the hand-picked ones once the player chose some.
+     * The Jade integration reads the controller's buffer directly.
      */
     public IEnergyStorage energyPort(BlockPos portPos, Direction side) {
         MinerStructure s = structure();
-        if (!formed || s == null) {
+        if (side == null || !formed || s == null) {
             return null;
-        }
-        if (side == null) {
-            return ReadOnlyViews.energy(energyPort);
         }
         MinerPorts.Face face = face(portPos, side);
         if (face != null && ports.acceptsEnergy(face)) {

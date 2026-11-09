@@ -99,8 +99,12 @@ public final class MinerGameTests {
             helper.assertTrue(level.getBlockState(m.pos()).getValue(DfmStateProperties.FORMED), "participant formed at " + m.pos());
         }
         // Energy by default: every one of the nine faces accepts it, no other face of the port blocks does.
+        helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, c.getBlockPos(), null) == null,
+                "no unsided energy at the terminal");
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             Direction out = face.outward(MinerLayout.Front.SOUTH);
+            helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), null) == null,
+                    "no unsided energy on " + face);
             helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), out) != null, "energy on " + face);
             helper.assertTrue(level.getCapability(Capabilities.EnergyStorage.BLOCK, portPos(c, face), Direction.UP) == null, "no energy up " + face);
             // Every outward face has an item handler (so a cable can be noticed), none of the inward faces.

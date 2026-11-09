@@ -578,7 +578,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                 && menu.getCarried().isEmpty() ? id : -1;
     }
 
-    private void buttonHotspot(int x, int y, int w, int h, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
+    void buttonHotspot(int x, int y, int w, int h, IntSupplier left, IntSupplier right, Supplier<List<Component>> tooltip) {
         Hotspot spot = new Hotspot(x, y, w, h, left, right, tooltip, 0, true, null);
         (drawing != null ? drawing.pendingHotspots : mainHotspots).add(spot);
     }

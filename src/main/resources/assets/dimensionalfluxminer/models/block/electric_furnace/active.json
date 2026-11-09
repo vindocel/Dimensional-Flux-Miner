@@ -1805,10 +1805,10 @@
       "faces": {
         "north": {
           "uv": [
-            0,
-            0,
-            16,
-            6.73684
+            3.25,
+            3.25,
+            12.75,
+            7.25
           ],
           "texture": "#terminal_active",
           "neoforge_data": {

@@ -6,6 +6,9 @@
 
 - Everything below also comes to the 26.3 line, except the REI and EMI parts: neither has a 26.x version yet, so JEI
   is the recipe viewer there (the creative tanks are listed once per liquid in it too).
+- Redesigned machine settings with labeled color buttons and an Apply to All Machines switch.
+- Prevented duplicate Jade energy bars when another overlay provider queries energy without a face.
+- Fixed the active and idle terminal textures lowering the block atlas mipmap level.
 
 ### ✨ Added
 

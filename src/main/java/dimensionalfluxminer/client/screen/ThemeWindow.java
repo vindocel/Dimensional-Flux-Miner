@@ -1,30 +1,22 @@
 package dimensionalfluxminer.client.screen;
 
-import net.minecraft.client.renderer.RenderPipelines;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 
-/**
- * Settings window of a machine screen, only on this player's computer:
- * <ul>
- *     <li>the color of the screen, light or dark, and the color of the icons, white (default), blue or purple, each picked like a
- *     family of the Miner's filter; the "reuse" switch beside them (one switch shared by every machine) applies both
- *     colors to all machines;</li>
- *     <li>the volume of this machine's sound, 0 to 100 % in steps of 10 (100 % until changed; 0 is mute), always this
- *     machine's own; not on the Dimensional Tanks, which make no sound.</li>
- * </ul>
- */
+/** Local appearance preferences and the volume of this machine. */
 final class ThemeWindow extends DfmScreen.Window {
-    private static final int CELL = 18;
-    private static final int CELL_GAP = 16;
-    private static final int COLOR_LABEL_Y = 20;
-    private static final int COLOR_CELLS_Y = 32;
-    private static final int ICON_LABEL_Y = 64;
-    private static final int ICON_CELLS_Y = 76;
-    private static final int VOLUME_LABEL_Y = 108;
-    private static final int VOLUME_Y = 120;
+    private static final String THEME = "gui.dimensionalfluxminer.theme.";
+    private static final int INSET = 10;
+    private static final int GAP = 4;
+    private static final int CHOICE_HEIGHT = 22;
+    private static final int SCREEN_Y = 32;
+    private static final int ICONS_Y = 70;
+    private static final int APPLY_Y = 103;
+    private static final int VOLUME_LABEL_Y = 125;
+    private static final int VOLUME_Y = 137;
     private static final int STEPS = 10;
     private static final int SEGMENT_W = 8;
     private static final int SEGMENT_H = 8;
@@ -32,7 +24,7 @@ final class ThemeWindow extends DfmScreen.Window {
     private static final int VOLUME_OFF = 0xFF1E2631;
 
     ThemeWindow(DfmScreen<?> screen) {
-        super(screen, "theme", 156);
+        super(screen, "theme", 200);
     }
 
     @Override
@@ -47,52 +39,46 @@ final class ThemeWindow extends DfmScreen.Window {
 
     @Override
     public int height() {
-        return hasSound() ? VOLUME_Y + DfmScreen.SMALL_BUTTON + 8 : ICON_CELLS_Y + CELL + 16;
+        return hasSound() ? VOLUME_Y + DfmScreen.SMALL_BUTTON + 8 : APPLY_Y + ButtonArt.SWITCH_HEIGHT + 8;
     }
 
     @Override
     protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
         var pos = screen.machinePos();
-        int rowWidth = 4 * CELL + 3 * CELL_GAP;
-        int cellsX = x + (width - rowWidth) / 2;
-        int secondX = cellsX + CELL + CELL_GAP;
-
-        // Row titles centered over their choices (the reuse switch sits in the fourth column, between the rows).
-        int labelX = cellsX - CELL_GAP / 2;
-        int pairWidth = 2 * CELL + 2 * CELL_GAP;
-        int tripleWidth = 3 * CELL + 3 * CELL_GAP;
-
-        // Screen color: Light and Dark.
-        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.color"), labelX, y + COLOR_LABEL_Y, pairWidth,
-                GuiTheme.subheading(), 1.0F, true);
+        int left = x + INSET;
+        int contentWidth = width - 2 * INSET;
+        screen.text(g, Component.translatable(THEME + "color"), left, y + SCREEN_Y - 12, GuiTheme.heading());
+        int themeWidth = (contentWidth - GAP) / 2;
         boolean dark = GuiThemes.dark(pos);
-        cell(g, cellsX, y + COLOR_CELLS_Y, GuiTheme.LIGHT_PANEL, !dark, "gui.dimensionalfluxminer.theme.light", mouseX, mouseY,
+        choice(g, left, y + SCREEN_Y, themeWidth, GuiTheme.LIGHT_PANEL, !dark, "light", mouseX, mouseY,
                 () -> GuiThemes.choose(pos, false));
-        cell(g, secondX, y + COLOR_CELLS_Y, GuiTheme.DARK_PANEL, dark, "gui.dimensionalfluxminer.theme.dark", mouseX, mouseY,
+        choice(g, left + themeWidth + GAP, y + SCREEN_Y, themeWidth, GuiTheme.DARK_PANEL, dark, "dark", mouseX, mouseY,
                 () -> GuiThemes.choose(pos, true));
 
-        // Icon color: White, Blue and Purple.
-        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.icons"), labelX, y + ICON_LABEL_Y, tripleWidth,
-                GuiTheme.subheading(), 1.0F, true);
+        screen.text(g, Component.translatable(THEME + "icons"), left, y + ICONS_Y - 12, GuiTheme.heading());
         IconColor icons = GuiThemes.icons(pos);
-        for (IconColor color : IconColor.values()) {
-            cell(g, cellsX + color.ordinal() * (CELL + CELL_GAP), y + ICON_CELLS_Y, color.preview(), color == icons,
-                    "gui.dimensionalfluxminer.theme." + color.id(), mouseX, mouseY, () -> GuiThemes.chooseAccent(pos, color));
+        IconColor[] colors = IconColor.values();
+        int iconWidth = (contentWidth - (colors.length - 1) * GAP) / colors.length;
+        for (IconColor color : colors) {
+            int offset = color.ordinal() * (iconWidth + GAP);
+            int choiceWidth = color.ordinal() == colors.length - 1 ? contentWidth - offset : iconWidth;
+            choice(g, left + offset, y + ICONS_Y, choiceWidth, color.preview(), color == icons, color.id(), mouseX, mouseY,
+                    () -> GuiThemes.chooseAccent(pos, color));
         }
 
-        // The switch that applies both colors to every machine, between the two rows.
         boolean all = GuiThemes.applyToAll();
-        int reuseX = cellsX + 3 * (CELL + CELL_GAP);
-        int reuseY = y + (COLOR_CELLS_Y + ICON_CELLS_Y) / 2;
-        screen.imageButton(g, reuseX, reuseY, CELL, GuiIcon.REUSE, true, all, mouseX, mouseY, () -> {
+        int switchX = left + contentWidth - ButtonArt.SWITCH_WIDTH;
+        int switchY = y + APPLY_Y;
+        screen.fitted(g, Component.translatable(THEME + "apply_all.label"), left, switchY + 3,
+                switchX - left - GAP, GuiTheme.heading(), 1.0F, false);
+        ButtonArt.drawSwitch(g, switchX, switchY, all,
+                screen.hovered(switchX, switchY, ButtonArt.SWITCH_WIDTH, ButtonArt.SWITCH_HEIGHT, mouseX, mouseY));
+        screen.buttonHotspot(switchX, switchY, ButtonArt.SWITCH_WIDTH, ButtonArt.SWITCH_HEIGHT, () -> {
             GuiThemes.setApplyToAll(pos, !all);
             return -1;
         }, null, () -> List.of(
-                Component.translatable("gui.dimensionalfluxminer.theme.apply_all", MachineText.onOff(all)),
-                Component.translatable(all ? "gui.dimensionalfluxminer.theme.apply_all.on"
-                        : "gui.dimensionalfluxminer.theme.apply_all.off").withStyle(ChatFormatting.GRAY)));
-        screen.fitted(g, Component.translatable("gui.dimensionalfluxminer.theme.apply_all.short"), reuseX - CELL_GAP / 2,
-                reuseY + CELL + 3, CELL + CELL_GAP, all ? GuiTheme.heading() : GuiTheme.subheading(), 0.8F, true);
+                Component.translatable(THEME + "apply_all", MachineText.onOff(all)),
+                Component.translatable(THEME + (all ? "apply_all.on" : "apply_all.off")).withStyle(ChatFormatting.GRAY)));
 
         if (hasSound()) {
             volume(g, x, y, mouseX, mouseY);
@@ -140,25 +126,20 @@ final class ThemeWindow extends DfmScreen.Window {
                 }, null, () -> help);
     }
 
-    /** One choice, drawn like a filter family: a slot holding its color, checked when selected. */
-    private void cell(GuiGraphicsExtractor g, int cx, int cy, int color, boolean selected, String nameKey, int mouseX, int mouseY, Runnable choose) {
-        screen.slot(g, selected ? DfmScreen.SlotKind.OUTPUT : DfmScreen.SlotKind.NORMAL, cx, cy);
-        g.fill(cx + 1, cy + 1, cx + CELL - 1, cy + CELL - 1, color);
-        g.pose().pushMatrix();
-        g.pose().translate(0, 0);
+    /** A framed button with a color preview and its name in the same click target. */
+    private void choice(GuiGraphicsExtractor g, int x, int y, int w, int color, boolean selected, String nameKey,
+                        int mouseX, int mouseY, Runnable choose) {
+        ButtonArt.draw(g, x, y, w, CHOICE_HEIGHT, true, screen.hovered(x, y, w, CHOICE_HEIGHT, mouseX, mouseY), selected);
+        g.fill(x + 3, y + 3, x + 19, y + 19, 0xFF1A1A1A);
+        g.fill(x + 4, y + 4, x + 18, y + 18, color);
         if (selected) {
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, DfmScreen.CHECK, cx, cy, CELL, CELL);
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, DfmScreen.CHECK, x + 4, y + 4, 14, 14);
         }
-        if (screen.hovered(cx + 1, cy + 1, 16, 16, mouseX, mouseY)) {
-            g.fill(cx + 1, cy + 1, cx + CELL - 1, cy + CELL - 1, 0x80FFFFFF);
-        }
-        g.pose().popMatrix();
-        Component name = Component.translatable(nameKey);
-        screen.fitted(g, name, cx - CELL_GAP / 2, cy + CELL + 3, CELL + CELL_GAP, selected ? GuiTheme.heading() : GuiTheme.subheading(),
-                0.8F, true);
-        screen.hotspot(cx, cy, CELL, CELL, () -> {
+        Component name = Component.translatable(THEME + nameKey);
+        screen.fitted(g, name, x + 22, y + 7, w - 25, 0xFFFFFFFF, 1.0F, false);
+        screen.buttonHotspot(x, y, w, CHOICE_HEIGHT, () -> {
             choose.run();
             return -1;
-        }, null, () -> List.of(name), 0);
+        }, null, () -> List.of(name));
     }
 }

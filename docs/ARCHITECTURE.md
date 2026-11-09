@@ -11,6 +11,8 @@ these layers keep it and the saves unchanged on the new API:
 - `machine.transfer`: the machines keep their slot, energy and tank classes (`ItemSlots`, `SlotStorage`,
   `EnergyStore`, `FluidTanks`); `Transfer` exposes them as NeoForge transfer handlers (with a snapshot `Journal`
   per block entity for transactions) and wraps other blocks' handlers the same way.
+- Public energy handlers require a configured face. The Jade plugin reads the machines' own buffers directly
+  for its energy bars, so generic unsided energy queries do not produce a second bar.
 - `content.TagBlockEntity`: block entities still save and load a `CompoundTag` with the same keys, bridged to the new
   value input/output. `content.TagSavedData`: saved data with codecs, moving the old `data/<name>.dat` files once.
 - `gametest.DfmGameTests`: registers every `@GameTest` method (the mod's own annotation) as a test function and

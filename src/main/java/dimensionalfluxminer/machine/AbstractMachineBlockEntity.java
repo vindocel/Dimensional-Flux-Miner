@@ -571,12 +571,9 @@ public abstract class AbstractMachineBlockEntity extends dimensionalfluxminer.co
 
     protected abstract void restoreContents(Object snapshot);
 
-    /** Energy input on configured faces; the {@code null} side is a read-only view of the buffer. */
+    /** Energy input on configured faces. The Jade integration reads the buffer directly. */
     public EnergyStore energyFor(Direction side) {
-        if (side == null) {
-            return ReadOnlyViews.energy(energy);
-        }
-        if (route(side, Transmission.ENERGY) != SideRoute.ENERGY_INPUT) {
+        if (side == null || route(side, Transmission.ENERGY) != SideRoute.ENERGY_INPUT) {
             return null;
         }
         return energy;

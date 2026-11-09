@@ -40,7 +40,7 @@ public final class DfmBlockEntities {
         // Single and creative tank items are fluid containers (used on a tank they fill it); the dual one is not.
         event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> dimensionalfluxminer.tank.DimensionalTankItem.fluidHandler(access),
                 DfmItems.DIMENSIONAL_TANK.get(), DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
-        // The terminal has no port of its own: only its null side (read-only views for information tools) answers.
+        // The terminal has no port of its own. Its unsided item view is available to information tools.
         event.registerBlockEntity(Capabilities.Item.BLOCK, MINER_CONTROLLER.get(), (be, side) -> Transfer.exposeItems(be.itemPort(be.getBlockPos(), side), be.journal()));
         event.registerBlockEntity(Capabilities.Energy.BLOCK, MINER_CONTROLLER.get(), (be, side) -> Transfer.exposeEnergy(be.energyPort(be.getBlockPos(), side), be.journal()));
         event.registerBlockEntity(Capabilities.Item.BLOCK, MINER_LINK.get(), (be, side) -> be.exposedItems(side));

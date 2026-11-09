@@ -7,6 +7,9 @@
 - 🆙 **Ported to Minecraft 26.1.2** (NeoForge 26.1.2.126, Java 25), with every feature of the 26.3 line. JEI and REI are
   the recipe viewers (REI first when both are installed); EMI and Polymorph have no 26.1.2 version yet. Jade, Applied
   Energistics 2 and KubeJS use their 26.1.2 versions.
+- Fixed duplicate Jade energy bars when another overlay provider inspects the same machine.
+- Fixed the Electric Furnace's animated terminal texture lowering the block atlas mipmap level.
+- Redesigned machine settings with labeled color buttons and an Apply to All Machines switch.
 
 ### 🧱 Minecraft 26.3
 

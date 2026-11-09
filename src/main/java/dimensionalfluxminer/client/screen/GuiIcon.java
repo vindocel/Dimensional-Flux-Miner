@@ -26,7 +26,6 @@ enum GuiIcon {
     REDSTONE_LOW,
     REDSTONE_OFF,
     REDSTONE_ON,
-    REUSE,
     /** Drawn 1 px lower: the drawing sits high in its image. */
     SETTINGS(1),
     SIDE_CONFIG,

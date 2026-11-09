@@ -172,6 +172,7 @@ public final class CrusherGameTests {
         // The configurable faces have an item handler for the cables to find, but with no route it moves nothing.
         Direction front = be.facing();
         be.output().insert(new ItemStack(Items.GRAVEL), 4, false);
+        helper.assertTrue(Transfer.energy(helper.getLevel(), abs, null) == null, "no unsided energy view");
         for (Direction dir : Direction.values()) {
             boolean energyExpected = dir != front && dir != Direction.UP;
             helper.assertTrue((Transfer.energy(helper.getLevel(), abs, dir) != null) == energyExpected,

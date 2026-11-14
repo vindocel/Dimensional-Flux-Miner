@@ -281,7 +281,7 @@ final class SideConfigWindow extends DfmScreen.Window {
         }
     }
 
-    /** Pick-block item of every neighbor, indexed by face ordinal (empty for air). */
+    /** Item of every neighbor ({@link NeighborIcon}), indexed by face ordinal (empty for air). */
     private ItemStack[] neighborItems() {
         ItemStack[] result = new ItemStack[RelativeFace.VALUES.length];
         java.util.Arrays.fill(result, ItemStack.EMPTY);
@@ -298,10 +298,7 @@ final class SideConfigWindow extends DfmScreen.Window {
         for (RelativeFace face : RelativeFace.VALUES) {
             Direction side = face.toDirection(facing);
             BlockPos other = pos.relative(side);
-            BlockState state = level.getBlockState(other);
-            if (!state.isAir()) {
-                result[face.ordinal()] = state.getCloneItemStack(other, level, false, mc.player);
-            }
+            result[face.ordinal()] = NeighborIcon.of(level, other, side.getOpposite());
         }
         return result;
     }

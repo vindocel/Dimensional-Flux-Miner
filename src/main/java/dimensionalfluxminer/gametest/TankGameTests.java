@@ -36,6 +36,167 @@ public final class TankGameTests {
     private TankGameTests() {
     }
 
+    @GameTest(template = "empty_small")
+    public static void tankItemDisplayFollowsChannelWithoutOwningFluid(GameTestHelper helper) {
+        var code = new TankCode(DyeColor.LIME, DyeColor.RED, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        var stack = new net.minecraft.world.item.ItemStack(DfmBlocks.DIMENSIONAL_TANK.get());
+        stack.set(DfmDataComponents.TANK_CODE.get(), code);
+        var channel = TankChannels.get(helper.getLevel().getServer()).channel(TankKind.SINGLE, code);
+        channel.set(0, water(30000));
+        dimensionalfluxminer.tank.TankItemDisplay.update(stack, helper.getLevel().getServer());
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.SINGLE, 0).getAmount() == 30000,
+                "item reading preserves the finite fill amount");
+        stack.set(DfmDataComponents.TANK_DISPLAY_A.get(), net.neoforged.neoforge.fluids.SimpleFluidContent.copyOf(lava(128000)));
+        helper.assertTrue(itemFluids(stack).getFluidInTank(0).is(Fluids.WATER)
+                && itemFluids(stack).getFluidInTank(0).getAmount() == 30000, "a display snapshot is never fluid storage");
+        channel.set(0, water(1000));
+        dimensionalfluxminer.tank.TankItemDisplay.update(stack, helper.getLevel().getServer());
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.SINGLE, 0).getAmount() == 1000,
+                "channel changes refresh an existing item");
+        channel.set(0, FluidStack.EMPTY);
+        dimensionalfluxminer.tank.TankItemDisplay.update(stack, helper.getLevel().getServer());
+        helper.assertTrue(!stack.has(DfmDataComponents.TANK_DISPLAY_A.get()), "empty channels clear stale readings");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void tankItemDisplaySelectsLocalAndSharedChambers(GameTestHelper helper) {
+        var code = new TankCode(DyeColor.PURPLE, DyeColor.BLUE, DyeColor.LIME,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        var stack = new net.minecraft.world.item.ItemStack(DfmBlocks.DIMENSIONAL_DUAL_TANK.get());
+        stack.set(DfmDataComponents.TANK_CODE.get(), code);
+        stack.set(DfmDataComponents.TANK_LOCAL_A.get(), net.neoforged.neoforge.fluids.SimpleFluidContent.copyOf(lava(50000)));
+        stack.set(DfmDataComponents.TANK_LOCAL_B.get(), net.neoforged.neoforge.fluids.SimpleFluidContent.copyOf(water(30000)));
+        var channel = TankChannels.get(helper.getLevel().getServer()).channel(TankKind.DUAL, code);
+        channel.set(0, water(90000));
+        channel.set(1, lava(10000));
+        dimensionalfluxminer.tank.TankItemDisplay.update(stack, helper.getLevel().getServer());
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.DUAL, 0).getAmount() == 90000,
+                "open mode displays the shared A chamber");
+        stack.set(DfmDataComponents.TANK_CHANNEL_LOCKED.get(), true);
+        dimensionalfluxminer.tank.TankItemDisplay.update(stack, helper.getLevel().getServer());
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.DUAL, 0).is(Fluids.LAVA)
+                && dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.DUAL, 0).getAmount() == 50000,
+                "locked mode displays the local A chamber");
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.DUAL, 1).getAmount() == 30000,
+                "local B has its own fill height");
+        stack.remove(DfmDataComponents.TANK_CHANNEL_LOCKED.get());
+        dimensionalfluxminer.tank.TankItemDisplay.update(stack, helper.getLevel().getServer());
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(stack, TankKind.DUAL, 1).getAmount() == 10000,
+                "reconnection displays shared B without moving the local reserve");
+        helper.assertTrue(stack.get(DfmDataComponents.TANK_LOCAL_A.get()).copy().getAmount() == 50000, "inactive local fluid is untouched");
+        helper.succeed();
+    }
+
+    /** New single and dual tank items come with the channel locked; a saved tank without the key (older worlds) stays open. */
+    @GameTest(template = "empty_small")
+    public static void newTanksStartWithTheChannelLocked(GameTestHelper helper) {
+        for (TankKind kind : new TankKind[] {TankKind.SINGLE, TankKind.DUAL}) {
+            Block block = kind == TankKind.DUAL ? DfmBlocks.DIMENSIONAL_DUAL_TANK.get() : DfmBlocks.DIMENSIONAL_TANK.get();
+            var fresh = new net.minecraft.world.item.ItemStack(block);
+            helper.assertTrue(dimensionalfluxminer.tank.DimensionalTankItem.channelLocked(fresh), kind + " item starts locked");
+            var be = place(helper, kind == TankKind.SINGLE ? FIRST : SECOND, kind, null);
+            helper.assertTrue(!be.channelLocked(), kind + " block without the saved key stays open");
+            be.applyComponentsFromItemStack(fresh);
+            helper.assertTrue(be.channelLocked(), kind + " placed from a new item is locked");
+            var carried = new net.minecraft.world.item.ItemStack(block);
+            carried.set(DfmDataComponents.TANK_CODE.get(), TankCode.DEFAULT);
+            helper.assertTrue(!dimensionalfluxminer.tank.DimensionalTankItem.channelLocked(carried), kind + " item with a code keeps the open mode");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void singleTankCanDisconnectAndPreserveBothStores(GameTestHelper helper) {
+        localRoundTrip(helper, TankKind.SINGLE);
+    }
+
+    @GameTest(template = "empty_small")
+    public static void dualTankCanDisconnectAndPreserveBothStores(GameTestHelper helper) {
+        localRoundTrip(helper, TankKind.DUAL);
+    }
+
+    private static void localRoundTrip(GameTestHelper helper, TankKind kind) {
+        TankCode code = new TankCode(DyeColor.RED, DyeColor.BLUE, DyeColor.GREEN,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        var tank = place(helper, FIRST, kind, code);
+        var peer = place(helper, SECOND, kind, null);
+        peer.setCode(code);
+        var retained = face(helper, tank, RelativeFace.RIGHT);
+        retained.fill(water(3000), FluidTanks.FluidAction.EXECUTE);
+        if (kind == TankKind.DUAL) {
+            tank.chamberHandler(1).fill(water(4000), FluidTanks.FluidAction.EXECUTE);
+        }
+        helper.assertTrue(!tank.channelLocked() && tank.setChannelLocked(true), "old and new tanks default to shared storage");
+        helper.assertTrue(tank.chamber(0).isEmpty() && peer.chamber(0).getAmount() == 3000, "disconnecting does not copy or drain shared fluid");
+        retained.fill(lava(2000), FluidTanks.FluidAction.EXECUTE);
+        helper.assertTrue(tank.chamber(0).is(Fluids.LAVA) && peer.chamber(0).is(Fluids.WATER), "retained handlers follow the active storage");
+        if (kind == TankKind.DUAL) {
+            tank.chamberHandler(1).fill(lava(5000), FluidTanks.FluidAction.EXECUTE);
+        }
+        helper.assertTrue(!tank.handleButton(null, DimensionalTankBlockEntity.BUTTON_CODE_BASE + DyeColor.BLACK.getId())
+                && !tank.handleButton(null, DimensionalTankBlockEntity.BUTTON_PERSONAL), "server rejects channel changes while locked");
+        tank.setCode(TankCode.DEFAULT);
+        helper.assertTrue(tank.code().equals(code), "direct code changes are also rejected");
+        var exposed = Transfer.exposeFluids(retained, tank.journal());
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            exposed.extract(0, net.neoforged.neoforge.transfer.fluid.FluidResource.of(tank.chamber(0)), 700, transaction);
+        }
+        helper.assertTrue(tank.chamber(0).getAmount() == 2000, "cancelled local fluid transfers roll back");
+        var saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        helper.assertTrue(tank.channelLocked() && tank.chamber(0).getAmount() == 2000, "local mode and contents persist");
+        tank.setChannelLocked(false);
+        helper.assertTrue(tank.chamber(0).is(Fluids.WATER) && tank.chamber(0).getAmount() == 3000, "reconnecting restores the shared channel");
+        saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        helper.getLevel().destroyBlock(tank.getBlockPos(), true);
+        var drops = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(tank.getBlockPos()).inflate(1));
+        var drop = drops.stream().map(net.minecraft.world.entity.item.ItemEntity::getItem)
+                .filter(stack -> stack.getItem() instanceof dimensionalfluxminer.tank.DimensionalTankItem).findFirst().orElseThrow();
+        helper.assertTrue(drop.get(DfmDataComponents.TANK_LOCAL_A.get()).copy().getAmount() == 2000,
+                "loot keeps inactive local fluid while the shared store stays in the channel");
+        helper.assertTrue(dimensionalfluxminer.tank.TankItemDisplay.fluid(drop, kind, 0).getAmount() == 3000,
+                "the dropped item immediately carries the shared display reading");
+        var replaced = place(helper, FIRST, kind, null);
+        replaced.applyComponentsFromItemStack(drop);
+        helper.assertTrue(!replaced.channelLocked() && replaced.chamber(0).getAmount() == 3000, "replacement preserves unlocked mode");
+        replaced.setChannelLocked(true);
+        helper.assertTrue(replaced.chamber(0).is(Fluids.LAVA) && replaced.chamber(0).getAmount() == 2000, "replacement retains its independent reserve");
+        if (kind == TankKind.DUAL) {
+            helper.assertTrue(replaced.chamber(1).is(Fluids.LAVA) && replaced.chamber(1).getAmount() == 5000
+                    && peer.chamber(1).is(Fluids.WATER) && peer.chamber(1).getAmount() == 4000, "both chambers remain separate across replacement");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void lockedTankItemTransfersOnlyItsLocalFluid(GameTestHelper helper) {
+        var stack = new net.minecraft.world.item.ItemStack(DfmBlocks.DIMENSIONAL_TANK.get());
+        stack.set(DfmDataComponents.TANK_CHANNEL_LOCKED.get(), true);
+        stack.set(DfmDataComponents.TANK_LOCAL_A.get(), net.neoforged.neoforge.fluids.SimpleFluidContent.copyOf(water(3000)));
+        var handler = net.neoforged.neoforge.transfer.access.ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM);
+        var waterResource = net.neoforged.neoforge.transfer.fluid.FluidResource.of(water(1));
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            helper.assertTrue(handler.extract(0, waterResource, 1000, transaction) == 1000, "local item can be drained");
+        }
+        helper.assertTrue(stack.get(DfmDataComponents.TANK_LOCAL_A.get()).copy().getAmount() == 3000, "cancelled item drain is restored");
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            handler.extract(0, waterResource, 1000, transaction);
+            transaction.commit();
+        }
+        helper.assertTrue(stack.get(DfmDataComponents.TANK_LOCAL_A.get()).copy().getAmount() == 2000, "committed drain updates the item component");
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            helper.assertTrue(handler.insert(0, net.neoforged.neoforge.transfer.fluid.FluidResource.of(lava(1)), 1000, transaction) == 0,
+                    "local item rejects mixed fluids");
+            helper.assertTrue(handler.insert(0, waterResource, 200000, transaction) == 126000, "local item respects tank capacity");
+            transaction.commit();
+        }
+        helper.succeed();
+    }
+
     private static DimensionalTankBlockEntity place(GameTestHelper helper, BlockPos pos, TankKind kind, Direction facing, TankCode code) {
         Block block = kind == TankKind.DUAL ? DfmBlocks.DIMENSIONAL_DUAL_TANK.get() : DfmBlocks.DIMENSIONAL_TANK.get();
         helper.setBlock(pos, block.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, facing));
@@ -69,6 +230,263 @@ public final class TankGameTests {
 
     private static TankCode code(DyeColor a, DyeColor b, DyeColor c) {
         return new TankCode(a, b, c);
+    }
+
+    @GameTest(template = "empty_small", timeoutTicks = 1250)
+    public static void containerSlotsWaitForRealTicksAndKeepIndependentProgress(GameTestHelper helper) {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        int duration = dimensionalfluxminer.DfmConfig.tankContainerTicks();
+        tank.channel().set(0, water(2000));
+        tank.containers().setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET));
+        tank.containers().setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET));
+        tank.containers().tick();
+        tank.containers().tick();
+        if (duration > 1) {
+            helper.assertTrue(tank.containers().progressSnapshot()[0] == 1 && tank.containers().progressSnapshot()[1] == 1,
+                    "extra calls in the same world tick do not advance either timer");
+            var saved = tank.containers().serializeNBT(helper.getLevel().registryAccess());
+            var restored = new dimensionalfluxminer.tank.TankContainerSlots(tank);
+            restored.load(helper.getLevel().registryAccess(), saved);
+            helper.assertTrue(restored.progressSnapshot()[0] == 1 && restored.progressSnapshot()[1] == 1, "partial progress persists");
+            restored.setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET));
+            helper.assertTrue(restored.progressSnapshot()[0] == 0 && restored.progressSnapshot()[1] == 1,
+                    "replacing one input resets only its own timer");
+        }
+        if (duration > 2) {
+            helper.runAfterDelay(duration - 2, () -> {
+                helper.assertTrue(tank.containers().getStackInSlot(0).is(net.minecraft.world.item.Items.WATER_BUCKET)
+                        && tank.containers().getStackInSlot(1).is(net.minecraft.world.item.Items.BUCKET)
+                        && tank.chamber(0).getAmount() == 2000, "containers and fluid remain unchanged before the delay");
+            });
+        }
+        helper.runAfterDelay(duration + 1, () -> {
+            helper.assertTrue(tank.containers().getStackInSlot(0).is(net.minecraft.world.item.Items.BUCKET)
+                    && tank.containers().getStackInSlot(1).is(net.minecraft.world.item.Items.WATER_BUCKET)
+                    && tank.containers().finished(0) && tank.containers().finished(1)
+                    && tank.chamber(0).getAmount() == 2000, "both independent slots complete after their delay");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty_small")
+    public static void tankConvertsSpongesAndEveryConcreteColor(GameTestHelper helper) {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        var slots = tank.containers();
+        slots.setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WET_SPONGE));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.SPONGE) && tank.chamber(0).getAmount() == 1000,
+                "wet sponge returns one bucket of water");
+        slots.setStackInSlot(1, slots.extractItem(0, 1, false));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.WET_SPONGE) && tank.chamber(0).isEmpty(),
+                "dry sponge absorbs one bucket");
+        for (DyeColor color : DyeColor.values()) {
+            var input = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", color.getName() + "_concrete_powder"));
+            var result = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", color.getName() + "_concrete"));
+            tank.channel().set(0, water(999));
+            slots.setStackInSlot(1, new net.minecraft.world.item.ItemStack(input));
+            slots.process();
+            helper.assertTrue(slots.getStackInSlot(1).is(input) && tank.chamber(0).getAmount() == 999, "insufficient water: " + color);
+            tank.channel().set(0, water(1000));
+            slots.process();
+            helper.assertTrue(slots.getStackInSlot(1).is(result) && tank.chamber(0).isEmpty(), "concrete: " + color);
+            helper.assertFalse(slots.isItemValid(0, slots.getStackInSlot(1)), "concrete is not reversible: " + color);
+        }
+        tank.channel().set(0, lava(1000));
+        slots.setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.SPONGE));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.SPONGE) && tank.chamber(0).is(Fluids.LAVA),
+                "sponge refuses a different fluid");
+        slots.setStackInSlot(1, net.minecraft.world.item.ItemStack.EMPTY);
+        tank.channel().set(0, water(127999));
+        slots.setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WET_SPONGE));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.WET_SPONGE) && tank.chamber(0).getAmount() == 127999,
+                "wet sponge leaves no partial conversion when full");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void optionalContainerRecipeProducesRegisteredItem(GameTestHelper helper) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("enderio")) {
+            helper.succeed();
+            return;
+        }
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.getValue(
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("enderio", "fluid_nutrient_distillation_still"));
+        var result = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("enderio", "nutritious_stick"));
+        helper.assertTrue(fluid != null && fluid != Fluids.EMPTY && result != net.minecraft.world.item.Items.AIR, "optional resources registered");
+        tank.channel().set(0, new FluidStack(fluid, 1000));
+        tank.containers().setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+        tank.containers().process();
+        helper.assertTrue(tank.containers().getStackInSlot(1).is(result) && tank.chamber(0).isEmpty(), "optional fluid converts a stick");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void tankExperienceRecipesAcceptCommonFluids(GameTestHelper helper) {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        var tag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.FLUID,
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "experience"));
+        int checked = 0;
+        for (var fluid : net.minecraft.core.registries.BuiltInRegistries.FLUID.getTagOrEmpty(tag)) {
+            tank.channel().set(0, new FluidStack(fluid, 500));
+            tank.containers().setStackInSlot(0, net.minecraft.world.item.ItemStack.EMPTY);
+            tank.containers().setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GLASS_BOTTLE));
+            tank.containers().process();
+            helper.assertTrue(tank.containers().getStackInSlot(1).is(net.minecraft.world.item.Items.EXPERIENCE_BOTTLE)
+                    && tank.chamber(0).getAmount() == 250 && tank.chamber(0).is(fluid.value()), "fills from tagged XP");
+            tank.containers().setStackInSlot(0, tank.containers().extractItem(1, 1, false));
+            tank.containers().process();
+            helper.assertTrue(tank.containers().getStackInSlot(0).is(net.minecraft.world.item.Items.GLASS_BOTTLE)
+                    && tank.chamber(0).getAmount() == 500 && tank.chamber(0).is(fluid.value()),
+                    "emptying a bottle adds to the stored XP fluid through the common tag");
+            tank.channel().set(0, FluidStack.EMPTY);
+            tank.containers().setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EXPERIENCE_BOTTLE));
+            tank.containers().process();
+            helper.assertTrue(tank.containers().getStackInSlot(0).is(net.minecraft.world.item.Items.GLASS_BOTTLE)
+                    && tank.chamber(0).getAmount() == 250
+                    && tank.chamber(0).is(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get()),
+                    "empty tank always receives native liquid experience");
+            checked++;
+        }
+        helper.assertTrue(checked > 0, "experience tag contains a fluid");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void containerSlotsConvertBucketsAndExperienceWithoutLoss(GameTestHelper helper) {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.RED, DyeColor.RED,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        var slots = tank.containers();
+        var waterBucket = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET);
+        helper.assertFalse(slots.isItemValid(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET)),
+                "red input rejects the empty result");
+        helper.assertFalse(slots.isItemValid(1, waterBucket), "blue input rejects a full bucket");
+        helper.assertTrue(slots.insertItem(0, waterBucket, false).isEmpty(), "accept a filled bucket");
+        helper.assertTrue(tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_DRAIN_BOTH), "red bidirectional face");
+        var face = Transfer.items(helper.getLevel(), tank.getBlockPos(), Direction.SOUTH);
+        helper.assertTrue(face.extractItem(0, 1, true).isEmpty(), "automation cannot take unfinished input");
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.BUCKET)
+                && tank.chamber(0).getAmount() == 1000, "empty bucket and store 1000 mB");
+        helper.assertTrue(face.extractItem(0, 1, false).is(net.minecraft.world.item.Items.BUCKET), "same face extracts result");
+        slots.setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.WATER_BUCKET) && tank.chamber(0).isEmpty(),
+                "blue slot fills from the tank");
+        slots.setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GLASS_BOTTLE));
+        var xp = new FluidStack(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get(), 249);
+        tank.channel().set(0, xp);
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.GLASS_BOTTLE)
+                && tank.chamber(0).getAmount() == 249, "insufficient XP is unchanged");
+        tank.channel().set(0, new FluidStack(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get(), 250));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.EXPERIENCE_BOTTLE) && tank.chamber(0).isEmpty(),
+                "250 mB fills one experience bottle: item=" + slots.getStackInSlot(1) + ", fluid=" + tank.chamber(0)
+                        + ", finished=" + slots.finished(1) + ", recipes="
+                        + dimensionalfluxminer.recipe.Recipes.byType(helper.getLevel(), dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get()).size());
+        slots.setStackInSlot(0, slots.extractItem(1, 1, false));
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.GLASS_BOTTLE)
+                && tank.chamber(0).getAmount() == 250, "reverse conversion returns exactly 250 mB");
+        var saved = slots.serializeNBT(helper.getLevel().registryAccess());
+        var reloaded = new dimensionalfluxminer.tank.TankContainerSlots(tank);
+        reloaded.load(helper.getLevel().registryAccess(), saved);
+        helper.assertTrue(reloaded.finished(0) && reloaded.getStackInSlot(0).is(net.minecraft.world.item.Items.GLASS_BOTTLE),
+                "completion and result persist");
+        tank.channel().set(0, water(127999));
+        slots.setStackInSlot(0, waterBucket.copy());
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.WATER_BUCKET)
+                && tank.chamber(0).getAmount() == 127999, "insufficient capacity leaves bucket and fluid intact");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void containerFacesRollbackAndKeepSlotsLocal(GameTestHelper helper) {
+        var shared = new TankCode(DyeColor.BLUE, DyeColor.RED, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        var tank = place(helper, FIRST, TankKind.SINGLE, shared);
+        var other = place(helper, SECOND, TankKind.SINGLE, shared);
+        tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_FILL_BOTH);
+        var handler = helper.getLevel().getCapability(Capabilities.Item.BLOCK, tank.getBlockPos(), Direction.SOUTH);
+        var bucket = net.neoforged.neoforge.transfer.item.ItemResource.of(net.minecraft.world.item.Items.BUCKET);
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            helper.assertTrue(handler.insert(0, bucket, 16, transaction) == 1, "one container per slot");
+        }
+        helper.assertTrue(tank.containers().getStackInSlot(1).isEmpty(), "cancelled insertion is rolled back");
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            handler.insert(0, bucket, 1, transaction);
+            transaction.commit();
+        }
+        tank.channel().set(0, water(1000));
+        tank.containers().process();
+        helper.assertTrue(other.containers().getStackInSlot(1).isEmpty() && other.chamber(0).isEmpty(),
+                "items stay local while fluid is shared");
+        helper.assertTrue(tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_DRAIN_INPUT), "change route");
+        helper.assertTrue(Transfer.items(helper.getLevel(), tank.getBlockPos(), Direction.SOUTH).extractItem(0, 1, false).isEmpty(),
+                "changed route no longer exposes the blue output");
+        var dual = place(helper, new BlockPos(5, 1, 5), TankKind.DUAL, shared);
+        helper.assertTrue(Transfer.items(helper.getLevel(), dual.getBlockPos(), Direction.SOUTH) == null, "dual has no item capability");
+        var saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        helper.assertTrue(tank.containers().finished(1)
+                && tank.containers().getStackInSlot(1).is(net.minecraft.world.item.Items.WATER_BUCKET), "block save keeps the result and completion");
+        helper.destroyBlock(FIRST);
+        int dropped = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(tank.getBlockPos()).inflate(2)).stream()
+                .filter(item -> item.getItem().is(net.minecraft.world.item.Items.WATER_BUCKET))
+                .mapToInt(item -> item.getItem().getCount()).sum();
+        helper.assertTrue(dropped == 1, "breaking drops the local result exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void containerAutomationUsesItsOwnToggles(GameTestHelper helper) {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.BLACK, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        helper.setBlock(FIRST.south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState());
+        net.minecraft.world.level.block.entity.ChestBlockEntity chest = TestSupport.blockEntity(helper, FIRST.south());
+        chest.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET));
+        tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_DRAIN_BOTH);
+        helper.assertTrue(tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_INPUT), "item input enabled");
+        DimensionalTankBlockEntity.serverTick(helper.getLevel(), tank.getBlockPos(), tank.getBlockState(), tank);
+        tank.containers().process();
+        helper.assertTrue(chest.getItem(0).isEmpty() && tank.containers().finished(0), "pull and process one bucket");
+        var data = new CompoundTag();
+        tank.writeMenuData(data, helper.getLevel().registryAccess());
+        helper.assertFalse(data.getBooleanOr("auto_input_fluid", false) || data.getBooleanOr("auto_eject_fluid", false),
+                "item automation leaves liquid automation off");
+        tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT);
+        DimensionalTankBlockEntity.serverTick(helper.getLevel(), tank.getBlockPos(), tank.getBlockState(), tank);
+        helper.assertTrue(chest.getItem(0).is(net.minecraft.world.item.Items.BUCKET) && tank.containers().getStackInSlot(0).isEmpty(),
+                "same face ejects its result without pulling it back");
+        var saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        helper.assertTrue(tank.sides().get(RelativeFace.BACK, dimensionalfluxminer.machine.side.Transmission.ITEM, 0)
+                == SideRoute.CONTAINER_DRAIN_BOTH, "item route persists");
+        var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        try {
+            buf.writeBlockPos(helper.absolutePos(new BlockPos(6, 1, 6)));
+            buf.writeEnum(TankKind.SINGLE);
+            var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+            var menu = new dimensionalfluxminer.tank.TankMenu(1, player.getInventory(), buf);
+            helper.assertTrue(menu.kind() == TankKind.SINGLE && menu.slots.size() == 38,
+                    "opening packet defines slots even before the client receives the block");
+        } finally {
+            buf.release();
+        }
+        helper.succeed();
     }
 
     /** Using a tank with an empty hand opens it instead of failing on the missing item. */

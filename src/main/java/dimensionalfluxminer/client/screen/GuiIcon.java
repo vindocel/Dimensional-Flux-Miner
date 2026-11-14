@@ -1,6 +1,5 @@
 package dimensionalfluxminer.client.screen;
 
-import net.minecraft.client.renderer.RenderPipelines;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -8,9 +7,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 
 /**
- * Icons of the machine screens, in the icon color the player picked ({@link IconColor}: {@code icon/<name>},
- * {@code icon_purple/<name>} or {@code icon_white/<name>}); each reads on both the light and the dark screens. Drawn at its own pixel size (read from
- * the GUI atlas).
+ * One source image per icon. The selected palette colors neutral pixels during drawing and preserves colored details.
+ * Furnace display accents are composed from separate layers in the same pixel coordinates.
  */
 enum GuiIcon {
     AUTO_EJECT,
@@ -21,6 +19,10 @@ enum GuiIcon {
     FILTER,
     FLUIDS,
     ITEMS,
+    LOCK,
+    LOCK_OPEN,
+    MINUS,
+    PLUS,
     POWER_OFF,
     POWER_ON,
     REDSTONE_LOW,
@@ -48,14 +50,17 @@ enum GuiIcon {
         this.nudgeY = nudgeY;
     }
 
-    /** Sprite of each icon color, in {@link IconColor} order. */
-    private final Identifier[] sprites = java.util.Arrays.stream(IconColor.values())
-            .map(color -> DimensionalFluxMiner.id(color.folder() + "/" + name().toLowerCase(java.util.Locale.ROOT)))
-            .toArray(Identifier[]::new);
+    private final Identifier sprite = DimensionalFluxMiner.id("icon_white/" + name().toLowerCase(java.util.Locale.ROOT));
+    private static final Identifier TERMINAL = DimensionalFluxMiner.id("icon_white/smelting_alloy_terminal");
+    private static final Identifier SEPARATION = DimensionalFluxMiner.id("icon_white/smelting_alloy_furnace_separation");
 
     /** Draws the icon centered in a {@code w} x {@code h} area at (x, y), shrunk only when it does not fit. */
     void drawCentered(GuiGraphicsExtractor g, int x, int y, int w, int h) {
-        Identifier sprite = sprites[GuiTheme.icons().ordinal()];
+        drawCentered(g, x, y, w, h, false);
+    }
+
+    /** Selected buttons use a darker foreground; colored artwork details retain their native colors. */
+    void drawCentered(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean selected) {
         TextureAtlasSprite atlasSprite = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.GUI).getSprite(sprite);
         int width = atlasSprite.contents().width();
         int height = atlasSprite.contents().height();
@@ -63,7 +68,20 @@ enum GuiIcon {
         g.pose().pushMatrix();
         g.pose().translate(x + (w - width * scale) / 2.0F, y + nudgeY + (h - height * scale) / 2.0F);
         g.pose().scale(scale, scale);
-        g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 0, 0, width, height);
+        IconColor color = GuiTheme.icons();
+        int tint = selected ? IconPalette.selectedColor(color.iconTint()) : color.iconTint();
+        int accent = IconPalette.accentColor(color);
+        if (selected) accent = IconPalette.selectedColor(accent);
+        var pipeline = selected && this == POWER_OFF ? IconPalette.MONOCHROME_PIPELINE : IconPalette.pipeline(color);
+        g.blitSprite(pipeline, sprite, 0, 0, width, height, tint);
+        if (this == SMELTING_ALLOY) {
+            g.blitSprite(IconPalette.accent(color), TERMINAL, 0, 0, width, height, accent);
+        } else if (this == SMELTING_ALLOY_FURNACE) {
+            // Only the right half belongs to the alloy furnace; the left half is the ordinary furnace.
+            g.blitSprite(IconPalette.accent(color), TERMINAL, width, height, width / 2, 0,
+                    width / 2, 0, width - width / 2, height, accent);
+            g.blitSprite(IconPalette.accent(color), SEPARATION, 0, 0, width, height, accent);
+        }
         g.pose().popMatrix();
     }
 }

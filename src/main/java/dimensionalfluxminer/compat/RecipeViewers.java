@@ -17,6 +17,8 @@ public final class RecipeViewers {
     public static final Identifier SMELTING = DimensionalFluxMiner.id("smelting");
     public static final Identifier ALLOYING = DimensionalFluxMiner.id("alloying");
 
+    public static final Identifier TANK_CONTAINER = DimensionalFluxMiner.id("tank_container");
+
     private RecipeViewers() {
     }
 

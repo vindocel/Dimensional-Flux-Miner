@@ -5,7 +5,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 /**
  * Every button of the machine screens, drawn with plain fills: dark outline (cyan when hovered, purple with purple
  * icons, see {@link IconColor#hoverOutline}), light border and a slate inside. A disabled button and a switched-on
- * one (toggle on, selected tab) are both gray and sunk: gray border and dark inside; the switched-on one still reacts
+ * one (toggle on, selected tab) are sunk; enabled selections follow the icon accent while disabled controls remain gray.
+ * The switched-on one still reacts
  * to the mouse. In the dark look the neutral parts follow {@link GuiTheme#chromeColor}; colored parts keep their color.
  */
 final class ButtonArt {
@@ -24,7 +25,11 @@ final class ButtonArt {
     /** Button of {@code w} x {@code h} at (x, y). */
     static void draw(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean enabled, boolean hovered, boolean on) {
         border(g, x, y, w, h, enabled, hovered, !enabled || on);
-        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, GuiTheme.chromeColor(!enabled || on ? FILL_DISABLED : FILL));
+        if (enabled && on) {
+            frame(g, x + 1, y + 1, w - 2, h - 2, GuiTheme.chromeColor(GuiTheme.selectionColor(BORDER_DISABLED)));
+        }
+        int fill = !enabled || on ? FILL_DISABLED : FILL;
+        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, GuiTheme.chromeColor(enabled && on ? GuiTheme.selectionColor(fill) : fill));
     }
 
     /** A recessed track with the handle on the right when enabled. */
@@ -33,8 +38,8 @@ final class ButtonArt {
         g.fill(x + 2, y + 2, x + SWITCH_WIDTH - 2, y + SWITCH_HEIGHT - 2, GuiTheme.chromeColor(0xFF182229));
         g.fill(x + 3, y + 3, x + SWITCH_WIDTH - 3, y + SWITCH_HEIGHT - 3, GuiTheme.chromeColor(0xFF29363D));
         if (on) {
-            g.fill(x + 12, y + 3, x + 20, y + 11, GuiTheme.chromeColor(0xFF506066));
-            g.fill(x + 12, y + 3, x + 20, y + 4, GuiTheme.chromeColor(0xFF69777B));
+            g.fill(x + 12, y + 3, x + 20, y + 11, GuiTheme.chromeColor(GuiTheme.selectionColor(0xFF506066)));
+            g.fill(x + 12, y + 3, x + 20, y + 4, GuiTheme.chromeColor(GuiTheme.selectionColor(0xFF69777B)));
         }
         int knob = x + (on ? 20 : 3);
         g.fill(knob, y + 3, knob + 8, y + 11, GuiTheme.chromeColor(0xFF3E4A50));

@@ -86,6 +86,9 @@ public final class Recipes {
             case AlloyingRecipe alloy -> {
                 return alloy.result().copy();
             }
+            case TankContainerRecipe container -> {
+                return container.result();
+            }
             default -> {
             }
         }
@@ -105,6 +108,7 @@ public final class Recipes {
             case CrushingRecipe crushing -> List.of(crushing.ingredient());
             case OreCrushingRecipe ore -> List.of(ore.ingredient());
             case AlloyingRecipe alloy -> alloy.ingredients().stream().map(SizedIngredient::ingredient).toList();
+            case TankContainerRecipe container -> List.of(container.ingredient());
             case ShapedRecipe shaped -> shaped.getIngredients().stream().flatMap(Optional::stream).toList();
             case SingleItemRecipe single -> List.of(single.input());
             default -> recipe.placementInfo().ingredients();

@@ -168,12 +168,22 @@ never flows or sinks across a claim border, into a protected region, or where co
 
 ## Dimensional Tanks
 
+Channel mode defaults to shared. Shift + click the padlock to enable an independent reserve with the same capacity per chamber. Switching moves no liquid; both reserves remain saved, and local contents survive breaking and replacement.
+
 | | Value |
 |---|---|
 | Single tank | 1 chamber of 128 000 mB |
 | Dual tank | 2 chambers of 128 000 mB each (A and B) |
 | Energy | none |
-| Auto Input / Auto Eject | no per-tick limit: as much as the neighbor gives or takes |
+| Liquid Auto Input / Auto Eject | no per-tick limit: as much as the neighbor gives or takes |
+| Container slots (ordinary single tank) | 2 local slots, 1 container each; independent 5-tick conversion cycles by default (0.25 s at 20 TPS) |
+| Container automation | One item per configured face per tick in each enabled direction; finished results only for extraction |
+| Experience bottle | 1 glass bottle + 250 mB Liquid Experience ↔ 1 experience bottle (datapack recipes) |
+| Sponge | 1 dry sponge + 1 000 mB water ↔ 1 wet sponge |
+| Concrete | 1 concrete powder + 1 000 mB water → 1 concrete, all 16 colors; no reverse recipe |
+| Nutritious stick (optional) | 1 stick + 1 000 mB nutrient distillation → 1 nutritious stick; requires its item/fluid mod |
+
+Recipe viewer fluid gauges show the amount for one operation; their full appearance does not represent the tank's storage capacity.
 | Recipe (tank) | 4 Dimensional Steel Chassis, 2 Dimensional Ports, 2 Reinforced Eyes of Ender, 1 Reinforced Structural Glass |
 | Recipe (dual tank) | 2 Dimensional Tanks, 4 Reinforced Eyes of Ender, 2 Pure Steel, 1 Dimensional Steel Chassis |
 
@@ -184,6 +194,7 @@ never flows or sinks across a claim border, into a protected region, or where co
 | `electric_furnace.externalAlloyRecipeTypes` | `enderio:alloy_smelting`, `oritech:foundry` | Recipe types of other mods run as alloys (1–3 counted item ingredients, item results) |
 | `tank.personalItem` | `minecraft:diamond` | Item that makes a Dimensional Tank's code personal |
 | `tank.anarchyMode` | `false` | A broken personal tank drops as a public one plus the personal item |
+| `tank.containerTicks` | `5` | Real game ticks per container conversion in each slot, from 1 to 1 200; failed conversions retry after another cycle |
 
 ## Compatibility
 

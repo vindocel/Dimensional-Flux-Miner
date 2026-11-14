@@ -36,6 +36,7 @@ public final class DfmBlockEntities {
 
     /** The mod's slot, energy and tank views, as NeoForge transfer handlers (see {@code machine.transfer.Transfer}). */
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.Item.BLOCK, DIMENSIONAL_TANK.get(), (be, side) -> Transfer.exposeItems(be.itemFor(side), be.journal()));
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, DIMENSIONAL_TANK.get(), (be, side) -> Transfer.exposeFluids(be.fluidFor(side), be.journal()));
         // Single and creative tank items are fluid containers (used on a tank they fill it); the dual one is not.
         event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> dimensionalfluxminer.tank.DimensionalTankItem.fluidHandler(access),

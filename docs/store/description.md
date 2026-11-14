@@ -20,9 +20,12 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 - 🛢️ **Creative Dimensional Tank**: endless liquid for building and testing, one per liquid in the creative tab.
 - 🪣 **Tank items carry their liquid**: use one on a tank to fill it, or switch on bucket mode to pour and pick up liquids.
 - 🧹 **Empty button** on the tanks' code window clears a channel.
-- ⚪ **White icons** by default, new buttons and glass read-outs on every screen.
+- 🧴 **Container slots** on the single tank handle experience bottles, sponges and concrete powder, with configurable item automation.
+- ⏱️ **Container processing time** is short and configurable, with each tank slot working independently.
+- ⚪ **White icons** by default, with blue, purple or custom colors for icons, display glass/text and active toggle tracks. Selected buttons use darker icons for contrast.
 - 💧 **Liquid gauges** on the tank screens, and the liquid now fills the tanks up to the glass.
-- ⚡ **Applied Energistics 2**: the machines and the Miner's energy ports draw AE from an ME network they touch.
+- 🧴 **Matching fluid gauges** in tank conversion recipes in JEI and REI.
+- ⚡ **Applied Energistics 2**: the machines and the Miner's energy ports draw AE from an energy cell touching them or through a quartz fiber; ME cables pass by without connecting.
 ---
 
 ## ✨ Highlights
@@ -98,7 +101,8 @@ Three electric lanes that smelt and make alloys.
 
 ## 🛢️ Dimensional Tanks
 
-Fill a tank at home, drain it in the Nether. Tanks with the same **three-color code** share the same liquid, in any dimension.
+Fill a tank at home, drain it in the Nether. Tanks with the same **three-color code** share the same liquid, in any dimension. New tanks come locked, as individual tanks; Shift + click the padlock to open the channel; both stores keep their contents separately. An amber padlock on the block marks individual mode.
+The inventory icon and held tank show the current liquid level, channel colors and padlock.
 
 ![Dimensional Tanks](https://cdn.modrinth.com/data/vTLvFHBt/images/d5d195b620b8977cfdd212247133484c44c1e163.png)
 

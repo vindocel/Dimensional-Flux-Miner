@@ -14,17 +14,19 @@ final class ThemeWindow extends DfmScreen.Window {
     private static final int CHOICE_HEIGHT = 22;
     private static final int SCREEN_Y = 32;
     private static final int ICONS_Y = 70;
-    private static final int APPLY_Y = 103;
-    private static final int VOLUME_LABEL_Y = 125;
-    private static final int VOLUME_Y = 137;
+    private static final int APPLY_Y = 129;
+    private static final int VOLUME_LABEL_Y = 151;
+    private static final int VOLUME_Y = 163;
     private static final int STEPS = 10;
     private static final int SEGMENT_W = 8;
     private static final int SEGMENT_H = 8;
     private static final int SEGMENT_GAP = 1;
     private static final int VOLUME_OFF = 0xFF1E2631;
+    private final CustomColorWindow colorPicker;
 
     ThemeWindow(DfmScreen<?> screen) {
         super(screen, "theme", 200);
+        colorPicker = new CustomColorWindow(screen);
     }
 
     @Override
@@ -58,12 +60,17 @@ final class ThemeWindow extends DfmScreen.Window {
         screen.text(g, Component.translatable(THEME + "icons"), left, y + ICONS_Y - 12, GuiTheme.heading());
         IconColor icons = GuiThemes.icons(pos);
         IconColor[] colors = IconColor.values();
-        int iconWidth = (contentWidth - (colors.length - 1) * GAP) / colors.length;
+        int iconWidth = (contentWidth - GAP) / 2;
         for (IconColor color : colors) {
-            int offset = color.ordinal() * (iconWidth + GAP);
-            int choiceWidth = color.ordinal() == colors.length - 1 ? contentWidth - offset : iconWidth;
-            choice(g, left + offset, y + ICONS_Y, choiceWidth, color.preview(), color == icons, color.id(), mouseX, mouseY,
-                    () -> GuiThemes.chooseAccent(pos, color));
+            int offset = color.ordinal() % 2 * (iconWidth + GAP);
+            choice(g, left + offset, y + ICONS_Y + color.ordinal() / 2 * (CHOICE_HEIGHT + GAP), iconWidth,
+                    color.preview(), color == icons, color.id(), mouseX, mouseY, () -> {
+                        if (color == IconColor.CUSTOM) {
+                            colorPicker.open();
+                        } else {
+                            GuiThemes.chooseAccent(pos, color);
+                        }
+                    });
         }
 
         boolean all = GuiThemes.applyToAll();
@@ -103,7 +110,7 @@ final class ThemeWindow extends DfmScreen.Window {
         int barY = y + VOLUME_Y + (DfmScreen.SMALL_BUTTON - SEGMENT_H) / 2;
         List<Component> help = List.of(Component.translatable("gui.dimensionalfluxminer.theme.volume", level),
                 Component.translatable("gui.dimensionalfluxminer.theme.volume.help").withStyle(ChatFormatting.GRAY));
-        screen.button(g, left, y + VOLUME_Y, DfmScreen.SMALL_BUTTON, DfmScreen.SMALL_BUTTON, Component.literal("-"), volume > 0,
+        screen.imageButton(g, left, y + VOLUME_Y, DfmScreen.SMALL_BUTTON, GuiIcon.MINUS, volume > 0, false,
                 mouseX, mouseY, () -> {
                     GuiThemes.setVolume(pos, volume - 100 / STEPS);
                     return -1;
@@ -119,8 +126,8 @@ final class ThemeWindow extends DfmScreen.Window {
                 return -1;
             }, null, () -> help, 0);
         }
-        screen.button(g, barX + barWidth + 4, y + VOLUME_Y, DfmScreen.SMALL_BUTTON, DfmScreen.SMALL_BUTTON, Component.literal("+"),
-                volume < 100, mouseX, mouseY, () -> {
+        screen.imageButton(g, barX + barWidth + 4, y + VOLUME_Y, DfmScreen.SMALL_BUTTON, GuiIcon.PLUS,
+                volume < 100, false, mouseX, mouseY, () -> {
                     GuiThemes.setVolume(pos, volume + 100 / STEPS);
                     return -1;
                 }, null, () -> help);

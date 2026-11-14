@@ -4,6 +4,8 @@ import dev.architectury.event.CompoundEventResult;
 import dimensionalfluxminer.client.screen.CrusherLayout;
 import dimensionalfluxminer.client.screen.DfmScreen;
 import dimensionalfluxminer.client.screen.ElectricFurnaceLayout;
+import dimensionalfluxminer.client.screen.FluidGauge;
+import dimensionalfluxminer.client.screen.TankRecipeLayout;
 import dimensionalfluxminer.client.screen.GuiTheme;
 import dimensionalfluxminer.compat.RecipeViewerData;
 import dimensionalfluxminer.compat.RecipeViewers;
@@ -50,6 +52,7 @@ public final class DfmReiPlugin implements REIClientPlugin {
     static final CategoryIdentifier<Page> CRUSHING = CategoryIdentifier.of(RecipeViewers.CRUSHING);
     static final CategoryIdentifier<Page> SMELTING = CategoryIdentifier.of(RecipeViewers.SMELTING);
     static final CategoryIdentifier<Page> ALLOYING = CategoryIdentifier.of(RecipeViewers.ALLOYING);
+    static final CategoryIdentifier<Page> TANK_CONTAINER = CategoryIdentifier.of(RecipeViewers.TANK_CONTAINER);
     /** The element plus a 1 px margin (the alloy element is drawn 1 px around the slot area). */
     private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
     private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
@@ -86,6 +89,9 @@ public final class DfmReiPlugin implements REIClientPlugin {
                 ELEMENT_W, ELEMENT_H));
         registry.add(new Category(ALLOYING, "alloying", DfmBlocks.ELECTRIC_FURNACE.get().asItem().getDefaultInstance(),
                 ELEMENT_W, ELEMENT_H));
+        registry.add(new Category(TANK_CONTAINER, "tank_container", DfmBlocks.DIMENSIONAL_TANK.get().asItem().getDefaultInstance(),
+                TankRecipeLayout.WIDTH, TankRecipeLayout.HEIGHT));
+        registry.addWorkstations(TANK_CONTAINER, EntryStacks.of(DfmBlocks.DIMENSIONAL_TANK.get()));
         registry.addWorkstations(CRUSHING, EntryStacks.of(DfmBlocks.MECHANICAL_CRUSHER.get()));
         registry.addWorkstations(SMELTING, EntryStacks.of(DfmBlocks.ELECTRIC_FURNACE.get()));
         registry.addWorkstations(ALLOYING, EntryStacks.of(DfmBlocks.ELECTRIC_FURNACE.get()));
@@ -96,6 +102,17 @@ public final class DfmReiPlugin implements REIClientPlugin {
         Level level = Minecraft.getInstance().level;
         if (RecipeViewers.emi() || level == null) {
             return;
+        }
+        for (var holder : dimensionalfluxminer.recipe.Recipes.byType(level, dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get())) {
+            var recipe = holder.value();
+            List<EntryIngredient> inputs = new ArrayList<>();
+            List<EntryIngredient> outputs = new ArrayList<>();
+            inputs.add(EntryIngredients.ofItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(recipe.ingredient()))));
+            outputs.add(EntryIngredients.of(recipe.result()));
+            var fluid = EntryIngredient.of(recipe.fluids().stream().map(stack -> EntryStacks.of(
+                    dev.architectury.fluid.FluidStack.create(stack.getFluid(), stack.getAmount()))).toList());
+            (recipe.filling() ? inputs : outputs).add(fluid);
+            registry.add(new Page(TANK_CONTAINER, inputs, outputs, holder.id().identifier(), 0));
         }
         for (CrusherProcessing.Display display : RecipeViewerData.crushing()) {
             EntryIngredient output = EntryIngredients.of(display.output());
@@ -222,6 +239,23 @@ public final class DfmReiPlugin implements REIClientPlugin {
             widgets.add(Widgets.createRecipeBase(bounds));
             // The element (slot frames, energy and heat parts included) follows REI's light or dark theme, read on
             // every draw so switching it in REI applies at once.
+            if (id == TANK_CONTAINER) {
+                boolean filling = page.inputs().size() > 1;
+                widgets.add(Widgets.createDrawableWidget((g, mouseX, mouseY, delta) ->
+                        GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () ->
+                                TankRecipeLayout.drawEmptySideAndArrow(g, x, y, filling))));
+                widgets.add(Widgets.createSlot(new Rectangle(x + TankRecipeLayout.INPUT_ITEM_X - 1,
+                        y + TankRecipeLayout.ITEM_Y - 1, 18, 18)).entries(page.inputs().getFirst()).markInput());
+                widgets.add(Widgets.createSlot(new Rectangle(x + TankRecipeLayout.OUTPUT_ITEM_X - 1,
+                        y + TankRecipeLayout.ITEM_Y - 1, 18, 18)).entries(page.outputs().getFirst()).markOutput());
+                int fluidX = x + TankRecipeLayout.fluidX(filling);
+                int fluidY = y + TankRecipeLayout.FLUID_Y;
+                var fluidSlot = Widgets.createSlot(new Rectangle(fluidX, fluidY, FluidGauge.NARROW_WIDTH, FluidGauge.HEIGHT))
+                        .entries((filling ? page.inputs() : page.outputs()).get(1)).disableBackground().disableHighlight();
+                widgets.add(filling ? fluidSlot.markInput() : fluidSlot.markOutput());
+                widgets.add(tankFluidIcon(fluidSlot, fluidX, fluidY));
+                return widgets;
+            }
             widgets.add(Widgets.createDrawableWidget((g, mouseX, mouseY, delta) ->
                     GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () -> {
                         if (id == CRUSHING) {
@@ -249,6 +283,16 @@ public final class DfmReiPlugin implements REIClientPlugin {
                 slot(widgets, page.outputs().get(i), x + 1 + variant.outputX[i], y + 1 + ElectricFurnaceLayout.OUTPUT_Y, true);
             }
             return widgets;
+        }
+
+        private static Widget tankFluidIcon(me.shedaniel.rei.api.client.gui.widgets.Slot slot, int x, int y) {
+            return Widgets.createDrawableWidget((g, mouseX, mouseY, delta) -> {
+                if (slot.getCurrentEntry().getValue() instanceof dev.architectury.fluid.FluidStack current) {
+                    var fluid = new net.neoforged.neoforge.fluids.FluidStack(current.getFluid(), (int) current.getAmount());
+                    GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () ->
+                            FluidGauge.drawNarrow(g, x, y, fluid, fluid.getAmount()));
+                }
+            });
         }
     }
 

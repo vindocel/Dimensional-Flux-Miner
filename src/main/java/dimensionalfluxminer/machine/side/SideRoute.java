@@ -25,7 +25,31 @@ public enum SideRoute {
     FLUID_A_INPUT_OUTPUT(Transmission.FLUID, 0xFFA460D9),
     FLUID_B_INPUT(Transmission.FLUID, 0xFFFFA160),
     FLUID_B_OUTPUT(Transmission.FLUID, 0xFF52D9DB),
-    FLUID_B_INPUT_OUTPUT(Transmission.FLUID, 0xFFFFDD4F);
+    FLUID_B_INPUT_OUTPUT(Transmission.FLUID, 0xFFFFDD4F),
+    CONTAINER_DRAIN_INPUT(Transmission.ITEM, 0xFFC9071F),
+    CONTAINER_DRAIN_OUTPUT(Transmission.ITEM, 0xFFC9071F),
+    CONTAINER_DRAIN_BOTH(Transmission.ITEM, 0xFFC9071F),
+    CONTAINER_FILL_INPUT(Transmission.ITEM, 0xFF366BD0),
+    CONTAINER_FILL_OUTPUT(Transmission.ITEM, 0xFF366BD0),
+    CONTAINER_FILL_BOTH(Transmission.ITEM, 0xFF366BD0);
+
+    public int containerSlot() {
+        return switch (this) {
+            case CONTAINER_DRAIN_INPUT, CONTAINER_DRAIN_OUTPUT, CONTAINER_DRAIN_BOTH -> 0;
+            case CONTAINER_FILL_INPUT, CONTAINER_FILL_OUTPUT, CONTAINER_FILL_BOTH -> 1;
+            default -> -1;
+        };
+    }
+
+    public boolean insertsContainers() {
+        return this == CONTAINER_DRAIN_INPUT || this == CONTAINER_DRAIN_BOTH
+                || this == CONTAINER_FILL_INPUT || this == CONTAINER_FILL_BOTH;
+    }
+
+    public boolean extractsContainers() {
+        return this == CONTAINER_DRAIN_OUTPUT || this == CONTAINER_DRAIN_BOTH
+                || this == CONTAINER_FILL_OUTPUT || this == CONTAINER_FILL_BOTH;
+    }
 
     public static final SideRoute[] VALUES = values();
 

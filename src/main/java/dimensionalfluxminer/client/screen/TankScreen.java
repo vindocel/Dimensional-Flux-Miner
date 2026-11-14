@@ -2,6 +2,7 @@ package dimensionalfluxminer.client.screen;
 
 import net.minecraft.client.renderer.RenderPipelines;
 import dimensionalfluxminer.client.render.FluidColors;
+import dimensionalfluxminer.compat.RecipeViewers;
 import dimensionalfluxminer.machine.side.SideRoute;
 import dimensionalfluxminer.machine.side.SideRules;
 import dimensionalfluxminer.machine.side.Transmission;
@@ -52,16 +53,16 @@ public class TankScreen extends DfmScreen<TankMenu> {
 
     public TankScreen(TankMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, TankMenu.INVENTORY_TOP + 82);
-        kind = inventory.player.level().getBlockState(menu.pos()).getBlock() instanceof dimensionalfluxminer.tank.DimensionalTankBlock block
-                ? block.kind() : TankKind.SINGLE;
+        kind = menu.kind();
         List<Component> help = new ArrayList<>();
         help.add(Component.translatable("gui.dimensionalfluxminer.tank.auto.help"));
-        if (kind == TankKind.DUAL) {
-            help.add(Component.translatable("gui.dimensionalfluxminer.tank.auto.dual_help"));
-        }
-        sideWindow = new SideConfigWindow(this, "tank.side_config", kind == TankKind.DUAL ? SideRules.TANK_DUAL : SideRules.TANK_SINGLE,
-                List.of(Transmission.FLUID), this::data, menu.pos(),
-                Map.of(Transmission.FLUID, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.FLUID, help)));
+        sideWindow = new SideConfigWindow(this, "tank.side_config", kind == TankKind.DUAL ? SideRules.TANK_DUAL
+                : kind == TankKind.SINGLE ? SideRules.TANK_CONTAINERS : SideRules.TANK_SINGLE,
+                kind == TankKind.SINGLE ? List.of(Transmission.ITEM, Transmission.FLUID) : List.of(Transmission.FLUID),
+                this::data, menu.pos(), Map.of(
+                        Transmission.FLUID, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.FLUID, help),
+                        Transmission.ITEM, new SideConfigWindow.AutomationTab(SideConfigWindow.Automation.ITEMS,
+                                List.of(Component.translatable("gui.dimensionalfluxminer.tank.containers.help")))));
         codeWindow = new CodeWindow(this);
     }
 
@@ -81,6 +82,20 @@ public class TankScreen extends DfmScreen<TankMenu> {
 
     private int capacity() {
         return Math.max(1, data().getIntOr("capacity", 0));
+    }
+
+    private int channelLockX() {
+        return kind == TankKind.DUAL ? 120 : 130;
+    }
+
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        if (!kind.creative() && event.button() == 0 && !event.hasShiftDown()
+                && hovered(leftPos + channelLockX(), topPos + RESERVOIR_Y + RESERVOIR_H - SWATCH - 1,
+                        14, 14, (int) event.x(), (int) event.y())) {
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
@@ -108,9 +123,9 @@ public class TankScreen extends DfmScreen<TankMenu> {
                 screenLines(g, List.of(amountLine(chambers[i])), infoX + 4 + LIQUID + 3, rowY + 10, infoW - 8 - LIQUID - 3, 10);
             }
         } else {
-            reservoir(g, x + 16, top, chambers[0], 0, focusedChamber == 0, mouseX, mouseY);
-            infoX = x + 54;
-            infoW = 114;
+            reservoir(g, x + (kind == TankKind.SINGLE ? 8 : 16), top, chambers[0], 0, focusedChamber == 0, mouseX, mouseY);
+            infoX = x + (kind == TankKind.SINGLE ? 44 : 54);
+            infoW = kind == TankKind.SINGLE ? 100 : 114;
             innerScreen(g, infoX, top, infoW, INFO_H);
             liquidLine(g, fluidName(chambers[0]), chambers[0], infoX + 4, top + 6, infoW - 8);
             Component second = kind.creative()
@@ -118,6 +133,14 @@ public class TankScreen extends DfmScreen<TankMenu> {
                             : "gui.dimensionalfluxminer.creative_tank.endless")
                     : Component.translatable("gui.dimensionalfluxminer.tank.percent", percent(chambers[0]));
             screenLines(g, List.of(amountLine(chambers[0]), second), infoX + 4, top + 20, infoW - 8, 12);
+            if (kind == TankKind.SINGLE) {
+                containerSlot(g, x, y, 0, mouseX, mouseY);
+                containerSlot(g, x, y, 1, mouseX, mouseY);
+                fitted(g, Component.literal("↓"), x + TankMenu.CONTAINER_X, y + 44, 16, GuiTheme.subheading(), 1.0F, true);
+                recipeArea(x + TankMenu.CONTAINER_X - 1, y + 42, 18, 12,
+                        () -> new Identifier[] {RecipeViewers.TANK_CONTAINER},
+                        () -> List.of(Component.translatable("emi.category.dimensionalfluxminer.tank_container")));
+            }
         }
 
         if (kind.creative()) {
@@ -128,20 +151,53 @@ public class TankScreen extends DfmScreen<TankMenu> {
         }
 
         // The code, left to right as on the panel; clicking it opens the code window.
+        boolean locked = data().getBooleanOr("channel_locked", false);
+        if (locked && isWindowOpen(codeWindow)) {
+            closeWindow(codeWindow);
+        }
         int codeY = y + RESERVOIR_Y + RESERVOIR_H - SWATCH;
-        int codeX = infoX + infoW - (3 * SWATCH + 2 * 3);
-        fitted(g, Component.translatable("gui.dimensionalfluxminer.tank.code"), infoX, codeY + 2, codeX - infoX - 4, GuiTheme.subheading(), 1.0F, false);
+        int lockX = x + channelLockX();
+        int codeX = lockX - 3 - (3 * SWATCH + 2 * 3);
+        Component codeLabel = Component.translatable("gui.dimensionalfluxminer.tank.code_short");
+        int labelWidth = Math.min(font.width(codeLabel), codeX - infoX - 3);
+        fitted(g, codeLabel, codeX - labelWidth - 2, codeY + 2, labelWidth, GuiTheme.subheading(), 1.0F, false);
         TankCode code = code();
         for (int p = 0; p < TankCode.POSITIONS; p++) {
             swatch(g, codeX + p * (SWATCH + 3), codeY, SWATCH, code.get(p), false);
+            if (locked) {
+                int sx = codeX + p * (SWATCH + 3);
+                g.fill(sx + 1, codeY + 1, sx + SWATCH - 1, codeY + SWATCH - 1, 0xA0808080);
+            }
         }
-        hotspot(codeX, codeY, 3 * SWATCH + 6, SWATCH, () -> {
-            openWindow(codeWindow);
-            return -1;
-        }, null, () -> codeTooltip(code), 0);
+        if (!locked) {
+            hotspot(codeX, codeY, 3 * SWATCH + 6, SWATCH, () -> {
+                openWindow(codeWindow);
+                return -1;
+            }, null, () -> codeTooltip(code), 0);
+        }
+        iconButton(g, lockX, codeY - 1, 14, locked ? GuiIcon.LOCK : GuiIcon.LOCK_OPEN, locked,
+                mouseX, mouseY, () -> DimensionalTankBlockEntity.BUTTON_CHANNEL_LOCK, () -> List.of(
+                        locked ? Component.translatable("gui.dimensionalfluxminer.tank.channel_locked")
+                                : Component.translatable("gui.dimensionalfluxminer.tank.channel_open", codeText(code)),
+                        Component.translatable("gui.dimensionalfluxminer.tank.channel_mode_help").withStyle(ChatFormatting.GRAY)));
 
         MachineTabs.sideConfig(this, g, x, y, sideWindow, mouseX, mouseY);
         themeTab(g, x, y, MachineTabs.ROW_2, mouseX, mouseY);
+    }
+
+    private void containerSlot(GuiGraphicsExtractor g, int x, int y, int slot, int mouseX, int mouseY) {
+        int left = x + TankMenu.CONTAINER_X - 1;
+        int top = y + (slot == 0 ? TankMenu.DRAIN_Y : TankMenu.FILL_Y) - 1;
+        int color = slot == 0 ? SideRoute.CONTAINER_DRAIN_BOTH.color() : SideRoute.CONTAINER_FILL_BOTH.color();
+        slot(g, SlotKind.NORMAL, left, top);
+        g.fill(left, top - 2, left + 18, top, color);
+        if (isWindowOpen(sideWindow) && sideWindow.focusedRoute().containerSlot() == slot) {
+            g.fill(left + 1, top + 1, left + 17, top + 17, color & 0xFFFFFF | 0x66000000);
+        }
+        if (hovered(left, top, 18, 18, mouseX, mouseY) && menu.slots.get(slot).getItem().isEmpty()) {
+            g.setComponentTooltipForNextFrame(font, List.of(Component.translatable(
+                    slot == 0 ? "gui.dimensionalfluxminer.tank.container_drain" : "gui.dimensionalfluxminer.tank.container_fill")), mouseX, mouseY);
+        }
     }
 
     /** Creative tank, in the code's place: channels are off, and a button forgets the liquid. */
@@ -178,7 +234,6 @@ public class TankScreen extends DfmScreen<TankMenu> {
         lines.add(codeText(code));
         lines.add(code.personal() ? Component.translatable("gui.dimensionalfluxminer.tank.personal.owner", code.ownerName().orElse("?"))
                 .withStyle(ChatFormatting.LIGHT_PURPLE) : Component.translatable("gui.dimensionalfluxminer.tank.public").withStyle(ChatFormatting.GRAY));
-        lines.add(Component.translatable("gui.dimensionalfluxminer.tank.code.kind_note").withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("gui.dimensionalfluxminer.tank.code.open").withStyle(ChatFormatting.DARK_GRAY));
         return lines;
     }
@@ -255,16 +310,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
      * right) around the color. {@code selected} adds a frame in the screen color around it.
      */
     void swatch(GuiGraphicsExtractor g, int x, int y, int size, DyeColor color, boolean selected) {
-        int dark = GuiTheme.gray(0xFF373737);
-        int light = GuiTheme.gray(0xFFFFFFFF);
-        int corner = GuiTheme.gray(0xFF8B8B8B);
-        g.fill(x, y, x + size - 1, y + 1, dark);
-        g.fill(x, y, x + 1, y + size - 1, dark);
-        g.fill(x + 1, y + size - 1, x + size, y + size, light);
-        g.fill(x + size - 1, y + 1, x + size, y + size, light);
-        g.fill(x + size - 1, y, x + size, y + 1, corner);
-        g.fill(x, y + size - 1, x + 1, y + size, corner);
-        g.fill(x + 1, y + 1, x + size - 1, y + size - 1, 0xFF000000 | color.getTextureDiffuseColor());
+        ColorSwatch.draw(g, x, y, size, color.getTextureDiffuseColor());
         if (selected) {
             MachineTabs.outline(g, x - 1, y - 1, size + 2, size + 2, SCREEN_TEXT);
         }

@@ -130,23 +130,6 @@ public class GuideScreen extends Screen {
         turnFrom = -1;
     }
 
-    /** Boxes opened to show their full text (see {@link GuideElements.Expandable}), kept while the game runs. */
-    private static final java.util.Set<String> EXPANDED = new java.util.HashSet<>();
-
-    static boolean expanded(String key) {
-        return EXPANDED.contains(key);
-    }
-
-    /** Opens or closes a box and lays the book out again on the same spread (the change only adds or removes text). */
-    void toggleExpanded(String key) {
-        if (!EXPANDED.remove(key)) {
-            EXPANDED.add(key);
-        }
-        playClick();
-        book = GuideBook.build(this, GuideContent.chapters(), contentW, contentH);
-        spread = Mth.clamp(spread, 0, book.spreads() - 1);
-    }
-
     private int leftPageX() {
         return bookX + COVER;
     }
@@ -396,6 +379,11 @@ public class GuideScreen extends Screen {
     }
 
     /** An item reference in the text is under the mouse: its icon and name are shown this frame. */
+    /** Tooltip shown this frame (a link's destination, for example). */
+    void hoverText(Component text) {
+        hoveredText = List.of(text);
+    }
+
     void hoverReference(Identifier id) {
         hoveredReference = id;
     }

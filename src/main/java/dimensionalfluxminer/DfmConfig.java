@@ -115,6 +115,9 @@ public final class DfmConfig {
     public static final ModConfigSpec.BooleanValue TANK_ANARCHY_MODE = BUILDER
             .comment("Dimensional Tanks: a broken personal tank drops as a public one, plus the personal item.")
             .define("tank.anarchyMode", false);
+    public static final ModConfigSpec.IntValue TANK_CONTAINER_TICKS = BUILDER
+            .comment("Single Dimensional Tank: game ticks per container conversion in each local slot. Each slot runs independently.")
+            .defineInRange("tank.containerTicks", 5, 1, 1200);
 
     public static final ModConfigSpec SPEC = BUILDER.build();
 
@@ -199,6 +202,11 @@ public final class DfmConfig {
         if (def instanceof Long) {
             return raw instanceof Number n && Double.isFinite(n.doubleValue()) && n.doubleValue() == Math.rint(n.doubleValue())
                     ? (Object) n.longValue() : null;
+        }
+        if (def instanceof Integer) {
+            return raw instanceof Number n && Double.isFinite(n.doubleValue()) && n.doubleValue() == Math.rint(n.doubleValue())
+                    && n.doubleValue() >= Integer.MIN_VALUE && n.doubleValue() <= Integer.MAX_VALUE
+                    ? (Object) n.intValue() : null;
         }
         if (def instanceof Double) {
             return raw instanceof Number n ? (Object) n.doubleValue() : null;
@@ -351,6 +359,10 @@ public final class DfmConfig {
 
     public static boolean tankAnarchyMode() {
         return value(TANK_ANARCHY_MODE);
+    }
+
+    public static int tankContainerTicks() {
+        return value(TANK_CONTAINER_TICKS);
     }
 
     public static List<Identifier> externalAlloyTypes() {

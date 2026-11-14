@@ -89,7 +89,7 @@ public class MinerScreen extends DfmScreen<MinerMenu> {
 
         // Power (a push switch: sunk while the machine is on) and Filter, left of the terminal.
         boolean run = d.getBooleanOr("run", false);
-        // The icon shows the action of the next click: the gray symbol to turn off while on, the cyan one to turn on while off.
+        // The icon shows the next action, with the dark selection accent while running.
         iconButton(g, x + BUTTONS_X, y + TERMINAL_Y, BUTTON_SIZE, run ? POWER_OFF : POWER_ON, run,
                 mouseX, mouseY, locked ? () -> -1 : () -> MinerControllerBlockEntity.BUTTON_RUN, () -> locked ? lockedTooltip() : List.of(
                         Component.translatable(run ? "gui.dimensionalfluxminer.miner.power.on" : "gui.dimensionalfluxminer.miner.power.off"),

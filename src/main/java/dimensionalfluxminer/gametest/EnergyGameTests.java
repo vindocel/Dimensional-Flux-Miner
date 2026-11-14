@@ -53,6 +53,42 @@ public final class EnergyGameTests {
         helper.succeedWhen(() -> helper.assertTrue(crusher.energyBuffer().stored() > 0, "crusher filled from AE2"));
     }
 
+    /** With Applied Energistics 2, ME cables touching a machine never connect: no energy reaches it through them. */
+    @GameTest(template = "empty_small", timeoutTicks = 100)
+    public static void ae2CablesDoNotPowerMachines(GameTestHelper helper) {
+        var crusher = CrusherGameTests.place(helper);
+        crusher.energyBuffer().setStored(0);
+        if (!dimensionalfluxminer.compat.Ae2Compat.loaded()) {
+            helper.succeed();
+            return;
+        }
+        // West and east of a north-facing crusher both take energy.
+        placeAe2Cell(helper, new BlockPos(4, 1, 2));
+        dimensionalfluxminer.compat.ae2.Ae2TestParts.cable(helper.getLevel(), helper.absolutePos(new BlockPos(3, 1, 2)));
+        placeAe2Cell(helper, new BlockPos(0, 1, 2));
+        dimensionalfluxminer.compat.ae2.Ae2TestParts.cable(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 2)));
+        helper.runAfterDelay(40, () -> {
+            helper.assertTrue(crusher.energyBuffer().stored() == 0, "ME cable must not power the crusher");
+            helper.succeed();
+        });
+    }
+
+    /** With Applied Energistics 2, a quartz fiber on the cable face toward the machine carries the network's energy. */
+    @GameTest(template = "empty_small", timeoutTicks = 100)
+    public static void ae2QuartzFiberPowersMachines(GameTestHelper helper) {
+        var crusher = CrusherGameTests.place(helper);
+        crusher.energyBuffer().setStored(0);
+        if (!dimensionalfluxminer.compat.Ae2Compat.loaded()) {
+            helper.succeed();
+            return;
+        }
+        // West of a north-facing crusher takes energy; the fiber sits on the cable's east face, toward the crusher.
+        placeAe2Cell(helper, new BlockPos(0, 1, 2));
+        dimensionalfluxminer.compat.ae2.Ae2TestParts.cableWithFiber(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 2)),
+                net.minecraft.core.Direction.EAST);
+        helper.succeedWhen(() -> helper.assertTrue(crusher.energyBuffer().stored() > 0, "crusher filled through the quartz fiber"));
+    }
+
     /** With Applied Energistics 2, the Miner draws AE through an energy port. */
     @GameTest(template = "empty_large", timeoutTicks = 100)
     public static void minerDrawsEnergyFromAe2(GameTestHelper helper) {

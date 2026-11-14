@@ -196,6 +196,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         // tooltips drawn after it stay as they are.
         GuiTheme.setDark(GuiThemes.dark(menu.pos()));
         GuiTheme.setIcons(GuiThemes.icons(menu.pos()));
+        GuiTheme.setCustomRgb(GuiThemes.customRgb(menu.pos()));
         pendingAreas.clear();
         mainHotspots.clear();
         itemAreas.clear();
@@ -243,6 +244,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         } finally {
             GuiTheme.setDark(false);
             GuiTheme.setIcons(IconColor.WHITE);
+            GuiTheme.setCustomRgb(GuiThemes.DEFAULT_CUSTOM_COLOR);
         }
     }
 
@@ -321,6 +323,14 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
 
         /** Any mouse press on the screen, before it is handled; {@code onThis} = the press lands on this window. */
         protected void mousePressed(double mouseX, double mouseY, boolean onThis) {
+        }
+
+        protected boolean mouseDragged(double mouseX, double mouseY) {
+            return false;
+        }
+
+        protected boolean mouseReleased() {
+            return false;
         }
 
         int x() {
@@ -456,6 +466,9 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (!windows.isEmpty() && windows.getLast().mouseDragged(event.x(), event.y())) {
+            return true;
+        }
         if (dragged != null) {
             dragged.relX = (int) Math.round(event.x() - dragOffsetX) - leftPos;
             dragged.relY = (int) Math.round(event.y() - dragOffsetY) - topPos;
@@ -467,6 +480,9 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (!windows.isEmpty() && windows.getLast().mouseReleased()) {
+            return true;
+        }
         if (dragged != null && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             dragged = null;
             return true;
@@ -756,7 +772,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, left, null, tooltip);
         ButtonArt.draw(g, x, y, size, size, true, hover, pressed);
-        icon.drawCentered(g, x, y, size, size);
+        icon.drawCentered(g, x, y, size, size, pressed);
     }
 
     /**
@@ -794,7 +810,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         boolean hover = hovered(x, y, size, size, mouseX, mouseY);
         buttonHotspot(x, y, size, size, active ? left : null, active ? right : null, tooltip);
         ButtonArt.draw(g, x, y, size, size, active, hover, lit);
-        icon.drawCentered(g, x, y, size, size);
+        icon.drawCentered(g, x, y, size, size, active && lit);
     }
 
     /** Square button whose light border is marked with {@code color} (null keeps the plain button). */
@@ -859,7 +875,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                            Supplier<List<Component>> tooltip) {
         int[] inner = tabFrame(g, x, y, TAB_INNER, leftSide, color, enabled, lit, warning, mouseX, mouseY, left, right, tooltip);
         int offset = (TAB_INNER - iconSize) / 2;
-        tabContents.add(() -> icon.drawCentered(g, inner[0] + offset, inner[1] + offset, iconSize, iconSize));
+        tabContents.add(() -> icon.drawCentered(g, inner[0] + offset, inner[1] + offset, iconSize, iconSize, enabled && lit));
     }
 
     /**

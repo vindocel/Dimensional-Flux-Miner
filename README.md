@@ -190,7 +190,12 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 
 ---
 
+Machine screen icons share one white source image. Choose white, blue, purple or a custom color with HSV sliders and a hex field; display glass/text and the lit parts of toggles follow the accent, while switch handles stay neutral. Selected icon buttons use a darker accent for contrast. Colored details stay unchanged, and furnace display accents remain cyan with white icons.
+
 ## 🛢️ Dimensional Tanks
+
+New tanks come with the channel locked and work individually; Shift + click the padlock beside the code to open the channel (or lock it again). Shared and local liquids stay separate; local contents remain on the item when the tank is broken. Open it to reconnect. Colors are inactive in individual mode, with an amber padlock on a slightly darker display replacing the channel bars on the front and lid. The tooltip reads "Channel open: <colors>" or "Channel locked: individual tank".
+Tank items show the active liquid level and their channel colors or padlock in the inventory and hand, updating as they fill or drain.
 
 | Tank | Chambers |
 |---|---|
@@ -203,6 +208,11 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 - 🔁 Changing the code (click the code on the screen) points the tank at another channel: no liquid moves, is copied or is lost. A broken tank keeps its code on the item, and the liquid stays in the channel.
 - 💎 **Personal codes**: a diamond on the tank makes its code a channel of its own for you, apart from the public one with the same colors; sneak and use it with an empty hand to make it public again (the diamond comes back).
 - 🪣 Buckets and fluid containers: right click the block with a filled one to empty it, with an empty one to take the liquid out (on the dual tank, the right side is A and the left side is B), or click the reservoir on the screen.
+- The single tank also has two container slots: red empties into the tank, blue fills from it. Each holds one container and returns the result in place. Configure either slot as input, output or both on each item face. Glass bottles can store Liquid Experience as experience bottles, and the red slot empties them again. Click the arrow between the slots to see conversion recipes.
+- Tank conversions also wet/dry sponges, harden all 16 colors of concrete powder and make nutritious sticks when their item and fluid are installed. Experience bottles accept fluids in the common experience tag.
+- An experience bottle adds to the XP fluid already stored in the tank; an empty tank receives the DFM's Liquid Experience.
+- JEI and REI show conversion liquids in animated gauges matching the tank screen, with the amount per operation in the tooltip.
+- Each container slot takes a short time to fill or drain its item; the two slots process independently.
 - 🔧 Pipes: every face but the front carries liquid; the single tank starts as input/output on all of them, the dual tank with A on the right side and B on the left. Each face serves one chamber only, and a full chamber never spills into the other. Liquids have their own Auto Input and Auto Eject in the Side Configuration.
 - 🪣 A single (or creative) tank item used on another tank fills it with its liquid. **Bucket mode** (sneak and use the item in the air): it pours its liquid on the ground and picks up liquid sources instead of being placed.
 - ⚡ No energy.
@@ -278,7 +288,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 - 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face. A cable that keeps pulling items from a face (or pushing into it) sets that face's item route by itself, on the Miner's ports, the Crusher and the Electric Furnace.
 - 📘 **JEI and REI** (optional; EMI only on the 1.21.1 line, it has no 26.1.2 build yet): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots. The side tabs and open windows push the item lists out of the way.
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
-- ⚡ **Applied Energistics 2** (optional): the Crusher, the Electric Furnace and the Miner's energy ports draw AE from an ME network they touch (1 AE = 2 FE, no channel).
+- ⚡ **Applied Energistics 2** (optional): the Crusher, the Electric Furnace and the Miner's energy ports draw AE from an energy cell touching them or from a quartz fiber on the cable face toward them (1 AE = 2 FE, no channel). ME cables do not connect to them.
 - 🧪 **Cognition**: the Experience Obelisk takes the Electric Furnace's Liquid Experience directly.
 - 🔀 **Polymorph** (optional, 1.21.1 line only until it ships for 26.1.2): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.

@@ -1,0 +1,27 @@
+{
+  "keys": [
+    {
+      "name": "result",
+      "role": "output",
+      "type": "item_stack"
+    },
+    {
+      "name": "ingredient",
+      "role": "input",
+      "type": "ingredient"
+    },
+    {
+      "name": "fluid",
+      "type": "fluid_stack"
+    },
+    {
+      "name": "filling",
+      "type": "boolean"
+    },
+    {
+      "name": "fluid_tag",
+      "type": "string",
+      "default_optional": true
+    }
+  ]
+}

@@ -7,18 +7,18 @@ import net.minecraft.resources.Identifier;
 /**
  * Icon color the player picks for a machine screen; white is the default. The energy fill (screens and Jade), the
  * text and glass of the read-out windows, the volume bar and the outline of the button under the mouse are blue with white and
- * blue icons, purple with purple icons. Each
- * color has the same icons in its own folder of {@code sprites}; a new icon goes in every folder.
+ * blue icons, purple with purple icons. Every choice uses the same source artwork and a runtime palette.
  */
 public enum IconColor {
-    WHITE("icon_white", 0xFFFFFFFF, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
+    WHITE(0xFFFFFFFF, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
             0x14243A, 0x1F3852, 0x0F1A2B),
-    BLUE("icon", 0xFF20C8D1, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
+    BLUE(0xFF20C8D1, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
             0x14243A, 0x1F3852, 0x0F1A2B),
-    PURPLE("icon_purple", 0xFF9366DE, 0xFFB592FF, 0xFF9366DE, 0xFF784AB9, "energy_shimmer_sheet_purple",
-            0x1E1430, 0x2E1F4A, 0x170F24);
+    PURPLE(0xFF9366DE, 0xFFB592FF, 0xFF9366DE, 0xFF784AB9, "energy_shimmer_sheet_purple",
+            0x1E1430, 0x2E1F4A, 0x170F24),
+    CUSTOM(0xFFEF8B32, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
+            0x14243A, 0x1F3852, 0x0F1A2B);
 
-    private final String folder;
     private final int preview;
     private final int screenText;
     private final int volumeLit;
@@ -28,9 +28,8 @@ public enum IconColor {
     private final int glassBottom;
     private final int glassRim;
 
-    IconColor(String folder, int preview, int screenText, int volumeLit, int hoverOutline, String energySheet, int glassTop,
+    IconColor(int preview, int screenText, int volumeLit, int hoverOutline, String energySheet, int glassTop,
             int glassBottom, int glassRim) {
-        this.folder = folder;
         this.preview = preview;
         this.screenText = screenText;
         this.volumeLit = volumeLit;
@@ -56,43 +55,47 @@ public enum IconColor {
         return WHITE;
     }
 
-    /** Folder of this color's icons in the GUI atlas ({@code sprites/<folder>/<name>.png}). */
-    String folder() {
-        return folder;
-    }
-
     /** Color shown for this choice in the settings window. */
     int preview() {
-        return preview;
+        return this == CUSTOM ? iconTint() : preview;
+    }
+
+    int iconTint() {
+        return switch (this) {
+            case WHITE -> 0xFFFFFFFF;
+            case BLUE -> 0xFF45E5E9;
+            case PURPLE -> 0xFFC6A5FF;
+            case CUSTOM -> 0xFF000000 | GuiTheme.customRgb();
+        };
     }
 
     /** Text of the terminal screens. */
     int screenText() {
-        return screenText;
+        return this == CUSTOM ? GuiTheme.customText() : screenText;
     }
 
     /** Lit segments of the volume bar. */
     int volumeLit() {
-        return volumeLit;
+        return this == CUSTOM ? iconTint() : volumeLit;
     }
 
     /** Outline of the button under the mouse: cyan, or the same tone turned purple (hue 265) with purple icons. */
     int hoverOutline() {
-        return hoverOutline;
+        return this == CUSTOM ? iconTint() : hoverOutline;
     }
 
     /** Glass of the read-out windows at the top and at the bottom (0xRRGGBB): navy, or dark purple with purple icons. */
     int glassTop() {
-        return glassTop;
+        return this == CUSTOM ? GuiTheme.customTop() : glassTop;
     }
 
     int glassBottom() {
-        return glassBottom;
+        return this == CUSTOM ? GuiTheme.customBottom() : glassBottom;
     }
 
     /** Dark rim around the glass (0xRRGGBB). */
     int glassRim() {
-        return glassRim;
+        return this == CUSTOM ? GuiTheme.customRim() : glassRim;
     }
 
     /** Shimmering energy fill (42 frames of 8 x 66). */

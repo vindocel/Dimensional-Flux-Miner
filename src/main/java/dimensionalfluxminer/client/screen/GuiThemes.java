@@ -31,6 +31,7 @@ import net.neoforged.fml.loading.FMLPaths;
  * Machines are told apart by world (folder of the save, or the server address), dimension and position.
  */
 public final class GuiThemes {
+    static final int DEFAULT_CUSTOM_COLOR = 0xEF8B32;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE = "dimensionalfluxminer-themes.json";
 
@@ -38,8 +39,10 @@ public final class GuiThemes {
     private static boolean applyToAll = true;
     private static boolean allDark;
     private static IconColor allIcons = IconColor.WHITE;
+    private static int allCustomColor = DEFAULT_CUSTOM_COLOR;
     private static final Map<String, Boolean> MACHINES = new LinkedHashMap<>();
     private static final Map<String, IconColor> ACCENTS = new LinkedHashMap<>();
+    private static final Map<String, Integer> CUSTOM_COLORS = new LinkedHashMap<>();
     private static final Map<String, Integer> VOLUMES = new LinkedHashMap<>();
 
     private GuiThemes() {
@@ -107,6 +110,23 @@ public final class GuiThemes {
         save();
     }
 
+    static int customRgb(BlockPos pos) {
+        load();
+        return applyToAll ? allCustomColor : CUSTOM_COLORS.getOrDefault(key(pos), allCustomColor);
+    }
+
+    static void chooseCustom(BlockPos pos, int rgb) {
+        load();
+        if (applyToAll) {
+            allCustomColor = rgb & 0xFFFFFF;
+            allIcons = IconColor.CUSTOM;
+        } else {
+            CUSTOM_COLORS.put(key(pos), rgb & 0xFFFFFF);
+            ACCENTS.put(key(pos), IconColor.CUSTOM);
+        }
+        save();
+    }
+
     /**
      * Turns "apply to all" on or off from the machine at {@code pos}. On: that machine's screen and icon colors become
      * those of every machine. Off: that machine keeps the colors it shows (no machine goes back to the defaults). The
@@ -116,13 +136,16 @@ public final class GuiThemes {
         load();
         boolean currentDark = dark(pos);
         IconColor currentIcons = icons(pos);
+        int currentRgb = customRgb(pos);
         applyToAll = value;
         if (value) {
             allDark = currentDark;
             allIcons = currentIcons;
+            allCustomColor = currentRgb;
         } else {
             MACHINES.put(key(pos), currentDark);
             ACCENTS.put(key(pos), currentIcons);
+            CUSTOM_COLORS.put(key(pos), currentRgb);
         }
         save();
     }
@@ -163,11 +186,16 @@ public final class GuiThemes {
             }
             applyToAll = !json.has("applyToAll") || json.get("applyToAll").getAsBoolean();
             allDark = json.has("allDark") && json.get("allDark").getAsBoolean();
+            allCustomColor = json.has("allCustomColor") ? json.get("allCustomColor").getAsInt() & 0xFFFFFF : DEFAULT_CUSTOM_COLOR;
             if (json.has("allIcons")) {
                 allIcons = IconColor.byId(json.get("allIcons").getAsString());
             } else if (json.has("allPurple") && json.get("allPurple").getAsBoolean()) {
                 // Files from before the white icons kept only purple or not; not purple is the default (white) now.
                 allIcons = IconColor.PURPLE;
+            }
+            // Replace the former inactive cyan default without changing an active custom choice.
+            if (allIcons != IconColor.CUSTOM && allCustomColor == 0x45E5E9) {
+                allCustomColor = DEFAULT_CUSTOM_COLOR;
             }
             if (json.has("machines")) {
                 json.getAsJsonObject("machines").entrySet().forEach(e -> MACHINES.put(e.getKey(), "dark".equals(e.getValue().getAsString())));
@@ -177,6 +205,11 @@ public final class GuiThemes {
             }
             if (json.has("volumes")) {
                 json.getAsJsonObject("volumes").entrySet().forEach(e -> VOLUMES.put(e.getKey(), Math.max(0, Math.min(100, e.getValue().getAsInt()))));
+            }
+            if (json.has("customColors")) {
+                json.getAsJsonObject("customColors").entrySet().forEach(e -> CUSTOM_COLORS.put(e.getKey(), e.getValue().getAsInt() & 0xFFFFFF));
+                CUSTOM_COLORS.replaceAll((key, rgb) -> ACCENTS.getOrDefault(key, allIcons) != IconColor.CUSTOM && rgb == 0x45E5E9
+                        ? DEFAULT_CUSTOM_COLOR : rgb);
             }
         } catch (IOException | RuntimeException e) {
             DimensionalFluxMiner.LOGGER.warn("Could not read {}; the machine screens use the light look", path, e);
@@ -188,12 +221,16 @@ public final class GuiThemes {
         json.addProperty("applyToAll", applyToAll);
         json.addProperty("allDark", allDark);
         json.addProperty("allIcons", allIcons.id());
+        json.addProperty("allCustomColor", allCustomColor);
         JsonObject machines = new JsonObject();
         MACHINES.forEach((key, dark) -> machines.addProperty(key, dark ? "dark" : "light"));
         json.add("machines", machines);
         JsonObject accents = new JsonObject();
         ACCENTS.forEach((key, color) -> accents.addProperty(key, color.id()));
         json.add("accents", accents);
+        JsonObject customColors = new JsonObject();
+        CUSTOM_COLORS.forEach(customColors::addProperty);
+        json.add("customColors", customColors);
         JsonObject volumes = new JsonObject();
         VOLUMES.forEach(volumes::addProperty);
         json.add("volumes", volumes);

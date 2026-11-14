@@ -66,7 +66,7 @@ public final class DimensionalFluxMiner {
 
         // The guide, the matter values and the recipe viewers read these recipes on the client too.
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> event.sendRecipes(
-                DfmRecipes.CRUSHING.get(), DfmRecipes.ORE_CRUSHING.get(), DfmRecipes.ALLOYING.get(),
+                DfmRecipes.CRUSHING.get(), DfmRecipes.ORE_CRUSHING.get(), DfmRecipes.ALLOYING.get(), DfmRecipes.TANK_CONTAINER.get(),
                 net.minecraft.world.item.crafting.RecipeType.CRAFTING, net.minecraft.world.item.crafting.RecipeType.SMELTING,
                 net.minecraft.world.item.crafting.RecipeType.BLASTING, net.minecraft.world.item.crafting.RecipeType.STONECUTTING));
         NeoForge.EVENT_BUS.addListener(ContentEvents::onEntityJoin);
@@ -79,6 +79,7 @@ public final class DimensionalFluxMiner {
         NeoForge.EVENT_BUS.addListener(CorruptedWaterEffects::onEntityTick);
         NeoForge.EVENT_BUS.addListener(dimensionalfluxminer.machine.QuickInstall::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(dimensionalfluxminer.tank.TankInteraction::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(dimensionalfluxminer.tank.TankItemDisplay::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, dimensionalfluxminer.compat.CarryOnCompat::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(dimensionalfluxminer.network.ConfigOverridesPayload::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent event) -> DfmConfig.setOverrides(java.util.Map.of()));

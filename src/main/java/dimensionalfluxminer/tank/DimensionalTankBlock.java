@@ -160,7 +160,8 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
         if (itemHandler == null) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
-        if (item.kind() == kind && !kind.creative()
+        if (item.kind() == kind && !kind.creative() && !tank.channelLocked()
+                && !DimensionalTankItem.channelLocked(stack)
                 && stack.getOrDefault(dimensionalfluxminer.registry.DfmDataComponents.TANK_CODE.get(), TankCode.DEFAULT).sameChannel(tank.code())) {
             return InteractionResult.CONSUME;
         }
@@ -199,7 +200,10 @@ public class DimensionalTankBlock extends BaseEntityBlock implements net.minecra
             if (player.isShiftKeyDown() && kind.creative()) {
                 tank.setCreativeFluid(net.neoforged.neoforge.fluids.FluidStack.EMPTY);
             } else if (!player.isShiftKeyDown() || !tank.makePublic(player)) {
-                serverPlayer.openMenu(tank, pos);
+                serverPlayer.openMenu(tank, buf -> {
+                    buf.writeBlockPos(pos);
+                    buf.writeEnum(tank.kind());
+                });
             }
         }
         return InteractionResult.SUCCESS;

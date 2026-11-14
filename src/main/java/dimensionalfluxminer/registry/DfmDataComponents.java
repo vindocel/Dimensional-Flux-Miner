@@ -12,6 +12,24 @@ public final class DfmDataComponents {
     public static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE,
             DimensionalFluxMiner.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> TANK_CHANNEL_LOCKED =
+            COMPONENTS.registerComponentType("tank_channel_locked", builder -> builder.persistent(com.mojang.serialization.Codec.BOOL)
+                    .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.BOOL));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<SimpleFluidContent>> TANK_LOCAL_A =
+            COMPONENTS.registerComponentType("tank_local_a", builder -> builder.persistent(SimpleFluidContent.CODEC)
+                    .networkSynchronized(SimpleFluidContent.STREAM_CODEC));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<SimpleFluidContent>> TANK_LOCAL_B =
+            COMPONENTS.registerComponentType("tank_local_b", builder -> builder.persistent(SimpleFluidContent.CODEC)
+                    .networkSynchronized(SimpleFluidContent.STREAM_CODEC));
+
+    /** Read-only channel snapshots for item rendering; never used as fluid storage. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<SimpleFluidContent>> TANK_DISPLAY_A =
+            COMPONENTS.registerComponentType("tank_display_a", builder -> builder.persistent(SimpleFluidContent.CODEC)
+                    .networkSynchronized(SimpleFluidContent.STREAM_CODEC));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<SimpleFluidContent>> TANK_DISPLAY_B =
+            COMPONENTS.registerComponentType("tank_display_b", builder -> builder.persistent(SimpleFluidContent.CODEC)
+                    .networkSynchronized(SimpleFluidContent.STREAM_CODEC));
+
     /** Code of a Dimensional Tank item: the broken tank keeps it, so placing it again reconnects to the same channel. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<TankCode>> TANK_CODE = COMPONENTS.registerComponentType("tank_code",
             builder -> builder.persistent(TankCode.CODEC).networkSynchronized(TankCode.STREAM_CODEC));

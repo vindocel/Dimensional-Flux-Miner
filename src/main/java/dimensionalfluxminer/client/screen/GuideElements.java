@@ -150,11 +150,18 @@ final class GuideElements {
         private final Component title;
         private final Text body;
         private final int accent;
+        /** When set, the title is an underlined link that opens this page through the game's link confirmation. */
+        private final String url;
 
         Note(Component title, Component body, int accent) {
+            this(title, body, accent, null);
+        }
+
+        Note(Component title, Component body, int accent, String url) {
             this.title = title;
             this.body = new Text(body);
             this.accent = accent;
+            this.url = url;
         }
 
         @Override
@@ -168,57 +175,24 @@ final class GuideElements {
             g.fill(x, y, x + width, y + h, 0x1E000000 | (accent & 0x00FFFFFF));
             g.fill(x, y, x + 2, y + h, accent);
             g.text(screen.font(), title, x + 6, y + 4, accent, false);
+            if (url != null) {
+                int lineWidth = Math.min(width - 12, screen.font().width(title));
+                g.fill(x + 6, y + 13, x + 6 + lineWidth, y + 14, accent);
+                if (mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + 15) {
+                    g.fill(x + 4, y + 2, x + width - 4, y + 15, TINT);
+                    screen.hoverText(Component.translatable("guide.dimensionalfluxminer.mod_link"));
+                }
+            }
             body.render(screen, g, x + 6, y + 15, width - 10, mouseX, mouseY);
         }
-    }
-
-    /**
-     * A short box (a mod integration, for example) with a button that opens its full text below it, on this page and
-     * the next ones; clicking again closes it. The full text is added by the chapter while the box is open.
-     */
-    static final class Expandable implements GuideElement {
-        private static final int BUTTON_H = 13;
-        private final String key;
-        private final Component title;
-        private final Text summary;
-
-        Expandable(String key, Component title, Component summary) {
-            this.key = key;
-            this.title = title;
-            this.summary = new Text(summary);
-        }
-
-        private Component label() {
-            return Component.translatable(GuideScreen.expanded(key) ? "guide.dimensionalfluxminer.expand.less"
-                    : "guide.dimensionalfluxminer.expand.more");
-        }
-
-        private int buttonWidth(GuideScreen screen, int width) {
-            return Math.min(width - 10, screen.font().width(label()) + 12);
-        }
 
         @Override
-        public int height(GuideScreen screen, int width) {
-            return 15 + summary.height(screen, width - 10) + 3 + BUTTON_H + 4;
-        }
-
-        @Override
-        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
-            int h = height(screen, width);
-            g.fill(x, y, x + width, y + h, TINT);
-            g.fill(x, y, x + 2, y + h, HEADING);
-            g.text(screen.font(), title, x + 6, y + 4, HEADING, false);
-            summary.render(screen, g, x + 6, y + 15, width - 10, mouseX, mouseY);
-            screen.textButton(g, x + 6, y + h - BUTTON_H - 4, buttonWidth(screen, width), BUTTON_H, label(), mouseX, mouseY);
-        }
-
-        @Override
-        public boolean click(GuideScreen screen, double mouseX, double mouseY, int x, int y, int width, int button) {
-            int by = y + height(screen, width) - BUTTON_H - 4;
-            if (mouseX < x + 6 || mouseX >= x + 6 + buttonWidth(screen, width) || mouseY < by || mouseY >= by + BUTTON_H) {
+        public boolean click(GuideScreen screen, double mx, double my, int x, int y, int width, int button) {
+            if (url == null || button != 0 || mx < x || mx >= x + width || my < y || my >= y + 15) {
                 return false;
             }
-            screen.toggleExpanded(key);
+            screen.playClick();
+            net.minecraft.client.gui.screens.ConfirmLinkScreen.confirmLinkNow(screen, url);
             return true;
         }
     }

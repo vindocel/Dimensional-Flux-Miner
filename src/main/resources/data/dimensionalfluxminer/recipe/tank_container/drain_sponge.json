@@ -1,0 +1,12 @@
+{
+  "type": "dimensionalfluxminer:tank_container",
+  "ingredient": "minecraft:wet_sponge",
+  "result": {
+    "id": "minecraft:sponge"
+  },
+  "fluid": {
+    "id": "minecraft:water",
+    "amount": 1000
+  },
+  "filling": false
+}

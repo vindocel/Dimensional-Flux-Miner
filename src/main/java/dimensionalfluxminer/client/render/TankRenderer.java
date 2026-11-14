@@ -39,6 +39,10 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
     private static final int EMPTY_STRIPE = 0xFF7A7A7A;
     /** Code fields of the creative tank, which has no channel. */
     private static final int NO_CODE = 0xFF2B2B2B;
+    /** Display background of a locked tank: the panel's own 0x1B1D2A, slightly darker. */
+    private static final int LOCKED_PANEL = 0xFF15171F;
+    private static final Identifier CHANNEL_LOCK = DimensionalFluxMiner.id("textures/gui/sprites/icon_white/lock.png");
+    private static final int LOCK_COLOR = 0xFFE5B34D;
 
     /** A chamber: liquid volume (x0, y0, z0, x1, yMax, z1) and gauge fill (x0, y0, x1, yMax, z) at 100%. */
     private record Chamber(float[] volume, float[] gauge) {
@@ -111,6 +115,7 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         int capacity = TankKind.CHAMBER_CAPACITY;
         /** Null on the creative tank: it has no channel. */
         @Nullable TankCode code = TankCode.DEFAULT;
+        boolean channelLocked;
     }
 
     @Override
@@ -130,6 +135,7 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         }
         state.capacity = be.kind().capacity();
         state.code = be.kind().creative() ? null : be.code();
+        state.channelLocked = be.channelLocked();
     }
 
     @Override
@@ -142,26 +148,35 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         pose.translate(-0.5F, 0, -0.5F);
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
         collector.submitCustomGeometry(pose, RenderTypes.translucentMovingBlock(),
-                (last, translucent) -> contents(last, translucent, layout, state.chambers, state.capacity, state.code, light));
+                (last, translucent) -> contents(last, translucent, layout, state.chambers, state.capacity, state.code, state.channelLocked, light));
+        if (state.code != null && state.channelLocked) {
+            collector.submitCustomGeometry(pose, RenderTypes.entityTranslucent(CHANNEL_LOCK),
+                    (last, consumer) -> channelLocks(last, consumer, layout, light));
+        }
         pose.popPose();
     }
 
     /**
-     * Creative tank item: the liquid it holds, drawn as in the block (the special item renderer draws the tank model over
-     * it). Block space 0..1, front north.
+     * Item contents and channel indicators, drawn as in the block. The item renderer adds the shell and glass.
+     * Block space 0..1, front north; finite tanks retain their actual fill fraction.
      */
-    public static void submitCreativeItem(FluidStack stack, PoseStack pose, SubmitNodeCollector collector, int light) {
-        FluidStack[] chambers = {stack.copyWithAmount(TankKind.CREATIVE.capacity())};
+    public static void submitItem(TankKind kind, FluidStack[] chambers, @Nullable TankCode code, boolean locked,
+                                  PoseStack pose, SubmitNodeCollector collector, int light) {
+        Layout layout = kind == TankKind.DUAL ? DUAL : SINGLE;
         pose.pushPose();
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
         collector.submitCustomGeometry(pose, RenderTypes.translucentMovingBlock(),
-                (last, translucent) -> contents(last, translucent, SINGLE, chambers, TankKind.CREATIVE.capacity(), null, light));
+                (last, translucent) -> contents(last, translucent, layout, chambers, kind.capacity(), code, locked, light));
+        if (code != null && locked) {
+            collector.submitCustomGeometry(pose, RenderTypes.entityTranslucent(CHANNEL_LOCK),
+                    (last, consumer) -> channelLocks(last, consumer, layout, light));
+        }
         pose.popPose();
     }
 
     /** Liquids, gauges, lid stripes and code fields in model units; a null code (creative tank) leaves the fields dark. */
     private static void contents(PoseStack.Pose last, VertexConsumer translucent, Layout layout, FluidStack[] chambers, int capacity,
-                                 @Nullable TankCode code, int light) {
+                                 @Nullable TankCode code, boolean channelLocked, int light) {
         TextureAtlasSprite solid = sprite(SOLID);
         for (int i = 0; i < layout.chambers().length; i++) {
             FluidStack stack = i < chambers.length ? chambers[i] : FluidStack.EMPTY;
@@ -194,6 +209,32 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
             }
         }
 
+        if (code != null && channelLocked) {
+            // One even, slightly darker background over the whole display inside its outline (the code fields and the
+            // gaps between them). In the panel texture a field is 6 x 16 pixels; the inner area reaches 1 pixel past the
+            // fields sideways and 4 pixels above and below, minus the 2 x 2 corner squares (the panel's fixing screws),
+            // which stay whole: two overlapping rectangles leave out exactly the corner pixel of each square.
+            float[] first = layout.code()[0];
+            float[] end = layout.code()[TankCode.POSITIONS - 1];
+            float px = (first[2] - first[0]) / 6;
+            float py = (first[3] - first[1]) / 16;
+            float z = first[4] - 0.012F;
+            face(last, translucent, Direction.NORTH, end[0], first[1] - 4 * py, z, first[2], first[3] + 4 * py, z,
+                    solid, LOCKED_PANEL, light);
+            face(last, translucent, Direction.NORTH, end[0] - px, first[1] - 3 * py, z, first[2] + px, first[3] + 3 * py, z,
+                    solid, LOCKED_PANEL, light);
+            float[] lidFirst = layout.lidCode()[0];
+            float[] lidEnd = layout.lidCode()[TankCode.POSITIONS - 1];
+            px = (lidFirst[2] - lidFirst[0]) / 6;
+            float pz = (lidFirst[3] - lidFirst[1]) / 16;
+            float y = LID_CODE_Y + 0.02F;
+            face(last, translucent, Direction.UP, lidEnd[0], y, lidFirst[1] - 4 * pz, lidFirst[2], y, lidFirst[3] + 4 * pz,
+                    solid, LOCKED_PANEL, light);
+            face(last, translucent, Direction.UP, lidEnd[0] - px, y, lidFirst[1] - 3 * pz, lidFirst[2] + px, y, lidFirst[3] + 3 * pz,
+                    solid, LOCKED_PANEL, light);
+            return;
+        }
+
         // The dimensional address, left to right as seen from the front; it stays visible with empty chambers. The
         // creative tank has no channel: its fields stay dark.
         for (int p = 0; p < TankCode.POSITIONS; p++) {
@@ -202,6 +243,39 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
             face(last, translucent, Direction.NORTH, f[0], f[1], f[4], f[2], f[3], f[4], solid, color, light);
             float[] l = layout.lidCode()[p];
             face(last, translucent, Direction.UP, l[0], LID_CODE_Y, l[1], l[2], LID_CODE_Y, l[3], solid, color, light);
+        }
+    }
+
+    /** Reuse the GUI's pixel artwork directly, without adding a small sprite to the mipmapped block atlas. */
+    private static void channelLocks(PoseStack.Pose pose, VertexConsumer consumer, Layout layout, int light) {
+        float[] first = layout.code()[0];
+        float[] end = layout.code()[TankCode.POSITIONS - 1];
+        float x = (end[0] + first[2]) / 2;
+        float y = (first[1] + first[3]) / 2;
+        float half = (first[3] - first[1]) * 0.625F;
+        float z = first[4] - 0.014F;
+        lockQuad(pose, consumer, new float[][] {
+                {x + half, y + half, z}, {x + half, y - half, z},
+                {x - half, y - half, z}, {x - half, y + half, z}}, Direction.NORTH, light);
+
+        first = layout.lidCode()[0];
+        end = layout.lidCode()[TankCode.POSITIONS - 1];
+        x = (end[0] + first[2]) / 2;
+        z = (first[1] + first[3]) / 2;
+        half = (first[3] - first[1]) * 0.625F;
+        y = LID_CODE_Y + 0.022F;
+        lockQuad(pose, consumer, new float[][] {
+                {x + half, y, z + half}, {x + half, y, z - half},
+                {x - half, y, z - half}, {x - half, y, z + half}}, Direction.UP, light);
+    }
+
+    private static void lockQuad(PoseStack.Pose pose, VertexConsumer consumer, float[][] corners, Direction normal, int light) {
+        for (int i = 0; i < 4; i++) {
+            float[] point = corners[i];
+            consumer.addVertex(pose, point[0], point[1], point[2])
+                    .setColor(LOCK_COLOR).setUv(i < 2 ? 0 : 1, i == 0 || i == 3 ? 0 : 1)
+                    .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light)
+                    .setNormal(pose, normal.getStepX(), normal.getStepY(), normal.getStepZ());
         }
     }
 

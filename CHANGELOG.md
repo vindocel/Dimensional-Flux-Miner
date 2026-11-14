@@ -8,8 +8,35 @@
   the recipe viewers (REI first when both are installed); EMI and Polymorph have no 26.1.2 version yet. Jade, Applied
   Energistics 2 and KubeJS use their 26.1.2 versions.
 - Fixed duplicate Jade energy bars when another overlay provider inspects the same machine.
+- Applied Energistics 2 power now comes only from an energy cell touching a machine or a quartz fiber on the cable face
+  toward it. ME cables no longer connect to the machines or the Miner's energy ports, so they can pass right next to them.
+- The side settings now show Applied Energistics 2 parts (interfaces, import and export buses, cables) facing the
+  machine instead of a blank slot.
 - Fixed the Electric Furnace's animated terminal texture lowering the block atlas mipmap level.
 - Redesigned machine settings with labeled color buttons and an Apply to All Machines switch.
+- Preserved machine and guide screen colors when Dark Mode is enabled.
+- Added red drain and blue fill container slots to the single Dimensional Tank, with independent item routing and automation.
+- Added reversible experience bottle filling using Liquid Experience, with datapack recipes and recipe viewer support.
+- Clicking the arrow between the tank's container slots opens its conversion recipes.
+- Tank conversion recipes display animated fluid gauges matching the tank screen in JEI and REI.
+- Fixed blocky fluid textures in tank gauges caused by sampling atlas padding.
+- Fixed a split reflection effect in narrow fluid gauges in recipe viewers.
+- Added a channel padlock to single and dual tanks for independent storage, preserving shared and local contents separately. Shift + click switches modes; lock icons follow the selected white, blue or purple palette.
+- Icons now use shared white artwork with runtime color masks, preserving colored details and furnace accent layers.
+- Added a custom icon/toggle color picker with HSV sliders, hexadecimal input and saved per-machine or global preferences.
+- Active toggles follow the selected accent; volume buttons use editable plus/minus sprites without text shadows.
+- Custom colors now tint display glass and text, start with an orange swatch, and use an inset color sample in the picker; switch handles retain their neutral color.
+- Selected icon buttons use a darker shade of the chosen accent for balanced contrast, including automation and power controls.
+- Tanks in individual mode replace the channel bars on the front and lid with an amber pixel-art padlock on an even, slightly darker display.
+- New single and dual tanks come with the channel locked (individual tank); unlock them to pick and use a code. Tanks already placed keep their mode.
+- Tank tooltips show the channel in one line: "Channel open: <colors>" or "Channel locked: individual tank".
+- Shorter, more direct tooltips across the machine and tank screens; the detailed explanations live in the guide.
+- The guide is shorter and more focused: repeated explanations, integration boxes and obvious details were removed.
+- The guide's energy section has a tip linking to Bigger Reactors Rework on CurseForge for players who need an FE source.
+- Tank items now show their actual fluid levels, saved channel colors and padlock in the inventory and hand. Shared readings update from the server, including filling and draining in bucket mode.
+- Added a short, configurable processing delay to each single tank container slot (5 ticks by default).
+- Added sponge drying/wetting, all 16 concrete colors and optional nutritious stick conversion in the single tank. Experience bottles accept common tagged experience fluids.
+- Experience bottles add to an existing tagged experience fluid; empty tanks receive the mod's own Liquid Experience.
 
 ### 🧱 Minecraft 26.3
 

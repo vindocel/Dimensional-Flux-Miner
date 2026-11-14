@@ -3,7 +3,8 @@
   "minVersion": "0.8",
   "package": "dimensionalfluxminer.mixin",
   "mixins": ["MobSunlightMixin"],
-  "client": ["client.ParticleEngineCorruptedWaterMixin", "client.GuiGraphicsThemeMixin"],
+  "client": ["client.ParticleEngineCorruptedWaterMixin", "client.GuiGraphicsThemeMixin",
+    "client.ScreenPaletteMixin", "client.DarkModeTextureMixin"],
   "injectors": {
     "defaultRequire": 1
   }

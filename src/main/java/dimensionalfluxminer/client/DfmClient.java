@@ -88,6 +88,8 @@ public final class DfmClient {
     static void onRegisterPipelines(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(GuiTheme.DARK_PIPELINE);
         event.registerPipeline(GuiTheme.LIGHT_PIPELINE);
+        event.registerPipeline(dimensionalfluxminer.client.screen.IconPalette.PIPELINE);
+        event.registerPipeline(dimensionalfluxminer.client.screen.IconPalette.MONOCHROME_PIPELINE);
     }
 
     @SubscribeEvent
@@ -115,7 +117,7 @@ public final class DfmClient {
     @SubscribeEvent
     static void onRegisterSpecialRenderers(RegisterSpecialModelRendererEvent event) {
         event.register(GuideBookRenderer.ID, GuideBookRenderer.Unbaked.MAP_CODEC);
-        event.register(dimensionalfluxminer.client.render.CreativeTankItemRenderer.ID, dimensionalfluxminer.client.render.CreativeTankItemRenderer.Unbaked.MAP_CODEC);
+        event.register(dimensionalfluxminer.client.render.TankItemRenderer.ID, dimensionalfluxminer.client.render.TankItemRenderer.Unbaked.MAP_CODEC);
     }
 
     /** The purple water particles behave exactly like the vanilla ones, with their own sprites. */

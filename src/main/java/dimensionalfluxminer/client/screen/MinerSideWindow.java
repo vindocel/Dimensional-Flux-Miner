@@ -235,7 +235,7 @@ final class MinerSideWindow extends DfmScreen.Window {
         }
     }
 
-    /** Pick-block item of the block touching every face, indexed by face ordinal (empty for air). */
+    /** Item of the block touching every face ({@link NeighborIcon}), indexed by face ordinal (empty for air). */
     private ItemStack[] neighborItems() {
         ItemStack[] result = new ItemStack[MinerPorts.Face.VALUES.length];
         java.util.Arrays.fill(result, ItemStack.EMPTY);
@@ -254,10 +254,7 @@ final class MinerSideWindow extends DfmScreen.Window {
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             Direction out = face.outward(front);
             BlockPos other = face.owner(layout.core(), front).relative(out);
-            BlockState state = level.getBlockState(other);
-            if (!state.isAir()) {
-                result[face.ordinal()] = state.getCloneItemStack(other, level, false, mc.player);
-            }
+            result[face.ordinal()] = NeighborIcon.of(level, other, out.getOpposite());
         }
         return result;
     }

@@ -49,8 +49,10 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * A Dimensional Tank: an endpoint of the channel named by its kind and its three-color code. The liquid is kept in
- * {@link TankChannels}, never here, so every tank with the same kind and code (in any dimension) sees and changes the
- * same content. No energy, no processing. Each face carries the liquid of one chamber (Side Configuration) and the
+ * {@link TankChannels} while connected, so tanks with the same kind and code share content across dimensions.
+ * Closing the channel lock selects independent chambers persisted with this block and its item.
+ * No energy. The ordinary single tank also converts containers in two local slots.
+ * Each face carries the liquid of one chamber (Side Configuration) and the
  * liquids have their own Auto Input and Auto Eject (default OFF); capabilities stay available with both OFF.
  * <p>
  * The creative tank has no channel and no code: it keeps one liquid in the block and gives it without end
@@ -71,16 +73,42 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
      * deleted for every tank with the code; the creative tank forgets its liquid.
      */
     public static final int BUTTON_CLEAR = 3300;
+    public static final int BUTTON_CHANNEL_LOCK = 3400;
     /** Client updates of the liquids at most every this many ticks. */
     private static final int SYNC_INTERVAL = 2;
 
     private final TankKind kind;
     private final SideConfiguration sides;
+    private final TankContainerSlots containers = new TankContainerSlots(this);
+    private boolean autoInputItems;
+    private boolean autoEjectItems;
+
+    public TankContainerSlots containers() {
+        return containers;
+    }
+
+    public dimensionalfluxminer.machine.transfer.ItemSlots itemFor(Direction side) {
+        if (kind != TankKind.SINGLE) {
+            return null;
+        }
+        return side == null ? containers.readOnly()
+                : containers.face(sides.get(RelativeFace.of(facing(), side), Transmission.ITEM, 0));
+    }
+
+    public boolean configureItems(RelativeFace face, SideRoute route) {
+        if (kind != TankKind.SINGLE || !sides.set(face, Transmission.ITEM, 0, route)) {
+            return false;
+        }
+        onSidesChanged();
+        return true;
+    }
     private TankCode code = TankCode.DEFAULT;
     private boolean autoInputFluid;
     private boolean autoEjectFluid;
     /** Server: the channel of the current code, looked up again when the code changes. */
     private TankChannels.Channel channel;
+    private TankChannels.Channel local;
+    private boolean channelLocked;
     private int syncedVersion = -1;
     /** Game time of the last client update; starts far enough back for the first tick to send one (no overflow). */
     private long lastSync = -SYNC_INTERVAL;
@@ -98,7 +126,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         for (int i = 0; i < copy.length; i++) {
             copy[i] = c.get(i).copy();
         }
-        return new Object[] {c, copy, creativeFluid.copy()};
+        return new Object[] {c, copy, creativeFluid.copy(), containers.snapshot(), containers.completionSnapshot(), containers.progressSnapshot()};
     }, snapshot -> {
         if (snapshot[0] instanceof TankChannels.Channel c) {
             FluidStack[] copy = (FluidStack[]) snapshot[1];
@@ -106,6 +134,9 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
                 c.set(i, copy[i]);
             }
         }
+        containers.restore((ItemStack[]) snapshot[3]);
+        containers.restoreCompletion((boolean[]) snapshot[4]);
+        containers.restoreProgress((int[]) snapshot[5]);
         FluidStack creative = (FluidStack) snapshot[2];
         if (!FluidStack.matches(creative, creativeFluid)) {
             creativeFluid = creative;
@@ -120,7 +151,9 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     public DimensionalTankBlockEntity(BlockPos pos, BlockState state) {
         super(DfmBlockEntities.DIMENSIONAL_TANK.get(), pos, state);
         this.kind = state.getBlock() instanceof DimensionalTankBlock block ? block.kind() : TankKind.SINGLE;
-        this.sides = new SideConfiguration(kind == TankKind.DUAL ? SideRules.TANK_DUAL : SideRules.TANK_SINGLE);
+        this.local = TankChannels.local(kind, this::setChanged);
+        this.sides = new SideConfiguration(kind == TankKind.DUAL ? SideRules.TANK_DUAL
+                : kind == TankKind.SINGLE ? SideRules.TANK_CONTAINERS : SideRules.TANK_SINGLE);
         this.clientChambers = emptyChambers(kind);
     }
 
@@ -138,6 +171,27 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
     public TankCode code() {
         return code;
+    }
+
+    public boolean channelLocked() {
+        return channelLocked;
+    }
+
+    /** Switches storage without moving fluid between the shared channel and this block. */
+    public boolean setChannelLocked(boolean locked) {
+        if (kind.creative() || channelLocked == locked) {
+            return false;
+        }
+        channelLocked = locked;
+        syncedVersion = -1;
+        handlers.clear();
+        if (level != null) {
+            level.invalidateCapabilities(worldPosition);
+        }
+        setChanged();
+        updateLight();
+        syncToClients();
+        return true;
     }
 
     public Direction facing() {
@@ -168,7 +222,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
     /** Points the tank at another channel. The content of both channels stays where it is. The creative tank has no channel. */
     public void setCode(TankCode code) {
-        if (kind.creative() || code.equals(this.code)) {
+        if (kind.creative() || channelLocked || code.equals(this.code)) {
             return;
         }
         boolean sameChannel = code.sameChannel(this.code);
@@ -187,7 +241,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
      * stack is not the personal item.
      */
     public boolean makePersonal(Player player, ItemStack source) {
-        if (kind.creative() || code.personal() || !source.is(dimensionalfluxminer.DfmConfig.tankPersonalItem())) {
+        if (kind.creative() || channelLocked || code.personal() || !source.is(dimensionalfluxminer.DfmConfig.tankPersonalItem())) {
             return false;
         }
         setCode(code.withOwner(player));
@@ -201,6 +255,12 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
+        if (level != null && !level.isClientSide() && kind == TankKind.SINGLE) {
+            for (int slot = 0; slot < containers.getSlots(); slot++) {
+                net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), containers.getStackInSlot(slot));
+                containers.setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        }
         if (level != null && dimensionalfluxminer.DfmConfig.tankAnarchyMode() && code().personal()) {
             net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
                     new ItemStack(dimensionalfluxminer.DfmConfig.tankPersonalItem()));
@@ -209,7 +269,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
     /** Makes a personal code public again and gives the personal item back (none in creative). */
     public boolean makePublic(Player player) {
-        if (!code.personal()) {
+        if (channelLocked || !code.personal()) {
             return false;
         }
         setCode(code.withoutOwner());
@@ -219,8 +279,11 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         return true;
     }
 
-    /** Server: the channel of this tank (null on the client, outside a server or for the creative tank). */
+    /** Server: the active shared or local storage (null on the client or for the creative tank). */
     public TankChannels.Channel channel() {
+        if (channelLocked && !kind.creative() && level != null && !level.isClientSide()) {
+            return local;
+        }
         if (channel == null && !kind.creative() && level != null && !level.isClientSide() && level.getServer() != null) {
             channel = TankChannels.get(level.getServer()).channel(kind, code);
         }
@@ -320,6 +383,10 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         if (be.autoInputFluid || be.autoEjectFluid) {
             be.automation();
         }
+        if (be.kind == TankKind.SINGLE) {
+            be.itemAutomation();
+            be.containers.tick();
+        }
         int version = be.contentVersion();
         long now = level.getGameTime();
         if (version >= 0 && version != be.syncedVersion && now - be.lastSync >= SYNC_INTERVAL) {
@@ -327,6 +394,26 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
             be.lastSync = now;
             be.syncToClients();
             be.updateLight();
+        }
+    }
+
+    private void itemAutomation() {
+        if (!autoInputItems && !autoEjectItems) {
+            return;
+        }
+        for (RelativeFace face : RelativeFace.VALUES) {
+            SideRoute route = sides.get(face, Transmission.ITEM, 0);
+            if (route.containerSlot() < 0) {
+                continue;
+            }
+            var own = Transfer.exposeItems(containers.face(route), journal);
+            Direction direction = face.toDirection(facing());
+            if (autoEjectItems && route.extractsContainers()) {
+                Transfer.moveContainer(level, worldPosition, direction, own, false);
+            }
+            if (autoInputItems && route.insertsContainers()) {
+                Transfer.moveContainer(level, worldPosition, direction, own, true);
+            }
         }
     }
 
@@ -444,6 +531,12 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
     /** Applies a validated GUI button press on the server. */
     public boolean handleButton(Player player, int id) {
+        if (id == BUTTON_CHANNEL_LOCK) {
+            return setChannelLocked(!channelLocked);
+        }
+        if (channelLocked && (id == BUTTON_PERSONAL || id >= BUTTON_CODE_BASE && id < BUTTON_CODE_BASE + TankCode.POSITIONS * 16)) {
+            return false;
+        }
         if (kind.creative() && (id == BUTTON_PERSONAL || id >= BUTTON_CODE_BASE && id < BUTTON_CODE_BASE + TankCode.POSITIONS * 16)) {
             // No channels on the creative tank.
             return false;
@@ -503,31 +596,51 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
             setChanged();
             return true;
         }
+        if (kind == TankKind.SINGLE && id == AbstractMachineBlockEntity.BUTTON_AUTO_INPUT) {
+            autoInputItems = !autoInputItems;
+            setChanged();
+            return true;
+        }
+        if (kind == TankKind.SINGLE && id == AbstractMachineBlockEntity.BUTTON_AUTO_EJECT) {
+            autoEjectItems = !autoEjectItems;
+            setChanged();
+            return true;
+        }
         int sideBase = AbstractMachineBlockEntity.BUTTON_SIDE_BASE;
         if (id >= sideBase && id < sideBase + RelativeFace.VALUES.length * 16) {
             int local = id - sideBase;
             int transmission = (local % 16) / 2;
-            if (transmission != Transmission.FLUID.ordinal()) {
+            if (transmission != Transmission.FLUID.ordinal() && !(kind == TankKind.SINGLE && transmission == Transmission.ITEM.ordinal())) {
                 return false;
             }
-            if (sides.cycle(RelativeFace.VALUES[local / 16], Transmission.FLUID, 0, local % 2 == 0)) {
+            if (sides.cycle(RelativeFace.VALUES[local / 16], Transmission.VALUES[transmission], 0, local % 2 == 0)) {
                 onSidesChanged();
                 return true;
             }
             return false;
         }
-        if (id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR + Transmission.FLUID.ordinal()
-                || id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL) {
+        if (id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL) {
             sides.clear(Transmission.FLUID, 0);
+            sides.clear(Transmission.ITEM, 0);
             onSidesChanged();
             return true;
         }
-        int batch = AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + Transmission.FLUID.ordinal() * 2;
-        if (id == batch || id == batch + 1) {
-            SideRoute target = sides.batchTarget(Transmission.FLUID, 0, id == batch);
-            if (sides.applyAll(Transmission.FLUID, 0, target)) {
+        for (Transmission transmission : new Transmission[] {Transmission.ITEM, Transmission.FLUID}) {
+            if (transmission == Transmission.ITEM && kind != TankKind.SINGLE) {
+                continue;
+            }
+            if (id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR + transmission.ordinal()) {
+                sides.clear(transmission, 0);
                 onSidesChanged();
                 return true;
+            }
+            int batch = AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + transmission.ordinal() * 2;
+            if (id == batch || id == batch + 1) {
+                SideRoute target = sides.batchTarget(transmission, 0, id == batch);
+                if (sides.applyAll(transmission, 0, target)) {
+                    onSidesChanged();
+                    return true;
+                }
             }
         }
         return false;
@@ -564,6 +677,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     }
     /** Snapshot sent to open menus (server -> client). */
     public void writeMenuData(CompoundTag tag, HolderLookup.Provider registries) {
+        tag.putBoolean("channel_locked", channelLocked);
         tag.putString("kind", kind.id());
         tag.put("code", code.save());
         tag.put("chambers", writeChambers(registries));
@@ -571,6 +685,8 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         tag.putBoolean("auto_input_fluid", autoInputFluid);
         tag.putBoolean("auto_eject_fluid", autoEjectFluid);
         tag.put("sides", sides.save());
+        tag.putBoolean("auto_input", autoInputItems);
+        tag.putBoolean("auto_eject", autoEjectItems);
     }
 
     private ListTag writeChambers(HolderLookup.Provider registries) {
@@ -594,10 +710,21 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveTag(tag, registries);
+        tag.putBoolean("channel_locked", channelLocked);
+        ListTag localChambers = new ListTag();
+        for (int i = 0; i < kind.chambers(); i++) {
+            localChambers.add(TagStacks.save(registries, local.get(i)));
+        }
+        tag.put("local_chambers", localChambers);
         tag.put("code", code.save());
         tag.put("sides", sides.save());
+        tag.putBoolean("auto_input", autoInputItems);
+        tag.putBoolean("auto_eject", autoEjectItems);
         tag.putBoolean("auto_input_fluid", autoInputFluid);
         tag.putBoolean("auto_eject_fluid", autoEjectFluid);
+        if (kind == TankKind.SINGLE) {
+            tag.put("containers", containers.serializeNBT(registries));
+        }
         if (!creativeFluid.isEmpty()) {
             tag.put("creative_fluid", TagStacks.save(registries, creativeFluid));
         }
@@ -606,8 +733,20 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadTag(tag, registries);
+        channelLocked = !kind.creative() && tag.getBooleanOr("channel_locked", false);
+        local = TankChannels.local(kind, this::setChanged);
+        FluidStack[] savedLocal = readChambers(tag.getListOrEmpty("local_chambers"), kind.chambers(), registries);
+        for (int i = 0; i < savedLocal.length; i++) {
+            local.set(i, savedLocal[i].copyWithAmount(Math.min(kind.capacity(), savedLocal[i].getAmount())));
+        }
+        syncedVersion = -1;
         code = tag.getCompound("code").map(TankCode::load).orElse(TankCode.DEFAULT);
         sides.load(tag.getCompoundOrEmpty("sides"));
+        autoInputItems = tag.getBooleanOr("auto_input", false);
+        autoEjectItems = tag.getBooleanOr("auto_eject", false);
+        if (kind == TankKind.SINGLE) {
+            containers.load(registries, tag.getCompoundOrEmpty("containers"));
+        }
         autoInputFluid = tag.getBooleanOr("auto_input_fluid", false);
         autoEjectFluid = tag.getBooleanOr("auto_eject_fluid", false);
         creativeFluid = FluidStack.EMPTY;
@@ -633,6 +772,13 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
             return;
         }
         TankCode stored = input.get(DfmDataComponents.TANK_CODE.get());
+        // A new tank item (no code yet) is placed locked; a broken tank keeps its state.
+        Boolean locked = input.get(DfmDataComponents.TANK_CHANNEL_LOCKED.get());
+        channelLocked = locked != null ? locked : stored == null;
+        for (int i = 0; i < kind.chambers(); i++) {
+            SimpleFluidContent fluid = input.get(i == 0 ? DfmDataComponents.TANK_LOCAL_A.get() : DfmDataComponents.TANK_LOCAL_B.get());
+            local.set(i, fluid == null ? FluidStack.EMPTY : fluid.copy().copyWithAmount(Math.min(kind.capacity(), fluid.getAmount())));
+        }
         if (stored != null) {
             code = stored;
             channel = null;
@@ -650,12 +796,28 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
         }
         // Anarchy mode: a broken personal tank comes back public (the block drops the personal item apart).
         components.set(DfmDataComponents.TANK_CODE.get(), dimensionalfluxminer.DfmConfig.tankAnarchyMode() ? code.withoutOwner() : code);
+        if (channelLocked) {
+            components.set(DfmDataComponents.TANK_CHANNEL_LOCKED.get(), true);
+        }
+        if (!channelLocked) {
+            for (int i = 0; i < kind.chambers(); i++) {
+                components.set(i == 0 ? DfmDataComponents.TANK_DISPLAY_A.get() : DfmDataComponents.TANK_DISPLAY_B.get(),
+                        SimpleFluidContent.copyOf(chamber(i)));
+            }
+        }
+        for (int i = 0; i < kind.chambers(); i++) {
+            if (!local.get(i).isEmpty()) {
+                components.set(i == 0 ? DfmDataComponents.TANK_LOCAL_A.get() : DfmDataComponents.TANK_LOCAL_B.get(), SimpleFluidContent.copyOf(local.get(i)));
+            }
+        }
     }
 
     @Override
     public void removeComponentsFromTag(net.minecraft.world.level.storage.ValueOutput output) {
         output.discard("code");
         output.discard("creative_fluid");
+        output.discard("channel_locked");
+        output.discard("local_chambers");
     }
 
     // ---------------------------------------------------------------- client sync
@@ -663,6 +825,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
+        tag.putBoolean("channel_locked", channelLocked);
         tag.put("code", code.save());
         tag.put("chambers", writeChambers(registries));
         return tag;
@@ -680,6 +843,7 @@ public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.Tag
 
 
     private void readClientData(CompoundTag tag, HolderLookup.Provider registries) {
+        channelLocked = !kind.creative() && tag.getBooleanOr("channel_locked", false);
         code = TankCode.load(tag.getCompoundOrEmpty("code"));
         clientChambers = readChambers(tag.getListOrEmpty("chambers"), kind.chambers(), registries);
         updateLight();

@@ -23,6 +23,14 @@ public final class GuiTheme {
     private static boolean dark;
     /** Icon color of the screen being drawn. */
     private static IconColor icons = IconColor.WHITE;
+    private static int customRgb = -1;
+    private static int customText;
+    private static int customTop;
+    private static int customBottom;
+    private static int customRim;
+    static {
+        setCustomRgb(GuiThemes.DEFAULT_CUSTOM_COLOR);
+    }
     private static int chromeDepth;
 
     private GuiTheme() {
@@ -66,6 +74,48 @@ public final class GuiTheme {
         return icons;
     }
 
+    static void setCustomRgb(int rgb) {
+        rgb &= 0xFFFFFF;
+        if (customRgb == rgb) {
+            return;
+        }
+        customRgb = rgb;
+        float[] chosen = java.awt.Color.RGBtoHSB(rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, null);
+        customText = 0xFF000000 | customTone(0x52D9DB, chosen);
+        customTop = customTone(0x14243A, chosen);
+        customBottom = customTone(0x1F3852, chosen);
+        customRim = customTone(0x0F1A2B, chosen);
+    }
+
+    /** Retain the display's contrast while following the chosen hue and saturation. */
+    private static int customTone(int base, float[] chosen) {
+        float[] source = java.awt.Color.RGBtoHSB(base >> 16 & 255, base >> 8 & 255, base & 255, null);
+        return java.awt.Color.HSBtoRGB(chosen[0], source[1] * chosen[1], source[2]) & 0xFFFFFF;
+    }
+
+    static int customText() { return customText; }
+    static int customTop() { return customTop; }
+    static int customBottom() { return customBottom; }
+    static int customRim() { return customRim; }
+
+    static int customRgb() {
+        return customRgb;
+    }
+
+    /** A selected control retains its depth while taking the icon accent. */
+    static int selectionColor(int base) {
+        if (icons == IconColor.WHITE) {
+            return base;
+        }
+        int tint = icons.iconTint();
+        int rgb = 0;
+        for (int shift = 0; shift <= 16; shift += 8) {
+            int value = Math.round(((base >> shift) & 255) * 0.35F + ((tint >> shift) & 255) * 0.65F);
+            rgb |= value << shift;
+        }
+        return 0xFF000000 | rgb;
+    }
+
     /** Draws {@code drawing} as screen chrome: darkened in the dark look, unchanged in the light one. */
     static void chrome(Runnable drawing) {
         chromeDepth++;
@@ -98,13 +148,16 @@ public final class GuiTheme {
         }
         boolean before = dark;
         IconColor beforeIcons = icons;
+        int beforeRgb = customRgb;
         dark = GuiThemes.dark(machine.machinePos());
         icons = GuiThemes.icons(machine.machinePos());
+        setCustomRgb(GuiThemes.customRgb(machine.machinePos()));
         try {
             chrome(drawing);
         } finally {
             dark = before;
             icons = beforeIcons;
+            setCustomRgb(beforeRgb);
         }
     }
 

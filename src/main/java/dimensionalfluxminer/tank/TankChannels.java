@@ -35,7 +35,7 @@ public final class TankChannels extends SavedData {
 
     /** Chambers of one channel: a single tank has one, a dual tank two (A = 0, B = 1). */
     public static final class Channel {
-        private final TankChannels owner;
+        private final Runnable changed;
         private final TankKind kind;
         private final TankCode code;
         private final FluidStack[] chambers;
@@ -43,7 +43,11 @@ public final class TankChannels extends SavedData {
         private int version;
 
         private Channel(TankChannels owner, TankKind kind, TankCode code) {
-            this.owner = owner;
+            this(owner::setDirty, kind, code);
+        }
+
+        private Channel(Runnable changed, TankKind kind, TankCode code) {
+            this.changed = changed;
             this.kind = kind;
             this.code = code;
             this.chambers = new FluidStack[kind.chambers()];
@@ -70,7 +74,7 @@ public final class TankChannels extends SavedData {
         public void set(int chamber, FluidStack stack) {
             chambers[chamber] = stack.isEmpty() ? FluidStack.EMPTY : stack;
             version++;
-            owner.setDirty();
+            changed.run();
         }
 
         public int version() {
@@ -85,6 +89,11 @@ public final class TankChannels extends SavedData {
             }
             return true;
         }
+    }
+
+    /** Independent chambers owned and persisted by one block entity. */
+    public static Channel local(TankKind kind, Runnable changed) {
+        return new Channel(changed, kind, TankCode.DEFAULT);
     }
 
     private CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {

@@ -226,6 +226,26 @@ public final class Transfer {
 
     // ---------------------------------------------------------------- capabilities of other blocks
 
+    /** Moves one item between a local handler and the adjacent block in one shared transaction. */
+    public static void moveContainer(Level level, BlockPos pos, Direction side, ResourceHandler<ItemResource> own, boolean into) {
+        BlockPos target = pos.relative(side);
+        if (!level.isLoaded(target)) {
+            return;
+        }
+        var neighbor = level.getCapability(Capabilities.Item.BLOCK, target, side.getOpposite());
+        if (neighbor == null) {
+            return;
+        }
+        try (Transaction transaction = Transaction.openRoot()) {
+            var moved = into
+                    ? net.neoforged.neoforge.transfer.ResourceHandlerUtil.moveFirst(neighbor, own, resource -> true, 1, transaction)
+                    : net.neoforged.neoforge.transfer.ResourceHandlerUtil.moveFirst(own, neighbor, resource -> true, 1, transaction);
+            if (moved != null) {
+                transaction.commit();
+            }
+        }
+    }
+
     public static @Nullable ItemSlots items(Level level, BlockPos pos, @Nullable Direction side) {
         return items(level.getCapability(Capabilities.Item.BLOCK, pos, side));
     }

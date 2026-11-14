@@ -17,8 +17,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * A single or creative tank item as a fluid container. The single tank's liquid is its channel's
  * (the code on the item, white, white, white for a new one), so filling or draining the item changes the channel; it
- * only answers on the server thread. The creative tank's liquid is on the item and never runs out. The item itself
- * never changes, except an empty creative tank picking its liquid.
+ * only answers on the server thread. A locked tank instead stores finite liquid on its item.
+ * The creative tank's liquid is on the item and never runs out.
  */
 public final class TankItemFluidHandler {
     private TankItemFluidHandler() {
@@ -40,6 +40,9 @@ public final class TankItemFluidHandler {
             return null;
         }
         ItemStack stack = access.getResource().toStack();
+        if (DimensionalTankItem.channelLocked(stack)) {
+            return new Local(access);
+        }
         TankChannels.Channel channel = TankChannels.get(server).channel(kind, stack.getOrDefault(DfmDataComponents.TANK_CODE.get(), TankCode.DEFAULT));
         Transfer.Journal<FluidStack> journal = new Transfer.Journal<>(() -> channel.get(0).copy(), saved -> channel.set(0, saved));
         return Transfer.exposeFluids(new ChamberFluidHandler(() -> channel, 0, true, true), journal);
@@ -49,6 +52,53 @@ public final class TankItemFluidHandler {
      * The creative tank item: drains give as much as asked and never lower it; while empty, the first liquid poured in
      * becomes its endless liquid (the item is exchanged for one that carries it).
      */
+    private record Local(ItemAccess access) implements ResourceHandler<FluidResource> {
+        private FluidStack stored() {
+            SimpleFluidContent fluid = access.getResource().toStack().get(DfmDataComponents.TANK_LOCAL_A.get());
+            return fluid == null ? FluidStack.EMPTY : fluid.copy();
+        }
+
+        @Override
+        public int size() { return 1; }
+
+        @Override
+        public FluidResource getResource(int index) { return FluidResource.of(stored()); }
+
+        @Override
+        public long getAmountAsLong(int index) { return stored().getAmount(); }
+
+        @Override
+        public long getCapacityAsLong(int index, FluidResource resource) { return TankKind.CHAMBER_CAPACITY; }
+
+        @Override
+        public boolean isValid(int index, FluidResource resource) { return index == 0; }
+
+        private boolean replace(FluidStack fluid, TransactionContext transaction) {
+            ItemResource next = access.getResource().with(DfmDataComponents.TANK_LOCAL_A.get(), SimpleFluidContent.copyOf(fluid));
+            return access.exchange(next, 1, transaction) == 1;
+        }
+
+        @Override
+        public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
+            FluidStack fluid = stored();
+            if (index != 0 || resource.isEmpty() || amount <= 0 || !fluid.isEmpty() && !resource.matches(fluid)) {
+                return 0;
+            }
+            int moved = Math.min(amount, Math.max(0, TankKind.CHAMBER_CAPACITY - fluid.getAmount()));
+            return moved > 0 && replace(resource.toStack(fluid.getAmount() + moved), transaction) ? moved : 0;
+        }
+
+        @Override
+        public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
+            FluidStack fluid = stored();
+            if (index != 0 || resource.isEmpty() || amount <= 0 || !resource.matches(fluid)) {
+                return 0;
+            }
+            int moved = Math.min(amount, fluid.getAmount());
+            return moved > 0 && replace(fluid.copyWithAmount(fluid.getAmount() - moved), transaction) ? moved : 0;
+        }
+    }
+
     private record Creative(ItemAccess access) implements ResourceHandler<FluidResource> {
         private FluidStack stored() {
             return creativeFluid(access.getResource().toStack());

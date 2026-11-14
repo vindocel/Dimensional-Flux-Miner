@@ -139,6 +139,11 @@ public class DimensionalTankItem extends BlockItem {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, display, tooltip, flag);
+        if (!kind().creative()) {
+            for (var component : java.util.List.of(DfmDataComponents.TANK_LOCAL_A.get(), DfmDataComponents.TANK_LOCAL_B.get())) {
+                localFluidLine(stack, component, tooltip);
+            }
+        }
         if (kind() != TankKind.DUAL) {
             tooltip.accept(Component.translatable(bucketMode(stack) ? "tooltip.dimensionalfluxminer.tank.bucket_mode.on"
                     : "tooltip.dimensionalfluxminer.tank.bucket_mode.off").withStyle(bucketMode(stack) ? ChatFormatting.AQUA : ChatFormatting.GRAY));
@@ -153,13 +158,34 @@ public class DimensionalTankItem extends BlockItem {
             tooltip.accept(Component.translatable("tooltip.dimensionalfluxminer.creative_tank.no_channels").withStyle(ChatFormatting.DARK_GRAY));
             return;
         }
-        TankCode code = stack.get(DfmDataComponents.TANK_CODE.get());
-        if (code != null) {
-            tooltip.accept(Component.translatable("tooltip.dimensionalfluxminer.tank.code", Component.translatable(
-                    "gui.dimensionalfluxminer.tank.code.colors", name(code.first()), name(code.second()), name(code.third())))
+        if (channelLocked(stack)) {
+            tooltip.accept(Component.translatable("gui.dimensionalfluxminer.tank.channel_locked").withStyle(ChatFormatting.GRAY));
+            return;
+        }
+        TankCode code = stack.getOrDefault(DfmDataComponents.TANK_CODE.get(), TankCode.DEFAULT);
+        tooltip.accept(Component.translatable("gui.dimensionalfluxminer.tank.channel_open", Component.translatable(
+                "gui.dimensionalfluxminer.tank.code.colors", name(code.first()), name(code.second()), name(code.third())))
+                .withStyle(ChatFormatting.GRAY));
+        code.ownerName().ifPresent(owner -> tooltip.accept(Component.translatable("gui.dimensionalfluxminer.tank.personal.owner", owner)
+                .withStyle(ChatFormatting.LIGHT_PURPLE)));
+    }
+
+    /**
+     * Whether the tank item keeps its liquid to itself (channel locked). A new tank, never placed and so without a
+     * code, starts locked; a tank broken from the world carries its code and its own state.
+     */
+    public static boolean channelLocked(ItemStack stack) {
+        Boolean locked = stack.get(DfmDataComponents.TANK_CHANNEL_LOCKED.get());
+        return locked != null ? locked : !stack.has(DfmDataComponents.TANK_CODE.get());
+    }
+
+    private static void localFluidLine(ItemStack stack,
+            net.minecraft.core.component.DataComponentType<net.neoforged.neoforge.fluids.SimpleFluidContent> component,
+            Consumer<Component> tooltip) {
+        var content = stack.get(component);
+        if (content != null && !content.isEmpty()) {
+            tooltip.accept(Component.translatable("tooltip.dimensionalfluxminer.tank.local_fluid", content.copy().getHoverName(), content.copy().getAmount())
                     .withStyle(ChatFormatting.GRAY));
-            code.ownerName().ifPresent(owner -> tooltip.accept(Component.translatable("gui.dimensionalfluxminer.tank.personal.owner", owner)
-                    .withStyle(ChatFormatting.LIGHT_PURPLE)));
         }
     }
 

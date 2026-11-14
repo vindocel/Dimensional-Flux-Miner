@@ -3,6 +3,8 @@ package dimensionalfluxminer.compat.jei;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.screen.CrusherLayout;
 import dimensionalfluxminer.client.screen.ElectricFurnaceLayout;
+import dimensionalfluxminer.client.screen.FluidGauge;
+import dimensionalfluxminer.client.screen.TankRecipeLayout;
 import dimensionalfluxminer.compat.RecipeViewerData;
 import dimensionalfluxminer.compat.RecipeViewers;
 import dimensionalfluxminer.crusher.CrusherProcessing;
@@ -48,6 +50,8 @@ public class DfmJeiPlugin implements IModPlugin {
     @SuppressWarnings({"unchecked", "rawtypes"})
     static final RecipeType<RecipeHolder<AlloyingRecipe>> ALLOYING = RecipeType.create(DimensionalFluxMiner.MOD_ID, "alloying",
             (Class) RecipeHolder.class);
+    static final RecipeType<dimensionalfluxminer.recipe.TankContainerRecipe> TANK_CONTAINER = RecipeType.create(
+            DimensionalFluxMiner.MOD_ID, "tank_container", dimensionalfluxminer.recipe.TankContainerRecipe.class);
     /** The element plus a 1 px margin (the alloy element is drawn 1 px around the slot area). */
     private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
     private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
@@ -84,7 +88,7 @@ public class DfmJeiPlugin implements IModPlugin {
             return;
         }
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
-        registration.addRecipeCategories(new CrushingCategory(gui), new FurnaceCategory(gui), new AlloyingCategory(gui));
+        registration.addRecipeCategories(new CrushingCategory(gui), new FurnaceCategory(gui), new AlloyingCategory(gui), new TankContainerCategory(gui));
     }
 
     @Override
@@ -93,6 +97,8 @@ public class DfmJeiPlugin implements IModPlugin {
         if (!enabled() || level == null) {
             return;
         }
+        registration.addRecipes(TANK_CONTAINER, dimensionalfluxminer.recipe.Recipes.byType(level,
+                dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get()).stream().map(RecipeHolder::value).toList());
         registration.addRecipes(CRUSHING, RecipeViewerData.crushing());
         registration.addRecipes(SMELTING, RecipeViewerData.electricFurnaceSmelting(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess()));
         registration.addRecipes(ALLOYING, RecipeViewerData.alloying(dimensionalfluxminer.recipe.Recipes.map(level)));
@@ -127,8 +133,82 @@ public class DfmJeiPlugin implements IModPlugin {
         if (!enabled()) {
             return;
         }
+        registration.addRecipeCatalyst(DfmBlocks.DIMENSIONAL_TANK.get(), TANK_CONTAINER);
         registration.addRecipeCatalyst(DfmBlocks.MECHANICAL_CRUSHER.get(), CRUSHING);
         registration.addRecipeCatalyst(DfmBlocks.ELECTRIC_FURNACE.get(), SMELTING, ALLOYING);
+    }
+
+    private static final class TankContainerCategory implements IRecipeCategory<dimensionalfluxminer.recipe.TankContainerRecipe> {
+        private final IDrawable icon;
+
+        private TankContainerCategory(IGuiHelper gui) {
+            icon = gui.createDrawableItemStack(DfmBlocks.DIMENSIONAL_TANK.get().asItem().getDefaultInstance());
+        }
+
+        @Override
+        public RecipeType<dimensionalfluxminer.recipe.TankContainerRecipe> getRecipeType() {
+            return TANK_CONTAINER;
+        }
+
+        @Override
+        public Component getTitle() {
+            return Component.translatable("emi.category.dimensionalfluxminer.tank_container");
+        }
+
+        @Override
+        public IDrawable getIcon() {
+            return icon;
+        }
+
+        @Override
+        public int getWidth() {
+            return TankRecipeLayout.WIDTH;
+        }
+
+        @Override
+        public int getHeight() {
+            return TankRecipeLayout.HEIGHT;
+        }
+
+        @Override
+        public void setRecipe(IRecipeLayoutBuilder builder, dimensionalfluxminer.recipe.TankContainerRecipe recipe, IFocusGroup focuses) {
+            builder.addInputSlot(TankRecipeLayout.INPUT_ITEM_X, TankRecipeLayout.ITEM_Y).setStandardSlotBackground().addIngredients(recipe.ingredient());
+            builder.addOutputSlot(TankRecipeLayout.OUTPUT_ITEM_X, TankRecipeLayout.ITEM_Y).setStandardSlotBackground().addItemStack(recipe.result());
+            var fluidSlot = builder.addSlot(recipe.filling() ? mezz.jei.api.recipe.RecipeIngredientRole.INPUT : mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT,
+                    TankRecipeLayout.fluidX(recipe.filling()), TankRecipeLayout.FLUID_Y)
+                    .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new TankFluidRenderer());
+            for (var fluid : recipe.fluids()) {
+                fluidSlot.addFluidStack(fluid.getFluid(), fluid.getAmount(), fluid.getComponentsPatch());
+            }
+        }
+
+        @Override
+        public void draw(dimensionalfluxminer.recipe.TankContainerRecipe recipe, IRecipeSlotsView slots, GuiGraphicsExtractor g,
+                         double mouseX, double mouseY) {
+            TankRecipeLayout.drawEmptySideAndArrow(g, 0, 0, recipe.filling());
+        }
+    }
+
+    private static final class TankFluidRenderer implements mezz.jei.api.ingredients.IIngredientRenderer<net.neoforged.neoforge.fluids.FluidStack> {
+        @Override
+        public void render(GuiGraphicsExtractor g, net.neoforged.neoforge.fluids.FluidStack fluid) {
+            FluidGauge.drawNarrow(g, 0, 0, fluid, fluid.getAmount());
+        }
+
+        @Override
+        public List<Component> getTooltip(net.neoforged.neoforge.fluids.FluidStack fluid, net.minecraft.world.item.TooltipFlag flag) {
+            return List.of(fluid.getHoverName(), Component.literal(fluid.getAmount() + " mB"));
+        }
+
+        @Override
+        public int getWidth() {
+            return FluidGauge.NARROW_WIDTH;
+        }
+
+        @Override
+        public int getHeight() {
+            return FluidGauge.HEIGHT;
+        }
     }
 
     private static final class CrushingCategory implements IRecipeCategory<CrusherProcessing.Display> {

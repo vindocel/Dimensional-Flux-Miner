@@ -1,6 +1,9 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "dimensionalfluxminer:item/dimensional_tank"
+    "type": "minecraft:special",
+    "model": {
+      "type": "dimensionalfluxminer:creative_tank"
+    },
+    "base": "dimensionalfluxminer:item/dimensional_tank"
   }
 }

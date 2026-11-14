@@ -10,6 +10,10 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.IInWorldGridNodeHost;
 import appeng.api.networking.IManagedGridNode;
+import appeng.api.parts.IPartHost;
+import appeng.blockentity.networking.CreativeEnergyCellBlockEntity;
+import appeng.blockentity.networking.EnergyCellBlockEntity;
+import appeng.parts.networking.QuartzFiberPart;
 import dimensionalfluxminer.machine.transfer.EnergyStore;
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import java.util.EnumSet;
@@ -17,18 +21,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.Function;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 /**
- * AE2 side of {@link dimensionalfluxminer.compat.Ae2Compat}. Each block entity gets one in-world grid node, created
- * on its first server tick and exposed only on the sides where it takes energy; it needs no channel and uses no idle
- * power. Every tick the node draws from the network what the energy input still accepts.
+ * AE2 side of {@link dimensionalfluxminer.compat.Ae2Compat}. A block entity joins an AE2 network only through power
+ * links: an energy cell (normal, dense or creative) touching a side that takes energy, or a quartz fiber mounted on the
+ * face of a cable bus that points at that side. ME cables and other parts never connect, so a cable run can pass next
+ * to the machines without touching them. The node needs no channel and uses no idle power; every tick it draws from
+ * the network what the energy input still accepts.
  */
 public final class Ae2Power {
+    /** How often, in ticks, the neighbors are checked again for power links (staggered by position). */
+    private static final int LINK_CHECK_TICKS = 10;
     private static final Map<BlockEntity, Node> NODES = new WeakHashMap<>();
 
     private Ae2Power() {
@@ -46,39 +56,51 @@ public final class Ae2Power {
     }
 
     public static void pull(BlockEntity be, Function<Direction, EnergyStore> input) {
-        if (be.getLevel() == null || be.getLevel().isClientSide() || be.isRemoved()) {
+        Level level = be.getLevel();
+        if (level == null || level.isClientSide() || be.isRemoved()) {
             return;
         }
-        Set<Direction> sides = EnumSet.noneOf(Direction.class);
-        EnergyStore store = null;
+        Set<Direction> inputs = EnumSet.noneOf(Direction.class);
         for (Direction side : Direction.values()) {
             EnergyStore s = input.apply(side);
             if (s != null && s.canReceive()) {
-                sides.add(side);
-                store = store == null ? s : store;
+                inputs.add(side);
             }
         }
+        BlockPos pos = be.getBlockPos();
+        boolean check = Math.floorMod(level.getGameTime() + pos.asLong(), LINK_CHECK_TICKS) == 0;
         Node node = NODES.get(be);
         if (node == null) {
-            if (sides.isEmpty()) {
+            if (inputs.isEmpty() || !check) {
+                return;
+            }
+            Set<Direction> links = powerLinks(level, pos, inputs);
+            if (links.isEmpty()) {
                 return;
             }
             node = new Node(be);
             NODES.put(be, node);
-            node.managed.setExposedOnSides(sides);
-            node.sides = sides;
-            node.managed.create(be.getLevel(), be.getBlockPos());
+            node.managed.setExposedOnSides(links);
+            node.sides = links;
+            node.managed.create(level, pos);
             be.invalidateCapabilities();
-        } else if (!node.sides.equals(sides)) {
-            node.managed.setExposedOnSides(sides);
-            node.sides = sides;
+        } else if (check || !inputs.containsAll(node.sides)) {
+            Set<Direction> links = powerLinks(level, pos, inputs);
+            if (!node.sides.equals(links)) {
+                node.managed.setExposedOnSides(links);
+                node.sides = links;
+            }
         }
-        if (store == null) {
+        if (node.sides.isEmpty()) {
+            return;
+        }
+        EnergyStore store = input.apply(node.sides.iterator().next());
+        IGrid grid = node.managed.getGrid();
+        if (store == null || grid == null) {
             return;
         }
         int room = store.receiveEnergy(Integer.MAX_VALUE, true);
-        IGrid grid = node.managed.getGrid();
-        if (room <= 0 || grid == null) {
+        if (room <= 0) {
             return;
         }
         double wanted = PowerUnit.FE.convertTo(PowerUnit.AE, room);
@@ -87,6 +109,25 @@ public final class Ae2Power {
         if (fe > 0) {
             store.receiveEnergy(fe, false);
         }
+    }
+
+    /** The sides in {@code inputs} whose neighbor is a power link (an energy cell or a quartz fiber facing us). */
+    private static Set<Direction> powerLinks(Level level, BlockPos pos, Set<Direction> inputs) {
+        Set<Direction> links = EnumSet.noneOf(Direction.class);
+        for (Direction side : inputs) {
+            BlockPos other = pos.relative(side);
+            if (level.isLoaded(other) && isPowerLink(level.getBlockEntity(other), side.getOpposite())) {
+                links.add(side);
+            }
+        }
+        return links;
+    }
+
+    private static boolean isPowerLink(BlockEntity other, Direction towardUs) {
+        if (other instanceof EnergyCellBlockEntity || other instanceof CreativeEnergyCellBlockEntity) {
+            return true;
+        }
+        return other instanceof IPartHost host && host.getPart(towardUs) instanceof QuartzFiberPart;
     }
 
     public static void release(BlockEntity be) {

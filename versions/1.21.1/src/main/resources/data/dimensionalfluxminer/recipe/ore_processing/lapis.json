@@ -1,0 +1,11 @@
+{
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": {
+    "tag": "c:ores/lapis"
+  },
+  "result": {
+    "id": "minecraft:lapis_lazuli"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

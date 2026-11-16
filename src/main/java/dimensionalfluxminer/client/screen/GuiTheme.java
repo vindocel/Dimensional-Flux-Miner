@@ -1,8 +1,17 @@
 package dimensionalfluxminer.client.screen;
 
+//? if =26.1.2 {
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else if >=26.3 {
+/*import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import dimensionalfluxminer.DimensionalFluxMiner;
+import net.minecraft.client.renderer.RenderPipelines;
+*///?} else {
+/*import java.util.function.Supplier;
+import net.minecraft.client.renderer.ShaderInstance;
+*///?}
 
 /**
  * Light or dark look of the machine screens while one is drawn. The dark look only touches the gray parts of the
@@ -11,15 +20,23 @@ import net.minecraft.client.renderer.RenderPipelines;
  * ones. Icons, items, liquids and the navy screens are never drawn inside it, so they keep their colors.
  */
 public final class GuiTheme {
+    //? if >=26.1 {
     /** Brightness kept by gray pixels in the dark look ({@code DARKNESS} of {@code dark_gui.fsh}). */
     static final float DARKNESS = 0.32F;
     /** Textured GUI pipelines of the chrome: dark, and light (no change, but still the mod's shader). */
     public static final RenderPipeline DARK_PIPELINE = pipeline("dark_gui", DARKNESS);
     public static final RenderPipeline LIGHT_PIPELINE = pipeline("light_gui", 1.0F);
+    //?} else {
+    /*/^* Brightness kept by gray pixels in the dark look (same value as {@code Darkness} in {@code dark_gui.json}). ^/
+    static final float DARKNESS = 0.32F;
+    *///?}
     /** Panel color of each look, for the previews of the theme window. */
     static final int LIGHT_PANEL = 0xFFBEBEBE;
     static final int DARK_PANEL = 0xFF3D3D3D;
 
+    //? if <26.1 {
+    /*private static ShaderInstance shader;
+    *///?}
     private static boolean dark;
     /** Icon color of the screen being drawn. */
     private static IconColor icons = IconColor.WHITE;
@@ -36,6 +53,7 @@ public final class GuiTheme {
     private GuiTheme() {
     }
 
+    //? if >=26.1 {
     private static RenderPipeline pipeline(String name, float darkness) {
         return RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
                 .withLocation(DimensionalFluxMiner.id("pipeline/" + name))
@@ -132,9 +150,117 @@ public final class GuiTheme {
      */
     public static RenderPipeline pipeline(RenderPipeline normal) {
         if (chromeDepth == 0 || normal != RenderPipelines.GUI_TEXTURED) {
+    //?} else {
+    /*/^* Set when the shaders load (and reload with the resource packs). ^/
+    public static void setShader(ShaderInstance instance) {
+        shader = instance;
+    }
+
+    static void setDark(boolean value) {
+        dark = value;
+    }
+
+    public static boolean dark() {
+        return dark;
+    }
+
+    /^*
+     * Draws {@code drawing} with the light or dark look for a page another mod shows (a recipe viewer with its own dark
+     * theme), then puts the previous look back; the player's choices of the machine screens are never touched.
+     ^/
+    public static void withDark(boolean value, Runnable drawing) {
+        boolean before = dark;
+        dark = value;
+        try {
+            drawing.run();
+        } finally {
+            dark = before;
+        }
+    }
+
+    static void setIcons(IconColor value) {
+        icons = value;
+    }
+
+    static IconColor icons() {
+        return icons;
+    }
+
+    static void setCustomRgb(int rgb) {
+        rgb &= 0xFFFFFF;
+        if (customRgb == rgb) {
+            return;
+        }
+        customRgb = rgb;
+        float[] chosen = java.awt.Color.RGBtoHSB(rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, null);
+        customText = 0xFF000000 | customTone(0x52D9DB, chosen);
+        customTop = customTone(0x14243A, chosen);
+        customBottom = customTone(0x1F3852, chosen);
+        customRim = customTone(0x0F1A2B, chosen);
+    }
+
+    /^* Retain the display's contrast while following the chosen hue and saturation. ^/
+    private static int customTone(int base, float[] chosen) {
+        float[] source = java.awt.Color.RGBtoHSB(base >> 16 & 255, base >> 8 & 255, base & 255, null);
+        return java.awt.Color.HSBtoRGB(chosen[0], source[1] * chosen[1], source[2]) & 0xFFFFFF;
+    }
+
+    static int customText() { return customText; }
+    static int customTop() { return customTop; }
+    static int customBottom() { return customBottom; }
+    static int customRim() { return customRim; }
+
+    static int customRgb() {
+        return customRgb;
+    }
+
+    /^* A selected control retains its depth while taking the icon accent. ^/
+    static int selectionColor(int base) {
+        if (icons == IconColor.WHITE) {
+            return base;
+        }
+        int tint = icons.iconTint();
+        int rgb = 0;
+        for (int shift = 0; shift <= 16; shift += 8) {
+            int value = Math.round(((base >> shift) & 255) * 0.35F + ((tint >> shift) & 255) * 0.65F);
+            rgb |= value << shift;
+        }
+        return 0xFF000000 | rgb;
+    }
+
+    /^* Draws {@code drawing} as screen chrome: darkened in the dark look, unchanged in the light one. ^/
+    static void chrome(Runnable drawing) {
+        chromeDepth++;
+        try {
+            drawing.run();
+        } finally {
+            chromeDepth--;
+        }
+    }
+
+    /^*
+     * Shader used by a texture drawn now. Inside {@link #chrome} it is always the mod's own shader (dark, or with no
+     * change in the light look), so screen-wide dark shaders of other mods never touch these screens twice.
+     ^/
+    public static Supplier<ShaderInstance> shader(Supplier<ShaderInstance> normal) {
+        Supplier<ShaderInstance> icon = IconPalette.shader();
+        if (icon != null) {
+            return icon;
+        }
+        if (chromeDepth == 0 || shader == null) {
+    *///?}
             return normal;
         }
+        //? if >=26.1 {
         return dark ? DARK_PIPELINE : LIGHT_PIPELINE;
+        //?} else {
+        /*float darkness = dark ? DARKNESS : 1.0F;
+        ShaderInstance instance = shader;
+        return () -> {
+            instance.safeGetUniform("Darkness").set(darkness);
+            return instance;
+        };
+        *///?}
     }
 
     /**

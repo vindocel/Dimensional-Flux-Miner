@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ESE",
+    "TCT",
+    "ESE"
+  ],
+  "key": {
+    "E": {
+      "item": "dimensionalfluxminer:ender_eye_reinforced"
+    },
+    "S": {
+      "item": "dimensionalfluxminer:ingot_steel"
+    },
+    "T": {
+      "item": "dimensionalfluxminer:dimensional_tank"
+    },
+    "C": {
+      "item": "dimensionalfluxminer:steel_chassis"
+    }
+  },
+  "result": {
+    "id": "dimensionalfluxminer:dimensional_dual_tank",
+    "count": 1
+  }
+}

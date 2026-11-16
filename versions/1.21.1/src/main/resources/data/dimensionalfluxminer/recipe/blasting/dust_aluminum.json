@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/aluminum"
+      }
+    }
+  ],
+  "type": "dimensionalfluxminer:tag_blasting",
+  "ingredient": {
+    "item": "dimensionalfluxminer:dust_aluminum"
+  },
+  "result_tag": "c:ingots/aluminum",
+  "experience": 0.7,
+  "cookingtime": 100
+}

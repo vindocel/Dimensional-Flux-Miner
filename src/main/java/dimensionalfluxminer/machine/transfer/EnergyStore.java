@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.machine.transfer;
 
 /** Energy view used inside the mod; {@link Transfer} maps it to and from the NeoForge energy capability. */
@@ -16,3 +17,5 @@ public interface EnergyStore {
 
     boolean canReceive();
 }
+
+//?}

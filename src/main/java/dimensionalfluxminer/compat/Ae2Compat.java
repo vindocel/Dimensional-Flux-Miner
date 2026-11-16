@@ -1,6 +1,10 @@
 package dimensionalfluxminer.compat;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.EnergyStore;
+//?} else {
+/*import net.neoforged.neoforge.energy.IEnergyStorage;
+*///?}
 import java.util.function.Function;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -38,7 +42,11 @@ public final class Ae2Compat {
      * Once per game tick on the server: joins the network through the power links on the sides where {@code input}
      * takes energy and fills that input from the network.
      */
+    //? if >=26.1 {
     public static void pull(BlockEntity be, Function<Direction, EnergyStore> input) {
+    //?} else {
+    /*public static void pull(BlockEntity be, Function<Direction, IEnergyStorage> input) {
+    *///?}
         if (loaded()) {
             dimensionalfluxminer.compat.ae2.Ae2Power.pull(be, input);
         }

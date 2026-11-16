@@ -8,6 +8,7 @@ import dimensionalfluxminer.tank.DimensionalTankBlockEntity;
 import dimensionalfluxminer.tank.TankCode;
 import dimensionalfluxminer.tank.TankKind;
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
@@ -15,17 +16,34 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlas;
+//?} else {
+/*import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
+*///?}
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.Mth;
+//? if >=26.1 {
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
+//?} else {
+/*import net.minecraft.world.inventory.InventoryMenu;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+*///?}
 import net.neoforged.neoforge.fluids.FluidStack;
+//? if >=26.1 {
 import org.jspecify.annotations.Nullable;
+//?}
 
 /**
  * Dynamic parts of the Dimensional Tanks, drawn behind the cut-outs of the static model: the liquid volume of each
@@ -33,15 +51,24 @@ import org.jspecify.annotations.Nullable;
  * liquid of A and of B. Coordinates are those of the final models (0..16, native front north), rotated with the
  * facing around the block center.
  */
+//? if >=26.1 {
 public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEntity, TankRenderer.State> {
     private static final Identifier SOLID = DimensionalFluxMiner.id("block/dimensional_tank/solid_white");
+//?} else {
+/*public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEntity> {
+    private static final ResourceLocation SOLID = DimensionalFluxMiner.id("block/dimensional_tank/solid_white");
+*///?}
     /** Lid stripe of an empty chamber. */
     private static final int EMPTY_STRIPE = 0xFF7A7A7A;
     /** Code fields of the creative tank, which has no channel. */
     private static final int NO_CODE = 0xFF2B2B2B;
     /** Display background of a locked tank: the panel's own 0x1B1D2A, slightly darker. */
     private static final int LOCKED_PANEL = 0xFF15171F;
+    //? if >=26.1 {
     private static final Identifier CHANNEL_LOCK = DimensionalFluxMiner.id("textures/gui/sprites/icon_white/lock.png");
+    //?} else {
+    /*private static final ResourceLocation CHANNEL_LOCK = DimensionalFluxMiner.id("textures/gui/sprites/icon_white/lock.png");
+    *///?}
     private static final int LOCK_COLOR = 0xFFE5B34D;
 
     /** A chamber: liquid volume (x0, y0, z0, x1, yMax, z1) and gauge fill (x0, y0, x1, yMax, z) at 100%. */
@@ -107,6 +134,7 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
     public TankRenderer(BlockEntityRendererProvider.Context context) {
     }
 
+    //? if >=26.1 {
     /** What a frame needs of the tank, read on the client thread before drawing. */
     public static class State extends BlockEntityRenderState {
         TankKind kind = TankKind.SINGLE;
@@ -118,7 +146,9 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         boolean channelLocked;
     }
 
+    //?}
     @Override
+    //? if >=26.1 {
     public State createRenderState() {
         return new State();
     }
@@ -142,16 +172,37 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
     public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
         Layout layout = state.kind == TankKind.DUAL ? DUAL : SINGLE;
         int light = state.lightCoords;
+    //?} else {
+    /*public void render(DimensionalTankBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+        Layout layout = be.kind() == TankKind.DUAL ? DUAL : SINGLE;
+    *///?}
         pose.pushPose();
         pose.translate(0.5F, 0, 0.5F);
+        //? if =26.1.2 {
         pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
+        //?} else if >=26.3 {
+        /*pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(state.facing)));
+        *///?} else {
+        /*pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(be.facing())));
+        *///?}
         pose.translate(-0.5F, 0, -0.5F);
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
+        //? if >=26.1 {
         collector.submitCustomGeometry(pose, RenderTypes.translucentMovingBlock(),
                 (last, translucent) -> contents(last, translucent, layout, state.chambers, state.capacity, state.code, state.channelLocked, light));
         if (state.code != null && state.channelLocked) {
             collector.submitCustomGeometry(pose, RenderTypes.entityTranslucent(CHANNEL_LOCK),
                     (last, consumer) -> channelLocks(last, consumer, layout, light));
+        //?} else {
+        /*FluidStack[] chambers = new FluidStack[layout.chambers().length];
+        for (int i = 0; i < chambers.length; i++) {
+            chambers[i] = be.chamber(i);
+        }
+        TankCode code = be.kind().creative() ? null : be.code();
+        contents(pose, buffers, layout, chambers, be.kind().capacity(), code, be.channelLocked(), light);
+        if (code != null && be.channelLocked()) {
+            channelLocks(pose, buffers.getBuffer(RenderType.entityTranslucent(CHANNEL_LOCK)), layout, light);
+        *///?}
         }
         pose.popPose();
     }
@@ -160,52 +211,93 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
      * Item contents and channel indicators, drawn as in the block. The item renderer adds the shell and glass.
      * Block space 0..1, front north; finite tanks retain their actual fill fraction.
      */
+    //? if >=26.1 {
     public static void submitItem(TankKind kind, FluidStack[] chambers, @Nullable TankCode code, boolean locked,
                                   PoseStack pose, SubmitNodeCollector collector, int light) {
+    //?} else {
+    /*public static void renderItem(TankKind kind, FluidStack[] chambers, TankCode code, boolean locked, PoseStack pose,
+                                  MultiBufferSource buffers, int light) {
+    *///?}
         Layout layout = kind == TankKind.DUAL ? DUAL : SINGLE;
         pose.pushPose();
         pose.scale(1 / 16.0F, 1 / 16.0F, 1 / 16.0F);
+        //? if >=26.1 {
         collector.submitCustomGeometry(pose, RenderTypes.translucentMovingBlock(),
                 (last, translucent) -> contents(last, translucent, layout, chambers, kind.capacity(), code, locked, light));
+        //?} else {
+        /*contents(pose, buffers, layout, chambers, kind.capacity(), code, locked, light);
+        *///?}
         if (code != null && locked) {
+            //? if >=26.1 {
             collector.submitCustomGeometry(pose, RenderTypes.entityTranslucent(CHANNEL_LOCK),
                     (last, consumer) -> channelLocks(last, consumer, layout, light));
+            //?} else {
+            /*channelLocks(pose, buffers.getBuffer(RenderType.entityTranslucent(CHANNEL_LOCK)), layout, light);
+            *///?}
         }
         pose.popPose();
     }
 
     /** Liquids, gauges, lid stripes and code fields in model units; a null code (creative tank) leaves the fields dark. */
+    //? if >=26.1 {
     private static void contents(PoseStack.Pose last, VertexConsumer translucent, Layout layout, FluidStack[] chambers, int capacity,
                                  @Nullable TankCode code, boolean channelLocked, int light) {
+    //?} else {
+    /*private static void contents(PoseStack pose, MultiBufferSource buffers, Layout layout, FluidStack[] chambers, int capacity, TankCode code,
+                                 boolean channelLocked, int light) {
+        VertexConsumer translucent = buffers.getBuffer(Sheets.translucentCullBlockSheet());
+    *///?}
         TextureAtlasSprite solid = sprite(SOLID);
         for (int i = 0; i < layout.chambers().length; i++) {
             FluidStack stack = i < chambers.length ? chambers[i] : FluidStack.EMPTY;
             Chamber chamber = layout.chambers()[i];
             if (stack.isEmpty()) {
                 if (i < layout.stripes().length) {
+                    //? if >=26.1 {
                     stripe(last, translucent, layout.stripes()[i], solid, EMPTY_STRIPE, light);
+                    //?} else {
+                    /*stripe(pose, translucent, layout.stripes()[i], solid, EMPTY_STRIPE, light);
+                    *///?}
                 }
                 continue;
             }
             float fraction = Mth.clamp(stack.getAmount() / (float) capacity, 0, 1);
+            //? if >=26.1 {
             FluidModel fluid = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(stack.getFluid().defaultFluidState());
             TextureAtlasSprite still = fluid.stillMaterial().sprite();
             int color = fluid.fluidTintSource() != null ? fluid.fluidTintSource().colorAsStack(stack) : 0xFFFFFFFF;
+            //?} else {
+            /*IClientFluidTypeExtensions fluid = IClientFluidTypeExtensions.of(stack.getFluid());
+            TextureAtlasSprite still = sprite(fluid.getStillTexture(stack));
+            int color = fluid.getTintColor(stack);
+            *///?}
             int fluidLight = fluidLight(stack, light);
             float[] v = chamber.volume();
             float top = v[1] + fraction * (v[4] - v[1]);
             if (top > v[1]) {
+                //? if >=26.1 {
                 box(last, translucent, v[0], v[1], v[2], v[3], top, v[5], still, color, fluidLight);
+                //?} else {
+                /*box(pose, translucent, v[0], v[1], v[2], v[3], top, v[5], still, color, fluidLight);
+                *///?}
             }
             // Gauge and lid stripe: the liquid's own color as a flat fill (average of its texture times its tint).
             int flat = FluidColors.color(still, color);
             float[] g = chamber.gauge();
             float gaugeTop = g[1] + fraction * (g[3] - g[1]);
             if (gaugeTop > g[1]) {
+                //? if >=26.1 {
                 face(last, translucent, Direction.NORTH, g[0], g[1], g[4], g[2], gaugeTop, g[4], solid, flat, fluidLight);
+                //?} else {
+                /*face(pose, translucent, Direction.NORTH, g[0], g[1], g[4], g[2], gaugeTop, g[4], solid, flat, fluidLight);
+                *///?}
             }
             if (i < layout.stripes().length) {
+                //? if >=26.1 {
                 stripe(last, translucent, layout.stripes()[i], solid, flat, fluidLight);
+                //?} else {
+                /*stripe(pose, translucent, layout.stripes()[i], solid, flat, fluidLight);
+                *///?}
             }
         }
 
@@ -219,18 +311,34 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
             float px = (first[2] - first[0]) / 6;
             float py = (first[3] - first[1]) / 16;
             float z = first[4] - 0.012F;
+            //? if >=26.1 {
             face(last, translucent, Direction.NORTH, end[0], first[1] - 4 * py, z, first[2], first[3] + 4 * py, z,
+            //?} else {
+            /*face(pose, translucent, Direction.NORTH, end[0], first[1] - 4 * py, z, first[2], first[3] + 4 * py, z,
+            *///?}
                     solid, LOCKED_PANEL, light);
+            //? if >=26.1 {
             face(last, translucent, Direction.NORTH, end[0] - px, first[1] - 3 * py, z, first[2] + px, first[3] + 3 * py, z,
+            //?} else {
+            /*face(pose, translucent, Direction.NORTH, end[0] - px, first[1] - 3 * py, z, first[2] + px, first[3] + 3 * py, z,
+            *///?}
                     solid, LOCKED_PANEL, light);
             float[] lidFirst = layout.lidCode()[0];
             float[] lidEnd = layout.lidCode()[TankCode.POSITIONS - 1];
             px = (lidFirst[2] - lidFirst[0]) / 6;
             float pz = (lidFirst[3] - lidFirst[1]) / 16;
             float y = LID_CODE_Y + 0.02F;
+            //? if >=26.1 {
             face(last, translucent, Direction.UP, lidEnd[0], y, lidFirst[1] - 4 * pz, lidFirst[2], y, lidFirst[3] + 4 * pz,
+            //?} else {
+            /*face(pose, translucent, Direction.UP, lidEnd[0], y, lidFirst[1] - 4 * pz, lidFirst[2], y, lidFirst[3] + 4 * pz,
+            *///?}
                     solid, LOCKED_PANEL, light);
+            //? if >=26.1 {
             face(last, translucent, Direction.UP, lidEnd[0] - px, y, lidFirst[1] - 3 * pz, lidFirst[2] + px, y, lidFirst[3] + 3 * pz,
+            //?} else {
+            /*face(pose, translucent, Direction.UP, lidEnd[0] - px, y, lidFirst[1] - 3 * pz, lidFirst[2] + px, y, lidFirst[3] + 3 * pz,
+            *///?}
                     solid, LOCKED_PANEL, light);
             return;
         }
@@ -240,21 +348,38 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         for (int p = 0; p < TankCode.POSITIONS; p++) {
             float[] f = layout.code()[p];
             int color = code == null ? NO_CODE : 0xFF000000 | code.get(p).getTextureDiffuseColor();
+            //? if >=26.1 {
             face(last, translucent, Direction.NORTH, f[0], f[1], f[4], f[2], f[3], f[4], solid, color, light);
+            //?} else {
+            /*face(pose, translucent, Direction.NORTH, f[0], f[1], f[4], f[2], f[3], f[4], solid, color, light);
+            *///?}
             float[] l = layout.lidCode()[p];
+            //? if >=26.1 {
             face(last, translucent, Direction.UP, l[0], LID_CODE_Y, l[1], l[2], LID_CODE_Y, l[3], solid, color, light);
+            //?} else {
+            /*face(pose, translucent, Direction.UP, l[0], LID_CODE_Y, l[1], l[2], LID_CODE_Y, l[3], solid, color, light);
+            *///?}
         }
     }
 
     /** Reuse the GUI's pixel artwork directly, without adding a small sprite to the mipmapped block atlas. */
+    //? if >=26.1 {
     private static void channelLocks(PoseStack.Pose pose, VertexConsumer consumer, Layout layout, int light) {
+    //?} else {
+    /*private static void channelLocks(PoseStack pose, VertexConsumer consumer, Layout layout, int light) {
+        PoseStack.Pose last = pose.last();
+    *///?}
         float[] first = layout.code()[0];
         float[] end = layout.code()[TankCode.POSITIONS - 1];
         float x = (end[0] + first[2]) / 2;
         float y = (first[1] + first[3]) / 2;
         float half = (first[3] - first[1]) * 0.625F;
         float z = first[4] - 0.014F;
+        //? if >=26.1 {
         lockQuad(pose, consumer, new float[][] {
+        //?} else {
+        /*lockQuad(last, consumer, new float[][] {
+        *///?}
                 {x + half, y + half, z}, {x + half, y - half, z},
                 {x - half, y - half, z}, {x - half, y + half, z}}, Direction.NORTH, light);
 
@@ -264,7 +389,11 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         z = (first[1] + first[3]) / 2;
         half = (first[3] - first[1]) * 0.625F;
         y = LID_CODE_Y + 0.022F;
+        //? if >=26.1 {
         lockQuad(pose, consumer, new float[][] {
+        //?} else {
+        /*lockQuad(last, consumer, new float[][] {
+        *///?}
                 {x + half, y, z + half}, {x + half, y, z - half},
                 {x - half, y, z - half}, {x - half, y, z + half}}, Direction.UP, light);
     }
@@ -279,21 +408,38 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
         }
     }
 
+    //? if >=26.1 {
     private static void stripe(PoseStack.Pose pose, VertexConsumer consumer, float[] s, TextureAtlasSprite sprite, int color, int light) {
+    //?} else {
+    /*private static void stripe(PoseStack pose, VertexConsumer consumer, float[] s, TextureAtlasSprite sprite, int color, int light) {
+    *///?}
         face(pose, consumer, Direction.UP, s[0], STRIPE_Y, s[1], s[2], STRIPE_Y, s[3], sprite, color, light);
     }
 
+    //? if >=26.1 {
     private static TextureAtlasSprite sprite(Identifier id) {
         return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).getSprite(id);
+    //?} else {
+    /*private static TextureAtlasSprite sprite(ResourceLocation id) {
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(id);
+    *///?}
     }
 
     /** Liquids that glow (lava) light themselves. */
     private static int fluidLight(FluidStack stack, int light) {
         int own = stack.getFluid().getFluidType().getLightLevel(stack);
+        //? if >=26.1 {
         return own <= 0 ? light : LightCoordsUtil.pack(Math.max(LightCoordsUtil.block(light), own), LightCoordsUtil.sky(light));
+        //?} else {
+        /*return own <= 0 ? light : LightTexture.pack(Math.max(LightTexture.block(light), own), LightTexture.sky(light));
+        *///?}
     }
 
+    //? if >=26.1 {
     private static void box(PoseStack.Pose pose, VertexConsumer consumer, float x0, float y0, float z0, float x1, float y1, float z1,
+    //?} else {
+    /*private static void box(PoseStack pose, VertexConsumer consumer, float x0, float y0, float z0, float x1, float y1, float z1,
+    *///?}
                             TextureAtlasSprite sprite, int color, int light) {
         for (Direction direction : Direction.values()) {
             face(pose, consumer, direction, x0, y0, z0, x1, y1, z1, sprite, color, light);
@@ -304,7 +450,11 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
      * One face of the box (model units) facing {@code direction}, counter-clockwise seen from outside. The sprite is
      * laid at one model unit per texel, so it repeats its own pixels instead of stretching them.
      */
+    //? if >=26.1 {
     private static void face(PoseStack.Pose last, VertexConsumer consumer, Direction direction, float x0, float y0, float z0, float x1, float y1,
+    //?} else {
+    /*private static void face(PoseStack pose, VertexConsumer consumer, Direction direction, float x0, float y0, float z0, float x1, float y1,
+    *///?}
                              float z1, TextureAtlasSprite sprite, int color, int light) {
         float[][] corners = switch (direction) {
             case DOWN -> new float[][] {{x0, y0, z1}, {x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}};
@@ -314,6 +464,9 @@ public class TankRenderer implements BlockEntityRenderer<DimensionalTankBlockEnt
             case WEST -> new float[][] {{x0, y1, z0}, {x0, y0, z0}, {x0, y0, z1}, {x0, y1, z1}};
             case EAST -> new float[][] {{x1, y1, z1}, {x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}};
         };
+        //? if <26.1 {
+        /*PoseStack.Pose last = pose.last();
+        *///?}
         for (float[] c : corners) {
             float u;
             float v;

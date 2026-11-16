@@ -4,11 +4,23 @@ import dimensionalfluxminer.compat.RecipeViewers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+//? if >=26.1 {
 import net.minecraft.util.Util;
+//?} else {
+/*import net.minecraft.Util;
+*///?}
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.network.chat.Component;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -43,7 +55,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             screen.fittedText(g, text, x, y + 2, width, HEADING);
             g.fill(x, y + 12, x + width, y + 13, RULE);
         }
@@ -57,8 +73,13 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
             g.item(icon.get(), x, y + 1);
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+            g.renderItem(icon.get(), x, y + 1);
+        *///?}
             screen.fittedText(g, title, x + 20, y + 5, width - 20, HEADING);
             g.fill(x, y + 20, x + width, y + 21, RULE);
             g.fill(x, y + 22, x + width, y + 23, RULE);
@@ -92,7 +113,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             lines(screen, width);
             lines.render(screen, g, x, y, width, mouseX, mouseY);
         }
@@ -120,7 +145,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             if (spans == null) {
                 spans = new ArrayList<>(lines.size());
                 for (FormattedCharSequence line : lines) {
@@ -135,7 +164,11 @@ final class GuideElements {
                         screen.hoverReference(span.id());
                     }
                 }
+                //? if >=26.1 {
                 g.text(screen.font(), lines.get(i), x, ly, BODY, false);
+                //?} else {
+                /*g.drawString(screen.font(), lines.get(i), x, ly, BODY, false);
+                *///?}
                 for (GuideReferences.Span span : spans.get(i)) {
                     for (int px = span.start(); px < span.end() - 1; px += 2) {
                         g.fill(x + px, ly + 9, x + px + 1, ly + 10, REFERENCE);
@@ -170,11 +203,19 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             int h = height(screen, width);
             g.fill(x, y, x + width, y + h, 0x1E000000 | (accent & 0x00FFFFFF));
             g.fill(x, y, x + 2, y + h, accent);
+            //? if >=26.1 {
             g.text(screen.font(), title, x + 6, y + 4, accent, false);
+            //?} else {
+            /*g.drawString(screen.font(), title, x + 6, y + 4, accent, false);
+            *///?}
             if (url != null) {
                 int lineWidth = Math.min(width - 12, screen.font().width(title));
                 g.fill(x + 6, y + 13, x + 6 + lineWidth, y + 14, accent);
@@ -192,7 +233,11 @@ final class GuideElements {
                 return false;
             }
             screen.playClick();
+            //? if <26.3 {
             net.minecraft.client.gui.screens.ConfirmLinkScreen.confirmLinkNow(screen, url);
+            //?} else {
+            /*net.minecraft.client.gui.screens.ConfirmLinkScreen.confirmLinkNow(screen, java.net.URI.create(url));
+            *///?}
             return true;
         }
     }
@@ -213,7 +258,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             ItemStack item = stack.get();
             screen.itemSlot(g, item, x, y, mouseX, mouseY);
             screen.fittedText(g, item.getHoverName(), x + 22, y + 1, width - 22, HEADING);
@@ -242,7 +291,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             List<ItemStack> list = items.get();
             int per = perRow(width);
             for (int i = 0; i < list.size() + fluids.size(); i++) {
@@ -258,40 +311,68 @@ final class GuideElements {
     }
 
     /** A crafting table recipe (shaped or shapeless) read from the recipe manager, tag ingredients cycling. */
+    //? if >=26.1 {
     record Crafting(Identifier id) implements GuideElement {
+    //?} else {
+    /*record Crafting(ResourceLocation id) implements GuideElement {
+    *///?}
         @Override
         public int height(GuideScreen screen, int width) {
             return 67;
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             Level level = Minecraft.getInstance().level;
+            //? if >=26.1 {
             RecipeHolder<?> holder = level == null ? null : dimensionalfluxminer.recipe.Recipes.byKey(level, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, id)).orElse(null);
+            //?} else {
+            /*RecipeHolder<?> holder = level == null ? null : level.getRecipeManager().byKey(id).orElse(null);
+            *///?}
             if (holder == null) {
                 screen.fittedText(g, Component.translatable("guide.dimensionalfluxminer.recipe_missing"), x, y + 4, width, MUTED);
                 return;
             }
             Recipe<?> recipe = holder.value();
+            //? if >=26.1 {
             ItemStack result = dimensionalfluxminer.recipe.Recipes.result(level.registryAccess(), recipe);
+            //?} else {
+            /*ItemStack result = recipe.getResultItem(level.registryAccess());
+            *///?}
             Component name = result.getCount() > 1
                     ? Component.literal(result.getCount() + "× ").append(result.getHoverName()) : result.getHoverName();
             screen.fittedText(g, name, x, y + 1, width, HEADING);
             int gridY = y + 11;
+            //? if >=26.1 {
             List<java.util.Optional<Ingredient>> ingredients = dimensionalfluxminer.recipe.Recipes.grid(recipe);
+            //?} else {
+            /*List<Ingredient> ingredients = recipe.getIngredients();
+            *///?}
             int recipeW = recipe instanceof ShapedRecipe shaped ? shaped.getWidth() : 3;
             for (int row = 0; row < 3; row++) {
                 for (int col = 0; col < 3; col++) {
                     int index = row * recipeW + col;
                     ItemStack shown = ItemStack.EMPTY;
                     if (col < recipeW && index < ingredients.size()) {
+                        //? if >=26.1 {
                         shown = ingredients.get(index).map(Crafting::cycle).orElse(ItemStack.EMPTY);
+                        //?} else {
+                        /*shown = cycle(ingredients.get(index));
+                        *///?}
                     }
                     screen.itemSlot(g, shown, x + col * 18, gridY + row * 18, mouseX, mouseY);
                 }
             }
             int arrowX = x + 3 * 18 + 6;
+            //? if >=26.1 {
             g.text(screen.font(), "→", arrowX + 2, gridY + 23, HEADING, false);
+            //?} else {
+            /*g.drawString(screen.font(), "→", arrowX + 2, gridY + 23, HEADING, false);
+            *///?}
             screen.itemSlot(g, result, arrowX + 16, gridY + 18, mouseX, mouseY);
             Component kind = Component.translatable(recipe instanceof ShapedRecipe
                     ? "guide.dimensionalfluxminer.recipe_shaped" : "guide.dimensionalfluxminer.recipe_shapeless");
@@ -302,7 +383,11 @@ final class GuideElements {
         }
 
         private static ItemStack cycle(Ingredient ingredient) {
+            //? if >=26.1 {
             ItemStack[] options = dimensionalfluxminer.recipe.Recipes.stacks(ingredient);
+            //?} else {
+            /*ItemStack[] options = ingredient.getItems();
+            *///?}
             if (options.length == 0) {
                 return ItemStack.EMPTY;
             }
@@ -313,9 +398,15 @@ final class GuideElements {
     /** Opens machine recipe categories in EMI / JEI; hidden when no viewer is installed. */
     static final class ViewerButton implements GuideElement {
         private final Component label;
+        //? if >=26.1 {
         private final Identifier[] categories;
 
         ViewerButton(Component label, Identifier... categories) {
+        //?} else {
+        /*private final ResourceLocation[] categories;
+
+        ViewerButton(Component label, ResourceLocation... categories) {
+        *///?}
             this.label = label;
             this.categories = categories;
         }
@@ -326,7 +417,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             if (RecipeViewers.available()) {
                 screen.textButton(g, x, y, buttonWidth(screen, width), 15, label, mouseX, mouseY);
             }
@@ -382,7 +477,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
             int[] starts = new int[columns.length + 1];
             float total = 0;
             for (float c : columns) {
@@ -422,7 +521,11 @@ final class GuideElements {
         }
 
         @Override
+        //? if >=26.1 {
         public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
         }
     }
 }

@@ -1,15 +1,24 @@
 package dimensionalfluxminer.tank;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.FluidTanks;
+//?}
 import java.util.function.Supplier;
 import net.neoforged.neoforge.fluids.FluidStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+*///?}
 
 /**
  * One chamber of a tank's channel as a fluid tank. It holds a single liquid (components included) up to
  * {@link TankKind#CHAMBER_CAPACITY}; a different liquid is refused while the chamber is not empty. Simulated calls
  * never change the channel. The channel is looked up on every call, so a code change takes effect at once.
  */
+//? if >=26.1 {
 public final class ChamberFluidHandler implements FluidTanks {
+//?} else {
+/*public final class ChamberFluidHandler implements IFluidHandler {
+*///?}
     private final Supplier<TankChannels.Channel> channel;
     private final int chamber;
     private final java.util.function.BooleanSupplier fills;

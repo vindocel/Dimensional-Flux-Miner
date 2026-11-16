@@ -1,0 +1,15 @@
+{
+  "type": "dimensionalfluxminer:tank_container",
+  "ingredient": {
+    "item": "minecraft:lime_concrete_powder"
+  },
+  "result": {
+    "id": "minecraft:lime_concrete",
+    "count": 1
+  },
+  "fluid": {
+    "id": "minecraft:water",
+    "amount": 1000
+  },
+  "filling": true
+}

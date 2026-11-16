@@ -162,7 +162,11 @@ public final class GuiThemes {
         } else {
             world = "unknown";
         }
+        //? if >=26.1 {
         String dimension = mc.level != null ? mc.level.dimension().identifier().toString() : "unknown";
+        //?} else {
+        /*String dimension = mc.level != null ? mc.level.dimension().location().toString() : "unknown";
+        *///?}
         return world + "|" + dimension + "|" + pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 

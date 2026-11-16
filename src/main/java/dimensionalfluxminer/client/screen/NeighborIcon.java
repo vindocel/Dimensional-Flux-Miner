@@ -25,7 +25,13 @@ final class NeighborIcon {
         if (!part.isEmpty()) {
             return part;
         }
+        //? if >=26.1 {
         ItemStack stack = state.getCloneItemStack(pos, level, false, Minecraft.getInstance().player);
+        //?} else {
+        /*net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(
+                pos.getCenter().relative(towardMachine, 0.5), towardMachine, pos, false);
+        ItemStack stack = state.getCloneItemStack(hit, level, pos, Minecraft.getInstance().player);
+        *///?}
         return stack.isEmpty() ? new ItemStack(state.getBlock()) : stack;
     }
 }

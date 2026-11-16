@@ -13,7 +13,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -21,7 +25,11 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+//? if >=26.1 {
 import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
+//?} else {
+/*import net.neoforged.neoforge.event.AddReloadListenerEvent;
+*///?}
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /** Per-dimension Resource Profile cache, rebuilt on demand after every datapack reload. */
@@ -98,8 +106,13 @@ public final class ResourceProfiles {
         Map<Item, Item> crusherOverrides = new HashMap<>();
         for (ProfileOverride o : combined) {
             o.crusherOutput().ifPresent(out -> {
+                //? if >=26.1 {
                 Item ore = BuiltInRegistries.ITEM.getValue(o.resource());
                 Item product = BuiltInRegistries.ITEM.getValue(out);
+                //?} else {
+                /*Item ore = BuiltInRegistries.ITEM.get(o.resource());
+                Item product = BuiltInRegistries.ITEM.get(out);
+                *///?}
                 if (ore != Items.AIR && product != Items.AIR) {
                     crusherOverrides.put(ore, product);
                 }
@@ -109,21 +122,38 @@ public final class ResourceProfiles {
         invalidate();
     }
 
+    //? if >=26.1 {
     public static void onAddReloadListeners(AddServerReloadListenersEvent event) {
         event.addListener(DimensionalFluxMiner.id("dimensional_miner_resources"), new Loader());
+    //?} else {
+    /*public static void onAddReloadListeners(AddReloadListenerEvent event) {
+        event.addListener(new Loader());
+    *///?}
     }
 
     public static void onServerStopped(ServerStoppedEvent event) {
         invalidate();
     }
 
+    //? if >=26.1 {
     private static final class Loader extends SimpleJsonResourceReloadListener<JsonElement> {
+    //?} else {
+    /*private static final class Loader extends SimpleJsonResourceReloadListener {
+    *///?}
         Loader() {
+            //? if >=26.1 {
             super(net.minecraft.util.ExtraCodecs.JSON, net.minecraft.resources.FileToIdConverter.json("dimensional_miner_resources"));
+            //?} else {
+            /*super(new com.google.gson.Gson(), "dimensional_miner_resources");
+            *///?}
         }
 
         @Override
+        //? if >=26.1 {
         protected void apply(Map<Identifier, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
+        //?} else {
+        /*protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
+        *///?}
             List<ProfileOverride> parsed = new ArrayList<>();
             List<ProfileDimensionRule> parsedRules = new ArrayList<>();
             var conditionalOps = new net.neoforged.neoforge.common.conditions.ConditionalOps<>(

@@ -1,24 +1,38 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.Transfer;
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+*///?}
 
 /** Active Auto-Input/Auto-Eject against the directly adjacent inventory only. */
 public final class NeighborTransfer {
     private NeighborTransfer() {
     }
 
+    //? if >=26.1 {
     public static ItemSlots neighbor(Level level, BlockPos pos, Direction side) {
+    //?} else {
+    /*public static IItemHandler neighbor(Level level, BlockPos pos, Direction side) {
+    *///?}
         BlockPos target = pos.relative(side);
         if (!level.isLoaded(target)) {
             return null;
         }
+        //? if >=26.1 {
         return Transfer.items(level, target, side.getOpposite());
+        //?} else {
+        /*return level.getCapability(Capabilities.ItemHandler.BLOCK, target, side.getOpposite());
+        *///?}
     }
 
     /**
@@ -31,7 +45,11 @@ public final class NeighborTransfer {
      * @return items moved
      */
     public static long pull(Level level, BlockPos pos, Direction side, QueueItemHandler.Inserter inserter, long budget) {
+        //? if >=26.1 {
         ItemSlots source = neighbor(level, pos, side);
+        //?} else {
+        /*IItemHandler source = neighbor(level, pos, side);
+        *///?}
         if (source == null || budget <= 0) {
             return 0;
         }
@@ -46,7 +64,11 @@ public final class NeighborTransfer {
         return moved;
     }
 
+    //? if >=26.1 {
     private static long pullPass(ItemSlots source, QueueItemHandler.Inserter inserter, long budget) {
+    //?} else {
+    /*private static long pullPass(IItemHandler source, QueueItemHandler.Inserter inserter, long budget) {
+    *///?}
         long moved = 0;
         for (int slot = 0; slot < source.getSlots() && moved < budget; slot++) {
             ItemStack available = source.extractItem(slot, (int) Math.min(Integer.MAX_VALUE, budget - moved), true);
@@ -67,7 +89,11 @@ public final class NeighborTransfer {
             if (!rejected.isEmpty()) {
                 ItemStack back = source.insertItem(slot, rejected, false);
                 if (!back.isEmpty()) {
+                    //? if >=26.1 {
                     ItemSlots.insertStacked(source, back, false);
+                    //?} else {
+                    /*ItemHandlerHelper.insertItemStacked(source, back, false);
+                    *///?}
                 }
             }
         }
@@ -80,7 +106,11 @@ public final class NeighborTransfer {
      * @return items moved
      */
     public static long push(Level level, BlockPos pos, Direction side, ItemQueue queue, long budget) {
+        //? if >=26.1 {
         ItemSlots target = neighbor(level, pos, side);
+        //?} else {
+        /*IItemHandler target = neighbor(level, pos, side);
+        *///?}
         if (target == null || budget <= 0) {
             return 0;
         }
@@ -95,12 +125,20 @@ public final class NeighborTransfer {
                     break;
                 }
                 ItemStack offer = prototype.copyWithCount(attempt);
+                //? if >=26.1 {
                 ItemStack left = ItemSlots.insertStacked(target, offer, true);
+                //?} else {
+                /*ItemStack left = ItemHandlerHelper.insertItemStacked(target, offer, true);
+                *///?}
                 int accepted = attempt - left.getCount();
                 if (accepted <= 0) {
                     break;
                 }
+                //? if >=26.1 {
                 ItemStack really = ItemSlots.insertStacked(target, prototype.copyWithCount(accepted), false);
+                //?} else {
+                /*ItemStack really = ItemHandlerHelper.insertItemStacked(target, prototype.copyWithCount(accepted), false);
+                *///?}
                 int inserted = accepted - really.getCount();
                 queue.remove(kind, inserted, false);
                 moved += inserted;

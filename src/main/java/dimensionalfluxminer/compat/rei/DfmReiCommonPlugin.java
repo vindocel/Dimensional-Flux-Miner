@@ -1,3 +1,4 @@
+//? if =26.1.2 {
 package dimensionalfluxminer.compat.rei;
 
 import dimensionalfluxminer.registry.DfmItems;
@@ -14,3 +15,5 @@ public final class DfmReiCommonPlugin implements REICommonPlugin {
         registry.registerComponents(DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
     }
 }
+
+//?}

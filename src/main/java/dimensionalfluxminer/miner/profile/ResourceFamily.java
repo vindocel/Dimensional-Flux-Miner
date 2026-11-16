@@ -1,7 +1,11 @@
 package dimensionalfluxminer.miner.profile;
 
 import java.util.List;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 
@@ -9,7 +13,11 @@ import net.minecraft.world.item.Item;
  * One resource family of a dimension (for example Iron = Iron Ore + Deepslate Iron Ore), with its integer
  * weight in the profile and the canonical Crusher product of the family.
  */
+//? if >=26.1 {
 public record ResourceFamily(Identifier key, List<Variant> variants, int weight, Item crusherOutput) {
+//?} else {
+/*public record ResourceFamily(ResourceLocation key, List<Variant> variants, int weight, Item crusherOutput) {
+*///?}
     public record Variant(Item item, double weight) {
     }
 

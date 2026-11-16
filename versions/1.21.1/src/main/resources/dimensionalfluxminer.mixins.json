@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dimensionalfluxminer.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["MobSunlightMixin", "EntityCorruptedWaterMixin"],
+  "client": ["client.ParticleEngineCorruptedWaterMixin", "client.GuiGraphicsThemeMixin",
+    "client.ScreenPaletteMixin", "client.DarkModeTextureMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

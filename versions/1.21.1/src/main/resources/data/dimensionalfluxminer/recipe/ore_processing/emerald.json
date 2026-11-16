@@ -1,0 +1,11 @@
+{
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": {
+    "tag": "c:ores/emerald"
+  },
+  "result": {
+    "id": "minecraft:emerald"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

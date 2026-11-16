@@ -3,35 +3,60 @@ package dimensionalfluxminer.recipe;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dimensionalfluxminer.registry.DfmRecipes;
+//? if <26.1 {
+/*import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
+*///?}
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
+//? if >=26.1 {
 import net.minecraft.world.item.ItemStackTemplate;
+//?}
 import net.minecraft.world.item.crafting.Ingredient;
+//? if >=26.1 {
 import net.minecraft.world.item.crafting.PlacementInfo;
+//?}
 import net.minecraft.world.item.crafting.Recipe;
+//? if >=26.1 {
 import net.minecraft.world.item.crafting.RecipeBookCategories;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
+//?}
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 
 /** {@code dimensionalfluxminer:crushing}: one input item becomes a fixed output stack in the Crusher. */
+//? if >=26.1 {
 public record CrushingRecipe(Ingredient ingredient, ItemStackTemplate template) implements Recipe<SingleRecipeInput> {
+//?} else {
+/*public record CrushingRecipe(Ingredient ingredient, ItemStack result) implements Recipe<SingleRecipeInput> {
+*///?}
     public static final MapCodec<CrushingRecipe> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+            //? if >=26.1 {
             Ingredient.CODEC.fieldOf("ingredient").forGetter(CrushingRecipe::ingredient),
             ItemStackTemplate.CODEC.fieldOf("result").forGetter(CrushingRecipe::template)
+            //?} else {
+            /*Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(CrushingRecipe::ingredient),
+            ItemStack.STRICT_CODEC.fieldOf("result").forGetter(CrushingRecipe::result)
+            *///?}
     ).apply(i, CrushingRecipe::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, CrushingRecipe> STREAM_CODEC = StreamCodec.composite(
             Ingredient.CONTENTS_STREAM_CODEC, CrushingRecipe::ingredient,
+            //? if >=26.1 {
             ItemStackTemplate.STREAM_CODEC, CrushingRecipe::template,
+            //?} else {
+            /*ItemStack.STREAM_CODEC, CrushingRecipe::result,
+            *///?}
             CrushingRecipe::new);
+    //? if >=26.1 {
 
     /** A new copy of the output stack. */
     public ItemStack result() {
         return template.create();
     }
+    //?}
 
     @Override
     public boolean matches(SingleRecipeInput input, Level level) {
@@ -39,8 +64,28 @@ public record CrushingRecipe(Ingredient ingredient, ItemStackTemplate template) 
     }
 
     @Override
+    //? if >=26.1 {
     public ItemStack assemble(SingleRecipeInput input) {
         return template.create();
+    //?} else {
+    /*public ItemStack assemble(SingleRecipeInput input, HolderLookup.Provider registries) {
+        return result.copy();
+    }
+
+    @Override
+    public boolean canCraftInDimensions(int width, int height) {
+        return true;
+    }
+
+    @Override
+    public ItemStack getResultItem(HolderLookup.Provider registries) {
+        return result;
+    }
+
+    @Override
+    public NonNullList<Ingredient> getIngredients() {
+        return NonNullList.of(Ingredient.EMPTY, ingredient);
+    *///?}
     }
 
     @Override
@@ -49,6 +94,7 @@ public record CrushingRecipe(Ingredient ingredient, ItemStackTemplate template) 
     }
 
     @Override
+    //? if >=26.1 {
     public boolean showNotification() {
         return false;
     }
@@ -70,11 +116,18 @@ public record CrushingRecipe(Ingredient ingredient, ItemStackTemplate template) 
 
     @Override
     public RecipeSerializer<CrushingRecipe> getSerializer() {
+    //?} else {
+    /*public RecipeSerializer<?> getSerializer() {
+    *///?}
         return DfmRecipes.CRUSHING_SERIALIZER.get();
     }
 
     @Override
+    //? if >=26.1 {
     public RecipeType<CrushingRecipe> getType() {
+    //?} else {
+    /*public RecipeType<?> getType() {
+    *///?}
         return DfmRecipes.CRUSHING.get();
     }
 }

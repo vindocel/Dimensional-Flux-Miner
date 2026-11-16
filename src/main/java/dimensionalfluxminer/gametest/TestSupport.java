@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.gametest;
 
 import net.minecraft.core.BlockPos;
@@ -46,3 +47,5 @@ final class TestSupport {
         return output.buildResult();
     }
 }
+
+//?}

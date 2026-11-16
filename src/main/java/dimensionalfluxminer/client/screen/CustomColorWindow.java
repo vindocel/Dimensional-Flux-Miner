@@ -4,7 +4,11 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.network.chat.Component;
 
 /** A local color draft, committed only by Apply. */
@@ -64,7 +68,11 @@ final class CustomColorWindow extends DfmScreen.Window {
     }
 
     @Override
+    //? if >=26.1 {
     protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
+    //?} else {
+    /*protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    *///?}
         IconColor before = GuiTheme.icons();
         int beforeRgb = GuiTheme.customRgb();
         GuiTheme.setIcons(IconColor.CUSTOM);
@@ -163,11 +171,23 @@ final class CustomColorWindow extends DfmScreen.Window {
             return false;
         }
         if (keyCode == 259) {
+            //? if >=26.1 {
             editHex(replaceText || Minecraft.getInstance().hasControlDown() ? "" : hex.substring(0, Math.max(0, hex.length() - 1)));
+            //?} else {
+            /*editHex(replaceText || net.minecraft.client.gui.screens.Screen.hasControlDown() ? "" : hex.substring(0, Math.max(0, hex.length() - 1)));
+            *///?}
             replaceText = false;
+        //? if >=26.1 {
         } else if (keyCode == 65 && Minecraft.getInstance().hasControlDown()) {
+        //?} else {
+        /*} else if (keyCode == 65 && net.minecraft.client.gui.screens.Screen.hasControlDown()) {
+        *///?}
             replaceText = true;
+        //? if >=26.1 {
         } else if (keyCode == 86 && Minecraft.getInstance().hasControlDown()) {
+        //?} else {
+        /*} else if (keyCode == 86 && net.minecraft.client.gui.screens.Screen.hasControlDown()) {
+        *///?}
             String pasted = Minecraft.getInstance().keyboardHandler.getClipboard().replace("#", "").trim();
             if (pasted.matches("[0-9a-fA-F]{6}")) {
                 editHex(pasted);

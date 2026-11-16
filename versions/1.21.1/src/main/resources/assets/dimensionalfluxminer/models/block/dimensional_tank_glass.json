@@ -1,0 +1,106 @@
+{
+  "ambientocclusion": false,
+  "render_type": "minecraft:translucent",
+  "textures": {
+    "t0": "dimensionalfluxminer:block/dimensional_tank/structural_glass",
+    "particle": "dimensionalfluxminer:block/dimensional_tank/armor_plate"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        3.25,
+        1.2
+      ],
+      "to": [
+        14,
+        13.5,
+        1.2625
+      ],
+      "shade": true,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t0"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        3.25,
+        14.7375
+      ],
+      "to": [
+        14,
+        13.5,
+        14.8
+      ],
+      "shade": true,
+      "faces": {
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t0"
+        }
+      }
+    },
+    {
+      "from": [
+        1.2,
+        3.25,
+        2
+      ],
+      "to": [
+        1.2625,
+        13.5,
+        14
+      ],
+      "shade": true,
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t0"
+        }
+      }
+    },
+    {
+      "from": [
+        14.7375,
+        3.25,
+        2
+      ],
+      "to": [
+        14.8,
+        13.5,
+        14
+      ],
+      "shade": true,
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t0"
+        }
+      }
+    }
+  ]
+}

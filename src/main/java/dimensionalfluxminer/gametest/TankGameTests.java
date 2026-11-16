@@ -1,8 +1,14 @@
 package dimensionalfluxminer.gametest;
 
+//? if =26.1.2 {
 import net.minecraft.world.entity.EntityType;
 import dimensionalfluxminer.machine.transfer.FluidTanks;
 import dimensionalfluxminer.machine.transfer.Transfer;
+//?} else if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;
+import dimensionalfluxminer.machine.transfer.FluidTanks;
+import dimensionalfluxminer.machine.transfer.Transfer;
+*///?}
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
@@ -15,6 +21,9 @@ import dimensionalfluxminer.tank.TankCode;
 import dimensionalfluxminer.tank.TankKind;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.DyeColor;
@@ -23,11 +32,20 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+*///?}
 
 /**
  * Dimensional Tanks. Channels belong to the whole save and the tests run together, so every test uses a code of its
  * own (only the first one reads the default white code).
  */
+//? if <26.1 {
+/*@GameTestHolder(DimensionalFluxMiner.MOD_ID)
+@PrefixGameTestTemplate(false)
+*///?}
 public final class TankGameTests {
     private static final BlockPos FIRST = new BlockPos(1, 1, 1);
     private static final BlockPos SECOND = new BlockPos(3, 1, 3);
@@ -36,10 +54,67 @@ public final class TankGameTests {
     private TankGameTests() {
     }
 
+    //? if <26.1 {
+    /*private static DimensionalTankBlockEntity place(GameTestHelper helper, BlockPos pos, TankKind kind, Direction facing, TankCode code) {
+        Block block = kind == TankKind.DUAL ? DfmBlocks.DIMENSIONAL_DUAL_TANK.get() : DfmBlocks.DIMENSIONAL_TANK.get();
+        helper.setBlock(pos, block.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, facing));
+        DimensionalTankBlockEntity be = helper.getBlockEntity(pos);
+        if (code != null) {
+            be.setCode(code);
+            // A test world kept from an earlier run may still hold liquid in this channel.
+            TankChannels.Channel channel = be.channel();
+            for (int i = 0; i < channel.chambers(); i++) {
+                channel.set(i, FluidStack.EMPTY);
+            }
+        }
+        return be;
+    }
+
+    private static DimensionalTankBlockEntity place(GameTestHelper helper, BlockPos pos, TankKind kind, TankCode code) {
+        return place(helper, pos, kind, Direction.NORTH, code);
+    }
+
+    private static IFluidHandler face(GameTestHelper helper, DimensionalTankBlockEntity be, RelativeFace face) {
+        return helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, be.getBlockPos(), face.toDirection(be.facing()));
+    }
+
+    private static FluidStack water(int amount) {
+        return new FluidStack(Fluids.WATER, amount);
+    }
+
+    private static FluidStack lava(int amount) {
+        return new FluidStack(Fluids.LAVA, amount);
+    }
+
+    private static TankCode code(DyeColor a, DyeColor b, DyeColor c) {
+        return new TankCode(a, b, c);
+    }
+
+    private static IFluidHandler itemFluids(net.minecraft.world.item.ItemStack stack) {
+        return stack.getCapability(Capabilities.FluidHandler.ITEM);
+    }
+
+    private static void load(DimensionalTankBlockEntity be, CompoundTag tag, GameTestHelper helper) {
+        be.loadWithComponents(tag, helper.getLevel().registryAccess());
+    }
+
+    private static net.neoforged.neoforge.items.IItemHandler items(GameTestHelper helper, BlockPos absolute, Direction side) {
+        return helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, absolute, side);
+    }
+
+    private static TankCode uniqueCode(DyeColor a, DyeColor b, DyeColor c) {
+        return new TankCode(a, b, c, java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+    }
+
+    *///?}
     @GameTest(template = "empty_small")
     public static void tankItemDisplayFollowsChannelWithoutOwningFluid(GameTestHelper helper) {
+        //? if >=26.1 {
         var code = new TankCode(DyeColor.LIME, DyeColor.RED, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        //?} else {
+        /*var code = uniqueCode(DyeColor.LIME, DyeColor.RED, DyeColor.BLUE);
+        *///?}
         var stack = new net.minecraft.world.item.ItemStack(DfmBlocks.DIMENSIONAL_TANK.get());
         stack.set(DfmDataComponents.TANK_CODE.get(), code);
         var channel = TankChannels.get(helper.getLevel().getServer()).channel(TankKind.SINGLE, code);
@@ -62,8 +137,12 @@ public final class TankGameTests {
 
     @GameTest(template = "empty_small")
     public static void tankItemDisplaySelectsLocalAndSharedChambers(GameTestHelper helper) {
+        //? if >=26.1 {
         var code = new TankCode(DyeColor.PURPLE, DyeColor.BLUE, DyeColor.LIME,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        //?} else {
+        /*var code = uniqueCode(DyeColor.PURPLE, DyeColor.BLUE, DyeColor.LIME);
+        *///?}
         var stack = new net.minecraft.world.item.ItemStack(DfmBlocks.DIMENSIONAL_DUAL_TANK.get());
         stack.set(DfmDataComponents.TANK_CODE.get(), code);
         stack.set(DfmDataComponents.TANK_LOCAL_A.get(), net.neoforged.neoforge.fluids.SimpleFluidContent.copyOf(lava(50000)));
@@ -118,39 +197,72 @@ public final class TankGameTests {
     }
 
     private static void localRoundTrip(GameTestHelper helper, TankKind kind) {
+        //? if >=26.1 {
         TankCode code = new TankCode(DyeColor.RED, DyeColor.BLUE, DyeColor.GREEN,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+        //?} else {
+        /*TankCode code = uniqueCode(DyeColor.RED, DyeColor.BLUE, DyeColor.GREEN);
+        *///?}
         var tank = place(helper, FIRST, kind, code);
         var peer = place(helper, SECOND, kind, null);
         peer.setCode(code);
         var retained = face(helper, tank, RelativeFace.RIGHT);
+        //? if >=26.1 {
         retained.fill(water(3000), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*retained.fill(water(3000), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         if (kind == TankKind.DUAL) {
+            //? if >=26.1 {
             tank.chamberHandler(1).fill(water(4000), FluidTanks.FluidAction.EXECUTE);
+            //?} else {
+            /*tank.chamberHandler(1).fill(water(4000), IFluidHandler.FluidAction.EXECUTE);
+            *///?}
         }
         helper.assertTrue(!tank.channelLocked() && tank.setChannelLocked(true), "old and new tanks default to shared storage");
         helper.assertTrue(tank.chamber(0).isEmpty() && peer.chamber(0).getAmount() == 3000, "disconnecting does not copy or drain shared fluid");
+        //? if >=26.1 {
         retained.fill(lava(2000), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*retained.fill(lava(2000), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(tank.chamber(0).is(Fluids.LAVA) && peer.chamber(0).is(Fluids.WATER), "retained handlers follow the active storage");
         if (kind == TankKind.DUAL) {
+            //? if >=26.1 {
             tank.chamberHandler(1).fill(lava(5000), FluidTanks.FluidAction.EXECUTE);
+            //?} else {
+            /*tank.chamberHandler(1).fill(lava(5000), IFluidHandler.FluidAction.EXECUTE);
+            *///?}
         }
         helper.assertTrue(!tank.handleButton(null, DimensionalTankBlockEntity.BUTTON_CODE_BASE + DyeColor.BLACK.getId())
                 && !tank.handleButton(null, DimensionalTankBlockEntity.BUTTON_PERSONAL), "server rejects channel changes while locked");
         tank.setCode(TankCode.DEFAULT);
         helper.assertTrue(tank.code().equals(code), "direct code changes are also rejected");
+        //? if >=26.1 {
         var exposed = Transfer.exposeFluids(retained, tank.journal());
         try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
             exposed.extract(0, net.neoforged.neoforge.transfer.fluid.FluidResource.of(tank.chamber(0)), 700, transaction);
         }
         helper.assertTrue(tank.chamber(0).getAmount() == 2000, "cancelled local fluid transfers roll back");
+        //?} else {
+        /*helper.assertTrue(retained.drain(700, IFluidHandler.FluidAction.SIMULATE).getAmount() == 700
+                && tank.chamber(0).getAmount() == 2000, "simulated local fluid transfers change nothing");
+        *///?}
         var saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        //? if >=26.1 {
         TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        //?} else {
+        /*load(tank, saved, helper);
+        *///?}
         helper.assertTrue(tank.channelLocked() && tank.chamber(0).getAmount() == 2000, "local mode and contents persist");
         tank.setChannelLocked(false);
         helper.assertTrue(tank.chamber(0).is(Fluids.WATER) && tank.chamber(0).getAmount() == 3000, "reconnecting restores the shared channel");
         saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        //? if >=26.1 {
         TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        //?} else {
+        /*load(tank, saved, helper);
+        *///?}
         helper.getLevel().destroyBlock(tank.getBlockPos(), true);
         var drops = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
                 new net.minecraft.world.phys.AABB(tank.getBlockPos()).inflate(1));
@@ -177,6 +289,7 @@ public final class TankGameTests {
         var stack = new net.minecraft.world.item.ItemStack(DfmBlocks.DIMENSIONAL_TANK.get());
         stack.set(DfmDataComponents.TANK_CHANNEL_LOCKED.get(), true);
         stack.set(DfmDataComponents.TANK_LOCAL_A.get(), net.neoforged.neoforge.fluids.SimpleFluidContent.copyOf(water(3000)));
+        //? if >=26.1 {
         var handler = net.neoforged.neoforge.transfer.access.ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM);
         var waterResource = net.neoforged.neoforge.transfer.fluid.FluidResource.of(water(1));
         try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
@@ -194,7 +307,17 @@ public final class TankGameTests {
             helper.assertTrue(handler.insert(0, waterResource, 200000, transaction) == 126000, "local item respects tank capacity");
             transaction.commit();
         }
+        //?} else {
+        /*var handler = itemFluids(stack);
+        helper.assertTrue(handler.drain(water(1000), IFluidHandler.FluidAction.SIMULATE).getAmount() == 1000, "local item can be drained");
+        helper.assertTrue(stack.get(DfmDataComponents.TANK_LOCAL_A.get()).copy().getAmount() == 3000, "a simulated item drain changes nothing");
+        handler.drain(water(1000), IFluidHandler.FluidAction.EXECUTE);
+        helper.assertTrue(stack.get(DfmDataComponents.TANK_LOCAL_A.get()).copy().getAmount() == 2000, "an executed drain updates the item component");
+        helper.assertTrue(handler.fill(lava(1000), IFluidHandler.FluidAction.EXECUTE) == 0, "local item rejects mixed fluids");
+        helper.assertTrue(handler.fill(water(200000), IFluidHandler.FluidAction.EXECUTE) == 126000, "local item respects tank capacity");
+        *///?}
         helper.succeed();
+    //? if >=26.1 {
     }
 
     private static DimensionalTankBlockEntity place(GameTestHelper helper, BlockPos pos, TankKind kind, Direction facing, TankCode code) {
@@ -230,12 +353,17 @@ public final class TankGameTests {
 
     private static TankCode code(DyeColor a, DyeColor b, DyeColor c) {
         return new TankCode(a, b, c);
+    //?}
     }
 
     @GameTest(template = "empty_small", timeoutTicks = 1250)
     public static void containerSlotsWaitForRealTicksAndKeepIndependentProgress(GameTestHelper helper) {
+        //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE));
+        *///?}
         int duration = dimensionalfluxminer.DfmConfig.tankContainerTicks();
         tank.channel().set(0, water(2000));
         tank.containers().setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET));
@@ -271,8 +399,12 @@ public final class TankGameTests {
 
     @GameTest(template = "empty_small")
     public static void tankConvertsSpongesAndEveryConcreteColor(GameTestHelper helper) {
+        //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE));
+        *///?}
         var slots = tank.containers();
         slots.setStackInSlot(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WET_SPONGE));
         slots.process();
@@ -283,10 +415,17 @@ public final class TankGameTests {
         helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.WET_SPONGE) && tank.chamber(0).isEmpty(),
                 "dry sponge absorbs one bucket");
         for (DyeColor color : DyeColor.values()) {
+            //? if >=26.1 {
             var input = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
                     net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", color.getName() + "_concrete_powder"));
             var result = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
                     net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", color.getName() + "_concrete"));
+            //?} else {
+            /*var input = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace(color.getName() + "_concrete_powder"));
+            var result = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                    net.minecraft.resources.ResourceLocation.withDefaultNamespace(color.getName() + "_concrete"));
+            *///?}
             tank.channel().set(0, water(999));
             slots.setStackInSlot(1, new net.minecraft.world.item.ItemStack(input));
             slots.process();
@@ -316,12 +455,20 @@ public final class TankGameTests {
             helper.succeed();
             return;
         }
+        //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
         var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.getValue(
                 net.minecraft.resources.Identifier.fromNamespaceAndPath("enderio", "fluid_nutrient_distillation_still"));
         var result = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
                 net.minecraft.resources.Identifier.fromNamespaceAndPath("enderio", "nutritious_stick"));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE));
+        var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("enderio", "fluid_nutrient_distillation_still"));
+        var result = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("enderio", "nutritious_stick"));
+        *///?}
         helper.assertTrue(fluid != null && fluid != Fluids.EMPTY && result != net.minecraft.world.item.Items.AIR, "optional resources registered");
         tank.channel().set(0, new FluidStack(fluid, 1000));
         tank.containers().setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
@@ -332,10 +479,18 @@ public final class TankGameTests {
 
     @GameTest(template = "empty_small")
     public static void tankExperienceRecipesAcceptCommonFluids(GameTestHelper helper) {
+        //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.RED, DyeColor.CYAN, DyeColor.BLUE));
+        *///?}
         var tag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.FLUID,
+                //? if >=26.1 {
                 net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "experience"));
+                //?} else {
+                /*net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "experience"));
+                *///?}
         int checked = 0;
         for (var fluid : net.minecraft.core.registries.BuiltInRegistries.FLUID.getTagOrEmpty(tag)) {
             tank.channel().set(0, new FluidStack(fluid, 500));
@@ -364,8 +519,12 @@ public final class TankGameTests {
 
     @GameTest(template = "empty_small")
     public static void containerSlotsConvertBucketsAndExperienceWithoutLoss(GameTestHelper helper) {
+        //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.RED, DyeColor.RED,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.RED, DyeColor.RED, DyeColor.RED));
+        *///?}
         var slots = tank.containers();
         var waterBucket = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET);
         helper.assertFalse(slots.isItemValid(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET)),
@@ -373,7 +532,11 @@ public final class TankGameTests {
         helper.assertFalse(slots.isItemValid(1, waterBucket), "blue input rejects a full bucket");
         helper.assertTrue(slots.insertItem(0, waterBucket, false).isEmpty(), "accept a filled bucket");
         helper.assertTrue(tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_DRAIN_BOTH), "red bidirectional face");
+        //? if >=26.1 {
         var face = Transfer.items(helper.getLevel(), tank.getBlockPos(), Direction.SOUTH);
+        //?} else {
+        /*var face = items(helper, tank.getBlockPos(), Direction.SOUTH);
+        *///?}
         helper.assertTrue(face.extractItem(0, 1, true).isEmpty(), "automation cannot take unfinished input");
         slots.process();
         helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.BUCKET)
@@ -384,8 +547,12 @@ public final class TankGameTests {
         helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.WATER_BUCKET) && tank.chamber(0).isEmpty(),
                 "blue slot fills from the tank");
         slots.setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GLASS_BOTTLE));
+        //? if >=26.1 {
         var xp = new FluidStack(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get(), 249);
         tank.channel().set(0, xp);
+        //?} else {
+        /*tank.channel().set(0, new FluidStack(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get(), 249));
+        *///?}
         slots.process();
         helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.GLASS_BOTTLE)
                 && tank.chamber(0).getAmount() == 249, "insufficient XP is unchanged");
@@ -394,7 +561,11 @@ public final class TankGameTests {
         helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.EXPERIENCE_BOTTLE) && tank.chamber(0).isEmpty(),
                 "250 mB fills one experience bottle: item=" + slots.getStackInSlot(1) + ", fluid=" + tank.chamber(0)
                         + ", finished=" + slots.finished(1) + ", recipes="
+                        //? if >=26.1 {
                         + dimensionalfluxminer.recipe.Recipes.byType(helper.getLevel(), dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get()).size());
+                        //?} else {
+                        /*+ helper.getLevel().getRecipeManager().getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get()).size());
+                        *///?}
         slots.setStackInSlot(0, slots.extractItem(1, 1, false));
         slots.process();
         helper.assertTrue(slots.getStackInSlot(0).is(net.minecraft.world.item.Items.GLASS_BOTTLE)
@@ -413,12 +584,18 @@ public final class TankGameTests {
     }
 
     @GameTest(template = "empty_small")
+    //? if >=26.1 {
     public static void containerFacesRollbackAndKeepSlotsLocal(GameTestHelper helper) {
         var shared = new TankCode(DyeColor.BLUE, DyeColor.RED, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty());
+    //?} else {
+    /*public static void containerFacesKeepOneContainerAndSlotsLocal(GameTestHelper helper) {
+        var shared = uniqueCode(DyeColor.BLUE, DyeColor.RED, DyeColor.BLUE);
+    *///?}
         var tank = place(helper, FIRST, TankKind.SINGLE, shared);
         var other = place(helper, SECOND, TankKind.SINGLE, shared);
         tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_FILL_BOTH);
+        //? if >=26.1 {
         var handler = helper.getLevel().getCapability(Capabilities.Item.BLOCK, tank.getBlockPos(), Direction.SOUTH);
         var bucket = net.neoforged.neoforge.transfer.item.ItemResource.of(net.minecraft.world.item.Items.BUCKET);
         try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
@@ -429,17 +606,36 @@ public final class TankGameTests {
             handler.insert(0, bucket, 1, transaction);
             transaction.commit();
         }
+        //?} else {
+        /*var handler = items(helper, tank.getBlockPos(), Direction.SOUTH);
+        var buckets = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BUCKET, 16);
+        helper.assertTrue(handler.insertItem(0, buckets.copy(), true).getCount() == 15, "one container per slot");
+        helper.assertTrue(tank.containers().getStackInSlot(1).isEmpty(), "a simulated insertion changes nothing");
+        handler.insertItem(0, buckets.copyWithCount(1), false);
+        *///?}
         tank.channel().set(0, water(1000));
         tank.containers().process();
         helper.assertTrue(other.containers().getStackInSlot(1).isEmpty() && other.chamber(0).isEmpty(),
                 "items stay local while fluid is shared");
         helper.assertTrue(tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_DRAIN_INPUT), "change route");
+        //? if >=26.1 {
         helper.assertTrue(Transfer.items(helper.getLevel(), tank.getBlockPos(), Direction.SOUTH).extractItem(0, 1, false).isEmpty(),
+        //?} else {
+        /*helper.assertTrue(items(helper, tank.getBlockPos(), Direction.SOUTH).extractItem(0, 1, false).isEmpty(),
+        *///?}
                 "changed route no longer exposes the blue output");
         var dual = place(helper, new BlockPos(5, 1, 5), TankKind.DUAL, shared);
+        //? if >=26.1 {
         helper.assertTrue(Transfer.items(helper.getLevel(), dual.getBlockPos(), Direction.SOUTH) == null, "dual has no item capability");
+        //?} else {
+        /*helper.assertTrue(items(helper, dual.getBlockPos(), Direction.SOUTH) == null, "dual has no item capability");
+        *///?}
         var saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        //? if >=26.1 {
         TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        //?} else {
+        /*load(tank, saved, helper);
+        *///?}
         helper.assertTrue(tank.containers().finished(1)
                 && tank.containers().getStackInSlot(1).is(net.minecraft.world.item.Items.WATER_BUCKET), "block save keeps the result and completion");
         helper.destroyBlock(FIRST);
@@ -453,10 +649,18 @@ public final class TankGameTests {
 
     @GameTest(template = "empty_small")
     public static void containerAutomationUsesItsOwnToggles(GameTestHelper helper) {
+        //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.BLACK, DyeColor.BLUE,
                 java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.RED, DyeColor.BLACK, DyeColor.BLUE));
+        *///?}
         helper.setBlock(FIRST.south(), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState());
+        //? if >=26.1 {
         net.minecraft.world.level.block.entity.ChestBlockEntity chest = TestSupport.blockEntity(helper, FIRST.south());
+        //?} else {
+        /*net.minecraft.world.level.block.entity.ChestBlockEntity chest = helper.getBlockEntity(FIRST.south());
+        *///?}
         chest.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET));
         tank.configureItems(RelativeFace.BACK, SideRoute.CONTAINER_DRAIN_BOTH);
         helper.assertTrue(tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_INPUT), "item input enabled");
@@ -465,14 +669,22 @@ public final class TankGameTests {
         helper.assertTrue(chest.getItem(0).isEmpty() && tank.containers().finished(0), "pull and process one bucket");
         var data = new CompoundTag();
         tank.writeMenuData(data, helper.getLevel().registryAccess());
+        //? if >=26.1 {
         helper.assertFalse(data.getBooleanOr("auto_input_fluid", false) || data.getBooleanOr("auto_eject_fluid", false),
+        //?} else {
+        /*helper.assertFalse(data.getBoolean("auto_input_fluid") || data.getBoolean("auto_eject_fluid"),
+        *///?}
                 "item automation leaves liquid automation off");
         tank.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT);
         DimensionalTankBlockEntity.serverTick(helper.getLevel(), tank.getBlockPos(), tank.getBlockState(), tank);
         helper.assertTrue(chest.getItem(0).is(net.minecraft.world.item.Items.BUCKET) && tank.containers().getStackInSlot(0).isEmpty(),
                 "same face ejects its result without pulling it back");
         var saved = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        //? if >=26.1 {
         TestSupport.load(tank, saved, helper.getLevel().registryAccess());
+        //?} else {
+        /*load(tank, saved, helper);
+        *///?}
         helper.assertTrue(tank.sides().get(RelativeFace.BACK, dimensionalfluxminer.machine.side.Transmission.ITEM, 0)
                 == SideRoute.CONTAINER_DRAIN_BOTH, "item route persists");
         var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
@@ -489,6 +701,7 @@ public final class TankGameTests {
         helper.succeed();
     }
 
+    //? if >=26.1 {
     /** Using a tank with an empty hand opens it instead of failing on the missing item. */
     @GameTest(template = "empty_small")
     public static void emptyHandUseIsSafe(GameTestHelper helper) {
@@ -501,21 +714,34 @@ public final class TankGameTests {
         helper.assertTrue(result == net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND, "falls back to the empty-hand use: " + result);
         helper.succeed();
     }
+    //?}
     @GameTest(template = "empty_small")
     public static void newTankUsesWhiteCodeAndHasNoEnergy(GameTestHelper helper) {
         DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, null);
         helper.assertTrue(be.code().equals(TankCode.DEFAULT), "white, white, white");
         for (Direction side : Direction.values()) {
+            //? if >=26.1 {
             helper.assertTrue(Transfer.energy(helper.getLevel(), be.getBlockPos(), side) == null,
+            //?} else {
+            /*helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, be.getBlockPos(), side) == null,
+            *///?}
                     "no energy on " + side);
+            //? if >=26.1 {
             helper.assertTrue(Transfer.items(helper.getLevel(), be.getBlockPos(), side) == null,
+            //?} else {
+            /*helper.assertTrue(helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, be.getBlockPos(), side) == null,
+            *///?}
                     "no items on " + side);
         }
         helper.assertTrue(face(helper, be, RelativeFace.FRONT) == null, "the front (panel) has no pipe access");
         for (RelativeFace f : new RelativeFace[] {RelativeFace.BACK, RelativeFace.LEFT, RelativeFace.RIGHT, RelativeFace.UP, RelativeFace.DOWN}) {
             helper.assertTrue(face(helper, be, f) != null, "pipes connect without configuration: " + f);
         }
+        //? if >=26.1 {
         FluidTanks view = Transfer.fluids(helper.getLevel(), be.getBlockPos(), null);
+        //?} else {
+        /*IFluidHandler view = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, be.getBlockPos(), null);
+        *///?}
         helper.assertTrue(view != null && view.getTanks() == 1 && view.getTankCapacity(0) == 128_000, "one chamber of 128 000 mB");
         helper.succeed();
     }
@@ -525,17 +751,36 @@ public final class TankGameTests {
         TankCode code = code(DyeColor.RED, DyeColor.BLUE, DyeColor.WHITE);
         DimensionalTankBlockEntity first = place(helper, FIRST, TankKind.SINGLE, code);
         DimensionalTankBlockEntity second = place(helper, SECOND, TankKind.SINGLE, code);
+        //? if >=26.1 {
         FluidTanks in = face(helper, first, RelativeFace.BACK);
         FluidTanks out = face(helper, second, RelativeFace.UP);
         helper.assertTrue(in.fill(water(4 * BUCKET), FluidTanks.FluidAction.SIMULATE) == 4 * BUCKET, "simulated fill accepts");
+        //?} else {
+        /*IFluidHandler in = face(helper, first, RelativeFace.BACK);
+        IFluidHandler out = face(helper, second, RelativeFace.UP);
+        helper.assertTrue(in.fill(water(4 * BUCKET), IFluidHandler.FluidAction.SIMULATE) == 4 * BUCKET, "simulated fill accepts");
+        *///?}
         helper.assertTrue(out.getFluidInTank(0).isEmpty(), "simulation changes nothing");
+        //? if >=26.1 {
         helper.assertTrue(in.fill(water(4 * BUCKET), FluidTanks.FluidAction.EXECUTE) == 4 * BUCKET, "filled once");
+        //?} else {
+        /*helper.assertTrue(in.fill(water(4 * BUCKET), IFluidHandler.FluidAction.EXECUTE) == 4 * BUCKET, "filled once");
+        *///?}
         helper.assertTrue(out.getFluidInTank(0).getAmount() == 4 * BUCKET, "the other tank sees the same water");
+        //? if >=26.1 {
         helper.assertTrue(out.drain(BUCKET, FluidTanks.FluidAction.SIMULATE).getAmount() == BUCKET
+        //?} else {
+        /*helper.assertTrue(out.drain(BUCKET, IFluidHandler.FluidAction.SIMULATE).getAmount() == BUCKET
+        *///?}
                 && out.getFluidInTank(0).getAmount() == 4 * BUCKET, "simulated drain changes nothing");
         // Two takers never get more than the balance.
+        //? if >=26.1 {
         helper.assertTrue(out.drain(3 * BUCKET, FluidTanks.FluidAction.EXECUTE).getAmount() == 3 * BUCKET, "first taker");
         helper.assertTrue(in.drain(5 * BUCKET, FluidTanks.FluidAction.EXECUTE).getAmount() == BUCKET, "second taker gets the rest");
+        //?} else {
+        /*helper.assertTrue(out.drain(3 * BUCKET, IFluidHandler.FluidAction.EXECUTE).getAmount() == 3 * BUCKET, "first taker");
+        helper.assertTrue(in.drain(5 * BUCKET, IFluidHandler.FluidAction.EXECUTE).getAmount() == BUCKET, "second taker gets the rest");
+        *///?}
         helper.assertTrue(first.chamber(0).isEmpty() && second.chamber(0).isEmpty(), "empty everywhere");
         helper.succeed();
     }
@@ -547,13 +792,21 @@ public final class TankGameTests {
         DimensionalTankBlockEntity first = place(helper, FIRST, TankKind.SINGLE, code);
         DimensionalTankBlockEntity second = place(helper, SECOND, TankKind.SINGLE, code);
         helper.runAfterDelay(1, () -> {
+            //? if >=26.1 {
             face(helper, first, RelativeFace.BACK).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+            //?} else {
+            /*face(helper, first, RelativeFace.BACK).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+            *///?}
             int version = first.channel().version();
             helper.runAfterDelay(4, () -> {
                 helper.assertTrue(first.syncedVersion() == version, "the tank that was filled updated its clients");
                 helper.assertTrue(second.syncedVersion() == version, "the other endpoint updated its clients too");
                 var registries = helper.getLevel().registryAccess();
+                //? if >=26.1 {
                 var sent = DimensionalTankBlockEntity.readChambers(second.getUpdateTag(registries).getListOrEmpty("chambers"), 1, registries);
+                //?} else {
+                /*var sent = DimensionalTankBlockEntity.readChambers(second.getUpdateTag(registries).getList("chambers", 10), 1, registries);
+                *///?}
                 helper.assertTrue(sent[0].is(Fluids.WATER) && sent[0].getAmount() == BUCKET, "the update carries the liquid");
                 helper.succeed();
             });
@@ -564,7 +817,11 @@ public final class TankGameTests {
     public static void colorOrderMatters(GameTestHelper helper) {
         DimensionalTankBlockEntity first = place(helper, FIRST, TankKind.SINGLE, code(DyeColor.LIME, DyeColor.PINK, DyeColor.GRAY));
         DimensionalTankBlockEntity second = place(helper, SECOND, TankKind.SINGLE, code(DyeColor.PINK, DyeColor.LIME, DyeColor.GRAY));
+        //? if >=26.1 {
         face(helper, first, RelativeFace.BACK).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, first, RelativeFace.BACK).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(second.chamber(0).isEmpty(), "two colors swapped = another channel");
         helper.succeed();
     }
@@ -574,8 +831,13 @@ public final class TankGameTests {
         TankCode code = code(DyeColor.CYAN, DyeColor.CYAN, DyeColor.BLACK);
         DimensionalTankBlockEntity single = place(helper, FIRST, TankKind.SINGLE, code);
         DimensionalTankBlockEntity dual = place(helper, SECOND, TankKind.DUAL, code);
+        //? if >=26.1 {
         face(helper, single, RelativeFace.BACK).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
         face(helper, dual, RelativeFace.RIGHT).fill(lava(2 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, single, RelativeFace.BACK).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        face(helper, dual, RelativeFace.RIGHT).fill(lava(2 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(single.chamber(0).getAmount() == BUCKET && single.chamber(0).is(Fluids.WATER), "single keeps its water");
         helper.assertTrue(dual.chamber(0).is(Fluids.LAVA) && dual.chamber(1).isEmpty(), "dual keeps its own lava");
         helper.succeed();
@@ -588,6 +850,7 @@ public final class TankGameTests {
         DimensionalTankBlockEntity second = place(helper, SECOND, TankKind.DUAL, Direction.EAST, code);
         helper.assertTrue(first.route(RelativeFace.RIGHT) == SideRoute.FLUID_A_INPUT_OUTPUT
                 && first.route(RelativeFace.LEFT) == SideRoute.FLUID_B_INPUT_OUTPUT, "A on the right side, B on the left");
+        //? if >=26.1 {
         FluidTanks a = face(helper, first, RelativeFace.RIGHT);
         FluidTanks b = face(helper, first, RelativeFace.LEFT);
         helper.assertTrue(a.fill(water(TankKind.CHAMBER_CAPACITY), FluidTanks.FluidAction.EXECUTE) == TankKind.CHAMBER_CAPACITY, "A full");
@@ -596,10 +859,24 @@ public final class TankGameTests {
         helper.assertTrue(a.fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0, "another liquid is refused");
         helper.assertTrue(b.fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0, "water refused in the lava chamber");
         helper.assertTrue(b.drain(water(BUCKET), FluidTanks.FluidAction.EXECUTE).isEmpty(), "B face never drains A");
+        //?} else {
+        /*IFluidHandler a = face(helper, first, RelativeFace.RIGHT);
+        IFluidHandler b = face(helper, first, RelativeFace.LEFT);
+        helper.assertTrue(a.fill(water(TankKind.CHAMBER_CAPACITY), IFluidHandler.FluidAction.EXECUTE) == TankKind.CHAMBER_CAPACITY, "A full");
+        helper.assertTrue(b.fill(lava(3 * BUCKET), IFluidHandler.FluidAction.EXECUTE) == 3 * BUCKET, "lava in B");
+        helper.assertTrue(a.fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0, "a full A never spills into B");
+        helper.assertTrue(a.fill(lava(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0, "another liquid is refused");
+        helper.assertTrue(b.fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0, "water refused in the lava chamber");
+        helper.assertTrue(b.drain(water(BUCKET), IFluidHandler.FluidAction.EXECUTE).isEmpty(), "B face never drains A");
+        *///?}
         // The other dual (another facing, same code): A with A, B with B.
         helper.assertTrue(second.chamber(0).is(Fluids.WATER) && second.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "A shared");
         helper.assertTrue(second.chamber(1).is(Fluids.LAVA) && second.chamber(1).getAmount() == 3 * BUCKET, "B shared");
+        //? if >=26.1 {
         face(helper, second, RelativeFace.RIGHT).drain(BUCKET, FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, second, RelativeFace.RIGHT).drain(BUCKET, IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(first.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY - BUCKET && first.chamber(1).getAmount() == 3 * BUCKET,
                 "only A changed");
         helper.succeed();
@@ -630,7 +907,11 @@ public final class TankGameTests {
         TankCode before = code(DyeColor.YELLOW, DyeColor.GREEN, DyeColor.PURPLE);
         TankCode after = code(DyeColor.YELLOW, DyeColor.GREEN, DyeColor.LIGHT_BLUE);
         DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, before);
+        //? if >=26.1 {
         face(helper, be, RelativeFace.BACK).fill(water(5 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, be, RelativeFace.BACK).fill(water(5 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         // Third position to light blue through the code window's button.
         helper.assertTrue(be.handleButton(null, DimensionalTankBlockEntity.BUTTON_CODE_BASE + 2 * 16 + DyeColor.LIGHT_BLUE.getId()), "button");
         helper.assertTrue(be.code().equals(after), "code changed");
@@ -648,7 +929,11 @@ public final class TankGameTests {
     public static void breakingKeepsLiquidAndCode(GameTestHelper helper) {
         TankCode code = code(DyeColor.BLACK, DyeColor.RED, DyeColor.LIME);
         DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, code);
+        //? if >=26.1 {
         face(helper, be, RelativeFace.BACK).fill(water(7 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, be, RelativeFace.BACK).fill(water(7 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(code.equals(be.collectComponents().get(DfmDataComponents.TANK_CODE.get())), "the item gets the code");
         CompoundTag saved = be.saveWithoutMetadata(helper.getLevel().registryAccess());
         helper.destroyBlock(FIRST);
@@ -656,7 +941,11 @@ public final class TankGameTests {
         helper.assertTrue(channels.channel(TankKind.SINGLE, code).get(0).getAmount() == 7 * BUCKET, "the channel keeps the water");
         // A tank loaded from the save (or placed from the item) is back on the same channel.
         DimensionalTankBlockEntity again = place(helper, SECOND, TankKind.SINGLE, null);
+        //? if >=26.1 {
         TestSupport.load(again, saved, helper.getLevel().registryAccess());
+        //?} else {
+        /*again.loadWithComponents(saved, helper.getLevel().registryAccess());
+        *///?}
         helper.assertTrue(again.code().equals(code) && again.chamber(0).getAmount() == 7 * BUCKET, "reconnected");
         helper.succeed();
     }
@@ -668,7 +957,11 @@ public final class TankGameTests {
         DimensionalTankBlockEntity from = place(helper, new BlockPos(2, 1, 1), TankKind.SINGLE, source);
         // Facing east, the north face (towards the first tank's back) is the RIGHT side: input/output by default.
         DimensionalTankBlockEntity to = place(helper, new BlockPos(2, 1, 2), TankKind.SINGLE, Direction.EAST, target);
+        //? if >=26.1 {
         face(helper, from, RelativeFace.BACK).fill(water(10 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, from, RelativeFace.BACK).fill(water(10 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(from.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_FLUID_NEXT), "OFF -> Auto Input");
         helper.assertTrue(from.autoInputFluid() && !from.autoEjectFluid(), "only Auto Input");
         helper.runAfterDelay(3, () -> {
@@ -708,9 +1001,17 @@ public final class TankGameTests {
         helper.assertTrue(mine.code().personal() && mine.code().first() == DyeColor.PURPLE, "same colors, now personal");
         // A previous run may have left liquid in this player's channel.
         mine.channel().set(0, FluidStack.EMPTY);
+        //? if >=26.1 {
         face(helper, open, RelativeFace.BACK).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, open, RelativeFace.BACK).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(mine.chamber(0).isEmpty(), "the public channel with the same colors is another one");
+        //? if >=26.1 {
         face(helper, mine, RelativeFace.BACK).fill(lava(2 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, mine, RelativeFace.BACK).fill(lava(2 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(open.chamber(0).is(Fluids.WATER) && open.chamber(0).getAmount() == BUCKET, "public keeps its water");
         helper.assertTrue(mine.code().equals(mine.collectComponents().get(DfmDataComponents.TANK_CODE.get())), "the item keeps the owner");
         helper.assertTrue(mine.handleButton(null, DimensionalTankBlockEntity.BUTTON_CODE_BASE + DyeColor.RED.getId()) && mine.code().personal(),
@@ -730,8 +1031,13 @@ public final class TankGameTests {
         // west faces are input/output.
         DimensionalTankBlockEntity west = place(helper, new BlockPos(1, 1, 2), TankKind.SINGLE, code(DyeColor.GRAY, DyeColor.GRAY, DyeColor.BROWN));
         DimensionalTankBlockEntity east = place(helper, new BlockPos(3, 1, 2), TankKind.SINGLE, code(DyeColor.BROWN, DyeColor.GRAY, DyeColor.GRAY));
+        //? if >=26.1 {
         face(helper, dual, RelativeFace.RIGHT).fill(water(TankKind.CHAMBER_CAPACITY), FluidTanks.FluidAction.EXECUTE);
         face(helper, dual, RelativeFace.LEFT).fill(lava(TankKind.CHAMBER_CAPACITY), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*face(helper, dual, RelativeFace.RIGHT).fill(water(TankKind.CHAMBER_CAPACITY), IFluidHandler.FluidAction.EXECUTE);
+        face(helper, dual, RelativeFace.LEFT).fill(lava(TankKind.CHAMBER_CAPACITY), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         dual.setAutoEjectFluid(true);
         helper.runAfterDelay(3, () -> {
             helper.assertTrue(dual.chamber(0).isEmpty() && dual.chamber(1).isEmpty(),
@@ -739,10 +1045,18 @@ public final class TankGameTests {
             helper.assertTrue(west.chamber(0).is(Fluids.WATER) && west.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "A went west");
             helper.assertTrue(east.chamber(0).is(Fluids.LAVA) && east.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "B went east");
             // An ejecting face takes nothing back from outside (a pipe network would bounce the last mB back).
+            //? if >=26.1 {
             helper.assertTrue(face(helper, dual, RelativeFace.RIGHT).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0,
+            //?} else {
+            /*helper.assertTrue(face(helper, dual, RelativeFace.RIGHT).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0,
+            *///?}
                     "ejecting face refuses input");
             dual.setAutoEjectFluid(false);
+            //? if >=26.1 {
             helper.assertTrue(face(helper, dual, RelativeFace.RIGHT).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == BUCKET,
+            //?} else {
+            /*helper.assertTrue(face(helper, dual, RelativeFace.RIGHT).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == BUCKET,
+            *///?}
                     "Auto Eject off: the face takes input again");
             helper.succeed();
         });
@@ -775,13 +1089,22 @@ public final class TankGameTests {
             BlockPos pos = new BlockPos(i % 4, 1, i / 4);
             helper.setBlock(pos, blocks[i].defaultBlockState());
             var state = helper.getBlockState(pos);
+            //? if <26.3 {
             for (var type : java.util.List.of(net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.CREEPER,
                     net.minecraft.world.entity.EntityType.SPIDER)) {
+            //?} else {
+            /*for (var type : java.util.List.of(net.minecraft.world.entity.EntityTypes.ZOMBIE, net.minecraft.world.entity.EntityTypes.CREEPER,
+                    net.minecraft.world.entity.EntityTypes.SPIDER)) {
+            *///?}
                 helper.assertFalse(state.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), type), type + " spawns on " + blocks[i]);
             }
             if (state.hasProperty(dimensionalfluxminer.content.DfmStateProperties.FORMED)) {
                 var formed = state.setValue(dimensionalfluxminer.content.DfmStateProperties.FORMED, true);
+                //? if <26.3 {
                 helper.assertFalse(formed.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), net.minecraft.world.entity.EntityType.ZOMBIE),
+                //?} else {
+                /*helper.assertFalse(formed.isValidSpawn(helper.getLevel(), helper.absolutePos(pos), net.minecraft.world.entity.EntityTypes.ZOMBIE),
+                *///?}
                         "zombie spawns on formed " + blocks[i]);
             }
         }
@@ -794,7 +1117,11 @@ public final class TankGameTests {
         helper.assertTrue(be.configureSide(RelativeFace.BACK, SideRoute.FLUID_OUTPUT), "output route");
         helper.assertFalse(be.configureSide(RelativeFace.BACK, SideRoute.FLUID_A_INPUT), "dual routes are not offered on the single tank");
         helper.assertFalse(be.configureSide(RelativeFace.FRONT, SideRoute.FLUID_INPUT), "the front stays locked");
+        //? if >=26.1 {
         helper.assertTrue(face(helper, be, RelativeFace.BACK).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0, "no input there");
+        //?} else {
+        /*helper.assertTrue(face(helper, be, RelativeFace.BACK).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0, "no input there");
+        *///?}
         helper.assertTrue(be.configureSide(RelativeFace.BACK, SideRoute.NONE), "none");
         helper.assertTrue(face(helper, be, RelativeFace.BACK) == null, "no route, no handler");
         helper.succeed();
@@ -804,7 +1131,11 @@ public final class TankGameTests {
 
     private static DimensionalTankBlockEntity placeCreative(GameTestHelper helper, BlockPos pos, Direction facing) {
         helper.setBlock(pos, DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, facing));
+        //? if >=26.1 {
         return TestSupport.blockEntity(helper, pos);
+        //?} else {
+        /*return helper.getBlockEntity(pos);
+        *///?}
     }
 
     /** A liquid poured in by a player becomes endless: draining gives what is asked and never lowers it. */
@@ -812,19 +1143,43 @@ public final class TankGameTests {
     public static void creativeTankGivesEndlessLiquid(GameTestHelper helper) {
         DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
         helper.assertTrue(be.kind() == TankKind.CREATIVE && be.chamber(0).isEmpty(), "starts empty");
+        //? if >=26.1 {
         helper.assertTrue(be.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.SIMULATE) == BUCKET && be.chamber(0).isEmpty(),
+        //?} else {
+        /*helper.assertTrue(be.chamberHandler(0).fill(water(BUCKET), IFluidHandler.FluidAction.SIMULATE) == BUCKET && be.chamber(0).isEmpty(),
+        *///?}
                 "a simulated fill picks nothing");
+        //? if >=26.1 {
         helper.assertTrue(be.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == BUCKET, "a bucket picks the liquid");
+        //?} else {
+        /*helper.assertTrue(be.chamberHandler(0).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == BUCKET, "a bucket picks the liquid");
+        *///?}
         helper.assertTrue(be.chamber(0).is(Fluids.WATER) && be.chamber(0).getAmount() == Integer.MAX_VALUE, "water, always full");
+        //? if >=26.1 {
         FluidTanks back = face(helper, be, RelativeFace.BACK);
+        //?} else {
+        /*IFluidHandler back = face(helper, be, RelativeFace.BACK);
+        *///?}
         for (int i = 0; i < 3; i++) {
+            //? if >=26.1 {
             helper.assertTrue(back.drain(64 * BUCKET, FluidTanks.FluidAction.EXECUTE).getAmount() == 64 * BUCKET, "drained " + i);
         }
         helper.assertTrue(back.drain(lava(BUCKET), FluidTanks.FluidAction.EXECUTE).isEmpty(), "only its own liquid comes out");
+            //?} else {
+            /*helper.assertTrue(back.drain(64 * BUCKET, IFluidHandler.FluidAction.EXECUTE).getAmount() == 64 * BUCKET, "drained " + i);
+        }
+        helper.assertTrue(back.drain(lava(BUCKET), IFluidHandler.FluidAction.EXECUTE).isEmpty(), "only its own liquid comes out");
+            *///?}
         helper.assertTrue(be.chamber(0).getAmount() == Integer.MAX_VALUE, "never runs out");
+        //? if >=26.1 {
         helper.assertTrue(be.chamberHandler(0).fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0
                 && back.fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE) == 0, "a full creative tank takes nothing in");
         FluidTanks view = Transfer.fluids(helper.getLevel(), be.getBlockPos(), null);
+        //?} else {
+        /*helper.assertTrue(be.chamberHandler(0).fill(lava(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0
+                && back.fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE) == 0, "a full creative tank takes nothing in");
+        IFluidHandler view = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, be.getBlockPos(), null);
+        *///?}
         helper.assertTrue(view != null && view.getTanks() == 1 && view.getTankCapacity(0) == Integer.MAX_VALUE, "one endless chamber");
         helper.succeed();
     }
@@ -833,10 +1188,19 @@ public final class TankGameTests {
     @GameTest(template = "empty_small")
     public static void emptyCreativeTankVoidsPipes(GameTestHelper helper) {
         DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
+        //? if >=26.1 {
         FluidTanks back = face(helper, be, RelativeFace.BACK);
         helper.assertTrue(back.fill(lava(50 * BUCKET), FluidTanks.FluidAction.EXECUTE) == 50 * BUCKET, "accepted");
+        //?} else {
+        /*IFluidHandler back = face(helper, be, RelativeFace.BACK);
+        helper.assertTrue(back.fill(lava(50 * BUCKET), IFluidHandler.FluidAction.EXECUTE) == 50 * BUCKET, "accepted");
+        *///?}
         helper.assertTrue(be.chamber(0).isEmpty(), "and gone");
+        //? if >=26.1 {
         helper.assertTrue(back.drain(BUCKET, FluidTanks.FluidAction.EXECUTE).isEmpty(), "nothing to drain");
+        //?} else {
+        /*helper.assertTrue(back.drain(BUCKET, IFluidHandler.FluidAction.EXECUTE).isEmpty(), "nothing to drain");
+        *///?}
         helper.succeed();
     }
 
@@ -853,7 +1217,11 @@ public final class TankGameTests {
         helper.assertFalse(be.makePersonal(player, diamond), "no personal code");
         helper.assertTrue(diamond.getCount() == 1, "the personal item is not used");
         helper.assertFalse(be.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR), "nothing to clear");
+        //? if >=26.1 {
         be.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*be.chamberHandler(0).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(be.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR) && be.chamber(0).isEmpty(), "cleared");
         helper.assertFalse(DfmBlocks.DIMENSIONAL_TANK.get().defaultBlockState().is(DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get()), "a block of its own");
         helper.succeed();
@@ -863,13 +1231,21 @@ public final class TankGameTests {
     @GameTest(template = "empty_small")
     public static void creativeTankKeepsItsLiquid(GameTestHelper helper) {
         DimensionalTankBlockEntity be = placeCreative(helper, FIRST, Direction.NORTH);
+        //? if >=26.1 {
         be.chamberHandler(0).fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*be.chamberHandler(0).fill(lava(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         var stored = be.collectComponents().get(DfmDataComponents.CREATIVE_TANK_FLUID.get());
         helper.assertTrue(stored != null && stored.copy().is(Fluids.LAVA), "the item gets the lava");
         helper.assertTrue(be.collectComponents().get(DfmDataComponents.TANK_CODE.get()) == null, "and no code");
         CompoundTag saved = be.saveWithoutMetadata(helper.getLevel().registryAccess());
         DimensionalTankBlockEntity again = placeCreative(helper, SECOND, Direction.NORTH);
+        //? if >=26.1 {
         TestSupport.load(again, saved, helper.getLevel().registryAccess());
+        //?} else {
+        /*again.loadWithComponents(saved, helper.getLevel().registryAccess());
+        *///?}
         helper.assertTrue(again.chamber(0).is(Fluids.LAVA) && again.chamber(0).getAmount() == Integer.MAX_VALUE, "loaded");
         helper.assertTrue(again.lightLevel() == 15, "lava lights the area");
         helper.succeed();
@@ -896,7 +1272,11 @@ public final class TankGameTests {
         DimensionalTankBlockEntity creative = placeCreative(helper, new BlockPos(2, 1, 1), Direction.NORTH);
         DimensionalTankBlockEntity to = place(helper, new BlockPos(2, 1, 2), TankKind.SINGLE, Direction.EAST,
                 code(DyeColor.MAGENTA, DyeColor.BROWN, DyeColor.MAGENTA));
+        //? if >=26.1 {
         creative.chamberHandler(0).fill(water(BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*creative.chamberHandler(0).fill(water(BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(creative.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID), "Auto Eject on");
         helper.runAfterDelay(3, () -> {
             helper.assertTrue(to.chamber(0).is(Fluids.WATER) && to.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "the neighbor is full");
@@ -907,11 +1287,13 @@ public final class TankGameTests {
 
     // ---------------------------------------------------------------- bucket mode
 
+    //? if >=26.1 {
     /** The item's fluid capability, reached through the stack itself (null without one). */
     private static FluidTanks itemFluids(net.minecraft.world.item.ItemStack stack) {
         return Transfer.fluids(net.neoforged.neoforge.transfer.access.ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM));
     }
 
+    //?}
     private static net.minecraft.world.item.ItemStack bucketMode(net.minecraft.world.item.ItemStack stack) {
         stack.set(DfmDataComponents.TANK_BUCKET_MODE.get(), true);
         return stack;
@@ -921,12 +1303,25 @@ public final class TankGameTests {
     @GameTest(template = "empty_small")
     public static void tankItemIsAContainerInAnyMode(GameTestHelper helper) {
         var single = new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.DIMENSIONAL_TANK.get());
+        //? if >=26.1 {
         helper.assertTrue(itemFluids(single) != null, "a container with bucket mode off");
         helper.assertTrue(itemFluids(bucketMode(single)) != null, "and on");
+        //?} else {
+        /*helper.assertTrue(single.getCapability(Capabilities.FluidHandler.ITEM) != null, "a container with bucket mode off");
+        helper.assertTrue(bucketMode(single).getCapability(Capabilities.FluidHandler.ITEM) != null, "and on");
+        *///?}
         var dual = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.DIMENSIONAL_DUAL_TANK.get()));
+        //? if >=26.1 {
         helper.assertTrue(itemFluids(dual) == null, "never the dual tank");
+        //?} else {
+        /*helper.assertTrue(dual.getCapability(Capabilities.FluidHandler.ITEM) == null, "never the dual tank");
+        *///?}
         var creative = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get()));
+        //? if >=26.1 {
         helper.assertTrue(itemFluids(creative) != null, "the creative tank too");
+        //?} else {
+        /*helper.assertTrue(creative.getCapability(Capabilities.FluidHandler.ITEM) != null, "the creative tank too");
+        *///?}
         helper.succeed();
     }
 
@@ -937,14 +1332,24 @@ public final class TankGameTests {
         DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, code);
         var stack = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.DIMENSIONAL_TANK.get()));
         stack.set(DfmDataComponents.TANK_CODE.get(), code);
+        //? if >=26.1 {
         FluidTanks item = itemFluids(stack);
         helper.assertTrue(item.fill(water(5 * BUCKET), FluidTanks.FluidAction.EXECUTE) == 5 * BUCKET, "filled");
+        //?} else {
+        /*IFluidHandler item = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        helper.assertTrue(item.fill(water(5 * BUCKET), IFluidHandler.FluidAction.EXECUTE) == 5 * BUCKET, "filled");
+        *///?}
         helper.assertTrue(be.chamber(0).getAmount() == 5 * BUCKET, "the tank of the same code sees it");
         // Pouring one bucket on the ground takes it out of the channel.
         BlockPos ground = helper.absolutePos(new BlockPos(3, 1, 1));
+        //? if >=26.1 {
         var handler = net.neoforged.neoforge.transfer.access.ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM);
         helper.assertTrue(!net.neoforged.neoforge.transfer.fluid.FluidUtil.tryPlaceFluid(handler, null, helper.getLevel(), ground, true, null).isEmpty(),
                 "poured");
+        //?} else {
+        /*helper.assertTrue(net.neoforged.neoforge.fluids.FluidUtil.tryPlaceFluid(null, helper.getLevel(), net.minecraft.world.InteractionHand.MAIN_HAND,
+                ground, item, water(BUCKET)), "poured");
+        *///?}
         helper.assertTrue(helper.getLevel().getFluidState(ground).is(Fluids.WATER), "water on the ground");
         helper.assertTrue(be.chamber(0).getAmount() == 4 * BUCKET, "one bucket less");
         helper.succeed();
@@ -955,12 +1360,22 @@ public final class TankGameTests {
     public static void creativeTankItemFillsATank(GameTestHelper helper) {
         DimensionalTankBlockEntity be = place(helper, FIRST, TankKind.SINGLE, code(DyeColor.PINK, DyeColor.GRAY, DyeColor.PINK));
         var empty = bucketMode(new net.minecraft.world.item.ItemStack(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get()));
+        //? if >=26.1 {
         FluidTanks picker = itemFluids(empty);
         helper.assertTrue(picker.fill(lava(BUCKET), FluidTanks.FluidAction.EXECUTE) == BUCKET, "an empty creative item picks its liquid");
+        //?} else {
+        /*IFluidHandler picker = empty.getCapability(Capabilities.FluidHandler.ITEM);
+        helper.assertTrue(picker.fill(lava(BUCKET), IFluidHandler.FluidAction.EXECUTE) == BUCKET, "an empty creative item picks its liquid");
+        *///?}
         helper.assertTrue(dimensionalfluxminer.tank.TankItemFluidHandler.creativeFluid(empty).is(Fluids.LAVA), "kept on the item");
         var stack = bucketMode(dimensionalfluxminer.tank.CreativeTanks.filled(Fluids.WATER));
+        //? if >=26.1 {
         FluidTanks item = itemFluids(stack);
         var moved = FluidTanks.move(face(helper, be, RelativeFace.BACK), item, Integer.MAX_VALUE);
+        //?} else {
+        /*IFluidHandler item = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        var moved = net.neoforged.neoforge.fluids.FluidUtil.tryFluidTransfer(face(helper, be, RelativeFace.BACK), item, Integer.MAX_VALUE, true);
+        *///?}
         helper.assertTrue(moved.getAmount() == TankKind.CHAMBER_CAPACITY && be.chamber(0).getAmount() == TankKind.CHAMBER_CAPACITY, "full at once");
         helper.assertTrue(item.getFluidInTank(0).getAmount() == Integer.MAX_VALUE, "still endless");
         helper.succeed();
@@ -972,8 +1387,13 @@ public final class TankGameTests {
         TankCode code = code(DyeColor.LIGHT_BLUE, DyeColor.YELLOW, DyeColor.LIGHT_BLUE);
         DimensionalTankBlockEntity first = place(helper, FIRST, TankKind.DUAL, code);
         DimensionalTankBlockEntity second = place(helper, SECOND, TankKind.DUAL, code);
+        //? if >=26.1 {
         first.chamberHandler(0).fill(water(3 * BUCKET), FluidTanks.FluidAction.EXECUTE);
         first.chamberHandler(1).fill(lava(2 * BUCKET), FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*first.chamberHandler(0).fill(water(3 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        first.chamberHandler(1).fill(lava(2 * BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(second.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR + 1), "B emptied");
         helper.assertTrue(first.chamber(1).isEmpty() && first.chamber(0).getAmount() == 3 * BUCKET, "only B, on every tank of the code");
         helper.assertFalse(first.handleButton(null, DimensionalTankBlockEntity.BUTTON_CLEAR + 1), "nothing left in B");

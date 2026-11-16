@@ -14,7 +14,11 @@ import appeng.api.parts.IPartHost;
 import appeng.blockentity.networking.CreativeEnergyCellBlockEntity;
 import appeng.blockentity.networking.EnergyCellBlockEntity;
 import appeng.parts.networking.QuartzFiberPart;
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.EnergyStore;
+//?} else {
+/*import net.neoforged.neoforge.energy.IEnergyStorage;
+*///?}
 import dimensionalfluxminer.registry.DfmBlockEntities;
 import java.util.EnumSet;
 import java.util.Map;
@@ -55,14 +59,22 @@ public final class Ae2Power {
         }
     }
 
+    //? if >=26.1 {
     public static void pull(BlockEntity be, Function<Direction, EnergyStore> input) {
+    //?} else {
+    /*public static void pull(BlockEntity be, Function<Direction, IEnergyStorage> input) {
+    *///?}
         Level level = be.getLevel();
         if (level == null || level.isClientSide() || be.isRemoved()) {
             return;
         }
         Set<Direction> inputs = EnumSet.noneOf(Direction.class);
         for (Direction side : Direction.values()) {
+            //? if >=26.1 {
             EnergyStore s = input.apply(side);
+            //?} else {
+            /*IEnergyStorage s = input.apply(side);
+            *///?}
             if (s != null && s.canReceive()) {
                 inputs.add(side);
             }
@@ -94,7 +106,11 @@ public final class Ae2Power {
         if (node.sides.isEmpty()) {
             return;
         }
+        //? if >=26.1 {
         EnergyStore store = input.apply(node.sides.iterator().next());
+        //?} else {
+        /*IEnergyStorage store = input.apply(node.sides.iterator().next());
+        *///?}
         IGrid grid = node.managed.getGrid();
         if (store == null || grid == null) {
             return;

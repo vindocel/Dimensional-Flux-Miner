@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.content;
 
 import net.minecraft.core.BlockPos;
@@ -93,3 +94,5 @@ public abstract class TagBlockEntity extends BlockEntity {
         }
     }
 }
+
+//?}

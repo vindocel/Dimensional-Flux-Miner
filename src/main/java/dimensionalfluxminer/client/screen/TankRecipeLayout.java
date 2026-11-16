@@ -1,6 +1,10 @@
 package dimensionalfluxminer.client.screen;
 
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /** Shared positions and tank artwork for container conversion recipe pages. */
@@ -21,7 +25,11 @@ public final class TankRecipeLayout {
         return filling ? INPUT_FLUID_X : OUTPUT_FLUID_X;
     }
 
+    //? if >=26.1 {
     public static void drawEmptySideAndArrow(GuiGraphicsExtractor g, int x, int y, boolean filling) {
+    //?} else {
+    /*public static void drawEmptySideAndArrow(GuiGraphics g, int x, int y, boolean filling) {
+    *///?}
         FluidGauge.drawNarrow(g, x + fluidX(!filling), y + FLUID_Y, FluidStack.EMPTY, 1);
         int color = GuiTheme.chromeColor(0xFF888888);
         g.fill(x + 69, y + 34, x + 79, y + 37, color);

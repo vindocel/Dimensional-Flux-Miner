@@ -9,6 +9,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+//? if >=26.3 {
+/*import net.minecraft.world.level.block.BonemealSource;
+*///?}
 import net.minecraft.world.level.block.GrowingPlantHeadBlock;
 import net.minecraft.world.level.block.KelpBlock;
 import net.minecraft.world.level.block.KelpPlantBlock;
@@ -56,7 +59,11 @@ public final class CorruptedWaterPlants {
         }
 
         @Override
+        //? if >=26.1 {
         public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return new ItemStack(Items.KELP);
         }
     }
@@ -77,7 +84,11 @@ public final class CorruptedWaterPlants {
         }
 
         @Override
+        //? if >=26.1 {
         public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return new ItemStack(Items.KELP);
         }
     }
@@ -93,12 +104,20 @@ public final class CorruptedWaterPlants {
         }
 
         @Override
+        //? if <26.3 {
         public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state, BonemealSource source) {
+        *///?}
             return isCorruptedWaterSource(level.getBlockState(pos.above()));
         }
 
         @Override
+        //? if <26.3 {
         public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
+        *///?}
             BlockState lower = DfmBlocks.CORRUPTED_TALL_SEAGRASS.get().defaultBlockState();
             BlockState upper = lower.setValue(TallSeagrassBlock.HALF, DoubleBlockHalf.UPPER);
             BlockPos above = pos.above();
@@ -109,7 +128,11 @@ public final class CorruptedWaterPlants {
         }
 
         @Override
+        //? if >=26.1 {
         public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return new ItemStack(Items.SEAGRASS);
         }
     }
@@ -125,7 +148,11 @@ public final class CorruptedWaterPlants {
         }
 
         @Override
+        //? if >=26.1 {
         public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return new ItemStack(Items.SEAGRASS);
         }
     }

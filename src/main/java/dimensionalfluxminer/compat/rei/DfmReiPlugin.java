@@ -34,9 +34,16 @@ import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.forge.REIPluginClient;
 import net.minecraft.client.Minecraft;
+//? if <26.1 {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
@@ -60,6 +67,14 @@ public final class DfmReiPlugin implements REIClientPlugin {
     private static final int PADDING = 4;
     /** Crushing preview: one operation every 4 s. */
     private static final long PREVIEW_MS = 4000;
+    //? if <26.1 {
+
+    /*/^* Creative tanks holding different liquids are different entries. ^/
+    @Override
+    public void registerItemComparators(me.shedaniel.rei.api.common.entry.comparison.ItemComparatorRegistry registry) {
+        registry.registerComponents(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get());
+    }
+    *///?}
 
     /** One creative tank per liquid, right after the empty one (and only once, whatever REI took from the creative tab). */
     @Override
@@ -103,16 +118,28 @@ public final class DfmReiPlugin implements REIClientPlugin {
         if (RecipeViewers.emi() || level == null) {
             return;
         }
+        //? if >=26.1 {
         for (var holder : dimensionalfluxminer.recipe.Recipes.byType(level, dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get())) {
+        //?} else {
+        /*for (var holder : level.getRecipeManager().getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get())) {
+        *///?}
             var recipe = holder.value();
             List<EntryIngredient> inputs = new ArrayList<>();
             List<EntryIngredient> outputs = new ArrayList<>();
+            //? if >=26.1 {
             inputs.add(EntryIngredients.ofItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(recipe.ingredient()))));
+            //?} else {
+            /*inputs.add(EntryIngredients.ofItemStacks(List.of(recipe.ingredient().getItems())));
+            *///?}
             outputs.add(EntryIngredients.of(recipe.result()));
             var fluid = EntryIngredient.of(recipe.fluids().stream().map(stack -> EntryStacks.of(
                     dev.architectury.fluid.FluidStack.create(stack.getFluid(), stack.getAmount()))).toList());
             (recipe.filling() ? inputs : outputs).add(fluid);
+            //? if >=26.1 {
             registry.add(new Page(TANK_CONTAINER, inputs, outputs, holder.id().identifier(), 0));
+            //?} else {
+            /*registry.add(new Page(TANK_CONTAINER, inputs, outputs, holder.id(), 0));
+            *///?}
         }
         for (CrusherProcessing.Display display : RecipeViewerData.crushing()) {
             EntryIngredient output = EntryIngredients.of(display.output());
@@ -121,9 +148,17 @@ public final class DfmReiPlugin implements REIClientPlugin {
             }
             registry.add(new Page(CRUSHING, List.of(EntryIngredients.ofItemStacks(display.inputs())), List.of(output), null, 0));
         }
+        //? if >=26.1 {
         for (RecipeViewerData.FurnaceDisplay display : RecipeViewerData.electricFurnaceSmelting(dimensionalfluxminer.recipe.Recipes.map(level),
+        //?} else {
+        /*for (RecipeViewerData.FurnaceDisplay display : RecipeViewerData.electricFurnaceSmelting(level.getRecipeManager(),
+        *///?}
                 level.registryAccess())) {
+            //? if >=26.1 {
             List<ItemStack> inputs = List.of(dimensionalfluxminer.recipe.Recipes.stacks(display.input())).stream().map(s -> s.copyWithCount(display.inputCount())).toList();
+            //?} else {
+            /*List<ItemStack> inputs = List.of(display.input().getItems()).stream().map(s -> s.copyWithCount(display.inputCount())).toList();
+            *///?}
             EntryIngredient output = EntryIngredients.of(display.output());
             if (display.bulk()) {
                 output = withLine(output, RecipeViewerData.bulkLine());
@@ -131,16 +166,28 @@ public final class DfmReiPlugin implements REIClientPlugin {
             registry.add(new Page(SMELTING, List.of(EntryIngredients.ofItemStacks(inputs)), List.of(output), display.id(),
                     display.cookTicks() * 50L));
         }
+        //? if >=26.1 {
         for (RecipeHolder<AlloyingRecipe> holder : RecipeViewerData.alloying(dimensionalfluxminer.recipe.Recipes.map(level))) {
+        //?} else {
+        /*for (RecipeHolder<AlloyingRecipe> holder : RecipeViewerData.alloying(level.getRecipeManager())) {
+        *///?}
             AlloyingRecipe recipe = holder.value();
             List<EntryIngredient> inputs = new ArrayList<>();
             for (SizedIngredient sized : recipe.ingredients()) {
+                //? if >=26.1 {
                 inputs.add(EntryIngredients.ofItemStacks(sized.ingredient().items().map(item -> new ItemStack(item, sized.count())).toList()));
+                //?} else {
+                /*inputs.add(EntryIngredients.ofItemStacks(List.of(sized.getItems())));
+                *///?}
             }
             List<EntryIngredient> outputs = new ArrayList<>();
             outputs.add(EntryIngredients.of(recipe.result()));
             recipe.byproduct().ifPresent(b -> outputs.add(withLine(EntryIngredients.of(b.stack()), RecipeViewerData.chanceLine(b.chance()))));
+            //? if >=26.1 {
             registry.add(new Page(ALLOYING, inputs, outputs, holder.id().identifier(), recipe.processingTicks() * 50L));
+            //?} else {
+            /*registry.add(new Page(ALLOYING, inputs, outputs, holder.id(), recipe.processingTicks() * 50L));
+            *///?}
         }
     }
 
@@ -176,7 +223,11 @@ public final class DfmReiPlugin implements REIClientPlugin {
 
     /** One page: its inputs, outputs, recipe id (null for crushing) and the length of its heat animation. */
     record Page(CategoryIdentifier<Page> category, List<EntryIngredient> inputs, List<EntryIngredient> outputs,
+                //? if >=26.1 {
                 Identifier location, long cycleMs) implements Display {
+                //?} else {
+                /*ResourceLocation location, long cycleMs) implements Display {
+                *///?}
         @Override
         public List<EntryIngredient> getInputEntries() {
             return inputs;
@@ -193,14 +244,20 @@ public final class DfmReiPlugin implements REIClientPlugin {
         }
 
         @Override
+        //? if >=26.1 {
         public Optional<Identifier> getDisplayLocation() {
+        //?} else {
+        /*public Optional<ResourceLocation> getDisplayLocation() {
+        *///?}
             return Optional.ofNullable(location);
+        //? if >=26.1 {
         }
 
         /** Pages are rebuilt on the client from the synced recipes; they never go over the network. */
         @Override
         public me.shedaniel.rei.api.common.display.DisplaySerializer<?> getSerializer() {
             return null;
+        //?}
         }
     }
 
@@ -241,7 +298,11 @@ public final class DfmReiPlugin implements REIClientPlugin {
             // every draw so switching it in REI applies at once.
             if (id == TANK_CONTAINER) {
                 boolean filling = page.inputs().size() > 1;
+                //? if >=26.1 {
                 widgets.add(Widgets.createDrawableWidget((g, mouseX, mouseY, delta) ->
+                //?} else {
+                /*widgets.add(Widgets.createDrawableWidget((GuiGraphics g, int mouseX, int mouseY, float delta) ->
+                *///?}
                         GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () ->
                                 TankRecipeLayout.drawEmptySideAndArrow(g, x, y, filling))));
                 widgets.add(Widgets.createSlot(new Rectangle(x + TankRecipeLayout.INPUT_ITEM_X - 1,
@@ -256,7 +317,11 @@ public final class DfmReiPlugin implements REIClientPlugin {
                 widgets.add(tankFluidIcon(fluidSlot, fluidX, fluidY));
                 return widgets;
             }
+            //? if >=26.1 {
             widgets.add(Widgets.createDrawableWidget((g, mouseX, mouseY, delta) ->
+            //?} else {
+            /*widgets.add(Widgets.createDrawableWidget((GuiGraphics g, int mouseX, int mouseY, float delta) ->
+            *///?}
                     GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () -> {
                         if (id == CRUSHING) {
                             CrusherLayout.drawMechanism(g, x, y, CrusherLayout.WIDTH);
@@ -284,6 +349,7 @@ public final class DfmReiPlugin implements REIClientPlugin {
             }
             return widgets;
         }
+        //? if >=26.1 {
 
         private static Widget tankFluidIcon(me.shedaniel.rei.api.client.gui.widgets.Slot slot, int x, int y) {
             return Widgets.createDrawableWidget((g, mouseX, mouseY, delta) -> {
@@ -294,6 +360,19 @@ public final class DfmReiPlugin implements REIClientPlugin {
                 }
             });
         }
+        //?} else {
+    /*}
+
+    /^* The narrow liquid gauge drawn over the fluid slot, following the entry REI currently shows. ^/
+    private static Widget tankFluidIcon(me.shedaniel.rei.api.client.gui.widgets.Slot slot, int x, int y) {
+        return Widgets.createDrawableWidget((GuiGraphics g, int mouseX, int mouseY, float delta) -> {
+            if (slot.getCurrentEntry().getValue() instanceof dev.architectury.fluid.FluidStack current) {
+                var fluid = new net.neoforged.neoforge.fluids.FluidStack(current.getFluid(), (int) current.getAmount());
+                GuiTheme.withDark(ConfigObject.getInstance().isUsingDarkTheme(), () ->
+                        FluidGauge.drawNarrow(g, x, y, fluid, fluid.getAmount()));
+            }
+        });
+        *///?}
     }
 
     /** Slot whose 18 x 18 frame is at (x, y): the element already draws the frame, the item sits 1 px inside it. */

@@ -1,10 +1,12 @@
 package dimensionalfluxminer.miner;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.EnergyStore;
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.SlotStorage;
 import dimensionalfluxminer.machine.transfer.Transfer;
 import dimensionalfluxminer.machine.transfer.Transfer;
+//?}
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.registry.DfmTags;
@@ -50,7 +52,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
@@ -65,13 +71,22 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+//? if <26.1 {
+/*import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
+*///?}
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Logical controller of the Dimensional Flux Miner, living in the terminal. It owns every buffer of the formed
  * machine and drives production, the Basic environmental drain and the Stabilized Matter Injection.
  */
+//? if >=26.1 {
 public class MinerControllerBlockEntity extends dimensionalfluxminer.content.TagBlockEntity implements MenuProvider {
+//?} else {
+/*public class MinerControllerBlockEntity extends BlockEntity implements MenuProvider {
+*///?}
     public static final int OUTPUT_SLOTS = MinerOutput.SLOTS;
     public static final int MAX_ROLLS_PER_CYCLE = 64;
     /** The animation and the sound go on for 1 s after the work pauses, so short gaps do not flicker them. */
@@ -114,7 +129,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     private boolean autoEject;
     /** The nine configurable faces of the lower layer; see {@link MinerPorts}. */
     private final MinerPorts ports = new MinerPorts();
+    //? if >=26.1 {
     private final Set<Identifier> filter = new LinkedHashSet<>();
+    //?} else {
+    /*private final Set<ResourceLocation> filter = new LinkedHashSet<>();
+    *///?}
     private UUID owner;
     /** Columns this Miner has drained in its life; drives the "half of the area drained" advancement. */
     private long columnsDrained;
@@ -136,7 +155,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         return dimensionalfluxminer.miner.survey.ColumnOrder.get().size() / 2;
     }
 
+    //? if >=26.1 {
     private final SlotStorage coreSlot = new SlotStorage(1) {
+    //?} else {
+    /*private final ItemStackHandler coreSlot = new ItemStackHandler(1) {
+    *///?}
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return DfmItems.isCore(stack.getItem());
@@ -152,7 +175,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
             onCoreChanged();
         }
     };
+    //? if >=26.1 {
     private final SlotStorage upgradeSlot = new SlotStorage(1) {
+    //?} else {
+    /*private final ItemStackHandler upgradeSlot = new ItemStackHandler(1) {
+    *///?}
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return stack.is(DfmItems.EFFICIENCY_UPGRADE.get());
@@ -215,7 +242,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     private int loadPercent;
     private Direction clientFront = Direction.SOUTH;
 
+    //? if >=26.1 {
     private final EnergyStore energyPort = new EnergyStore() {
+    //?} else {
+    /*private final IEnergyStorage energyPort = new IEnergyStorage() {
+    *///?}
         @Override
         public int receiveEnergy(int toReceive, boolean simulate) {
             if (!formed) {
@@ -255,7 +286,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     };
 
     /** Insertion-only Matter Input (Stabilized Core): accepted substrate becomes DM immediately. */
+    //? if >=26.1 {
     private final ItemSlots matterPort = new ItemSlots() {
+    //?} else {
+    /*private final IItemHandler matterPort = new IItemHandler() {
+    *///?}
         @Override
         public int getSlots() {
             return 1;
@@ -288,6 +323,7 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         }
     };
 
+    //? if >=26.1 {
     /** What other blocks can change through the ports, put back if their transaction is cancelled. */
     private final Transfer.Journal<Object[]> journal = new Transfer.Journal<>(
             () -> new Object[] {energyBuffer.stored(), energyBuffer.debt(), matter.units(), output.handler().snapshot(),
@@ -307,6 +343,7 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         return journal;
     }
 
+    //?}
     public MinerControllerBlockEntity(BlockPos pos, BlockState state) {
         super(DfmBlockEntities.MINER_CONTROLLER.get(), pos, state);
     }
@@ -324,15 +361,27 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         return structure;
     }
 
+    //? if >=26.1 {
     public SlotStorage coreSlot() {
+    //?} else {
+    /*public ItemStackHandler coreSlot() {
+    *///?}
         return coreSlot;
     }
 
+    //? if >=26.1 {
     public SlotStorage upgradeSlot() {
+    //?} else {
+    /*public ItemStackHandler upgradeSlot() {
+    *///?}
         return upgradeSlot;
     }
 
+    //? if >=26.1 {
     public SlotStorage output() {
+    //?} else {
+    /*public ItemStackHandler output() {
+    *///?}
         return output.handler();
     }
 
@@ -388,7 +437,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         setChanged();
     }
 
+    //? if >=26.1 {
     public Set<Identifier> filter() {
+    //?} else {
+    /*public Set<ResourceLocation> filter() {
+    *///?}
         return filter;
     }
 
@@ -537,7 +590,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
      * Item capability of a face: Item Output, Matter Input (Stabilized Core only) or both on the same face. The
      * {@code null} side of every miner block is a read-only view of the output buffer (Jade).
      */
+    //? if >=26.1 {
     public ItemSlots itemPort(BlockPos portPos, Direction side) {
+    //?} else {
+    /*public IItemHandler itemPort(BlockPos portPos, Direction side) {
+    *///?}
         MinerStructure s = structure();
         if (!formed || s == null) {
             return null;
@@ -566,9 +623,17 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
      * Core) asks for the Matter Input. The face only gives or takes items once it has the role; the next scan moves
      * the role there (see {@link #scanAutomaticPorts}). Slots: the output slots, then one insertion-only matter slot.
      */
+    //? if >=26.1 {
     private final class PortHandler implements ItemSlots {
+    //?} else {
+    /*private final class PortHandler implements IItemHandler {
+    *///?}
         private final MinerPorts.Face face;
+        //? if >=26.1 {
         private final ItemSlots view = output.extractionView();
+        //?} else {
+        /*private final IItemHandler view = output.extractionView();
+        *///?}
 
         PortHandler(MinerPorts.Face face) {
             this.face = face;
@@ -635,7 +700,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
      * Energy capability of a face: every face by default, only the hand-picked ones once the player chose some.
      * The Jade integration reads the controller's buffer directly.
      */
+    //? if >=26.1 {
     public EnergyStore energyPort(BlockPos portPos, Direction side) {
+    //?} else {
+    /*public IEnergyStorage energyPort(BlockPos portPos, Direction side) {
+    *///?}
         MinerStructure s = structure();
         if (side == null || !formed || s == null) {
             return null;
@@ -772,7 +841,12 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             Direction out = face.outward(front);
             BlockPos neighbor = face.owner(s.core(), front).relative(out);
+            //? if >=26.1 {
             if (level.isLoaded(neighbor) && Transfer.energy(level, neighbor, out.getOpposite()) != null) {
+            //?} else {
+            /*if (level.isLoaded(neighbor) && level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
+                    neighbor, out.getOpposite()) != null) {
+            *///?}
                 mask |= face.bit();
             }
         }
@@ -824,10 +898,15 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         invalidatePorts();
         setChanged();
         syncToClients();
+        //? if >=26.1 {
         PacketDistributor.sendToPlayersTrackingChunk(serverLevel, net.minecraft.world.level.ChunkPos.containing(worldPosition),
+        //?} else {
+        /*PacketDistributor.sendToPlayersTrackingChunk(serverLevel, new net.minecraft.world.level.ChunkPos(worldPosition),
+        *///?}
                 new MinerFormationPayload(s.members().stream().map(MinerStructure.Member::pos).toList()));
         DfmAdvancements.awardOwner(serverLevel, owner, worldPosition, DfmAdvancements.MINER_FORMED);
         return null;
+    //? if >=26.1 {
     }
 
     /** Breaking the terminal takes the machine apart too (the parts' removal no longer finds this block entity). */
@@ -835,6 +914,7 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         super.preRemoveSideEffects(pos, state);
         invalidate();
+    //?}
     }
 
     /**
@@ -1067,7 +1147,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         WorkAccumulator.Plan plan = work.plan(rateNow, MAX_ROLLS_PER_CYCLE);
         // Basic: corruption is the source of matter, performed only when the buffer needs it.
         MinerSurvey drainSurvey = survey;
+        //? if >=26.1 {
         MinerAttempts.Result attempts = MinerAttempts.run(plan.operations(), profile, serverLevel.getRandom(), filter, hasEfficiencyUpgrade(), matter,
+        //?} else {
+        /*MinerAttempts.Result attempts = MinerAttempts.run(plan.operations(), profile, serverLevel.random, filter, hasEfficiencyUpgrade(), matter,
+        *///?}
                 core == CoreKind.BASIC ? () -> drainColumn(serverLevel, drainSurvey) : () -> false, output);
         long executed = attempts.executed();
         boolean missed = attempts.missed();
@@ -1166,7 +1250,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         }
         MinerLayout.Front front = MinerStructure.toFront(s.front());
         MinerPorts.Face face = MinerPorts.Face.VALUES[ports.outputFace()];
+        //? if >=26.1 {
         ItemSlots target = NeighborTransfer.neighbor(level, face.owner(s.core(), front), face.outward(front));
+        //?} else {
+        /*IItemHandler target = NeighborTransfer.neighbor(level, face.owner(s.core(), front), face.outward(front));
+        *///?}
         if (target != null) {
             output.ejectTo(target);
         }
@@ -1219,7 +1307,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     }
 
     private void syncToClients() {
+        //? if >=26.1 {
         if (level != null && !level.isClientSide()) {
+        //?} else {
+        /*if (level != null && !level.isClientSide) {
+        *///?}
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
@@ -1238,7 +1330,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     }
 
     @Override
+    //? if >=26.1 {
     protected void readUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    //?} else {
+    /*public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    *///?}
         readClient(tag);
     }
 
@@ -1247,8 +1343,17 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if <26.1 {
+    /*@Override
+    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
+        if (pkt.getTag() != null) {
+            readClient(pkt.getTag());
+        }
+    }
+    *///?}
 
     private void readClient(CompoundTag tag) {
+        //? if >=26.1 {
         formed = tag.getBooleanOr("formed", false);
         visualStage = MinerVisualStage.byKey(tag.getStringOr("stage", ""));
         loadPercent = tag.getIntOr("load", 0);
@@ -1256,6 +1361,15 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         animationStartTick = tag.getLongOr("anim_start", 0L);
         portLooks = tag.getIntOr("port_looks", 0);
         int[] colors = tag.getIntArray("node_colors").orElse(new int[0]);
+        //?} else {
+        /*formed = tag.getBoolean("formed");
+        visualStage = MinerVisualStage.byKey(tag.getString("stage"));
+        loadPercent = tag.getInt("load");
+        rate = RateScale.clampLevel(tag.getInt("rate"));
+        animationStartTick = tag.getLong("anim_start");
+        portLooks = tag.getInt("port_looks");
+        int[] colors = tag.getIntArray("node_colors");
+        *///?}
         nodeColors = colors.length == MinerPorts.Face.VALUES.length ? colors : new int[MinerPorts.Face.VALUES.length];
         clientFront = getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
@@ -1344,7 +1458,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
                     List<ResourceFamily> families = ResourceProfiles.get(serverLevel).families();
                     int index = id - BUTTON_FILTER_TOGGLE;
                     if (index < families.size()) {
+                        //? if >=26.1 {
                         Identifier key = families.get(index).key();
+                        //?} else {
+                        /*ResourceLocation key = families.get(index).key();
+                        *///?}
                         if (!filter.remove(key)) {
                             filter.add(key);
                         }
@@ -1410,7 +1528,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         tag.putDouble("load", metrics.smoothedLoad());
         tag.putDouble("nominal", curve().levelRate(rate));
         if (level != null) {
+            //? if >=26.1 {
             tag.putString("dimension", level.dimension().identifier().toString());
+            //?} else {
+            /*tag.putString("dimension", level.dimension().location().toString());
+            *///?}
         }
         tag.putInt("output_used", output.usedSlots());
         if (level instanceof ServerLevel serverLevel) {
@@ -1452,8 +1574,13 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     // ---------------------------------------------------------------- persistence
 
     @Override
+    //? if >=26.1 {
     protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveTag(tag, registries);
+    //?} else {
+    /*protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+    *///?}
         tag.putBoolean("formed", formed);
         tag.putLong("energy", energyBuffer.stored());
         tag.putDouble("energy_debt", energyBuffer.debt());
@@ -1470,7 +1597,11 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         filter.forEach(key -> filterTag.add(StringTag.valueOf(key.toString())));
         tag.put("filter", filterTag);
         if (owner != null) {
+            //? if >=26.1 {
             tag.store("owner", net.minecraft.core.UUIDUtil.CODEC, owner);
+            //?} else {
+            /*tag.putUUID("owner", owner);
+            *///?}
         }
         tag.putLong("columns_drained", columnsDrained);
         tag.putLong("cobblestone_injected", cobblestoneInjected);
@@ -1480,6 +1611,7 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
     }
 
     @Override
+    //? if >=26.1 {
     protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadTag(tag, registries);
         formed = tag.getBooleanOr("formed", false);
@@ -1488,26 +1620,61 @@ public class MinerControllerBlockEntity extends dimensionalfluxminer.content.Tag
         work.setProgress(tag.getDoubleOr("work_progress", 0.0));
         matter.set(tag.getLongOr("dm", 0L));
         rate = RateScale.clampLevel(tag.contains("rate") ? tag.getIntOr("rate", 0) : 1);
+    //?} else {
+    /*protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        formed = tag.getBoolean("formed");
+        energyBuffer.setStored(tag.getLong("energy"));
+        energyBuffer.setDebt(tag.getDouble("energy_debt"));
+        work.setProgress(tag.getDouble("work_progress"));
+        matter.set(tag.getLong("dm"));
+        rate = RateScale.clampLevel(tag.contains("rate") ? tag.getInt("rate") : 1);
+    *///?}
         // A normal save/restart with the structure intact keeps the manual START state.
+        //? if >=26.1 {
         runRequested = tag.getBooleanOr("run_requested", false) && formed;
         redstoneControl = tag.getBooleanOr("redstone_control", false);
         autoInput = tag.getBooleanOr("auto_input", false);
         autoEject = tag.getBooleanOr("auto_eject", false);
         ports.load(tag.getCompoundOrEmpty("ports"));
+        //?} else {
+        /*runRequested = tag.getBoolean("run_requested") && formed;
+        redstoneControl = tag.getBoolean("redstone_control");
+        autoInput = tag.getBoolean("auto_input");
+        autoEject = tag.getBoolean("auto_eject");
+        ports.load(tag.getCompound("ports"));
+        *///?}
         filter.clear();
+        //? if >=26.1 {
         ListTag filterTag = tag.getListOrEmpty("filter");
+        //?} else {
+        /*ListTag filterTag = tag.getList("filter", Tag.TAG_STRING);
+        *///?}
         for (int i = 0; i < filterTag.size(); i++) {
+            //? if >=26.1 {
             Identifier key = Identifier.tryParse(filterTag.getStringOr(i, ""));
+            //?} else {
+            /*ResourceLocation key = ResourceLocation.tryParse(filterTag.getString(i));
+            *///?}
             if (key != null) {
                 filter.add(key);
             }
         }
+        //? if >=26.1 {
         owner = tag.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         columnsDrained = tag.getLongOr("columns_drained", 0L);
         cobblestoneInjected = tag.getLongOr("cobblestone_injected", 0L);
         coreSlot.deserializeNBT(registries, tag.getCompoundOrEmpty("core"));
         upgradeSlot.deserializeNBT(registries, tag.getCompoundOrEmpty("upgrade"));
         output.load(registries, tag.getCompoundOrEmpty("output"));
+        //?} else {
+        /*owner = tag.hasUUID("owner") ? tag.getUUID("owner") : null;
+        columnsDrained = tag.getLong("columns_drained");
+        cobblestoneInjected = tag.getLong("cobblestone_injected");
+        coreSlot.deserializeNBT(registries, tag.getCompound("core"));
+        upgradeSlot.deserializeNBT(registries, tag.getCompound("upgrade"));
+        output.load(registries, tag.getCompound("output"));
+        *///?}
         lastCore = coreKind();
         structure = null;
         wasPowered = energyBuffer.stored() > 0;

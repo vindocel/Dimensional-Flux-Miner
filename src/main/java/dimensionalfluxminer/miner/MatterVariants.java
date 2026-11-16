@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.HolderLookup;
+//? if >=26.1 {
 import net.minecraft.core.RegistryAccess;
+//?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
@@ -19,7 +21,11 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+//? if >=26.1 {
 import net.minecraft.world.item.crafting.RecipeMap;
+//?} else {
+/*import net.minecraft.world.item.crafting.RecipeManager;
+*///?}
 import net.minecraft.world.item.crafting.StonecutterRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
@@ -45,7 +51,11 @@ public final class MatterVariants {
     private record Key(ResourceKey<Level> dimension, boolean upgrade) {
     }
 
+    //? if >=26.1 {
     private record Cache(RecipeMap recipes, List<Making> makings, Map<Key, Map<Item, Integer>> byDimension) {
+    //?} else {
+    /*private record Cache(RecipeManager recipes, List<Making> makings, Map<Key, Map<Item, Integer>> byDimension) {
+    *///?}
     }
 
     private static volatile Cache cache;
@@ -54,7 +64,11 @@ public final class MatterVariants {
     }
 
     /** Value in units of a variant accepted in {@code dimension}; empty for any other item. */
+    //? if >=26.1 {
     public static OptionalInt value(RecipeMap recipes, RegistryAccess registries, ResourceKey<Level> dimension, Item item) {
+    //?} else {
+    /*public static OptionalInt value(RecipeManager recipes, HolderLookup.Provider registries, ResourceKey<Level> dimension, Item item) {
+    *///?}
         return value(recipes, registries, dimension, item, false);
     }
 
@@ -63,7 +77,11 @@ public final class MatterVariants {
      * the substrates' Efficiency Upgrade values: cutting one block into many pieces never multiplies the upgrade bonus,
      * because each piece is worth its share of the upgraded block, not a bonus of its own.
      */
+    //? if >=26.1 {
     public static OptionalInt value(RecipeMap recipes, RegistryAccess registries, ResourceKey<Level> dimension, Item item,
+    //?} else {
+    /*public static OptionalInt value(RecipeManager recipes, HolderLookup.Provider registries, ResourceKey<Level> dimension, Item item,
+    *///?}
                                     boolean upgrade) {
         Cache current = cache;
         if (current == null || current.recipes() != recipes) {
@@ -80,21 +98,41 @@ public final class MatterVariants {
         return units == null ? OptionalInt.empty() : OptionalInt.of(units);
     }
 
+    //? if >=26.1 {
     private static List<Making> makings(RecipeMap recipes, RegistryAccess registries) {
+    //?} else {
+    /*private static List<Making> makings(RecipeManager recipes, HolderLookup.Provider registries) {
+    *///?}
         List<Making> list = new ArrayList<>();
+        //? if >=26.1 {
         for (RecipeHolder<?> holder : recipes.values()) {
+        //?} else {
+        /*for (RecipeHolder<?> holder : recipes.getRecipes()) {
+        *///?}
             Recipe<?> recipe = holder.value();
             if (!(recipe instanceof StonecutterRecipe || recipe instanceof AbstractCookingRecipe || recipe instanceof CraftingRecipe)) {
                 continue;
             }
+            //? if >=26.1 {
             ItemStack result = dimensionalfluxminer.recipe.Recipes.result(registries, recipe);
+            //?} else {
+            /*ItemStack result = recipe.getResultItem(registries);
+            *///?}
             if (result.isEmpty() || !plainBlock(result)) {
                 continue;
             }
             List<Item[]> ingredients = new ArrayList<>();
+            //? if >=26.1 {
             for (Ingredient ingredient : dimensionalfluxminer.recipe.Recipes.ingredients(recipe)) {
+            //?} else {
+            /*for (Ingredient ingredient : recipe.getIngredients()) {
+            *///?}
                 if (!ingredient.isEmpty()) {
+                    //? if >=26.1 {
                     ingredients.add(java.util.Arrays.stream(dimensionalfluxminer.recipe.Recipes.stacks(ingredient)).map(ItemStack::getItem).toArray(Item[]::new));
+                    //?} else {
+                    /*ingredients.add(java.util.Arrays.stream(ingredient.getItems()).map(ItemStack::getItem).toArray(Item[]::new));
+                    *///?}
                 }
             }
             if (!ingredients.isEmpty()) {
@@ -106,14 +144,22 @@ public final class MatterVariants {
 
     private static boolean plainBlock(ItemStack stack) {
         return stack.getItem() instanceof BlockItem block && !(block.getBlock() instanceof EntityBlock)
+                //? if >=26.1 {
                 && !MatterValues.isOre(stack) && stack.typeHolder().getData(DfmDataMaps.MATTER_VALUE) == null;
+                //?} else {
+                /*&& !MatterValues.isOre(stack) && stack.getItemHolder().getData(DfmDataMaps.MATTER_VALUE) == null;
+                *///?}
     }
 
     /** Every variant accepted in {@code dimension} and its value, by repeating the recipes until nothing gets cheaper. */
     private static Map<Item, Integer> variants(List<Making> makings, Key key) {
         Map<Item, Integer> substrates = new HashMap<>();
         BuiltInRegistries.ITEM.getDataMap(DfmDataMaps.MATTER_VALUE).forEach((id, value) -> {
+            //? if >=26.1 {
             Item item = BuiltInRegistries.ITEM.getValue(id);
+            //?} else {
+            /*Item item = BuiltInRegistries.ITEM.get(id);
+            *///?}
             if (value.acceptedIn(key.dimension()) && !MatterValues.isOre(new ItemStack(item))) {
                 substrates.put(item, MatterValues.matterInputUnits(value.units(), key.upgrade()));
             }

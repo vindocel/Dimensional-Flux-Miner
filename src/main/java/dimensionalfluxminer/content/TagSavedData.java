@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.content;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
@@ -83,3 +84,5 @@ public final class TagSavedData {
         }
     }
 }
+
+//?}

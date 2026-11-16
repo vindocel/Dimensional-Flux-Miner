@@ -2,7 +2,11 @@ package dimensionalfluxminer.client.screen;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import java.util.Locale;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 
 /**
  * Icon color the player picks for a machine screen; white is the default. The energy fill (screens and Jade), the
@@ -23,7 +27,11 @@ public enum IconColor {
     private final int screenText;
     private final int volumeLit;
     private final int hoverOutline;
+    //? if >=26.1 {
     private final Identifier energySheet;
+    //?} else {
+    /*private final ResourceLocation energySheet;
+    *///?}
     private final int glassTop;
     private final int glassBottom;
     private final int glassRim;
@@ -99,7 +107,11 @@ public enum IconColor {
     }
 
     /** Shimmering energy fill (42 frames of 8 x 66). */
+    //? if >=26.1 {
     public Identifier energySheet() {
+    //?} else {
+    /*public ResourceLocation energySheet() {
+    *///?}
         return energySheet;
     }
 }

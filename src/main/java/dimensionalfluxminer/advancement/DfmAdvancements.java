@@ -7,7 +7,11 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+//? if <26.3 {
 import net.minecraft.advancements.CriterionTrigger;
+//?} else {
+/*import net.minecraft.advancements.triggers.CriterionTrigger;
+*///?}
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;

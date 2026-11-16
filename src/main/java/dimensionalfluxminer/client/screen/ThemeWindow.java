@@ -2,8 +2,12 @@ package dimensionalfluxminer.client.screen;
 
 import java.util.List;
 import net.minecraft.ChatFormatting;
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.network.chat.Component;
 
 /** Local appearance preferences and the volume of this machine. */
@@ -45,7 +49,11 @@ final class ThemeWindow extends DfmScreen.Window {
     }
 
     @Override
+    //? if >=26.1 {
     protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
+    //?} else {
+    /*protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    *///?}
         var pos = screen.machinePos();
         int left = x + INSET;
         int contentWidth = width - 2 * INSET;
@@ -92,12 +100,20 @@ final class ThemeWindow extends DfmScreen.Window {
         }
     }
 
+    //? if >=26.1 {
     private void label(GuiGraphicsExtractor g, int x, int y, Component text) {
+    //?} else {
+    /*private void label(GuiGraphics g, int x, int y, Component text) {
+    *///?}
         screen.fitted(g, text, x + 6, y, width - 12, GuiTheme.subheading(), 1.0F, true);
     }
 
     /** Volume of this machine's sound: - [10 segments] + */
+    //? if >=26.1 {
     private void volume(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
+    //?} else {
+    /*private void volume(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    *///?}
         var pos = screen.machinePos();
         int volume = GuiThemes.volume(pos);
         Component level = volume == 0 ? Component.translatable("gui.dimensionalfluxminer.theme.volume.mute")
@@ -134,13 +150,21 @@ final class ThemeWindow extends DfmScreen.Window {
     }
 
     /** A framed button with a color preview and its name in the same click target. */
+    //? if >=26.1 {
     private void choice(GuiGraphicsExtractor g, int x, int y, int w, int color, boolean selected, String nameKey,
+    //?} else {
+    /*private void choice(GuiGraphics g, int x, int y, int w, int color, boolean selected, String nameKey,
+    *///?}
                         int mouseX, int mouseY, Runnable choose) {
         ButtonArt.draw(g, x, y, w, CHOICE_HEIGHT, true, screen.hovered(x, y, w, CHOICE_HEIGHT, mouseX, mouseY), selected);
         g.fill(x + 3, y + 3, x + 19, y + 19, 0xFF1A1A1A);
         g.fill(x + 4, y + 4, x + 18, y + 18, color);
         if (selected) {
+            //? if >=26.1 {
             g.blitSprite(RenderPipelines.GUI_TEXTURED, DfmScreen.CHECK, x + 4, y + 4, 14, 14);
+            //?} else {
+            /*g.blitSprite(DfmScreen.CHECK, x + 4, y + 4, 14, 14);
+            *///?}
         }
         Component name = Component.translatable(THEME + nameKey);
         screen.fitted(g, name, x + 22, y + 7, w - 25, 0xFFFFFFFF, 1.0F, false);

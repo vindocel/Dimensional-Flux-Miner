@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.client.render;
 
 import net.minecraft.client.Minecraft;
@@ -29,3 +30,5 @@ public final class FluidSprites {
         return tint(new FluidStack(fluid, 1000));
     }
 }
+
+//?}

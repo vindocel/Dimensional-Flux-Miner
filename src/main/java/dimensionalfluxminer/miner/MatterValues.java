@@ -34,7 +34,11 @@ public final class MatterValues {
 
     /** Base value of an item regardless of dimension (used for filter recovery of generated ores). */
     public static OptionalInt baseUnits(ItemStack stack) {
+        //? if >=26.1 {
         DfmDataMaps.MatterValue value = stack.typeHolder().getData(DfmDataMaps.MATTER_VALUE);
+        //?} else {
+        /*DfmDataMaps.MatterValue value = stack.getItemHolder().getData(DfmDataMaps.MATTER_VALUE);
+        *///?}
         if (value != null) {
             return OptionalInt.of(value.units());
         }
@@ -47,7 +51,11 @@ public final class MatterValues {
     /** Base value of a substrate accepted by the Matter Input of a Miner standing in {@code level}. */
     public static OptionalInt substrateUnits(ItemStack stack, ServerLevel level) {
         return substrateUnits(stack, level.dimension(), item -> ResourceProfiles.get(level).familyOf(item).isPresent(),
+                //? if >=26.1 {
                 item -> MatterVariants.value(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess(), level.dimension(), item));
+                //?} else {
+                /*item -> MatterVariants.value(level.getRecipeManager(), level.registryAccess(), level.dimension(), item));
+                *///?}
     }
 
     /**
@@ -60,7 +68,11 @@ public final class MatterValues {
         if (ore && !generatesHere.test(stack.getItem())) {
             return OptionalInt.empty();
         }
+        //? if >=26.1 {
         DfmDataMaps.MatterValue value = stack.typeHolder().getData(DfmDataMaps.MATTER_VALUE);
+        //?} else {
+        /*DfmDataMaps.MatterValue value = stack.getItemHolder().getData(DfmDataMaps.MATTER_VALUE);
+        *///?}
         if (value != null) {
             return ore || value.acceptedIn(dimension) ? OptionalInt.of(value.units()) : OptionalInt.empty();
         }
@@ -95,8 +107,13 @@ public final class MatterValues {
         }
         boolean producible = isOre(stack) || ResourceProfiles.get(level).familyOf(stack.getItem()).isPresent();
         OptionalInt variant = OptionalInt.empty();
+        //? if >=26.1 {
         if (efficiencyUpgrade && !producible && stack.typeHolder().getData(DfmDataMaps.MATTER_VALUE) == null) {
             variant = MatterVariants.value(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess(), level.dimension(), stack.getItem(), true);
+        //?} else {
+        /*if (efficiencyUpgrade && !producible && stack.getItemHolder().getData(DfmDataMaps.MATTER_VALUE) == null) {
+            variant = MatterVariants.value(level.getRecipeManager(), level.registryAccess(), level.dimension(), stack.getItem(), true);
+        *///?}
         }
         return OptionalInt.of(MatterMath.inputUnits(base.getAsInt(), efficiencyUpgrade, producible, variant));
     }

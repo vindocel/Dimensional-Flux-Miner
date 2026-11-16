@@ -9,10 +9,10 @@ it, but you should know how to edit a text file and how to put a folder inside a
 
 | | |
 |---|---|
-| Minecraft | 26.1.2 |
-| NeoForge | 26.1.2.126 |
+| Minecraft | 1.21.1, 26.1.2 and 26.3 |
+| NeoForge | 21.1.266, 26.1.2.126 and 26.3.0.95 |
 | Mod ID | `dimensionalfluxminer` |
-| Datapack format | `101` |
+| Datapack format | `48` (1.21.1), `101` (26.1.2) |
 
 Other references: gameplay numbers in [BALANCE.md](BALANCE.md), code layout in [ARCHITECTURE.md](ARCHITECTURE.md),
 the player-facing overview in the [README](../README.md).
@@ -434,7 +434,12 @@ My_DFM_Datapack/
         └── tags/
 ```
 
-`pack.mcmeta` for Minecraft 26.1.2 (data pack format `101`, declared with `min_format` and `max_format`):
+The JSON examples of this guide use the 26.x formats (string ingredients such as `"#c:ores/zinc"`). On 1.21.1, write
+ingredients as objects (`{"item": "minecraft:coal"}`, `{"tag": "c:ores/zinc"}`) and loot tables, item models and
+`pack.mcmeta` in the 1.21.1 formats (`"pack_format": 48`).
+
+`pack.mcmeta` for Minecraft 26.1.2 (data pack format `101`, declared with `min_format` and `max_format`; on 26.3 use that
+version's data pack format):
 
 ```json
 {
@@ -1549,7 +1554,7 @@ configuration file and the datapacks of this guide do. Without it, nothing chang
 
 | | |
 |---|---|
-| KubeJS | 26.1.2-8.0.8 or newer (NeoForge 26.1.2) |
+| KubeJS | 2101.7.2 or newer on 1.21.1; 26.1.2-8.0.8 or newer on 26.x |
 | Where | `kubejs/server_scripts/<any name>.js` in the instance or server folder |
 | Apply | `/reload`, or restart |
 | Errors | `logs/kubejs/server.log`, with the file and line |

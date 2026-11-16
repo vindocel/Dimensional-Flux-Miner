@@ -16,7 +16,11 @@ import java.util.TreeSet;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -41,7 +45,11 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
     private RecipeHolder<?> selected;
 
     private List<RecipeChoices.Option> sentOptions;
+    //? if >=26.1 {
     private Identifier sentSelected;
+    //?} else {
+    /*private ResourceLocation sentSelected;
+    *///?}
 
     private MachineRecipeData(BlockEntity owner, RecipeChoices.Host host) {
         this.owner = owner;
@@ -64,14 +72,22 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
             for (int i = 0; i < current.size(); i++) {
                 list.add(new Pair(i, current.get(i).id(), current.get(i).result()));
             }
+            //? if >=26.1 {
             chosen = dimensionalfluxminer.recipe.Recipes.byKey(level, offer.get().selected(host.recipeChoices())).orElse(null);
+            //?} else {
+            /*chosen = level.getRecipeManager().byKey(offer.get().selected(host.recipeChoices())).orElse(null);
+            *///?}
         }
         recipes = list;
         options = current;
         selected = chosen;
     }
 
+    //? if >=26.1 {
     private Identifier selectedId() {
+    //?} else {
+    /*private ResourceLocation selectedId() {
+    *///?}
         return selected == null ? null : selected.id();
     }
 
@@ -118,7 +134,11 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
         if (input.isEmpty()) {
             return null;
         }
+        //? if >=26.1 {
         for (RecipeHolder<T> holder : dimensionalfluxminer.recipe.Recipes.byType(level, type)) {
+        //?} else {
+        /*for (RecipeHolder<T> holder : level.getRecipeManager().getAllRecipesFor(type)) {
+        *///?}
             if (holder.value().matches(input, level)) {
                 return holder;
             }
@@ -201,14 +221,22 @@ final class MachineRecipeData implements IBlockEntityRecipeData {
     }
 
     /** One entry of the list, kept in the machine's order (the default recipe first). */
+    //? if >=26.1 {
     private record Pair(int order, Identifier id, ItemStack output) implements IRecipePair {
+    //?} else {
+    /*private record Pair(int order, ResourceLocation id, ItemStack output) implements IRecipePair {
+    *///?}
         @Override
         public ItemStack getOutput() {
             return output;
         }
 
         @Override
+        //? if >=26.1 {
         public Identifier getResourceLocation() {
+        //?} else {
+        /*public ResourceLocation getResourceLocation() {
+        *///?}
             return id;
         }
 

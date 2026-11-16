@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.machine.transfer;
 
 import java.util.function.Consumer;
@@ -458,3 +459,5 @@ public final class Transfer {
         };
     }
 }
+
+//?}

@@ -1,0 +1,12 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "evilcraft" }
+  ],
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": { "tag": "c:ores/dark_gem" },
+  "result": {
+    "id": "evilcraft:dark_gem"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

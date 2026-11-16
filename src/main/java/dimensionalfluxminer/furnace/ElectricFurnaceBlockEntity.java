@@ -1,8 +1,10 @@
 package dimensionalfluxminer.furnace;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.FluidTanks;
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.Transfer;
+//?}
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.ItemQueue;
@@ -36,11 +38,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+//? if >=26.1 {
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+//?}
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
+//? if >=26.1 {
 import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+//?} else {
+/*import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+*///?}
 
 public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity implements RecipeChoices.Host {
     public static final int LANES = 3;
@@ -225,7 +235,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             }
             ItemStack in = lane.firstPrototype().copyWithCount(1);
             List<RecipeChoices.Option> options = ElectricFurnaceRecipes.options(level, in).stream()
+                    //? if >=26.1 {
                     .map(h -> new RecipeChoices.Option(h.id().identifier(), h.value().assemble(new SingleRecipeInput(in))))
+                    //?} else {
+                    /*.map(h -> new RecipeChoices.Option(h.id(), h.value().getResultItem(level.registryAccess()).copy()))
+                    *///?}
                     .toList();
             if (options.size() > 1) {
                 return Optional.of(new RecipeChoices.Offer(in, options));
@@ -330,7 +344,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             free[i] = q.acceptable(stack);
         }
         boolean pairAware = !hasEfficiencyUpgrade() && cooking(stack)
+                //? if >=26.1 {
                 .map(r -> isRawToIngot(stack, r.assemble(new SingleRecipeInput(stack.copyWithCount(1)))))
+                //?} else {
+                /*.map(r -> isRawToIngot(stack, r.getResultItem(level.registryAccess())))
+                *///?}
                 .orElse(false);
         long[] add = AutoSplit.distribute(counts, free, stack.getCount(), pairAware);
         long placed = 0;
@@ -426,7 +444,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
                 total += current[i];
             }
             boolean pairAware = !upgrade && cooking(prototype)
+                    //? if >=26.1 {
                     .map(r -> isRawToIngot(prototype, r.assemble(new SingleRecipeInput(prototype.copyWithCount(1)))))
+                    //?} else {
+                    /*.map(r -> isRawToIngot(prototype, r.getResultItem(level.registryAccess())))
+                    *///?}
                     .orElse(false);
             long[] target = AutoSplit.distribute(new long[lanes.size()], free, total, pairAware);
             if (java.util.Arrays.equals(target, current) || java.util.Arrays.stream(target).sum() != total) {
@@ -483,7 +505,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             if (found.isEmpty()) {
                 continue;
             }
+            //? if >=26.1 {
             ItemStack result = found.get().assemble(new SingleRecipeInput(in.firstPrototype().copyWithCount(1)));
+            //?} else {
+            /*ItemStack result = found.get().getResultItem(level.registryAccess());
+            *///?}
             if (result.isEmpty()) {
                 continue;
             }
@@ -517,7 +543,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             long fit = planner.room(target, unit) / unit.getCount();
             long limit = Math.min(inputs[lane].firstCount() / unitItems[lane], fit);
             planner.reserve(target, unit, limit * unit.getCount());
+            //? if >=26.1 {
             double itemsPerTick = ElectricFurnaceEnergy.laneOperationsPerTick(rate, recipes[lane].cookingTime());
+            //?} else {
+            /*double itemsPerTick = ElectricFurnaceEnergy.laneOperationsPerTick(rate, recipes[lane].getCookingTime());
+            *///?}
             plans.add(new LanePlan(lane, target, recipes[lane], unitItems[lane], unit, itemsPerTick / unitItems[lane], limit));
         }
         if (plans.isEmpty()) {
@@ -543,7 +573,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
                 inputs[p.lane].remove(0, consumed, false);
                 outputs[p.target].insert(p.unitOutput, plan.operations() * p.unitOutput.getCount(), false);
                 // XP follows the base inputs processed; the bulk bonus multiplies items, not XP.
+                //? if >=26.1 {
                 experience.add(p.recipe.experience() * consumed);
+                //?} else {
+                /*experience.add(p.recipe.getExperience() * consumed);
+                *///?}
             }
             // Billed per input item: a Raw pair (2 items -> 3 ingots) costs two items.
             energy.consume(plan.workDone() * p.unitItems * energyPerItem);
@@ -616,7 +650,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             recipe.byproduct().ifPresent(b -> {
                 long successes = 0;
                 for (long op = 0; op < ops; op++) {
+                    //? if >=26.1 {
                     if (b.chance() >= 1.0F || level.getRandom().nextFloat() < b.chance()) {
+                    //?} else {
+                    /*if (b.chance() >= 1.0F || level.random.nextFloat() < b.chance()) {
+                    *///?}
                         successes++;
                     }
                 }
@@ -727,15 +765,27 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             if (!level.isLoaded(target)) {
                 continue;
             }
+            //? if >=26.1 {
             FluidTanks destination = Transfer.fluids(level, target, side.getOpposite());
+            //?} else {
+            /*IFluidHandler destination = level.getCapability(Capabilities.FluidHandler.BLOCK, target, side.getOpposite());
+            *///?}
             if (destination != null) {
+                //? if >=26.1 {
                 FluidTanks.move(destination, experienceHandler, Integer.MAX_VALUE);
+                //?} else {
+                /*FluidUtil.tryFluidTransfer(destination, experienceHandler, Integer.MAX_VALUE, true);
+                *///?}
             }
         }
     }
 
     @Override
+    //? if >=26.1 {
     protected ItemSlots createItemHandler(SideRoute route) {
+    //?} else {
+    /*protected IItemHandler createItemHandler(SideRoute route) {
+    *///?}
         int lane = route.dedicatedLane();
         List<ItemQueue> in;
         QueueItemHandler.Inserter inserter;
@@ -751,11 +801,16 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
     }
 
     /** Liquid XP on XP_OUTPUT faces only (Jade shows the stored XP in points through its own provider). */
+    //? if >=26.1 {
     public FluidTanks experienceFor(Direction side) {
+    //?} else {
+    /*public IFluidHandler experienceFor(Direction side) {
+    *///?}
         if (side == null || route(side, Transmission.EXPERIENCE) != SideRoute.XP_OUTPUT) {
             return null;
         }
         return experienceHandler;
+    //? if >=26.1 {
     }
 
     @Override
@@ -777,6 +832,7 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
             outputs[i].restore(parts[LANES + i]);
         }
         experience.setMilli((long) parts[LANES * 2]);
+    //?}
     }
 
     // ---------------------------------------------------------------- menu
@@ -840,7 +896,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
         if (player == null || !(level instanceof ServerLevel serverLevel) || experience.milli() <= 0) {
             return;
         }
+        //? if >=26.1 {
         int xp = StoredExperience.payout(experience.milli(), level.getRandom().nextDouble());
+        //?} else {
+        /*int xp = StoredExperience.payout(experience.milli(), level.random.nextDouble());
+        *///?}
         experience.setMilli(0);
         setChanged();
         if (xp > 0) {
@@ -890,7 +950,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
     protected void writeClientData(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (ItemStack stack : chamber) {
+            //? if >=26.1 {
             list.add(dimensionalfluxminer.machine.transfer.TagStacks.save(registries, stack));
+            //?} else {
+            /*list.add(stack.save(registries));
+            *///?}
         }
         tag.put("chamber", list);
     }
@@ -898,9 +962,17 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
     @Override
     protected void readClientData(CompoundTag tag, HolderLookup.Provider registries) {
         List<ItemStack> list = new ArrayList<>();
+        //? if >=26.1 {
         ListTag items = tag.getListOrEmpty("chamber");
+        //?} else {
+        /*ListTag items = tag.getList("chamber", Tag.TAG_COMPOUND);
+        *///?}
         for (int i = 0; i < items.size(); i++) {
+            //? if >=26.1 {
             ItemStack stack = dimensionalfluxminer.machine.transfer.TagStacks.parse(registries, items.getCompoundOrEmpty(i));
+            //?} else {
+            /*ItemStack stack = ItemStack.parseOptional(registries, items.getCompound(i));
+            *///?}
             if (!stack.isEmpty()) {
                 list.add(stack);
             }
@@ -911,8 +983,13 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
     // ---------------------------------------------------------------- persistence
 
     @Override
+    //? if >=26.1 {
     protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveTag(tag, registries);
+    //?} else {
+    /*protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+    *///?}
         tag.putString("mode", mode.name());
         tag.putBoolean("auto_split", autoSplit);
         for (int i = 0; i < LANES; i++) {
@@ -927,25 +1004,54 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
     }
 
     @Override
+    //? if >=26.1 {
     protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadTag(tag, registries);
+    //?} else {
+    /*protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+    *///?}
         try {
+            //? if >=26.1 {
             mode = ElectricFurnaceMode.valueOf(tag.getStringOr("mode", ""));
+            //?} else {
+            /*mode = ElectricFurnaceMode.valueOf(tag.getString("mode"));
+            *///?}
         } catch (IllegalArgumentException e) {
             mode = ElectricFurnaceMode.ALL;
         }
+        //? if >=26.1 {
         autoSplit = tag.getBooleanOr("auto_split", false);
+        //?} else {
+        /*autoSplit = tag.getBoolean("auto_split");
+        *///?}
         for (int i = 0; i < LANES; i++) {
+            //? if >=26.1 {
             inputs[i].load(tag.getListOrEmpty("in" + i), registries);
             outputs[i].load(tag.getListOrEmpty("out" + i), registries);
             laneWork[i].setProgress(tag.getDoubleOr("lane_progress" + i, 0.0));
+            //?} else {
+            /*inputs[i].load(tag.getList("in" + i, Tag.TAG_COMPOUND), registries);
+            outputs[i].load(tag.getList("out" + i, Tag.TAG_COMPOUND), registries);
+            laneWork[i].setProgress(tag.getDouble("lane_progress" + i));
+            *///?}
             laneProgress[i] = laneWork[i].progress();
         }
+        //? if >=26.1 {
         alloyWork.setProgress(tag.getDoubleOr("alloy_progress", 0.0));
+        //?} else {
+        /*alloyWork.setProgress(tag.getDouble("alloy_progress"));
+        *///?}
         // Saves from before the shared outputs kept alloy results apart: move them into the output slots.
+        //? if >=26.1 {
         mergeLegacyOutput(tag.getListOrEmpty("alloy_main"), registries);
         mergeLegacyOutput(tag.getListOrEmpty("alloy_byproduct"), registries);
         experience.setMilli(tag.getLongOr("xp_milli", 0L));
+        //?} else {
+        /*mergeLegacyOutput(tag.getList("alloy_main", Tag.TAG_COMPOUND), registries);
+        mergeLegacyOutput(tag.getList("alloy_byproduct", Tag.TAG_COMPOUND), registries);
+        experience.setMilli(tag.getLong("xp_milli"));
+        *///?}
         recipeChoices.load(tag);
     }
 
@@ -982,7 +1088,11 @@ public class ElectricFurnaceBlockEntity extends AbstractMachineBlockEntity imple
     public void dropContents() {
         super.dropContents();
         if (level instanceof ServerLevel serverLevel) {
+            //? if >=26.1 {
             int xp = StoredExperience.payout(experience.milli(), level.getRandom().nextDouble());
+            //?} else {
+            /*int xp = StoredExperience.payout(experience.milli(), level.random.nextDouble());
+            *///?}
             if (xp > 0) {
                 // Vanilla splits the award into a bounded number of orbs, never one entity per point.
                 ExperienceOrb.award(serverLevel, Vec3.atCenterOf(worldPosition), xp);

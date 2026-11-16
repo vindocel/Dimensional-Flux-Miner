@@ -1,0 +1,32 @@
+{
+  "type": "dimensionalfluxminer:alloying",
+  "ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:dusts/iron"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "tag": "c:dusts/coal"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "dimensionalfluxminer:grain_calcite"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "dimensionalfluxminer:ingot_steel",
+    "count": 1
+  },
+  "byproduct": {
+    "id": "dimensionalfluxminer:slag",
+    "count": 1,
+    "chance": 1.0
+  }
+}

@@ -11,12 +11,21 @@ import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+//?} else {
+/*import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+*///?}
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 
 /**
  * Draws the configured ports of the Miner's lower layer: an 8 x 8 pixel socket in the middle of each port face, just
@@ -43,9 +52,15 @@ public final class MinerPortRenderer {
     private static final float PIXEL = 1.0F / 16.0F;
     /** Half size of the network node frame: 10 x 10 pixels, a 1-pixel ring right against the socket. */
     private static final float FRAME = 5.0F / 16.0F;
+    //? if >=26.1 {
     private static Identifier white;
 
     private static final Map<MinerPorts.Look, Identifier> TEXTURES = new EnumMap<>(MinerPorts.Look.class);
+    //?} else {
+    /*private static ResourceLocation white;
+
+    private static final Map<MinerPorts.Look, ResourceLocation> TEXTURES = new EnumMap<>(MinerPorts.Look.class);
+    *///?}
 
     private MinerPortRenderer() {
     }
@@ -55,7 +70,11 @@ public final class MinerPortRenderer {
      * @param looks      the faces' looks packed by {@link MinerPorts#packLooks}
      * @param nodeColors per face, the ARGB color of the network node frame (0 = no node)
      */
+    //? if >=26.1 {
     public static void render(PoseStack pose, SubmitNodeCollector collector, int looks, int[] nodeColors, Direction front, int light) {
+    //?} else {
+    /*public static void render(PoseStack pose, MultiBufferSource buffers, int looks, int[] nodeColors, Direction front, int light) {
+    *///?}
         MinerLayout.Front f = MinerStructure.toFront(front);
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             MinerPorts.Look look = MinerPorts.unpackLook(looks, face);
@@ -74,19 +93,37 @@ public final class MinerPortRenderer {
             // Right-hand direction of someone looking at the face from outside.
             float rx = nz;
             float rz = -nx;
+            //? if <26.1 {
+            /*PoseStack.Pose last = pose.last();
+            *///?}
             if (look != MinerPorts.Look.NONE) {
+                //? if >=26.1 {
                 collector.submitCustomGeometry(pose, RenderTypes.entityCutout(texture(look)), (last, consumer) ->
                         quad(consumer, last, cx, cy, cz, rx, rz, -HALF, HALF, -HALF, HALF, nx, nz, 0xFFFFFFFF, light));
+                //?} else {
+                /*VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(texture(look)));
+                quad(consumer, last, cx, cy, cz, rx, rz, -HALF, HALF, -HALF, HALF, nx, nz, 0xFFFFFFFF, light);
+                *///?}
             }
             if (node != 0) {
                 // A network node on this face: a 1-pixel frame in the network's color around the socket.
+                //? if <26.1 {
+                /*VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(white()));
+                *///?}
                 float in = FRAME - PIXEL;
+                //? if >=26.1 {
                 collector.submitCustomGeometry(pose, RenderTypes.entityCutout(white()), (last, consumer) -> {
                     quad(consumer, last, cx, cy, cz, rx, rz, -FRAME, FRAME, in, FRAME, nx, nz, node, light);
                     quad(consumer, last, cx, cy, cz, rx, rz, -FRAME, FRAME, -FRAME, -in, nx, nz, node, light);
                     quad(consumer, last, cx, cy, cz, rx, rz, -FRAME, -in, -in, in, nx, nz, node, light);
                     quad(consumer, last, cx, cy, cz, rx, rz, in, FRAME, -in, in, nx, nz, node, light);
                 });
+                //?} else {
+                /*quad(consumer, last, cx, cy, cz, rx, rz, -FRAME, FRAME, in, FRAME, nx, nz, node, light);
+                quad(consumer, last, cx, cy, cz, rx, rz, -FRAME, FRAME, -FRAME, -in, nx, nz, node, light);
+                quad(consumer, last, cx, cy, cz, rx, rz, -FRAME, -in, -in, in, nx, nz, node, light);
+                quad(consumer, last, cx, cy, cz, rx, rz, in, FRAME, -in, in, nx, nz, node, light);
+                *///?}
             }
         }
     }
@@ -107,21 +144,42 @@ public final class MinerPortRenderer {
     }
 
     /** A plain white texture, tinted by the vertex color. */
+    //? if >=26.1 {
     private static Identifier white() {
+    //?} else {
+    /*private static ResourceLocation white() {
+    *///?}
         if (white == null) {
             NativeImage image = new NativeImage(1, 1, true);
+            //? if >=26.1 {
             image.setPixelABGR(0, 0, 0xFFFFFFFF);
+            //?} else {
+            /*image.setPixelRGBA(0, 0, 0xFFFFFFFF);
+            *///?}
             white = DimensionalFluxMiner.id("dynamic/miner_port_frame");
+            //? if >=26.1 {
             Minecraft.getInstance().getTextureManager().register(white, new DynamicTexture(white::toString, image));
+            //?} else {
+            /*Minecraft.getInstance().getTextureManager().register(white, new DynamicTexture(image));
+            *///?}
         }
         return white;
     }
 
     /** The texture of a look, painted the first time it is needed. */
+    //? if >=26.1 {
     private static Identifier texture(MinerPorts.Look look) {
+    //?} else {
+    /*private static ResourceLocation texture(MinerPorts.Look look) {
+    *///?}
         return TEXTURES.computeIfAbsent(look, l -> {
+            //? if >=26.1 {
             Identifier id = DimensionalFluxMiner.id("dynamic/miner_port_" + l.name().toLowerCase(Locale.ROOT));
             Minecraft.getInstance().getTextureManager().register(id, new DynamicTexture(id::toString, paint(l)));
+            //?} else {
+            /*ResourceLocation id = DimensionalFluxMiner.id("dynamic/miner_port_" + l.name().toLowerCase(Locale.ROOT));
+            Minecraft.getInstance().getTextureManager().register(id, new DynamicTexture(paint(l)));
+            *///?}
             return id;
         });
     }
@@ -137,7 +195,11 @@ public final class MinerPortRenderer {
                     // Item Output on the left half, Matter Input on the right half, seen from outside.
                     default -> x < 4 ? OUTPUT : MATTER;
                 };
+                //? if >=26.1 {
                 image.setPixelABGR(x, y, abgr(shade(PATTERN[y].charAt(x), accent)));
+                //?} else {
+                /*image.setPixelRGBA(x, y, abgr(shade(PATTERN[y].charAt(x), accent)));
+                *///?}
             }
         }
         return image;

@@ -1,0 +1,12 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "malum" }
+  ],
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": [ { "item": "malum:natural_quartz_ore" }, { "item": "malum:deepslate_quartz_ore" } ],
+  "result": {
+    "id": "malum:natural_quartz"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

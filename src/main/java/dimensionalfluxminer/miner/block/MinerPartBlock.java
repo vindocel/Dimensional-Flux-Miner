@@ -1,13 +1,20 @@
 package dimensionalfluxminer.miner.block;
 
+//? if <26.1 {
+/*import com.mojang.serialization.MapCodec;
+*///?}
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.Waterlogging;
 import dimensionalfluxminer.miner.MinerStructureEvents;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
+//? if >=26.1 {
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
+//?} else {
+/*import net.minecraft.world.level.LevelAccessor;
+*///?}
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
@@ -27,10 +34,20 @@ import net.minecraft.world.level.block.state.StateDefinition;
  * whole machine once, so every participant hides its own render but keeps its collision.
  */
 public class MinerPartBlock extends Block implements SimpleWaterloggedBlock {
+    //? if <26.1 {
+    /*public static final MapCodec<MinerPartBlock> CODEC = simpleCodec(MinerPartBlock::new);
+    *///?}
 
     public MinerPartBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(DfmStateProperties.FORMED, false).setValue(BlockStateProperties.WATERLOGGED, false));
+    //? if <26.1 {
+    /*}
+
+    @Override
+    protected MapCodec<? extends Block> codec() {
+        return CODEC;
+    *///?}
     }
 
     @Override
@@ -50,10 +67,17 @@ public class MinerPartBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     @Override
+    //? if >=26.1 {
     protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction direction,
                                      BlockPos neighborPos, BlockState neighborState, RandomSource random) {
         Waterlogging.tick(state, level, ticks, pos);
         return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
+    //?} else {
+    /*protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos,
+                                     BlockPos neighborPos) {
+        Waterlogging.tick(state, level, pos);
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    *///?}
     }
 
     @Override
@@ -70,19 +94,34 @@ public class MinerPartBlock extends Block implements SimpleWaterloggedBlock {
 
     /** A hidden participant must not cull neighbor faces, or the world behind the formed model shows through. */
     @Override
+    //? if >=26.1 {
     protected VoxelShape getOcclusionShape(BlockState state) {
         return state.getValue(DfmStateProperties.FORMED) ? Shapes.empty() : super.getOcclusionShape(state);
+    //?} else {
+    /*protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(DfmStateProperties.FORMED) ? Shapes.empty() : super.getOcclusionShape(state, level, pos);
+    *///?}
     }
 
     /** Light passes through the formed assembly so the single formed model is lit like the surroundings. */
     @Override
+    //? if >=26.1 {
     protected int getLightDampening(BlockState state) {
         return state.getValue(DfmStateProperties.FORMED) ? 0 : super.getLightDampening(state);
+    //?} else {
+    /*protected int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(DfmStateProperties.FORMED) ? 0 : super.getLightBlock(state, level, pos);
+    *///?}
     }
 
     @Override
+    //? if >=26.1 {
     protected boolean propagatesSkylightDown(BlockState state) {
         return state.getValue(DfmStateProperties.FORMED) || super.propagatesSkylightDown(state);
+    //?} else {
+    /*protected boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(DfmStateProperties.FORMED) || super.propagatesSkylightDown(state, level, pos);
+    *///?}
     }
 
     @Override
@@ -109,8 +148,16 @@ public class MinerPartBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     @Override
+    //? if >=26.1 {
     protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
         MinerStructureEvents.onPartRemoved(level, pos, state);
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+    //?} else {
+    /*protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
+            MinerStructureEvents.onPartRemoved(serverLevel, pos, state);
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    *///?}
     }
 }

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " E ",
+    "ECE",
+    " E "
+  ],
+  "key": {
+    "E": {
+      "item": "dimensionalfluxminer:ender_eye_reinforced"
+    },
+    "C": {
+      "item": "dimensionalfluxminer:steel_chassis"
+    }
+  },
+  "result": {
+    "id": "dimensionalfluxminer:dimensional_port",
+    "count": 1
+  }
+}

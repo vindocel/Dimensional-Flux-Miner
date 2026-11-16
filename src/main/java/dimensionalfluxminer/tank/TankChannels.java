@@ -8,8 +8,10 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
+//? if >=26.1 {
 import net.minecraft.world.level.saveddata.SavedDataType;
 import dimensionalfluxminer.content.TagSavedData;
+//?}
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
@@ -18,14 +20,22 @@ import net.neoforged.neoforge.fluids.FluidStack;
  * is loaded, when a tank is broken or when a tank switches to another code.
  */
 public final class TankChannels extends SavedData {
+    //? if >=26.1 {
     private static final String LEGACY_NAME = "dimensionalfluxminer_tank_channels";
     private static final SavedDataType<TankChannels> TYPE = TagSavedData.type(dimensionalfluxminer.DimensionalFluxMiner.id("tank_channels"),
             TankChannels::new, TankChannels::load, (data, registries) -> data.save(new CompoundTag(), registries));
+    //?} else {
+    /*private static final String NAME = "dimensionalfluxminer_tank_channels";
+    *///?}
 
     private final Map<String, Channel> channels = new HashMap<>();
 
     public static TankChannels get(MinecraftServer server) {
+        //? if >=26.1 {
         return TagSavedData.get(server.overworld(), TYPE, LEGACY_NAME);
+        //?} else {
+        /*return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(TankChannels::new, TankChannels::load, null), NAME);
+        *///?}
     }
 
     /** The channel of {@code kind} and {@code code}, created empty the first time. */
@@ -96,7 +106,12 @@ public final class TankChannels extends SavedData {
         return new Channel(changed, kind, TankCode.DEFAULT);
     }
 
+    //? if >=26.1 {
     private CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+    //?} else {
+    /*@Override
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+    *///?}
         ListTag list = new ListTag();
         for (Channel channel : channels.values()) {
             // An empty channel is the same as one never used.
@@ -108,7 +123,11 @@ public final class TankChannels extends SavedData {
             entry.put("code", channel.code.save());
             ListTag chambers = new ListTag();
             for (FluidStack stack : channel.chambers) {
+                //? if >=26.1 {
                 chambers.add(dimensionalfluxminer.machine.transfer.TagStacks.save(registries, stack));
+                //?} else {
+                /*chambers.add(stack.saveOptional(registries));
+                *///?}
             }
             entry.put("chambers", chambers);
             list.add(entry);
@@ -119,17 +138,35 @@ public final class TankChannels extends SavedData {
 
     private static TankChannels load(CompoundTag tag, HolderLookup.Provider registries) {
         TankChannels data = new TankChannels();
+        //? if >=26.1 {
         ListTag list = tag.getListOrEmpty("channels");
+        //?} else {
+        /*ListTag list = tag.getList("channels", Tag.TAG_COMPOUND);
+        *///?}
         for (int i = 0; i < list.size(); i++) {
+            //? if >=26.1 {
             CompoundTag entry = list.getCompoundOrEmpty(i);
             TankKind kind = TankKind.byId(entry.getStringOr("kind", ""));
+            //?} else {
+            /*CompoundTag entry = list.getCompound(i);
+            TankKind kind = TankKind.byId(entry.getString("kind"));
+            *///?}
             if (kind == null || kind.creative()) {
                 continue;
             }
+            //? if >=26.1 {
             Channel channel = data.channel(kind, TankCode.load(entry.getCompoundOrEmpty("code")));
             ListTag chambers = entry.getListOrEmpty("chambers");
+            //?} else {
+            /*Channel channel = data.channel(kind, TankCode.load(entry.getCompound("code")));
+            ListTag chambers = entry.getList("chambers", Tag.TAG_COMPOUND);
+            *///?}
             for (int c = 0; c < channel.chambers.length && c < chambers.size(); c++) {
+                //? if >=26.1 {
                 channel.chambers[c] = dimensionalfluxminer.machine.transfer.TagStacks.parseFluid(registries, chambers.getCompoundOrEmpty(c));
+                //?} else {
+                /*channel.chambers[c] = FluidStack.parseOptional(registries, chambers.getCompound(c));
+                *///?}
             }
         }
         return data;

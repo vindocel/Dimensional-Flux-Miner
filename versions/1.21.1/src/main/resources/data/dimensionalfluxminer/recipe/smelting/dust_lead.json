@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/lead"
+      }
+    }
+  ],
+  "type": "dimensionalfluxminer:tag_smelting",
+  "ingredient": {
+    "item": "dimensionalfluxminer:dust_lead"
+  },
+  "result_tag": "c:ingots/lead",
+  "experience": 0.7,
+  "cookingtime": 200
+}

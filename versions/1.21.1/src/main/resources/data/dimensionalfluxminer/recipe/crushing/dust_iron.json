@@ -1,0 +1,10 @@
+{
+  "type": "dimensionalfluxminer:crushing",
+  "ingredient": {
+    "item": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:dust_iron",
+    "count": 1
+  }
+}

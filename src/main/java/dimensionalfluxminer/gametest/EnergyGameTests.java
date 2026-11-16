@@ -14,17 +14,28 @@ import dimensionalfluxminer.furnace.ElectricFurnaceMode;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
+//? if <26.1 {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+*///?}
 
 /**
  * Energy per operation: the same FE for every operation at every Rate, charged only for the work really done. Every
  * check drives the logical cycles directly inside one callback, so the normal ticks of the test never interleave.
  */
+//? if <26.1 {
+/*@GameTestHolder(DimensionalFluxMiner.MOD_ID)
+@PrefixGameTestTemplate(false)
+*///?}
 public final class EnergyGameTests {
     private static final BlockPos MACHINE = new BlockPos(2, 1, 2);
     /** Plenty of FE, far above any buffer target: the work is never energy limited unless a test says so. */
@@ -36,13 +47,22 @@ public final class EnergyGameTests {
     /** Places an AE2 creative energy cell; false when AE2 is not installed. */
     private static boolean placeAe2Cell(GameTestHelper helper, BlockPos pos) {
         var cell = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getOptional(
+                //? if >=26.1 {
                 net.minecraft.resources.Identifier.fromNamespaceAndPath("ae2", "creative_energy_cell"));
+                //?} else {
+                /*net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("ae2", "creative_energy_cell"));
+                *///?}
         cell.ifPresent(block -> helper.setBlock(pos, block));
         return cell.isPresent();
     }
 
+    //? if >=26.1 {
     /** With Applied Energistics 2, a machine next to the network draws AE as FE. */
     @GameTest(template = "empty_small", timeoutTicks = 100)
+    //?} else {
+    /*/^* With Applied Energistics 2, a machine next to an energy cell draws AE as FE. ^/
+    @GameTest(template = "empty_small", timeoutTicks = 100)
+    *///?}
     public static void machinesDrawEnergyFromAe2(GameTestHelper helper) {
         var crusher = CrusherGameTests.place(helper);
         crusher.energyBuffer().setStored(0);
@@ -103,6 +123,9 @@ public final class EnergyGameTests {
         }
         helper.succeedWhen(() -> helper.assertTrue(c.energyBuffer().stored() > 0, "Miner filled from AE2"));
     }
+//? if <26.1 {
+
+//?}
     /** FE spent since {@code storedBefore}/{@code debtBefore}, fractions included. */
     private static double spent(DynamicEnergyBuffer buffer, long storedBefore, double debtBefore) {
         return (storedBefore - buffer.stored()) + (buffer.debt() - debtBefore);
@@ -282,7 +305,11 @@ public final class EnergyGameTests {
             be.energyBuffer().setStored(0);
             be.energyBuffer().setDebt(0);
             be.input().clear();
+            //? if >=26.1 {
             TestSupport.load(be, saved, registries);
+            //?} else {
+            /*be.loadWithComponents(saved, registries);
+            *///?}
             helper.assertTrue(progress > 0 && Math.abs(be.workProgress() - progress) < 1e-12, "progress kept: " + be.workProgress());
             helper.assertTrue(be.energyBuffer().stored() == stored && Math.abs(be.energyBuffer().debt() - debt) < 1e-12, "FE and its fraction kept");
             helper.assertTrue(be.input().firstCount() == 8, "input kept");
@@ -511,9 +538,17 @@ public final class EnergyGameTests {
             var registries = helper.getLevel().registryAccess();
             double lane = be.laneWorkProgress(1);
             CompoundTag saved = be.saveWithoutMetadata(registries);
+            //? if >=26.1 {
             TestSupport.load(be, new CompoundTag(), registries);
+            //?} else {
+            /*be.loadWithComponents(new CompoundTag(), registries);
+            *///?}
             helper.assertTrue(be.laneWorkProgress(1) == 0, "a save without progress starts from zero");
+            //? if >=26.1 {
             TestSupport.load(be, saved, registries);
+            //?} else {
+            /*be.loadWithComponents(saved, registries);
+            *///?}
             helper.assertTrue(lane > 0 && Math.abs(be.laneWorkProgress(1) - lane) < 1e-12, "lane progress kept: " + be.laneWorkProgress(1));
             helper.succeed();
         });
@@ -634,7 +669,11 @@ public final class EnergyGameTests {
             CompoundTag saved = c.saveWithoutMetadata(registries);
             c.energyBuffer().setStored(0);
             c.energyBuffer().setDebt(0);
+            //? if >=26.1 {
             TestSupport.load(c, saved, registries);
+            //?} else {
+            /*c.loadWithComponents(saved, registries);
+            *///?}
             helper.assertTrue(progress > 0 && Math.abs(c.workProgress() - progress) < 1e-12, "progress kept: " + c.workProgress());
             helper.assertTrue(c.energyBuffer().stored() == stored && Math.abs(c.energyBuffer().debt() - debt) < 1e-12, "FE and its fraction kept");
             helper.succeed();

@@ -2,13 +2,20 @@
 
 ## 0.2.8 (since 0.2.7)
 
-### 🧱 Minecraft 26.1.2
+### 🧱 Minecraft versions
 
-- 🆙 **Ported to Minecraft 26.1.2** (NeoForge 26.1.2.126, Java 25), with every feature of the 26.3 line. JEI and REI are
-  the recipe viewers (REI first when both are installed); EMI and Polymorph have no 26.1.2 version yet. Jade, Applied
-  Energistics 2 and KubeJS use their 26.1.2 versions.
+- Updated the Minecraft 1.21.1 build to NeoForge 21.1.266.
+
+- 🆙 **New: Minecraft 26.1.2** (NeoForge 26.1.2.126, Java 25), with every feature of the other versions.
+- 🔀 **1.21.1, 26.1.2 and 26.3 now get the same update**: every change below is on all three. The only differences are
+  the optional mods that have no build for a version: JEI works everywhere; REI on 1.21.1 and 26.1.2 (REI first when
+  both are installed); EMI and Polymorph on 1.21.1 only.
+- ⚡ **Applied Energistics 2 power on 1.21.1 too**, with the same rules as on 26.x (below).
+
+### 🔧 Changes in this update
+
 - Fixed duplicate Jade energy bars when another overlay provider inspects the same machine.
-- Applied Energistics 2 power now comes only from an energy cell touching a machine or a quartz fiber on the cable face
+- Applied Energistics 2 power comes only from an energy cell touching a machine or a quartz fiber on the cable face
   toward it. ME cables no longer connect to the machines or the Miner's energy ports, so they can pass right next to them.
 - The side settings now show Applied Energistics 2 parts (interfaces, import and export buses, cables) facing the
   machine instead of a blank slot.
@@ -18,7 +25,7 @@
 - Added red drain and blue fill container slots to the single Dimensional Tank, with independent item routing and automation.
 - Added reversible experience bottle filling using Liquid Experience, with datapack recipes and recipe viewer support.
 - Clicking the arrow between the tank's container slots opens its conversion recipes.
-- Tank conversion recipes display animated fluid gauges matching the tank screen in JEI and REI.
+- Tank conversion recipes display animated fluid gauges matching the tank screen in JEI, REI and EMI.
 - Fixed blocky fluid textures in tank gauges caused by sampling atlas padding.
 - Fixed a split reflection effect in narrow fluid gauges in recipe viewers.
 - Added a channel padlock to single and dual tanks for independent storage, preserving shared and local contents separately. Shift + click switches modes; lock icons follow the selected white, blue or purple palette.
@@ -37,11 +44,6 @@
 - Added a short, configurable processing delay to each single tank container slot (5 ticks by default).
 - Added sponge drying/wetting, all 16 concrete colors and optional nutritious stick conversion in the single tank. Experience bottles accept common tagged experience fluids.
 - Experience bottles add to an existing tagged experience fluid; empty tanks receive the mod's own Liquid Experience.
-
-### 🧱 Minecraft 26.3
-
-- Everything below also comes to the 26.3 line, except the REI and EMI parts: neither has a 26.x version yet, so JEI
-  is the recipe viewer there (the creative tanks are listed once per liquid in it too).
 
 ### ✨ Added
 

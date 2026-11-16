@@ -1,7 +1,9 @@
 package dimensionalfluxminer.miner;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.SlotStorage;
+//?}
 import dimensionalfluxminer.miner.profile.ResourceFamily;
 import dimensionalfluxminer.miner.profile.ResourceProfile;
 import java.util.ArrayList;
@@ -9,8 +11,17 @@ import java.util.List;
 import java.util.Set;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.world.item.ItemStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.items.ItemStackHandler;
+*///?}
 
 /**
  * The Miner's Output Buffer: 27 physical output-only slots (3 x 9) that only the machine fills. Automation sees an
@@ -23,7 +34,11 @@ public final class MinerOutput {
 
     private final Runnable onChange;
     private boolean batching;
+    //? if >=26.1 {
     private final SlotStorage handler = new SlotStorage(SLOTS) {
+    //?} else {
+    /*private final ItemStackHandler handler = new ItemStackHandler(SLOTS) {
+    *///?}
         @Override
         protected void onContentsChanged(int slot) {
             if (!batching) {
@@ -33,7 +48,11 @@ public final class MinerOutput {
     };
 
     /** Extraction-only view for the Item Output Port. */
+    //? if >=26.1 {
     private final ItemSlots extractionView = new ItemSlots() {
+    //?} else {
+    /*private final IItemHandler extractionView = new IItemHandler() {
+    *///?}
         @Override
         public int getSlots() {
             return SLOTS;
@@ -69,10 +88,15 @@ public final class MinerOutput {
         this.onChange = onChange;
     }
 
+    //? if >=26.1 {
     public SlotStorage handler() {
+    //?} else {
+    /*public ItemStackHandler handler() {
+    *///?}
         return handler;
     }
 
+    //? if >=26.1 {
     ItemSlots extractionView() {
         return extractionView;
     }
@@ -91,6 +115,26 @@ public final class MinerOutput {
      * first slot of the same item with room, in slot order), or -1 when none takes it. No copies, no simulation.
      */
     public static int insertionSlot(ItemSlots handler, ItemStack stack) {
+    //?} else {
+    /*IItemHandler extractionView() {
+        return extractionView;
+    }
+
+    void beginBatch() {
+        batching = true;
+    }
+
+    /^* Ends a batch; the caller marks the machine changed. ^/
+    void endBatch() {
+        batching = false;
+    }
+
+    /^*
+     * The slot {@code ItemHandlerHelper.insertItem} would put a single {@code stack} in (the first empty slot or the
+     * first slot of the same item with room, in slot order), or -1 when none takes it. No copies, no simulation.
+     ^/
+    public static int insertionSlot(IItemHandler handler, ItemStack stack) {
+    *///?}
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             int limit = Math.min(handler.getSlotLimit(slot), stack.getMaxStackSize());
             ItemStack existing = handler.getStackInSlot(slot);
@@ -113,7 +157,11 @@ public final class MinerOutput {
      * True when at least one result the machine keeps (all families, or the filtered ones) still fits. Only then is the
      * output really blocked: a single roll that does not fit is just a discarded attempt.
      */
+    //? if >=26.1 {
     boolean anyKeptResultFits(ResourceProfile profile, Set<Identifier> filter) {
+    //?} else {
+    /*boolean anyKeptResultFits(ResourceProfile profile, Set<ResourceLocation> filter) {
+    *///?}
         for (int i = 0; i < SLOTS; i++) {
             if (handler.getStackInSlot(i).isEmpty()) {
                 return true;
@@ -133,13 +181,21 @@ public final class MinerOutput {
     }
 
     /** Auto Eject: moves everything the target accepts, with no item limit. */
+    //? if >=26.1 {
     void ejectTo(ItemSlots target) {
+    //?} else {
+    /*void ejectTo(IItemHandler target) {
+    *///?}
         for (int slot = 0; slot < SLOTS; slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
             if (stack.isEmpty()) {
                 continue;
             }
+            //? if >=26.1 {
             ItemStack left = ItemSlots.insertStacked(target, stack.copy(), false);
+            //?} else {
+            /*ItemStack left = ItemHandlerHelper.insertItemStacked(target, stack.copy(), false);
+            *///?}
             int moved = stack.getCount() - left.getCount();
             if (moved > 0) {
                 handler.extractItem(slot, moved, false);

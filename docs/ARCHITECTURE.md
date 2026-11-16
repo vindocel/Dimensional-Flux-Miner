@@ -3,10 +3,26 @@
 How the code of Dimensional Flux Miner is organised, where each rule lives and how to work on it safely.
 Gameplay numbers are in [BALANCE.md](BALANCE.md); releases are in [RELEASING.md](RELEASING.md).
 
-## Minecraft 26.1.2 line
+## Minecraft versions (Stonecutter)
 
-This branch builds Minecraft 26.1.2 (NeoForge 26.1.2.126, Java 25). The gameplay code is the same as on the 1.21.1 line;
-these layers keep it and the saves unchanged on the new API:
+The branch builds Minecraft 1.21.1 (NeoForge 21.1.266, Java 21), 26.1.2 (NeoForge 26.1.2.126, Java 25) and 26.3
+(NeoForge 26.3.0.95, Java 25) with Stonecutter: `settings.gradle.kts` lists them, `versions/<minecraft>/gradle.properties`
+holds each one's own values and `build.gradle.kts` builds each as the Gradle project `:<minecraft>`.
+
+- One `src/main/java` for all of them. Where the API differs, Stonecutter conditions (`//? if >=26.1 {` … `//?} else {`
+  … `//?}`, and `>=26.3` for what only 26.3 has) choose the lines; Git holds the 26.1.2 layout (the other versions'
+  lines stay commented). Classes that exist on one side only (for example `machine.transfer.Transfer`, `recipe.Recipes`,
+  `content.TagBlockEntity`) are wrapped whole in a condition.
+- Resources: `src/main/resources` is shared by every version, `src/mc26/resources` by 26.1.2 and 26.3,
+  `versions/<minecraft>/src/main/resources` belongs to one version (loot tables, recipes, item models and other formats
+  that changed). `src/main/templates/META-INF/neoforge.mods.toml` is shared; its Catalogue logo entry is `mod_logo`.
+- Optional integrations without a build for a version are left out of its compile by `build.gradle.kts`: EMI and
+  Polymorph exist only on 1.21.1, REI on 1.21.1 and 26.1.2.
+- Runs: `:<minecraft>:runClient` uses `run/<minecraft>` for independent mods, settings and saves. `runGameTestServer`
+  uses `run/mc-<minecraft>/gametest` (only this mod, like CI) and `runGameTestCompat` `run/mc-<minecraft>/gametest-compat`
+  (a copy of the optional mods in its `mods` folder).
+
+On 26.x the gameplay code is the same as on 1.21.1; these layers keep it and the saves unchanged on the new API:
 
 - `machine.transfer`: the machines keep their slot, energy and tank classes (`ItemSlots`, `SlotStorage`,
   `EnergyStore`, `FluidTanks`); `Transfer` exposes them as NeoForge transfer handlers (with a snapshot `Journal`
@@ -19,12 +35,11 @@ these layers keep it and the saves unchanged on the new API:
   instance; each batch is a test environment that moves the world spawn away while it runs.
 - Recipes are a registry read before item components exist: results are `ItemStackTemplate`s. Clients get the
   mod's recipe types from the server (`OnDatapackSyncEvent`, `recipe.Recipes`).
-- EMI and Polymorph have no 26.1.2 build: `compat/emi` and `compat/polymorph` stay in the tree but are left out of
-  the compile (`build.gradle`). JEI, REI (`compat/rei`, recipe viewer order EMI, REI, JEI), Jade, AE2 and KubeJS are
-  compile-only.
-- Data uses this version's formats: loot tables with `conditions` / `functions`, datapack format 101 with
-  `min_format` / `max_format`, string ingredients. GameTests run in `run/mc-26.1.2/gametest` (only this mod, like CI)
-  and `runGameTestCompat` in `run/mc-26.1.2/gametest-compat` (a copy of the optional mods in its `mods` folder).
+- JEI, REI and EMI (`compat/rei`, `compat/emi`, recipe viewer order EMI, REI, JEI), Jade, AE2 and KubeJS are
+  compile-only on every version that has them.
+- Data formats are selected per version: 26.1.2 uses loot tables with `conditions` / `functions` and datapack
+  format 101; 26.3 uses `condition` / `modifier` entries with `type`. Both use string ingredients.
+  1.21.1 keeps its own recipe and resource formats in its version directory.
 - Tank items as fluid containers go through `ItemAccess` (`tank.TankItemFluidHandler.forAccess`); every tank item
   uses `client.render.TankItemRenderer`, retaining the existing `creative_tank` special-renderer ID for resource packs.
 
@@ -51,7 +66,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) and `Waterlogging`, shared by every waterloggable machine, tank and Miner part |
 | `advancement` | Custom advancement trigger |
 | `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
-| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `rei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded), `ae2` (lines 26.x: `Ae2Power` joins the ME network only through an adjacent energy cell or a quartz fiber facing the side; `Ae2Parts` gives the side screens the part facing the machine; `Ae2TestParts` places cables for the GameTests), always called through `compat.Ae2Compat` |
+| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `rei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded), `ae2` (all three versions: `Ae2Power` joins the ME network only through an adjacent energy cell or a quartz fiber facing the side; `Ae2Parts` gives the side screens the part facing the machine; `Ae2TestParts` places cables for the GameTests), always called through `compat.Ae2Compat` |
 | `mixin` | Corrupted Water particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
 | `client` | Renderers, screens, the guide, sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI, REI and Jade plugins are client side and may use it |
 
@@ -242,8 +257,8 @@ are part of the save format; the extracted classes write the same keys as before
 ## Tests
 
 ```bash
-./gradlew build                # compiles and runs the JUnit tests
-./gradlew runGameTestServer    # every GameTest must pass
+./gradlew :26.1.2:build                # compiles and runs the JUnit tests (also :1.21.1 and :26.3)
+./gradlew :26.1.2:runGameTestServer    # every GameTest must pass, on every version
 ```
 
 | Suite | Covers |
@@ -255,7 +270,7 @@ are part of the save format; the extracted classes write the same keys as before
 | `ProtectionGameTests` | Config protections and claims (a test claim system, and FTB Chunks when present in `run/mods`) |
 | `OptimizationGameTests` | Every optimisation gives exactly the result of the plain code |
 | `ContentGameTests` | Recipes and advancements load, Corrupted Water and plants, Pure Steel, the guide recipe |
-| `BenchmarkGameTests` | Opt-in benchmark: `DFM_BENCHMARK=1 ./gradlew runGameTestServer` logs `BENCH` lines |
+| `BenchmarkGameTests` | Opt-in benchmark: `DFM_BENCHMARK=1 ./gradlew :26.1.2:runGameTestServer` logs `BENCH` lines |
 
 The GameTest server loads the mods in `run/mods`; compat tests adapt to the mods present. Corruption tests need
 `skyAccess = true`. The test world is flat sandstone, with no spawn chunks: a test that needs natural ground lays it

@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "dimensionalfluxminer:corrupted_grass_plant",
+          "condition": {
+            "type": "minecraft:match_tool",
+            "predicate": {
+              "items": "minecraft:shears"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "random_sequence": "dimensionalfluxminer:blocks/corrupted_grass_plant"
+}

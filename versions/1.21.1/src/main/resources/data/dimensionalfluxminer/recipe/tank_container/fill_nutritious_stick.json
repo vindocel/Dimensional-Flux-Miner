@@ -1,0 +1,21 @@
+{
+  "type": "dimensionalfluxminer:tank_container",
+  "ingredient": {
+    "item": "minecraft:stick"
+  },
+  "result": {
+    "id": "enderio:nutritious_stick",
+    "count": 1
+  },
+  "fluid": {
+    "id": "enderio:fluid_nutrient_distillation_still",
+    "amount": 1000
+  },
+  "filling": true,
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "enderio"
+    }
+  ]
+}

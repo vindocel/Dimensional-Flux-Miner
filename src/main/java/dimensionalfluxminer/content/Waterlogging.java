@@ -2,8 +2,12 @@ package dimensionalfluxminer.content;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.context.BlockPlaceContext;
+//? if >=26.1 {
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
+//?} else {
+/*import net.minecraft.world.level.LevelAccessor;
+*///?}
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
@@ -31,9 +35,17 @@ public final class Waterlogging {
     }
 
     /** Lets the water held by the block flow on (call from {@code updateShape}). */
+    //? if >=26.1 {
     public static void tick(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos) {
+    //?} else {
+    /*public static void tick(BlockState state, LevelAccessor level, BlockPos pos) {
+    *///?}
         if (state.getValue(BlockStateProperties.WATERLOGGED)) {
+            //? if >=26.1 {
             ticks.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            //?} else {
+            /*level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            *///?}
         }
     }
 }

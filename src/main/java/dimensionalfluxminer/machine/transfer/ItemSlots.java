@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.machine.transfer;
 
 import net.minecraft.world.item.ItemStack;
@@ -63,3 +64,5 @@ public interface ItemSlots {
         return stack;
     }
 }
+
+//?}

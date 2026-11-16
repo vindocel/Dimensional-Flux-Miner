@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/osmium"
+      }
+    }
+  ],
+  "type": "dimensionalfluxminer:tag_smelting",
+  "ingredient": {
+    "item": "dimensionalfluxminer:dust_osmium"
+  },
+  "result_tag": "c:ingots/osmium",
+  "experience": 0.7,
+  "cookingtime": 200
+}

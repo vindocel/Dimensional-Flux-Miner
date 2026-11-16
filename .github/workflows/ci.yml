@@ -1,39 +1,61 @@
 name: CI
 
+# Builds every Minecraft version Stonecutter is configured for (settings.gradle.kts) and runs its GameTests.
 # No publishing secrets are available to CI or pull requests.
 on:
   push:
     branches:
       - main
-      - '1.21.x'
-      - 'mc/**'
+      - production
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build and GameTests
+  versions:
+    name: Minecraft versions
     runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.list.outputs.versions }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - name: Check the Minecraft line of the branch
-        shell: bash
-        env:
-          # A pull request is checked against the branch it merges into.
-          BRANCH: ${{ github.base_ref || github.ref_name }}
-        run: bash scripts/validate-release.sh branch "$BRANCH"
+      - name: Test release validation
+        run: |
+          python3 -B scripts/test-release.py
+          python3 -B scripts/test-published.py
 
-      - name: Set up Java 25
+      - name: List the Stonecutter versions
+        id: list
+        shell: bash
+        run: bash scripts/validate-release.sh versions
+
+  build:
+    name: Build and GameTests ${{ matrix.minecraft }}
+    needs: versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        minecraft: ${{ fromJSON(needs.versions.outputs.versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Gradle runs on Java 25; a version on another Java (1.21.1: Java 21) gets it through the toolchain.
+      - name: Set up Java
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: |
+            21
+            25
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -44,11 +66,15 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build
-        run: ./gradlew build --console=plain
+        env:
+          MINECRAFT: ${{ matrix.minecraft }}
+        run: ./gradlew ":$MINECRAFT:build" --console=plain
 
       - name: GameTests
         shell: bash
+        env:
+          MINECRAFT: ${{ matrix.minecraft }}
         run: |
           set -euo pipefail
-          ./gradlew runGameTestServer --console=plain | tee gametest.log
+          ./gradlew ":$MINECRAFT:runGameTestServer" --console=plain | tee gametest.log
           grep -q "required tests passed" gametest.log

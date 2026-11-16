@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.compat.jade;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
@@ -47,3 +48,5 @@ enum MachineItemsData implements IServerExtensionProvider<ItemStack> {
         return UID;
     }
 }
+
+//?}

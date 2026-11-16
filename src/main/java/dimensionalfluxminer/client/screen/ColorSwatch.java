@@ -1,13 +1,21 @@
 package dimensionalfluxminer.client.screen;
 
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 
 /** A color sample inside the same sunken bevel as the tank code fields. */
 final class ColorSwatch {
     private ColorSwatch() {
     }
 
+    //? if >=26.1 {
     static void draw(GuiGraphicsExtractor g, int x, int y, int size, int rgb) {
+    //?} else {
+    /*static void draw(GuiGraphics g, int x, int y, int size, int rgb) {
+    *///?}
         int dark = GuiTheme.gray(0xFF373737);
         int light = GuiTheme.gray(0xFFFFFFFF);
         int corner = GuiTheme.gray(0xFF8B8B8B);

@@ -1,0 +1,25 @@
+{
+  "neoforge:conditions": [
+    { "type": "neoforge:mod_loaded", "modid": "create" }
+  ],
+  "type": "dimensionalfluxminer:alloying",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:andesite"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": [
+        { "tag": "c:nuggets/iron" },
+        { "tag": "c:nuggets/zinc" }
+      ],
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "create:andesite_alloy",
+    "count": 1
+  }
+}

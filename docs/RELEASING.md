@@ -1,62 +1,136 @@
 # Release automation
 
-Publishing happens only when a **GitHub Release is published** (never on push or on a bare tag).
+Publishing happens only when a **GitHub Release is published** (never on a push or on a bare tag).
 
-## Versions
+## Branches
 
-`gradle.properties` holds the **base version of the open update**: `mod_version=0.3.0`. It changes only when an
-update is closed and the next one starts. Alphas, betas and the stable release of that update come from the tag,
-so they need no version commit:
+| Branch | What it holds |
+|---|---|
+| `production` | Day-to-day work for every Minecraft version. Every commit goes here; it may be unstable. Alphas and betas are released from it. |
+| `main` | Stable versions only. It receives a merge from `production` when a version is final, and stable releases are published from it. |
 
-| Tag | Channel | GitHub "Pre-release" | Built version |
-|---|---|---|---|
-| `v0.3.0-alpha.1+1.21.1` | alpha | checked | `0.3.0-alpha.1` |
-| `v0.3.0-beta.2+1.21.1` | beta | checked | `0.3.0-beta.2` |
-| `v0.3.0+1.21.1` | release | unchecked | `0.3.0` |
+CI (`.github/workflows/ci.yml`) builds every Minecraft version and runs its GameTests on every push to `production`
+or `main` and on every pull request.
 
-The `+<minecraft>` suffix is the Minecraft line and must match `minecraft_version` of the tagged commit. It keeps
-tags unique when several Minecraft lines ship the same mod version (`v0.3.0+1.21.1` and `v0.3.0+26.2`). Tags
-without it (`v0.2.0-beta.2`) are still accepted. A `mod_version` that already carries a channel
-(`0.2.0-beta.2`) must match the tag exactly.
+## Tags and Minecraft selection
 
-The JAR is named `dimensionalfluxminer-<minecraft>-<version>.jar`, e.g. `dimensionalfluxminer-1.21.1-0.3.0-beta.2.jar`.
+`gradle.properties` holds the base version of the open update (`mod_version=0.2.8`). Alpha, beta and stable
+versions come from the GitHub Release tag; changing the channel needs no version commit.
+
+| GitHub tag | Minecraft versions selected | Store versions |
+|---|---|---|
+| `v0.2.8` | All configured versions | `v0.2.8+1.21.1`, `v0.2.8+26.1.2`, `v0.2.8+26.3` |
+| `v0.2.8-beta.1` | All configured versions | `v0.2.8-beta.1+1.21.1`, `v0.2.8-beta.1+26.1.2`, `v0.2.8-beta.1+26.3` |
+| `v0.2.8+1.21.1` | 1.21.1 only | `v0.2.8+1.21.1` |
+| `v0.2.8+1.21.1-26.1.2` | 1.21.1 and 26.1.2 | `v0.2.8+1.21.1`, `v0.2.8+26.1.2` |
+| `v0.2.8-beta.2+26.1.2-26.3` | 26.1.2 and 26.3 | `v0.2.8-beta.2+26.1.2`, `v0.2.8-beta.2+26.3` |
+
+No Minecraft suffix means every version in `settings.gradle.kts`. After `+`, list one or more Minecraft versions
+separated by `-`. Unknown, repeated or malformed versions stop validation. New configured targets are automatically
+included by a tag without a Minecraft suffix.
+
+Alpha and beta releases must have **Pre-release** checked on GitHub; stable releases must leave it unchecked.
+Alpha/beta target `production`; stable releases target `main`. The tag's base version must match `mod_version`.
+If `mod_version` already includes a channel, the mod version and channel must match as well.
+
+Each store upload has its own name and version number, `v<mod-version>+<minecraft>`, independent of the GitHub
+Release title or the combined tag. The JAR keeps the existing name
+`dimensionalfluxminer-<minecraft>-<mod-version>.jar`; its metadata contains the mod version without the Minecraft suffix.
 
 ## Publishing a release
 
-1. Commit and push to the branch of the Minecraft line; wait for CI to pass.
-2. On GitHub: **Releases → Draft a new release**.
-3. **Choose a tag**: type the new tag (e.g. `v0.3.0-beta.1+1.21.1`), **Target**: the branch of that line.
-4. Optionally press **Generate release notes** (commits since the previous tag) and edit the text; it becomes the
-   CurseForge/Modrinth changelog.
-5. Check **Set as a pre-release** for alpha/beta, leave it unchecked for a stable release, then **Publish**.
+1. Commit and push to `production` (to `main` after the merge, for a stable release); wait for CI to pass.
+2. On GitHub, open **Releases → Draft a new release**.
+3. Choose a tag using the table above, and select `production` for alpha/beta or `main` for stable.
+4. Write the release notes. The same text becomes the changelog of each selected store upload.
+5. Set **Pre-release** to match the channel, then publish the GitHub Release.
 
-`release.yml` then checks out the tag and, in the `management` environment:
+The workflow resolves the selection, then builds, runs GameTests and validates each selected JAR in separate jobs.
+Only after **every selected build passes** can the store upload jobs start. The validated artifacts are transferred
+between jobs and checked again before upload. Only the upload jobs use the `management` environment and store secrets.
 
-1. validates the tag (format, base version, Minecraft suffix, Pre-release flag) and that the tagged commit is on the
-   selected target branch, and that an `mc/<version>` target builds that Minecraft version;
-2. builds from scratch with the version of the tag and runs the GameTests;
-3. checks the JAR (one distribution JAR, file name, version and Minecraft range in `neoforge.mods.toml`);
-4. publishes to CurseForge and Modrinth as alpha/beta/release for that Minecraft version.
+## Completing missing store uploads
 
-Any failed check stops the job before anything is uploaded.
+Before uploading each Minecraft version, `scripts/check-published.py` queries CurseForge and Modrinth independently.
+It recognizes the exact store version name (with or without its leading `v`) or the existing JAR filename, for the
+selected Minecraft version and NeoForge loader. CurseForge file lists are paginated.
 
-## Several Minecraft versions
+If `v0.2.8+1.21.1` was already uploaded and a later GitHub Release uses `v0.2.8`, that version is skipped in each store
+where it already exists. The 26.1.2 and 26.3 uploads still proceed. If a version exists on only one store, the workflow
+uploads it only to the other store. Existing files, versions and changelogs are not replaced.
 
-Each Minecraft line lives on its own branch, `mc/<minecraft_version>` (e.g. `mc/1.21.1`, `mc/26.2`), with its own
-`gradle.properties` (`minecraft_version`, `minecraft_version_range`, `neo_version`, mappings, dependencies).
-`main` follows the newest line.
+A store lookup error stops that target's uploads instead of treating it as missing. Publication jobs for the same
+store version are serialized across different GitHub tags. Only versions returned by the store API can be detected;
+files still awaiting approval or otherwise hidden from the API may not appear yet. No remote publication is atomic
+across stores; a rerun checks again and completes the remaining uploads.
 
-- A new branch `mc/<version>` created from another one already has CI and release; nothing else to configure.
-  CI fails if the branch name and `minecraft_version` disagree.
-- A change meant for several lines is made on the oldest one and carried forward with a pull request
-  (`mc/1.21.1` → `mc/26.2`); CI on that pull request builds and tests it on the newer line. Changes for one line
-  only stay on its branch.
-- To release a line, publish a release whose **Target** is its branch and whose tag carries its Minecraft suffix.
-- No automation can decide which code is compatible with which Minecraft version; CI on each branch is what
-  proves it.
+## Several Minecraft versions (Stonecutter)
+
+Every Minecraft version lives on the same branch. **Stonecutter** builds each one as the Gradle project
+`:<minecraft>`, listed in `settings.gradle.kts` (`versions(...)`) with its own `versions/<minecraft>/gradle.properties`
+(NeoForge, Java, Parchment, optional mod APIs, Catalogue logo entry). The shared values stay in the root
+`gradle.properties`.
+
+- **Code**: one `src/main/java` for all versions. Where the Minecraft API differs, Stonecutter conditions choose
+  the lines of each version:
+
+  ```java
+  //? if >=26.1 {
+  import net.minecraft.resources.Identifier;
+  //?} else {
+  /*import net.minecraft.resources.ResourceLocation;
+  *///?}
+  ```
+
+  The code of the active version is plain, the others stay commented. Git always holds the sources in the
+  `26.1.2` layout (`vcsVersion` in `settings.gradle.kts`, `stonecutter active` in `stonecutter.gradle.kts`).
+- **Resources**: `src/main/resources` holds what every version shares; `src/mc26/resources` what 26.1.2 and 26.3
+  share (their data and asset formats); `versions/<minecraft>/src/main/resources` what only that version has. A file
+  lives in exactly one of these places for each version.
+- **Optional integrations** without a build for a version stay out of its compilation (`build.gradle.kts`): EMI and
+  Polymorph exist only on 1.21.1, REI on 1.21.1 and 26.1.2.
+- **Development clients**: run `./gradlew :<minecraft>:runClient` to use `run/<minecraft>` with that version's own
+  mods, settings and worlds. No active-version switch is needed for this terminal command.
+- **Switching the edited version** (IDE): run the Gradle task
+  `Set active project to <minecraft>`; run `Reset active project` (back to 26.1.2) before committing. Building or
+  testing any version does not need a switch: `./gradlew :1.21.1:build` works from any active version.
+- To add a Minecraft version, add it to `versions(...)` in `settings.gradle.kts` and create
+  `versions/<minecraft>/gradle.properties`. CI builds and tests it from the next push.
+- No automation can decide which code is compatible with which Minecraft version; CI on every configured version is
+  what proves it.
 
 ## Credentials
 
-The `management` environment holds the secrets `CURSEFORGE_TOKEN`, `MODRINTH_TOKEN` and the variables
-`ID_DO_CURSEFORGE`, `ID_DO_MODRINTH`. Keep it protected with required reviewers if manual approval is wanted. CI
-and pull requests never get publishing credentials.
+The `management` environment holds:
+
+| Kind | Name | Purpose |
+|---|---|---|
+| Secret | `CURSEFORGE_TOKEN` | Existing CurseForge author upload token |
+| Optional secret | `CURSEFORGE_API_KEY` | Separate Core API read key, only if the existing token is not accepted for lookups |
+| Secret | `MODRINTH_TOKEN` | Modrinth version lookup and upload |
+| Variable | `ID_DO_CURSEFORGE` | Numeric CurseForge project ID |
+| Variable | `ID_DO_MODRINTH` | Modrinth project ID or slug |
+
+The workflow reuses `CURSEFORGE_TOKEN` for the CurseForge lookup by default. The upload API uses `X-Api-Token`,
+whereas the [Core API](https://docs.curseforge.com/rest-api/) requires `x-api-key`. A secret's name does not identify
+which credential it contains. If the existing credential is rejected by the Core API, the workflow stops rather
+than uploading blindly; a separate read key may then be set as the optional `CURSEFORGE_API_KEY` in `management`.
+Obtain that read key through the [CurseForge Core API console](https://console.curseforge.com/).
+Keep credentials in GitHub secrets, never in source or release notes.
+
+The [Modrinth version-list API](https://docs.modrinth.com/api/operations/getprojectversions/) uses the existing token.
+CI and build jobs do not receive store secrets. Keep `management` protected with required reviewers if desired.
+
+## Checking locally before a tag
+
+```bash
+./gradlew :1.21.1:build :26.1.2:build :26.3:build
+./gradlew :1.21.1:runGameTestServer :26.1.2:runGameTestServer :26.3:runGameTestServer
+bash scripts/validate-release.sh versions
+TAG=v0.2.8 PRERELEASE=false bash scripts/validate-release.sh tag
+TAG=v0.2.8-beta.1+1.21.1-26.1.2 PRERELEASE=true bash scripts/validate-release.sh tag
+python3 -B scripts/test-release.py
+python3 -B scripts/test-published.py
+```
+
+On Windows use `gradlew.bat` and run the script from Git Bash.

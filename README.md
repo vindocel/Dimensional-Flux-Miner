@@ -5,9 +5,9 @@
 **A miner that never digs.**
 It tunes into the frequency of the dimension it stands in and makes that dimension's ores appear out of nothing.
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.2-62B47A?style=for-the-badge)](https://www.minecraft.net/)
-[![NeoForge](https://img.shields.io/badge/NeoForge-21.1.255-E07A2F?style=for-the-badge)](https://neoforged.net/)
-[![Java](https://img.shields.io/badge/Java-21-5382A1?style=for-the-badge)](https://adoptium.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1%20%7C%2026.1.2%20%7C%2026.3-62B47A?style=for-the-badge)](https://www.minecraft.net/)
+[![NeoForge](https://img.shields.io/badge/NeoForge-21.1.266%20%7C%2026.1.2.126%20%7C%2026.3.0.95-E07A2F?style=for-the-badge)](https://neoforged.net/)
+[![Java](https://img.shields.io/badge/Java-21%20%7C%2025-5382A1?style=for-the-badge)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/License-EPL--2.0-9366DE?style=for-the-badge)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/vindocel/Dimensional-Flux-Miner/ci.yml?style=for-the-badge&label=CI)](https://github.com/vindocel/Dimensional-Flux-Miner/actions/workflows/ci.yml)
 
@@ -54,9 +54,9 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 
 | | |
 |---|---|
-| Minecraft | **26.1.2** |
-| NeoForge | **26.1.2.126** |
-| Java | **25** |
+| Minecraft | **1.21.1**, **26.1.2** and **26.3** |
+| NeoForge | **21.1.266** (1.21.1), **26.1.2.126** (26.1.2), **26.3.0.95** (26.3) |
+| Java | **21** (1.21.1), **25** (26.x) |
 | Mod ID | `dimensionalfluxminer` |
 | License | EPL-2.0 (see [`LICENSE`](LICENSE)) |
 
@@ -82,7 +82,7 @@ Your first **Pure Steel** earns you the guide (through the "Forged in the Flux" 
 - 📄 **Real pages**: the presentation and the clickable **contents** open the book; every chapter starts on a left page and the pages flow one after another, with a page-turn animation and sound. The violet ribbon goes back to the contents.
 - 🧊 **Interactive 3D Miner**: rotate the assembly, look at one layer at a time, switch between loose parts and the formed machine, hover a part to isolate it.
 - 🧾 **Live data**: crafting recipes come from the server, the speed tables and matter values follow the server configuration and datapacks.
-- 🔎 Item tooltips everywhere and buttons that open the machine recipes in JEI or REI (also EMI on the 1.21.1 line). The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
+- 🔎 Item tooltips everywhere and buttons that open the machine recipes in JEI or REI (REI on 1.21.1 and 26.1.2; EMI on 1.21.1). The first time a chapter names an item, the word is underlined: hover it to see the item's icon and name.
 
 All text lives in the language files (`guide.dimensionalfluxminer.*`), in English and Brazilian Portuguese.
 
@@ -286,11 +286,11 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 ## 🔌 Compatibility
 
 - 🔧 **Pipes and cables**: every machine exposes the standard NeoForge capabilities (items, energy, fluid) per face. A cable that keeps pulling items from a face (or pushing into it) sets that face's item route by itself, on the Miner's ports, the Crusher and the Electric Furnace.
-- 📘 **JEI and REI** (optional; EMI only on the 1.21.1 line, it has no 26.1.2 build yet): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots. The side tabs and open windows push the item lists out of the way.
+- 📘 **JEI, REI and EMI** (optional; REI on 1.21.1 and 26.1.2, EMI on 1.21.1 only: they have no build for the other versions yet): Crushing, Electric Furnace (Furnace) and Electric Furnace (Alloy) categories; clicking a machine's work chamber opens its recipes, and R / U work on the items inside machine slots. The side tabs and open windows push the item lists out of the way.
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
 - ⚡ **Applied Energistics 2** (optional): the Crusher, the Electric Furnace and the Miner's energy ports draw AE from an energy cell touching them or from a quartz fiber on the cable face toward them (1 AE = 2 FE, no channel). ME cables do not connect to them.
 - 🧪 **Cognition**: the Experience Obelisk takes the Electric Furnace's Liquid Experience directly.
-- 🔀 **Polymorph** (optional, 1.21.1 line only until it ships for 26.1.2): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
+- 🔀 **Polymorph** (optional, 1.21.1 only until it ships for 26.x): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
 - 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Electric Furnace work through the common tags.
 
@@ -318,15 +318,34 @@ examples and datapack instructions, see the **[Complete Customization Guide](doc
 
 ## 🛠️ Building from source
 
+Every Minecraft version is built from the same branch with [Stonecutter](https://stonecutter.kikugie.dev/): each one
+is the Gradle project `:<minecraft>`.
+
 ```bash
-./gradlew build                # jar in build/libs/dimensionalfluxminer-<minecraft>-<version>.jar
-./gradlew test                 # JUnit: rate curves, production curve, buffers, bulk bonus, auto-split, matter math, ore weights, void curve, layout
-./gradlew runGameTestServer    # in-world GameTests for the machines, the corruption and the content
-./gradlew runClient            # development client
-./gradlew runServer            # development server
+./gradlew :26.1.2:build                # jar in versions/26.1.2/build/libs/dimensionalfluxminer-26.1.2-<version>.jar
+./gradlew :1.21.1:build :26.3:build    # the other versions
+./gradlew :26.1.2:test                 # JUnit: rate curves, production curve, buffers, bulk bonus, auto-split, matter math, ore weights, void curve, layout
+./gradlew :26.1.2:runGameTestServer    # in-world GameTests for the machines, the corruption and the content
+./gradlew :26.1.2:runClient            # development client
 ```
 
-On Windows use `gradlew.bat`. The Gradle wrapper provisions Gradle itself; a JDK 21 is required (the foojay toolchain resolver can download one).
+On Windows use `gradlew.bat`. The Gradle wrapper provisions Gradle itself; Gradle runs on JDK 25 and the foojay toolchain
+resolver downloads JDK 21 for 1.21.1 when needed.
+
+Each development client has its own instance inside `run/<minecraft>`, with independent `mods/`, `config/`, `saves/`,
+`resourcepacks/` and `shaderpacks/`. On Windows, launch one from the repository root:
+
+```powershell
+.\gradlew.bat :1.21.1:runClient
+.\gradlew.bat :26.1.2:runClient
+.\gradlew.bat :26.3:runClient
+```
+
+Put compatible NeoForge mods in `run/1.21.1/mods`, `run/26.1.2/mods` or `run/26.3/mods`. The current development
+build of Dimensional Flux Miner is loaded automatically; do not add another copy of it to `mods/`.
+Use the version-qualified command to launch only that client. No active-version switch is needed from the terminal.
+For editing another version in the IDE, use `Set active project to <minecraft>`, then `Reset active project` before
+committing.
 
 - 🧭 Code layout, tests and development rules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - ⚖️ Every balance number (speed and energy tables, matter, ore distribution, protections, server config): [docs/BALANCE.md](docs/BALANCE.md).
@@ -337,11 +356,11 @@ On Windows use `gradlew.bat`. The Gradle wrapper provisions Gradle itself; a JDK
 
 | Workflow | When | What |
 |---|---|---|
-| 🧪 **CI** (`ci.yml`) | every push to `main`, `1.21.x`, `mc/**` and every pull request | checks that an `mc/<version>` branch builds that Minecraft version, runs `./gradlew build` and the GameTests on Java 21; no publishing credentials |
-| 📦 **Release** (`release.yml`) | a GitHub Release is published | validates the tag and its target branch, builds the tagged commit with the tag's version, runs the GameTests, checks the jar and uploads it to CurseForge and Modrinth with the release body as changelog |
+| 🧪 **CI** (`ci.yml`) | every push to `production` and `main` and every pull request | builds every Minecraft version Stonecutter is configured for and runs its GameTests; no publishing credentials |
+| 📦 **Release** (`release.yml`) | a GitHub Release is published | validates the tag and its target branch, builds and tests all selected Minecraft versions, validates their JARs and uploads only missing versions to CurseForge and Modrinth with the release body as changelog |
 
 - 🏷️ Tags look like `v0.3.0-beta.1+1.21.1`: `gradle.properties` keeps the base version, the channel (alpha, beta, release) comes from the tag.
-- 🌿 Each Minecraft line lives on an `mc/<version>` branch.
+- 🌿 Every Minecraft version lives on `production` (day-to-day work, alphas and betas); `main` receives it when a version is final (stable releases). No Minecraft suffix selects every configured target; `+1.21.1` selects one and `+1.21.1-26.1.2` selects a group. Existing uploads are skipped independently in each store.
 - 📘 Full release and multi-version workflow: [docs/RELEASING.md](docs/RELEASING.md).
 
 ---

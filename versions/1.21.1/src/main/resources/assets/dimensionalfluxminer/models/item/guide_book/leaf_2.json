@@ -1,0 +1,81 @@
+{
+  "texture_size": [
+    128,
+    128
+  ],
+  "textures": {
+    "0": "dimensionalfluxminer:item/guide_book",
+    "particle": "dimensionalfluxminer:item/guide_book"
+  },
+  "elements": [
+    {
+      "name": "pagina_solteira_2",
+      "from": [
+        8.5,
+        7.99,
+        2.5
+      ],
+      "to": [
+        15.5,
+        8,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            6,
+            6,
+            8
+          ],
+          "texture": "#0"
+        },
+        "east": {
+          "uv": [
+            2,
+            6,
+            6,
+            8
+          ],
+          "texture": "#0"
+        },
+        "south": {
+          "uv": [
+            2,
+            6,
+            6,
+            8
+          ],
+          "texture": "#0"
+        },
+        "west": {
+          "uv": [
+            2,
+            6,
+            6,
+            8
+          ],
+          "texture": "#0"
+        },
+        "up": {
+          "uv": [
+            12,
+            0,
+            16,
+            6
+          ],
+          "texture": "#0"
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            12,
+            6
+          ],
+          "texture": "#0"
+        }
+      }
+    }
+  ]
+}

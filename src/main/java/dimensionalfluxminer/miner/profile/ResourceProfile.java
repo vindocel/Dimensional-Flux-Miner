@@ -4,7 +4,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.resources.ResourceKey;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -102,7 +106,11 @@ public final class ResourceProfile {
         return index < 0 ? Optional.empty() : Optional.of(families.get(index));
     }
 
+    //? if >=26.1 {
     public Optional<ResourceFamily> family(Identifier key) {
+    //?} else {
+    /*public Optional<ResourceFamily> family(ResourceLocation key) {
+    *///?}
         return families.stream().filter(f -> f.key().equals(key)).findFirst();
     }
 
@@ -123,6 +131,10 @@ public final class ResourceProfile {
 
     @Override
     public String toString() {
+        //? if >=26.1 {
         return "ResourceProfile[" + dimension.identifier() + ", " + families.size() + " families, void " + emptyWeight + "]";
+        //?} else {
+        /*return "ResourceProfile[" + dimension.location() + ", " + families.size() + " families, void " + emptyWeight + "]";
+        *///?}
     }
 }

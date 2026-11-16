@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/zinc"
+      }
+    }
+  ],
+  "type": "dimensionalfluxminer:tag_smelting",
+  "ingredient": {
+    "item": "dimensionalfluxminer:dust_zinc"
+  },
+  "result_tag": "c:ingots/zinc",
+  "experience": 0.7,
+  "cookingtime": 200
+}

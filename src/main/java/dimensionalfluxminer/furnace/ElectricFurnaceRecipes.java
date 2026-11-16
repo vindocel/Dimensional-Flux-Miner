@@ -12,12 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackLinkedSet;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+//? if >=26.1 {
 import net.minecraft.world.item.crafting.RecipeMap;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
@@ -34,6 +39,24 @@ final class ElectricFurnaceRecipes {
 
     private final RecipeChoices choices;
     private RecipeMap cachedManager;
+//?} else {
+/*import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
+
+/^*
+ * Recipe lookups of one Electric Furnace, with their caches: the furnace recipe of each lane's item and of every item
+ * offered, the alloy of the three lanes, and the items that are alloy ingredients. Everything is rebuilt when the
+ * recipes reload (a new {@link RecipeManager}); the furnace recipes also when a recipe is chosen for an item.
+ ^/
+final class ElectricFurnaceRecipes {
+    private static final int COOKING_CACHE_LIMIT = 256;
+
+    private final RecipeChoices choices;
+    private RecipeManager cachedManager;
+*///?}
     private int cachedChoices;
     private final ItemStack[] laneKey;
     private final Optional<AbstractCookingRecipe>[] laneRecipe;
@@ -62,7 +85,11 @@ final class ElectricFurnaceRecipes {
     }
 
     private void refresh(Level level) {
+        //? if >=26.1 {
         RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
+        //?} else {
+        /*RecipeManager manager = level.getRecipeManager();
+        *///?}
         if (manager == cachedManager) {
             if (choices.version() != cachedChoices) {
                 // A recipe was chosen for an item: forget the furnace recipes remembered so far.
@@ -79,7 +106,11 @@ final class ElectricFurnaceRecipes {
         Set<Item> items = new HashSet<>();
         for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(manager, level.registryAccess())) {
             for (SizedIngredient sized : holder.value().ingredients()) {
+                //? if >=26.1 {
                 for (ItemStack option : dimensionalfluxminer.recipe.Recipes.stacks(sized.ingredient())) {
+                //?} else {
+                /*for (ItemStack option : sized.ingredient().getItems()) {
+                *///?}
                     items.add(option.getItem());
                 }
             }
@@ -115,7 +146,11 @@ final class ElectricFurnaceRecipes {
     }
 
     /** The recipe chosen for the item when it still accepts it, otherwise the default one. */
+    //? if >=26.1 {
     private static Optional<AbstractCookingRecipe> find(Level level, ItemStack stack, Identifier chosen) {
+    //?} else {
+    /*private static Optional<AbstractCookingRecipe> find(Level level, ItemStack stack, ResourceLocation chosen) {
+    *///?}
         if (chosen != null) {
             for (RecipeHolder<? extends AbstractCookingRecipe> option : options(level, stack)) {
                 if (option.id().equals(chosen)) {
@@ -128,10 +163,19 @@ final class ElectricFurnaceRecipes {
 
     /** Blast furnace recipe of the item, otherwise its furnace recipe. */
     private static Optional<RecipeHolder<? extends AbstractCookingRecipe>> defaultRecipe(Level level, SingleRecipeInput input) {
+        //? if >=26.1 {
         RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
         Optional<RecipeHolder<? extends AbstractCookingRecipe>> blasting = dimensionalfluxminer.recipe.Recipes.first(level, RecipeType.BLASTING, input)
+        //?} else {
+        /*RecipeManager manager = level.getRecipeManager();
+        Optional<RecipeHolder<? extends AbstractCookingRecipe>> blasting = manager.getRecipeFor(RecipeType.BLASTING, input, level)
+        *///?}
                 .map(h -> h);
+        //? if >=26.1 {
         return blasting.isPresent() ? blasting : dimensionalfluxminer.recipe.Recipes.first(level, RecipeType.SMELTING, input).map(h -> h);
+        //?} else {
+        /*return blasting.isPresent() ? blasting : manager.getRecipeFor(RecipeType.SMELTING, input, level).map(h -> h);
+        *///?}
     }
 
     /**
@@ -147,15 +191,28 @@ final class ElectricFurnaceRecipes {
         if (first.isEmpty()) {
             return List.of();
         }
+        //? if >=26.1 {
         RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
+        //?} else {
+        /*RecipeManager manager = level.getRecipeManager();
+        *///?}
         List<RecipeHolder<? extends AbstractCookingRecipe>> candidates = new ArrayList<>();
         candidates.add(first.get());
+        //? if >=26.1 {
         candidates.addAll(dimensionalfluxminer.recipe.Recipes.matching(level, RecipeType.BLASTING, input));
         candidates.addAll(dimensionalfluxminer.recipe.Recipes.matching(level, RecipeType.SMELTING, input));
+        //?} else {
+        /*candidates.addAll(manager.getRecipesFor(RecipeType.BLASTING, input, level));
+        candidates.addAll(manager.getRecipesFor(RecipeType.SMELTING, input, level));
+        *///?}
         List<RecipeHolder<? extends AbstractCookingRecipe>> options = new ArrayList<>();
         List<ItemStack> results = new ArrayList<>();
         for (RecipeHolder<? extends AbstractCookingRecipe> candidate : candidates) {
+            //? if >=26.1 {
             ItemStack result = candidate.value().assemble(input);
+            //?} else {
+            /*ItemStack result = candidate.value().getResultItem(level.registryAccess());
+            *///?}
             if (result.isEmpty() || options.stream().anyMatch(o -> o.id().equals(candidate.id()))
                     || results.stream().anyMatch(r -> ItemStack.matches(r, result))) {
                 continue;
@@ -187,7 +244,11 @@ final class ElectricFurnaceRecipes {
 
     /** True when one alloy recipe uses both items as different ingredients. */
     static boolean alloyPartners(Level level, ItemStack a, ItemStack b) {
+        //? if >=26.1 {
         for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess())) {
+        //?} else {
+        /*for (RecipeHolder<AlloyingRecipe> holder : ExternalAlloying.all(level.getRecipeManager(), level.registryAccess())) {
+        *///?}
             List<SizedIngredient> ingredients = holder.value().ingredients();
             for (int i = 0; i < ingredients.size(); i++) {
                 for (int j = 0; j < ingredients.size(); j++) {
@@ -205,7 +266,11 @@ final class ElectricFurnaceRecipes {
         if (result.getCount() != 1) {
             return false;
         }
+        //? if >=26.1 {
         return input.typeHolder().tags()
+        //?} else {
+        /*return input.getTags()
+        *///?}
                 .filter(t -> t.location().getNamespace().equals("c") && t.location().getPath().startsWith("raw_materials/"))
                 .map(t -> t.location().getPath().substring("raw_materials/".length()))
                 .anyMatch(material -> result.is(DfmTags.Items.common("ingots/" + material)));

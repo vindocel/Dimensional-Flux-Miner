@@ -1,8 +1,10 @@
 package dimensionalfluxminer.miner;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.SlotStorage;
 import dimensionalfluxminer.machine.transfer.SlotsSlot;
+//?}
 import dimensionalfluxminer.menu.MachineMenu;
 import dimensionalfluxminer.menu.WindowSlot;
 import dimensionalfluxminer.registry.DfmItems;
@@ -13,6 +15,11 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Main Miner screen: Core slot and the 27 output slots (9 x 3) always visible; the upgrade slot lives in a window. */
 public class MinerMenu extends MachineMenu<MinerControllerBlockEntity> {
@@ -33,10 +40,17 @@ public class MinerMenu extends MachineMenu<MinerControllerBlockEntity> {
 
     private MinerMenu(int containerId, Inventory inventory, BlockPos pos, MinerControllerBlockEntity be) {
         super(DfmMenus.MINER.get(), containerId, inventory, pos, be);
+        //? if >=26.1 {
         ItemSlots core = be != null ? be.coreSlot() : new SlotStorage(1);
         ItemSlots upgrade = be != null ? be.upgradeSlot() : new SlotStorage(1);
         ItemSlots output = be != null ? be.output() : new SlotStorage(MinerControllerBlockEntity.OUTPUT_SLOTS);
         addSlot(new SlotsSlot(core, 0, CORE_X, CORE_Y) {
+        //?} else {
+        /*IItemHandler core = be != null ? be.coreSlot() : new ItemStackHandler(1);
+        IItemHandler upgrade = be != null ? be.upgradeSlot() : new ItemStackHandler(1);
+        IItemHandler output = be != null ? be.output() : new ItemStackHandler(MinerControllerBlockEntity.OUTPUT_SLOTS);
+        addSlot(new SlotItemHandler(core, 0, CORE_X, CORE_Y) {
+        *///?}
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return DfmItems.isCore(stack.getItem());
@@ -61,7 +75,11 @@ public class MinerMenu extends MachineMenu<MinerControllerBlockEntity> {
         });
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
+                //? if >=26.1 {
                 addSlot(new SlotsSlot(output, col + row * 9, OUTPUT_X + col * 18, OUTPUT_Y + row * 18) {
+                //?} else {
+                /*addSlot(new SlotItemHandler(output, col + row * 9, OUTPUT_X + col * 18, OUTPUT_Y + row * 18) {
+                *///?}
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return false;

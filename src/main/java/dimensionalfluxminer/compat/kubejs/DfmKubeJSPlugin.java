@@ -1,7 +1,9 @@
 package dimensionalfluxminer.compat.kubejs;
 
 import dev.latvian.mods.kubejs.event.EventGroupRegistry;
+//? if >=26.1 {
 import dev.latvian.mods.kubejs.generator.KubeResourceGenerator;
+//?}
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
 import dev.latvian.mods.kubejs.script.ScriptManager;
 import dev.latvian.mods.kubejs.script.ScriptType;
@@ -45,9 +47,13 @@ public final class DfmKubeJSPlugin implements KubeJSPlugin {
         MatterValuesKubeEvent matter = new MatterValuesKubeEvent();
         DfmKubeEvents.MATTER_VALUES.post(ScriptType.SERVER, matter);
         if (!matter.isEmpty()) {
+            //? if >=26.1 {
             // Through the generator interface: the pack class itself extends a Minecraft class this line no longer has.
             java.util.Map<?, ?> packs = server.virtualPacks;
             ((KubeResourceGenerator) packs.get(GeneratedDataStage.LAST)).json(DimensionalFluxMiner.id("data_maps/item/matter_value"), matter.toJson());
+            //?} else {
+            /*server.virtualPacks.get(GeneratedDataStage.LAST).json(DimensionalFluxMiner.id("data_maps/item/matter_value"), matter.toJson());
+            *///?}
         }
     }
 }

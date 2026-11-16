@@ -13,12 +13,17 @@ import dev.emi.emi.api.widget.WidgetHolder;
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.client.screen.CrusherLayout;
 import dimensionalfluxminer.client.screen.ElectricFurnaceLayout;
+//? if <26.1 {
+/*import dimensionalfluxminer.client.screen.FluidGauge;
+import dimensionalfluxminer.client.screen.TankRecipeLayout;
+*///?}
 import dimensionalfluxminer.compat.RecipeViewerData;
 import dimensionalfluxminer.crusher.CrusherProcessing;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.registry.DfmBlocks;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
@@ -34,6 +39,26 @@ public class DfmEmiPlugin implements EmiPlugin {
     static final EmiRecipeCategory CRUSHING = new EmiRecipeCategory(DimensionalFluxMiner.id("crushing"), CRUSHER);
     static final EmiRecipeCategory SMELTING = new EmiRecipeCategory(DimensionalFluxMiner.id("smelting"), ELECTRIC_FURNACE);
     static final EmiRecipeCategory ALLOYING = new EmiRecipeCategory(DimensionalFluxMiner.id("alloying"), ELECTRIC_FURNACE);
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
+
+/^*
+ * EMI integration: Crushing, Electric Furnace furnace mode, Alloying and the container conversions of the Dimensional
+ * Tank. The Electric Furnace recipes use the machine's own processing element (inputs, pipes, heat chamber, outputs); the
+ * tank pages use the narrow liquid gauge of the other recipe viewers.
+ ^/
+@EmiEntrypoint
+public class DfmEmiPlugin implements EmiPlugin {
+    static final EmiStack CRUSHER = EmiStack.of(DfmBlocks.MECHANICAL_CRUSHER.get());
+    static final EmiStack ELECTRIC_FURNACE = EmiStack.of(DfmBlocks.ELECTRIC_FURNACE.get());
+    static final EmiRecipeCategory CRUSHING = new EmiRecipeCategory(DimensionalFluxMiner.id("crushing"), CRUSHER);
+    static final EmiRecipeCategory SMELTING = new EmiRecipeCategory(DimensionalFluxMiner.id("smelting"), ELECTRIC_FURNACE);
+    static final EmiRecipeCategory ALLOYING = new EmiRecipeCategory(DimensionalFluxMiner.id("alloying"), ELECTRIC_FURNACE);
+    static final EmiStack TANK = EmiStack.of(DfmBlocks.DIMENSIONAL_TANK.get());
+    static final EmiRecipeCategory TANK_CONTAINER = new EmiRecipeCategory(DimensionalFluxMiner.id("tank_container"), TANK);
+*///?}
     /** The element plus a 1 px margin (the alloy element is drawn 1 px around the slot area). */
     private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
     private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
@@ -66,6 +91,13 @@ public class DfmEmiPlugin implements EmiPlugin {
         registry.addWorkstation(CRUSHING, CRUSHER);
         registry.addWorkstation(SMELTING, ELECTRIC_FURNACE);
         registry.addWorkstation(ALLOYING, ELECTRIC_FURNACE);
+        //? if <26.1 {
+        /*registry.addCategory(TANK_CONTAINER);
+        registry.addWorkstation(TANK_CONTAINER, TANK);
+        for (var holder : registry.getRecipeManager().getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get())) {
+            registry.addRecipe(new TankContainer(holder.id(), holder.value()));
+        }
+        *///?}
 
         List<CrusherProcessing.Display> crushing = RecipeViewerData.crushing();
         for (int i = 0; i < crushing.size(); i++) {
@@ -85,7 +117,11 @@ public class DfmEmiPlugin implements EmiPlugin {
     private static final class Crushing extends BasicEmiRecipe {
         private final CrusherProcessing.Display display;
 
+        //? if >=26.1 {
         Crushing(Identifier id, CrusherProcessing.Display display) {
+        //?} else {
+        /*Crushing(ResourceLocation id, CrusherProcessing.Display display) {
+        *///?}
             super(CRUSHING, id, CrusherLayout.WIDTH, CrusherLayout.HEIGHT);
             this.display = display;
             inputs.add(EmiIngredient.of(display.inputs().stream().map(EmiStack::of).toList()));
@@ -112,7 +148,11 @@ public class DfmEmiPlugin implements EmiPlugin {
         private final RecipeViewerData.FurnaceDisplay display;
 
         Furnace(RecipeViewerData.FurnaceDisplay display) {
+            //? if >=26.1 {
             super(SMELTING, Identifier.fromNamespaceAndPath(DimensionalFluxMiner.MOD_ID,
+            //?} else {
+            /*super(SMELTING, ResourceLocation.fromNamespaceAndPath(DimensionalFluxMiner.MOD_ID,
+            *///?}
                     "/smelting/" + display.id().getNamespace() + "/" + display.id().getPath()), ELEMENT_W, ELEMENT_H);
             this.display = display;
             inputs.add(EmiIngredient.of(display.input(), display.inputCount()));
@@ -134,11 +174,76 @@ public class DfmEmiPlugin implements EmiPlugin {
         }
     }
 
+    //? if <26.1 {
+    /*/^* A container converted in a single tank slot: the liquid it takes or gives in the narrow gauge, the item in the middle. ^/
+    private static final class TankContainer extends BasicEmiRecipe {
+        private final boolean filling;
+        private final EmiIngredient fluid;
+
+        TankContainer(ResourceLocation id, dimensionalfluxminer.recipe.TankContainerRecipe recipe) {
+            super(TANK_CONTAINER, id, TankRecipeLayout.WIDTH, TankRecipeLayout.HEIGHT);
+            this.filling = recipe.filling();
+            this.fluid = EmiIngredient.of(recipe.fluids().stream()
+                    .map(stack -> EmiStack.of(stack.getFluid(), stack.getComponentsPatch(), stack.getAmount())).toList());
+            inputs.add(EmiIngredient.of(recipe.ingredient()));
+            outputs.add(EmiStack.of(recipe.result()));
+            if (filling) {
+                inputs.add(fluid);
+            } else {
+                fluid.getEmiStacks().forEach(outputs::add);
+            }
+        }
+
+        @Override
+        public void addWidgets(WidgetHolder widgets) {
+            widgets.addDrawable(0, 0, TankRecipeLayout.WIDTH, TankRecipeLayout.HEIGHT,
+                    (g, mouseX, mouseY, delta) -> TankRecipeLayout.drawEmptySideAndArrow(g, 0, 0, filling));
+            widgets.addSlot(inputs.getFirst(), TankRecipeLayout.INPUT_ITEM_X - 1, TankRecipeLayout.ITEM_Y - 1);
+            widgets.addSlot(outputs.getFirst(), TankRecipeLayout.OUTPUT_ITEM_X - 1, TankRecipeLayout.ITEM_Y - 1).recipeContext(this);
+            FluidSlot slot = widgets.add(new FluidSlot(fluid, TankRecipeLayout.fluidX(filling), TankRecipeLayout.FLUID_Y));
+            if (!filling) {
+                slot.recipeContext(this);
+            }
+        }
+    }
+
+    /^* Fluid slot shown as the narrow liquid gauge (18 x 64), cycling through the liquids of the recipe's tag. ^/
+    private static final class FluidSlot extends dev.emi.emi.api.widget.SlotWidget {
+        FluidSlot(EmiIngredient stack, int x, int y) {
+            super(stack, x, y);
+            drawBack(false);
+        }
+
+        @Override
+        public dev.emi.emi.api.widget.Bounds getBounds() {
+            return new dev.emi.emi.api.widget.Bounds(x, y, FluidGauge.NARROW_WIDTH, FluidGauge.HEIGHT);
+        }
+
+        @Override
+        public void drawStack(net.minecraft.client.gui.GuiGraphics g, int mouseX, int mouseY, float delta) {
+            List<EmiStack> stacks = getStack().getEmiStacks();
+            if (stacks.isEmpty()) {
+                return;
+            }
+            EmiStack shown = stacks.get((int) (System.currentTimeMillis() / 1000 % stacks.size()));
+            if (shown.getKey() instanceof net.minecraft.world.level.material.Fluid fluid) {
+                var stack = new net.neoforged.neoforge.fluids.FluidStack(fluid.builtInRegistryHolder(), (int) shown.getAmount(),
+                        shown.getComponentChanges());
+                FluidGauge.drawNarrow(g, x, y, stack, stack.getAmount());
+            }
+        }
+    }
+
+    *///?}
     /** Alloy mode: the three inputs feed one chamber; main output and byproduct below. */
     private static final class Alloying extends BasicEmiRecipe {
         private final long cycleMs;
 
+        //? if >=26.1 {
         Alloying(Identifier id, AlloyingRecipe recipe) {
+        //?} else {
+        /*Alloying(ResourceLocation id, AlloyingRecipe recipe) {
+        *///?}
             super(ALLOYING, id, ELEMENT_W, ELEMENT_H);
             this.cycleMs = recipe.processingTicks() * 50L;
             for (SizedIngredient sized : recipe.ingredients()) {

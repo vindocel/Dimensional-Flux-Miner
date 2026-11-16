@@ -17,7 +17,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
@@ -76,17 +80,29 @@ final class GuideReferences {
             Map.entry("blight.avoid", List.of("stabilized_dimensional_core")));
 
     /** Items already referenced in the chapter being built: only the first mention is marked. */
+    //? if >=26.1 {
     private static final Set<Identifier> SEEN = new HashSet<>();
+    //?} else {
+    /*private static final Set<ResourceLocation> SEEN = new HashSet<>();
+    *///?}
 
     /** What a reference shows: an item, or a fluid that has no item of its own. */
     record Target(ItemStack stack, Fluid fluid, Component name) {
     }
 
     /** A referenced word on one line, in pixels from the start of the line. */
+    //? if >=26.1 {
     record Span(int start, int end, Identifier id) {
+    //?} else {
+    /*record Span(int start, int end, ResourceLocation id) {
+    *///?}
     }
 
+    //? if >=26.1 {
     private record Alias(String text, Identifier id) {
+    //?} else {
+    /*private record Alias(String text, ResourceLocation id) {
+    *///?}
     }
 
     private GuideReferences() {
@@ -147,7 +163,11 @@ final class GuideReferences {
         }
         List<Alias> aliases = new ArrayList<>();
         for (String entry : allowed) {
+            //? if >=26.1 {
             Identifier id = entry.contains(":") ? Identifier.parse(entry) : DimensionalFluxMiner.id(entry);
+            //?} else {
+            /*ResourceLocation id = entry.contains(":") ? ResourceLocation.parse(entry) : DimensionalFluxMiner.id(entry);
+            *///?}
             Target target = target(id);
             if (target == null) {
                 continue;
@@ -197,13 +217,25 @@ final class GuideReferences {
     }
 
     /** The item (or fluid) behind an id, or null when nothing is registered under it. */
+    //? if >=26.1 {
     static Target target(Identifier id) {
+    //?} else {
+    /*static Target target(ResourceLocation id) {
+    *///?}
         if (BuiltInRegistries.ITEM.containsKey(id)) {
+            //? if >=26.1 {
             ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(id));
+            //?} else {
+            /*ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id));
+            *///?}
             return new Target(stack, null, stack.getHoverName());
         }
         if (BuiltInRegistries.FLUID.containsKey(id)) {
+            //? if >=26.1 {
             Fluid fluid = BuiltInRegistries.FLUID.getValue(id);
+            //?} else {
+            /*Fluid fluid = BuiltInRegistries.FLUID.get(id);
+            *///?}
             return new Target(ItemStack.EMPTY, fluid, fluid.getFluidType().getDescription());
         }
         return null;
@@ -220,7 +252,11 @@ final class GuideReferences {
             String id = insertion != null && insertion.startsWith(PREFIX) ? insertion.substring(PREFIX.length()) : null;
             if (!Objects.equals(id, current[0])) {
                 if (current[0] != null) {
+                    //? if >=26.1 {
                     out.add(new Span(start[0], x[0], Identifier.parse(current[0])));
+                    //?} else {
+                    /*out.add(new Span(start[0], x[0], ResourceLocation.parse(current[0])));
+                    *///?}
                 }
                 current[0] = id;
                 start[0] = x[0];
@@ -229,7 +265,11 @@ final class GuideReferences {
             return true;
         });
         if (current[0] != null) {
+            //? if >=26.1 {
             out.add(new Span(start[0], x[0], Identifier.parse(current[0])));
+            //?} else {
+            /*out.add(new Span(start[0], x[0], ResourceLocation.parse(current[0])));
+            *///?}
         }
         return out;
     }

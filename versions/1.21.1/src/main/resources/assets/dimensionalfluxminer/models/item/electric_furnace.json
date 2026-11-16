@@ -1,0 +1,11 @@
+{
+  "parent": "dimensionalfluxminer:block/electric_furnace/off",
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1
+      },
+      "model": "dimensionalfluxminer:block/electric_furnace/active"
+    }
+  ]
+}

@@ -83,21 +83,34 @@ public final class ProtectionService {
      * dimensions of the configuration and not of a dimension type in {@code #dimensionalfluxminer:corruption_blocked}.
      */
     public static boolean corruptionAllowed(Level level) {
+        //? if >=26.1 {
         return DfmConfig.corruptionEnabled() && !DfmConfig.corruptionBlockedDimensions().contains(level.dimension().identifier())
+        //?} else {
+        /*return DfmConfig.corruptionEnabled() && !DfmConfig.corruptionBlockedDimensions().contains(level.dimension().location())
+        *///?}
                 && !level.dimensionTypeRegistration().is(DfmTags.DimensionTypes.CORRUPTION_BLOCKED);
     }
 
     /** Spawn protection and the administrative regions of the configuration. */
     public static boolean inProtectedRegion(ServerLevel level, BlockPos pos) {
         if (DfmConfig.corruptionRespectsSpawnProtection() && level.dimension() == Level.OVERWORLD) {
+            //? if >=26.1 {
             int radius = level.getServer() instanceof net.minecraft.server.dedicated.DedicatedServer dedicated ? dedicated.spawnProtectionRadius() : 16;
             BlockPos spawn = level.getRespawnData().pos();
+            //?} else {
+            /*int radius = level.getServer().getSpawnProtectionRadius();
+            BlockPos spawn = level.getSharedSpawnPos();
+            *///?}
             if (radius > 0 && Math.max(Math.abs(pos.getX() - spawn.getX()), Math.abs(pos.getZ() - spawn.getZ())) <= radius) {
                 return true;
             }
         }
         for (DfmConfig.Region region : DfmConfig.corruptionProtectedRegions()) {
+            //? if >=26.1 {
             if (region.contains(level.dimension().identifier(), pos.getX(), pos.getZ())) {
+            //?} else {
+            /*if (region.contains(level.dimension().location(), pos.getX(), pos.getZ())) {
+            *///?}
                 return true;
             }
         }
@@ -169,7 +182,11 @@ public final class ProtectionService {
                 }
                 for (BlockPos pos : positions) {
                     if (adapter.chunkBased()) {
+                        //? if >=26.1 {
                         long chunk = ChunkPos.pack(pos.getX() >> 4, pos.getZ() >> 4);
+                        //?} else {
+                        /*long chunk = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
+                        *///?}
                         if (chunk == lastChunk) {
                             continue;
                         }

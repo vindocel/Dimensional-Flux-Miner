@@ -8,6 +8,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Tank menu with two container slots on the ordinary single tank and a snapshot of its liquid, code and sides. */
 public class TankMenu extends MachineMenu<DimensionalTankBlockEntity> {
@@ -39,8 +43,13 @@ public class TankMenu extends MachineMenu<DimensionalTankBlockEntity> {
                 local.setLevel(inventory.player.level());
             }
             var storage = local.containers();
+            //? if >=26.1 {
             addSlot(new dimensionalfluxminer.machine.transfer.SlotsSlot(storage, 0, CONTAINER_X, DRAIN_Y));
             addSlot(new dimensionalfluxminer.machine.transfer.SlotsSlot(storage, 1, CONTAINER_X, FILL_Y));
+            //?} else {
+            /*addSlot(new SlotItemHandler(storage, 0, CONTAINER_X, DRAIN_Y));
+            addSlot(new SlotItemHandler(storage, 1, CONTAINER_X, FILL_Y));
+            *///?}
         }
         addPlayerInventory(inventory, 8, INVENTORY_TOP);
     }
@@ -56,8 +65,13 @@ public class TankMenu extends MachineMenu<DimensionalTankBlockEntity> {
 
     @Override
     protected ItemStack moveIntoMachine(ItemStack stack) {
+        //? if >=26.1 {
         return blockEntity != null && hasContainers
                 ? dimensionalfluxminer.machine.transfer.ItemSlots.insert(blockEntity.containers(), stack, false) : stack;
+        //?} else {
+        /*return blockEntity != null && hasContainers
+                ? ItemHandlerHelper.insertItem(blockEntity.containers(), stack, false) : stack;
+        *///?}
     }
 
     @Override

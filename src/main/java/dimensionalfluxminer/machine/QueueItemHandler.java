@@ -1,15 +1,24 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.ItemSlots;
+//?}
 import java.util.List;
 import net.minecraft.world.item.ItemStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.IItemHandler;
+*///?}
 
 /**
  * Sided item handler over logical queues. Input queues accept insertion only (through the machine's own
  * insertion strategy) and output queues allow extraction only, so a combined handler can serve
  * {@code ITEM_INPUT_OUTPUT_ALL} without ever inserting into outputs or extracting unprocessed inputs.
  */
+//? if >=26.1 {
 public final class QueueItemHandler implements ItemSlots {
+//?} else {
+/*public final class QueueItemHandler implements IItemHandler {
+*///?}
     private final List<ItemQueue> inputs;
     private final Inserter inserter;
     private final List<ItemQueue> outputs;

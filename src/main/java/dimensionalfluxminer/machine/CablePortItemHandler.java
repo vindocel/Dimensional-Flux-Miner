@@ -1,7 +1,12 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.ItemSlots;
+//?}
 import net.minecraft.world.item.ItemStack;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.IItemHandler;
+*///?}
 
 /**
  * Item handler of a configurable face of a single-block machine, as on the Miner ports: every such face has one, whatever
@@ -10,14 +15,27 @@ import net.minecraft.world.item.ItemStack;
  * with no route). Probe slots never give or take items: a cable that pulls from them or pushes into them is recorded,
  * and the machine's next scan gives the face that route.
  */
+//? if >=26.1 {
 public final class CablePortItemHandler implements ItemSlots {
     private final ItemSlots route;
+//?} else {
+/*public final class CablePortItemHandler implements IItemHandler {
+    private final IItemHandler route;
+*///?}
     /** Null when the route already inserts and extracts. */
+    //? if >=26.1 {
     private final ItemSlots probe;
+    //?} else {
+    /*private final IItemHandler probe;
+    *///?}
     private final Runnable onPull;
     private final Runnable onPush;
 
+    //? if >=26.1 {
     public CablePortItemHandler(ItemSlots route, ItemSlots probe, Runnable onPull, Runnable onPush) {
+    //?} else {
+    /*public CablePortItemHandler(IItemHandler route, IItemHandler probe, Runnable onPull, Runnable onPush) {
+    *///?}
         this.route = route;
         this.probe = probe;
         this.onPull = onPull;

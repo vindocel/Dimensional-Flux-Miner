@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package dimensionalfluxminer.machine.transfer;
 
 import net.minecraft.core.HolderLookup;
@@ -148,3 +149,5 @@ public class SlotStorage implements ItemSlots.Modifiable {
         }
     }
 }
+
+//?}

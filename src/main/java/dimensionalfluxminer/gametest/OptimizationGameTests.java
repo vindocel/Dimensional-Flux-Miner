@@ -1,7 +1,9 @@
 package dimensionalfluxminer.gametest;
 
+//? if >=26.1 {
 import dimensionalfluxminer.machine.transfer.ItemSlots;
 import dimensionalfluxminer.machine.transfer.SlotStorage;
+//?}
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.miner.corruption.CorruptionService;
@@ -18,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -26,8 +31,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+//? if <26.1 {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.items.ItemStackHandler;
+*///?}
 
 /** Regression tests of the optimizations: each fast path gives exactly the answer of the code it replaced. */
+//? if <26.1 {
+/*@GameTestHolder(DimensionalFluxMiner.MOD_ID)
+@PrefixGameTestTemplate(false)
+*///?}
 public final class OptimizationGameTests {
     private OptimizationGameTests() {
     }
@@ -78,8 +93,13 @@ public final class OptimizationGameTests {
         RandomSource random = RandomSource.create(7);
         List<Item> items = List.of(Items.IRON_ORE, Items.COAL_ORE, Items.DIAMOND_ORE, Items.ENDER_PEARL, Items.DIAMOND_SWORD);
         for (int round = 0; round < 200; round++) {
+            //? if >=26.1 {
             SlotStorage fast = new SlotStorage(MinerControllerBlockEntity.OUTPUT_SLOTS);
             SlotStorage slow = new SlotStorage(MinerControllerBlockEntity.OUTPUT_SLOTS);
+            //?} else {
+            /*ItemStackHandler fast = new ItemStackHandler(MinerControllerBlockEntity.OUTPUT_SLOTS);
+            ItemStackHandler slow = new ItemStackHandler(MinerControllerBlockEntity.OUTPUT_SLOTS);
+            *///?}
             for (int slot = 0; slot < MinerControllerBlockEntity.OUTPUT_SLOTS; slot++) {
                 if (random.nextInt(3) > 0) {
                     Item item = items.get(random.nextInt(items.size()));
@@ -90,11 +110,19 @@ public final class OptimizationGameTests {
             }
             for (int i = 0; i < 400; i++) {
                 ItemStack stack = new ItemStack(items.get(random.nextInt(items.size())));
+                //? if >=26.1 {
                 boolean slowFits = ItemSlots.insert(slow, stack.copy(), true).isEmpty();
+                //?} else {
+                /*boolean slowFits = ItemHandlerHelper.insertItem(slow, stack.copy(), true).isEmpty();
+                *///?}
                 int slot = dimensionalfluxminer.miner.MinerOutput.insertionSlot(fast, stack);
                 helper.assertTrue((slot >= 0) == slowFits, "fits the same: round " + round + ", insert " + i);
                 if (slot >= 0) {
+                    //? if >=26.1 {
                     ItemSlots.insert(slow, stack.copy(), false);
+                    //?} else {
+                    /*ItemHandlerHelper.insertItem(slow, stack.copy(), false);
+                    *///?}
                     fast.insertItem(slot, stack.copy(), false);
                 }
                 for (int s = 0; s < MinerControllerBlockEntity.OUTPUT_SLOTS; s++) {
@@ -164,7 +192,11 @@ public final class OptimizationGameTests {
                     @Override
                     public ProtectionService.Status check(ServerLevel l, BlockPos pos, UUID o) {
                         // A chunk-based system gives one answer for the whole chunk, as the contract says.
+                        //? if >=26.1 {
                         boolean hit = chunkBased ? protectedPos != null && net.minecraft.world.level.ChunkPos.containing(pos).equals(net.minecraft.world.level.ChunkPos.containing(protectedPos))
+                        //?} else {
+                        /*boolean hit = chunkBased ? protectedPos != null && new net.minecraft.world.level.ChunkPos(pos).equals(new net.minecraft.world.level.ChunkPos(protectedPos))
+                        *///?}
                                 : pos.equals(protectedPos);
                         return hit ? ProtectionService.Status.UNAUTHORIZED : ProtectionService.Status.UNCLAIMED;
                     }

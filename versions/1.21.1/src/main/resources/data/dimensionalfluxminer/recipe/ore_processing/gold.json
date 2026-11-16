@@ -1,0 +1,9 @@
+{
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": {
+    "tag": "c:ores/gold"
+  },
+  "result_tag": "c:raw_materials/gold",
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

@@ -4,7 +4,11 @@ import dimensionalfluxminer.menu.WindowSlot;
 import dimensionalfluxminer.registry.DfmItems;
 import java.util.List;
 import java.util.function.Supplier;
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -34,7 +38,11 @@ final class MachineWindows {
         }
 
         @Override
+        //? if >=26.1 {
         protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
+        //?} else {
+        /*protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+        *///?}
             boolean installed = slot.getItem().is(DfmItems.EFFICIENCY_UPGRADE.get());
             screen.innerScreen(g, x + 6, y + 18, 120, 36);
             screen.screenLines(g, List.of(
@@ -73,7 +81,11 @@ final class MachineWindows {
         }
 
         @Override
+        //? if >=26.1 {
         protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
+        //?} else {
+        /*protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+        *///?}
             List<Component> list = lines.get();
             screen.innerScreen(g, x + 6, y + 18, width - 12, list.size() * 10 + 8);
             screen.screenLines(g, list, x + 10, y + 23, width - 20, 10);

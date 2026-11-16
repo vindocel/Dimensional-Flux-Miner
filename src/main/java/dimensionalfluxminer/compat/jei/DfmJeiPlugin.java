@@ -31,9 +31,17 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
+//? if >=26.1 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.network.chat.Component;
+//? if >=26.1 {
 import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
@@ -56,20 +64,49 @@ public class DfmJeiPlugin implements IModPlugin {
     private static final int ELEMENT_W = ElectricFurnaceLayout.WIDTH + 2;
     private static final int ELEMENT_H = ElectricFurnaceLayout.HEIGHT + 2;
 
+    //? if <26.3 {
     private static boolean enabled() {
         return !RecipeViewers.emi() && !RecipeViewers.rei();
+    //?} else {
+    /*/^* EMI and REI have no 26.x build: JEI always lists the recipes on this line. ^/
+    private static boolean enabled() {
+        return true;
+    *///?}
     }
 
     @Override
+    //? if >=26.1 {
     public Identifier getPluginUid() {
+    //?} else {
+    /*public ResourceLocation getPluginUid() {
+    *///?}
         return DimensionalFluxMiner.id("jei_plugin");
     }
 
     /** Creative tanks holding different liquids are different entries. */
     @Override
     public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration registration) {
+        //? if >=26.1 {
         registration.registerFromDataComponentTypes(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get(),
                 dimensionalfluxminer.registry.DfmDataComponents.CREATIVE_TANK_FLUID.get());
+        //?} else {
+        /*registration.registerSubtypeInterpreter(dimensionalfluxminer.registry.DfmItems.CREATIVE_DIMENSIONAL_TANK.get(),
+                new mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter<net.minecraft.world.item.ItemStack>() {
+                    @Override
+                    public Object getSubtypeData(net.minecraft.world.item.ItemStack stack,
+                            mezz.jei.api.ingredients.subtypes.UidContext context) {
+                        return stack.get(dimensionalfluxminer.registry.DfmDataComponents.CREATIVE_TANK_FLUID.get());
+                    }
+
+                    @Override
+                    public String getLegacyStringSubtypeInfo(net.minecraft.world.item.ItemStack stack,
+                            mezz.jei.api.ingredients.subtypes.UidContext context) {
+                        var content = stack.get(dimensionalfluxminer.registry.DfmDataComponents.CREATIVE_TANK_FLUID.get());
+                        return content == null || content.isEmpty() ? ""
+                                : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(content.getFluid()).toString();
+                    }
+                });
+        *///?}
     }
 
     @Override
@@ -97,11 +134,20 @@ public class DfmJeiPlugin implements IModPlugin {
         if (!enabled() || level == null) {
             return;
         }
+        //? if >=26.1 {
         registration.addRecipes(TANK_CONTAINER, dimensionalfluxminer.recipe.Recipes.byType(level,
+        //?} else {
+        /*registration.addRecipes(TANK_CONTAINER, level.getRecipeManager().getAllRecipesFor(
+        *///?}
                 dimensionalfluxminer.registry.DfmRecipes.TANK_CONTAINER.get()).stream().map(RecipeHolder::value).toList());
         registration.addRecipes(CRUSHING, RecipeViewerData.crushing());
+        //? if >=26.1 {
         registration.addRecipes(SMELTING, RecipeViewerData.electricFurnaceSmelting(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess()));
         registration.addRecipes(ALLOYING, RecipeViewerData.alloying(dimensionalfluxminer.recipe.Recipes.map(level)));
+        //?} else {
+        /*registration.addRecipes(SMELTING, RecipeViewerData.electricFurnaceSmelting(level.getRecipeManager(), level.registryAccess()));
+        registration.addRecipes(ALLOYING, RecipeViewerData.alloying(level.getRecipeManager()));
+        *///?}
     }
 
     /**
@@ -183,7 +229,11 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
+        //? if >=26.1 {
         public void draw(dimensionalfluxminer.recipe.TankContainerRecipe recipe, IRecipeSlotsView slots, GuiGraphicsExtractor g,
+        //?} else {
+        /*public void draw(dimensionalfluxminer.recipe.TankContainerRecipe recipe, IRecipeSlotsView slots, net.minecraft.client.gui.GuiGraphics g,
+        *///?}
                          double mouseX, double mouseY) {
             TankRecipeLayout.drawEmptySideAndArrow(g, 0, 0, recipe.filling());
         }
@@ -191,7 +241,11 @@ public class DfmJeiPlugin implements IModPlugin {
 
     private static final class TankFluidRenderer implements mezz.jei.api.ingredients.IIngredientRenderer<net.neoforged.neoforge.fluids.FluidStack> {
         @Override
+        //? if >=26.1 {
         public void render(GuiGraphicsExtractor g, net.neoforged.neoforge.fluids.FluidStack fluid) {
+        //?} else {
+        /*public void render(net.minecraft.client.gui.GuiGraphics g, net.neoforged.neoforge.fluids.FluidStack fluid) {
+        *///?}
             FluidGauge.drawNarrow(g, 0, 0, fluid, fluid.getAmount());
         }
 
@@ -253,7 +307,11 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
+        //? if >=26.1 {
         public void draw(CrusherProcessing.Display recipe, IRecipeSlotsView view, GuiGraphicsExtractor g, double mouseX, double mouseY) {
+        //?} else {
+        /*public void draw(CrusherProcessing.Display recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
+        *///?}
             CrusherLayout.drawMechanism(g, 0, 0, CrusherLayout.WIDTH);
             CrusherLayout.drawPreview(g, 0, 0, 4000);
         }
@@ -295,7 +353,11 @@ public class DfmJeiPlugin implements IModPlugin {
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, RecipeViewerData.FurnaceDisplay recipe, IFocusGroup focuses) {
             builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[0], 2 + ElectricFurnaceLayout.INPUT_Y)
+                    //? if >=26.1 {
                     .addItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(recipe.input())).stream().map(s -> s.copyWithCount(recipe.inputCount())).toList());
+                    //?} else {
+                    /*.addItemStacks(List.of(recipe.input().getItems()).stream().map(s -> s.copyWithCount(recipe.inputCount())).toList());
+                    *///?}
             var output = builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.FURNACE.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y)
                     .addItemStack(recipe.output());
             if (recipe.bulk()) {
@@ -304,13 +366,21 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
+        //? if >=26.1 {
         public void draw(RecipeViewerData.FurnaceDisplay recipe, IRecipeSlotsView view, GuiGraphicsExtractor g, double mouseX, double mouseY) {
+        //?} else {
+        /*public void draw(RecipeViewerData.FurnaceDisplay recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
+        *///?}
             ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE);
             ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.FURNACE, recipe.cookTicks() * 50L);
         }
 
         @Override
+        //? if >=26.1 {
         public Identifier getRegistryName(RecipeViewerData.FurnaceDisplay recipe) {
+        //?} else {
+        /*public ResourceLocation getRegistryName(RecipeViewerData.FurnaceDisplay recipe) {
+        *///?}
             return recipe.id();
         }
     }
@@ -354,7 +424,11 @@ public class DfmJeiPlugin implements IModPlugin {
             List<SizedIngredient> ingredients = recipe.ingredients();
             for (int i = 0; i < ingredients.size() && i < 3; i++) {
                 builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[i], 2 + ElectricFurnaceLayout.INPUT_Y)
+                        //? if >=26.1 {
                         .addItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(ingredients.get(i).ingredient())));
+                        //?} else {
+                        /*.addItemStacks(List.of(ingredients.get(i).getItems()));
+                        *///?}
             }
             builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y).addItemStack(recipe.result());
             recipe.byproduct().ifPresent(b -> builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[1], 2 + ElectricFurnaceLayout.OUTPUT_Y)
@@ -363,14 +437,23 @@ public class DfmJeiPlugin implements IModPlugin {
         }
 
         @Override
+        //? if >=26.1 {
         public void draw(RecipeHolder<AlloyingRecipe> recipe, IRecipeSlotsView view, GuiGraphicsExtractor g, double mouseX, double mouseY) {
+        //?} else {
+        /*public void draw(RecipeHolder<AlloyingRecipe> recipe, IRecipeSlotsView view, GuiGraphics g, double mouseX, double mouseY) {
+        *///?}
             ElectricFurnaceLayout.drawElement(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY);
             ElectricFurnaceLayout.previewHeat(g, 1, 1, ElectricFurnaceLayout.Variant.ALLOY, recipe.value().processingTicks() * 50L);
         }
 
         @Override
+        //? if >=26.1 {
         public Identifier getRegistryName(RecipeHolder<AlloyingRecipe> recipe) {
             return recipe.id().identifier();
+        //?} else {
+        /*public ResourceLocation getRegistryName(RecipeHolder<AlloyingRecipe> recipe) {
+            return recipe.id();
+        *///?}
         }
     }
 }

@@ -179,7 +179,8 @@ final class GuideContent {
     private static Chapter tanks() {
         Builder b = new Builder("tanks");
         b.item(DfmItems.DIMENSIONAL_TANK, "about").crafting("dimensional_tank");
-        b.text("containers").text("bottles").text("conversions");
+        b.text("containers").text("bottles").tankConversion("fill_experience_bottle");
+        b.text("nautilus").tankConversion("fill_nautilus_shell").text("conversions");
         b.heading("dual").item(DfmItems.DIMENSIONAL_DUAL_TANK, "dual").crafting("dimensional_dual_tank");
         b.heading("code").text("code").text("code_change").text("local").text("clear");
         b.heading("personal").text("personal");
@@ -397,6 +398,11 @@ final class GuideContent {
                 }
                 return list;
             }, fluids));
+            return this;
+        }
+
+        Builder tankConversion(String recipe) {
+            elements.add(new GuideElements.TankConversion(DimensionalFluxMiner.id("tank_container/" + recipe)));
             return this;
         }
 

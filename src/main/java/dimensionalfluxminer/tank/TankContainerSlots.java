@@ -1,5 +1,6 @@
 package dimensionalfluxminer.tank;
 
+import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.machine.ReadOnlyViews;
 import dimensionalfluxminer.machine.side.SideRoute;
 //? if >=26.1 {
@@ -17,6 +18,8 @@ import java.util.Optional;
 *///?}
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Items;
 //? if >=26.1 {
 import net.minecraft.world.SimpleContainer;
 //?}
@@ -312,6 +315,9 @@ public final class TankContainerSlots extends SlotStorage {
                 }
                 complete(slot, result);
                 *///?}
+                if (filling && getStackInSlot(slot).is(Items.NAUTILUS_SHELL) && tank.getLevel() instanceof ServerLevel level) {
+                    DfmAdvancements.awardNearby(level, tank.getBlockPos(), DfmAdvancements.NAUTILUS_SHELL_CREATED);
+                }
                 continue;
             }
             //? if >=26.1 {

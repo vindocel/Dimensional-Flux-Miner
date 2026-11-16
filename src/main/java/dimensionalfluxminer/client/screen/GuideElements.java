@@ -395,6 +395,56 @@ final class GuideElements {
         }
     }
 
+    /** Tank conversion read from the current datapack, with cycling item/fluid choices. */
+    //? if >=26.1 {
+    record TankConversion(Identifier id) implements GuideElement {
+    //?} else {
+    /*record TankConversion(ResourceLocation id) implements GuideElement {
+    *///?}
+        @Override
+        public int height(GuideScreen screen, int width) {
+            return 32;
+        }
+
+        @Override
+        //? if >=26.1 {
+        public void render(GuideScreen screen, GuiGraphicsExtractor g, int x, int y, int width, int mouseX, int mouseY) {
+        //?} else {
+        /*public void render(GuideScreen screen, GuiGraphics g, int x, int y, int width, int mouseX, int mouseY) {
+        *///?}
+            Level level = Minecraft.getInstance().level;
+            //? if >=26.1 {
+            RecipeHolder<?> holder = level == null ? null : dimensionalfluxminer.recipe.Recipes.byKey(level,
+                    net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, id)).orElse(null);
+            //?} else {
+            /*RecipeHolder<?> holder = level == null ? null : level.getRecipeManager().byKey(id).orElse(null);
+            *///?}
+            if (holder == null || !(holder.value() instanceof dimensionalfluxminer.recipe.TankContainerRecipe recipe)) {
+                screen.fittedText(g, Component.translatable("guide.dimensionalfluxminer.recipe_missing"), x, y + 4, width, MUTED);
+                return;
+            }
+            ItemStack result = recipe.result();
+            screen.fittedText(g, result.getHoverName(), x, y + 1, width, HEADING);
+            List<net.neoforged.neoforge.fluids.FluidStack> fluids = recipe.fluids();
+            var fluid = fluids.get((int) ((Util.getMillis() / 1000) % fluids.size()));
+            int start = x + Math.max(0, (width - 98) / 2);
+            int row = y + 13;
+            if (recipe.filling()) {
+                screen.fluidSlot(g, fluid, start, row, mouseX, mouseY);
+                screen.fittedText(g, Component.literal("+"), start + 22, row + 5, 12, HEADING, true);
+                screen.itemSlot(g, Crafting.cycle(recipe.ingredient()), start + 36, row, mouseX, mouseY);
+                screen.fittedText(g, Component.literal("="), start + 60, row + 5, 16, HEADING, true);
+                screen.itemSlot(g, result, start + 80, row, mouseX, mouseY);
+            } else {
+                screen.itemSlot(g, Crafting.cycle(recipe.ingredient()), start, row, mouseX, mouseY);
+                screen.fittedText(g, Component.literal("="), start + 22, row + 5, 16, HEADING, true);
+                screen.itemSlot(g, result, start + 42, row, mouseX, mouseY);
+                screen.fittedText(g, Component.literal("+"), start + 64, row + 5, 12, HEADING, true);
+                screen.fluidSlot(g, fluid, start + 80, row, mouseX, mouseY);
+            }
+        }
+    }
+
     /** Opens machine recipe categories in EMI / JEI; hidden when no viewer is installed. */
     static final class ViewerButton implements GuideElement {
         private final Component label;

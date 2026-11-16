@@ -37,6 +37,7 @@ public final class DfmAdvancements {
     public static final String WARDEN_HEALED = "warden_healed";
     public static final String WORLD_DRAINED = "world_drained";
     public static final String SLAG_RECOVERED = "slag_recovered";
+    public static final String NAUTILUS_SHELL_CREATED = "nautilus_shell_created";
     /** A Reinforced Eye of Ender flew towards a stronghold (the advancement also needs the player inside one). */
     public static final String REINFORCED_EYE_USED = "reinforced_eye_used";
 

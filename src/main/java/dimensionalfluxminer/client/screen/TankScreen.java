@@ -1,6 +1,7 @@
 package dimensionalfluxminer.client.screen;
 
 //? if >=26.1 {
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.renderer.RenderPipelines;
 //?}
 import dimensionalfluxminer.client.render.FluidColors;
@@ -119,7 +120,7 @@ public class TankScreen extends DfmScreen<TankMenu> {
     @Override
     //? if >=26.1 {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (!kind.creative() && event.button() == 0 && !event.hasShiftDown()
+        if (!kind.creative() && event.button() == InputConstants.MOUSE_BUTTON_LEFT && !event.hasShiftDown()
     //?} else {
     /*public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // The channel lock switches only with Shift + left click.

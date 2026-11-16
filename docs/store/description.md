@@ -15,17 +15,15 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 ---
 
-## 🆕 New in 0.2.8
+## 🆕 New in 0.2.9
 
-- 🛢️ **Creative Dimensional Tank**: endless liquid for building and testing, one per liquid in the creative tab.
-- 🪣 **Tank items carry their liquid**: use one on a tank to fill it, or switch on bucket mode to pour and pick up liquids.
-- 🧹 **Empty button** on the tanks' code window clears a channel.
-- 🧴 **Container slots** on the single tank handle experience bottles, sponges and concrete powder, with configurable item automation.
-- ⏱️ **Container processing time** is short and configurable, with each tank slot working independently.
-- ⚪ **White icons** by default, with blue, purple or custom colors for icons, display glass/text and active toggle tracks. Selected buttons use darker icons for contrast.
-- 💧 **Liquid gauges** on the tank screens, and the liquid now fills the tanks up to the glass.
-- 🧴 **Matching fluid gauges** in tank conversion recipes in JEI and REI.
-- ⚡ **Applied Energistics 2**: the machines and the Miner's energy ports draw AE from an energy cell touching them or through a quartz fiber; ME cables pass by without connecting.
+- 🐚 **Craft Nautilus Shells** in the single tank with calcite and Liquid Experience.
+- 🏆 **Memory of the Ocean** rewards creating a Nautilus Shell in a tank.
+- 📖 **Visual guide recipes** show Nautilus Shell and experience bottle conversions, with fluid amounts on hover.
+- 🔒 **Tank padlocks on 26.3** now require Shift + left click.
+- 🎨 **Refined side buttons** have smaller frames and an adjusted chest icon.
+- 🧱 **Minecraft 26.3** now uses NeoForge 26.3.0.103.
+
 ---
 
 ## ✨ Highlights
@@ -157,7 +155,7 @@ Forge your first **Pure Steel** and the guide is yours. The book opens in your h
 
 ## 🏆 Advancements
 
-**20 advancements**, two of them secret.
+**21 advancements**, two of them secret.
 
 ---
 
@@ -166,7 +164,7 @@ Forge your first **Pure Steel** and the guide is yours. The book opens in your h
 | | |
 |---|---|
 | Minecraft | 1.21.1, 26.1.2 and 26.3 |
-| Loader | NeoForge 21.1.266+ (1.21.1), 26.1.2.126+ (26.1.2), 26.3.0.95+ (26.3) |
+| Loader | NeoForge 21.1.266+ (1.21.1), 26.1.2.126+ (26.1.2), 26.3.0.103+ (26.3) |
 | Java | 21 (1.21.1), 25 (26.x) |
 | Required mods | none |
 

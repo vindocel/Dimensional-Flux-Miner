@@ -10,7 +10,7 @@ it, but you should know how to edit a text file and how to put a folder inside a
 | | |
 |---|---|
 | Minecraft | 1.21.1, 26.1.2 and 26.3 |
-| NeoForge | 21.1.266, 26.1.2.126 and 26.3.0.95 |
+| NeoForge | 21.1.266, 26.1.2.126 and 26.3.0.103 |
 | Mod ID | `dimensionalfluxminer` |
 | Datapack format | `48` (1.21.1), `101` (26.1.2) |
 
@@ -1062,6 +1062,11 @@ replenished instead of the canonical `fluid.id`, preserving its type and compone
 canonical fluid when draining an item. An experience bottle therefore adds to existing tagged XP, including
 another mod's XP; an empty tank receives the DFM's Liquid Experience. Without `fluid_tag`, the exact
 fluid/component requirement stays unchanged.
+
+`tank_container/fill_nautilus_shell` consumes one calcite block and 250 mB of fluid from `c:experience` in the
+blue slot to produce one nautilus shell, with no reverse conversion. Override its JSON to rebalance it, or use
+`event.recipes.dimensionalfluxminer.tank_container('minecraft:nautilus_shell', 'minecraft:calcite',
+  Fluid.of('dimensionalfluxminer:liquid_experience', 250), true).fluidTag('c:experience')` in KubeJS.
 
 Other defaults: `fill_sponge` / `drain_sponge` transfer 1 000 mB of water; `fill_<color>_concrete` consumes 1 000 mB
 of water for one powder of that color; `fill_nutritious_stick` consumes 1 000 mB of nutrient distillation for one

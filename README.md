@@ -6,7 +6,7 @@
 It tunes into the frequency of the dimension it stands in and makes that dimension's ores appear out of nothing.
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1%20%7C%2026.1.2%20%7C%2026.3-62B47A?style=for-the-badge)](https://www.minecraft.net/)
-[![NeoForge](https://img.shields.io/badge/NeoForge-21.1.266%20%7C%2026.1.2.126%20%7C%2026.3.0.95-E07A2F?style=for-the-badge)](https://neoforged.net/)
+[![NeoForge](https://img.shields.io/badge/NeoForge-21.1.266%20%7C%2026.1.2.126%20%7C%2026.3.0.103-E07A2F?style=for-the-badge)](https://neoforged.net/)
 [![Java](https://img.shields.io/badge/Java-21%20%7C%2025-5382A1?style=for-the-badge)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/License-EPL--2.0-9366DE?style=for-the-badge)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/vindocel/Dimensional-Flux-Miner/ci.yml?style=for-the-badge&label=CI)](https://github.com/vindocel/Dimensional-Flux-Miner/actions/workflows/ci.yml)
@@ -55,7 +55,7 @@ It tunes into the frequency of the dimension it stands in and makes that dimensi
 | | |
 |---|---|
 | Minecraft | **1.21.1**, **26.1.2** and **26.3** |
-| NeoForge | **21.1.266** (1.21.1), **26.1.2.126** (26.1.2), **26.3.0.95** (26.3) |
+| NeoForge | **21.1.266** (1.21.1), **26.1.2.126** (26.1.2), **26.3.0.103** (26.3) |
 | Java | **21** (1.21.1), **25** (26.x) |
 | Mod ID | `dimensionalfluxminer` |
 | License | EPL-2.0 (see [`LICENSE`](LICENSE)) |
@@ -209,6 +209,7 @@ Tank items show the active liquid level and their channel colors or padlock in t
 - 💎 **Personal codes**: a diamond on the tank makes its code a channel of its own for you, apart from the public one with the same colors; sneak and use it with an empty hand to make it public again (the diamond comes back).
 - 🪣 Buckets and fluid containers: right click the block with a filled one to empty it, with an empty one to take the liquid out (on the dual tank, the right side is A and the left side is B), or click the reservoir on the screen.
 - The single tank also has two container slots: red empties into the tank, blue fills from it. Each holds one container and returns the result in place. Configure either slot as input, output or both on each item face. Glass bottles can store Liquid Experience as experience bottles, and the red slot empties them again. Click the arrow between the slots to see conversion recipes.
+- The blue slot turns one Calcite block and 250 mB of Liquid Experience into one Nautilus Shell for crafting a Conduit. The guide shows this recipe and experience bottle filling as diagrams, with fluid amounts on hover.
 - Tank conversions also wet/dry sponges, harden all 16 colors of concrete powder and make nutritious sticks when their item and fluid are installed. Experience bottles accept fluids in the common experience tag.
 - An experience bottle adds to the XP fluid already stored in the tank; an empty tank receives the DFM's Liquid Experience.
 - JEI and REI show conversion liquids in animated gauges matching the tank screen, with the amount per operation in the tooltip.
@@ -264,6 +265,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 | ⚙️ | Ground and Sifted | build a Mechanical Crusher |
 | 🔥 | Electric Fire | build an Electric Furnace |
 | 🔩 | Forged in the Flux | get your first Pure Steel (rewards the guide) |
+| 🐚 | Memory of the Ocean | create a Nautilus Shell with Liquid Experience in a single Dimensional Tank |
 | ♻️ | Nothing Is Lost | turn Slag Aggregate back into steel |
 | 👁️ | Unbreakable Gaze | craft a Reinforced Eye of Ender |
 | 🏰 | To the Stronghold | reach a stronghold following a Reinforced Eye |

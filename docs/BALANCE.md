@@ -178,6 +178,7 @@ Channel mode defaults to shared. Shift + click the padlock to enable an independ
 | Liquid Auto Input / Auto Eject | no per-tick limit: as much as the neighbor gives or takes |
 | Container slots (ordinary single tank) | 2 local slots, 1 container each; independent 5-tick conversion cycles by default (0.25 s at 20 TPS) |
 | Container automation | One item per configured face per tick in each enabled direction; finished results only for extraction |
+| Nautilus shell | 1 calcite block + 250 mB Liquid Experience → 1 nautilus shell (blue slot, no reverse conversion) |
 | Experience bottle | 1 glass bottle + 250 mB Liquid Experience ↔ 1 experience bottle (datapack recipes) |
 | Sponge | 1 dry sponge + 1 000 mB water ↔ 1 wet sponge |
 | Concrete | 1 concrete powder + 1 000 mB water → 1 concrete, all 16 colors; no reverse recipe |

@@ -518,6 +518,95 @@ public final class TankGameTests {
     }
 
     @GameTest(template = "empty_small")
+    public static void nautilusAdvancementRequiresCompletedTankConversion(GameTestHelper helper) {
+        //? if >=26.1 {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.CYAN, DyeColor.PINK, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.CYAN, DyeColor.PINK, DyeColor.BLUE));
+        *///?}
+        var player = new net.minecraft.server.level.ServerPlayer(helper.getLevel().getServer(), helper.getLevel(),
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "nautilus-test"),
+                net.minecraft.server.level.ClientInformation.createDefault());
+        helper.getLevel().players().add(player);
+        try {
+            var pos = tank.getBlockPos();
+            player.setPos(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+            var advancement = helper.getLevel().getServer().getAdvancements().get(DimensionalFluxMiner.id("nautilus_shell"));
+            helper.assertTrue(advancement != null, "shell advancement loaded");
+            player.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.NAUTILUS_SHELL));
+            helper.assertFalse(player.getAdvancements().getOrStartProgress(advancement).isDone(), "merely holding a shell gives no award");
+            tank.channel().set(0, new FluidStack(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get(), 249));
+            tank.containers().setStackInSlot(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CALCITE));
+            tank.containers().process();
+            helper.assertFalse(player.getAdvancements().getOrStartProgress(advancement).isDone(), "incomplete conversion gives no award");
+            tank.channel().set(0, new FluidStack(dimensionalfluxminer.registry.DfmFluids.LIQUID_EXPERIENCE.get(), 250));
+            tank.containers().process();
+            helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(), "completed shell conversion awards nearby player");
+        } finally {
+            //? if >=26.3 {
+            /*player.getAdvancements().clearTriggers();
+            *///?} else {
+            player.getAdvancements().stopListening();
+            //?}
+            helper.getLevel().players().remove(player);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void calciteConsumesExperienceToMakeNautilusShells(GameTestHelper helper) {
+        //? if >=26.1 {
+        var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.CYAN, DyeColor.YELLOW, DyeColor.BLUE,
+                java.util.Optional.of(java.util.UUID.randomUUID()), java.util.Optional.empty()));
+        //?} else {
+        /*var tank = place(helper, FIRST, TankKind.SINGLE, uniqueCode(DyeColor.CYAN, DyeColor.YELLOW, DyeColor.BLUE));
+        *///?}
+        var slots = tank.containers();
+        var calcite = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CALCITE);
+        helper.assertTrue(slots.isItemValid(1, calcite) && !slots.isItemValid(0, calcite), "calcite belongs in the blue slot");
+        var tag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.FLUID,
+                //? if >=26.1 {
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "experience"));
+                //?} else {
+                /*net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "experience"));
+                *///?}
+        int checked = 0;
+        for (var fluid : net.minecraft.core.registries.BuiltInRegistries.FLUID.getTagOrEmpty(tag)) {
+            for (int amount : new int[] {249, 250, 501}) {
+                tank.channel().set(0, new FluidStack(fluid, amount));
+                slots.setStackInSlot(1, calcite.copy());
+                slots.process();
+                if (amount < 250) {
+                    helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.CALCITE)
+                            && !slots.finished(1) && tank.chamber(0).getAmount() == amount,
+                            "insufficient XP preserves calcite and fluid");
+                } else {
+                    helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.NAUTILUS_SHELL)
+                            && slots.getStackInSlot(1).getCount() == 1 && slots.finished(1), "one calcite produces one shell");
+                    helper.assertTrue(amount == 250 ? tank.chamber(0).isEmpty()
+                            : tank.chamber(0).is(fluid.value()) && tank.chamber(0).getAmount() == amount - 250,
+                            "conversion consumes exactly 250 mB and preserves remaining XP type");
+                    slots.process();
+                    helper.assertTrue(amount == 250 ? tank.chamber(0).isEmpty() : tank.chamber(0).getAmount() == amount - 250,
+                            "finished shell cannot consume more XP");
+                }
+            }
+            checked++;
+        }
+        helper.assertTrue(checked > 0, "experience tag contains a fluid");
+        tank.channel().set(0, water(1000));
+        slots.setStackInSlot(1, calcite.copy());
+        slots.process();
+        helper.assertTrue(slots.getStackInSlot(1).is(net.minecraft.world.item.Items.CALCITE)
+                && tank.chamber(0).is(Fluids.WATER) && tank.chamber(0).getAmount() == 1000,
+                "water cannot replace XP");
+        var shell = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.NAUTILUS_SHELL);
+        helper.assertTrue(!slots.isItemValid(0, shell), "shell has no reverse recipe");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
     public static void containerSlotsConvertBucketsAndExperienceWithoutLoss(GameTestHelper helper) {
         //? if >=26.1 {
         var tank = place(helper, FIRST, TankKind.SINGLE, new TankCode(DyeColor.RED, DyeColor.RED, DyeColor.RED,

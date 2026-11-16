@@ -14,16 +14,16 @@ or `main` and on every pull request.
 
 ## Tags and Minecraft selection
 
-`gradle.properties` holds the base version of the open update (`mod_version=0.2.8`). Alpha, beta and stable
+`gradle.properties` holds the base version of the open update (`mod_version=0.2.9`). Alpha, beta and stable
 versions come from the GitHub Release tag; changing the channel needs no version commit.
 
 | GitHub tag | Minecraft versions selected | Store versions |
 |---|---|---|
-| `v0.2.8` | All configured versions | `v0.2.8+1.21.1`, `v0.2.8+26.1.2`, `v0.2.8+26.3` |
-| `v0.2.8-beta.1` | All configured versions | `v0.2.8-beta.1+1.21.1`, `v0.2.8-beta.1+26.1.2`, `v0.2.8-beta.1+26.3` |
-| `v0.2.8+1.21.1` | 1.21.1 only | `v0.2.8+1.21.1` |
-| `v0.2.8+1.21.1-26.1.2` | 1.21.1 and 26.1.2 | `v0.2.8+1.21.1`, `v0.2.8+26.1.2` |
-| `v0.2.8-beta.2+26.1.2-26.3` | 26.1.2 and 26.3 | `v0.2.8-beta.2+26.1.2`, `v0.2.8-beta.2+26.3` |
+| `v0.2.9` | All configured versions | `v0.2.9+1.21.1`, `v0.2.9+26.1.2`, `v0.2.9+26.3` |
+| `v0.2.9-beta.1` | All configured versions | `v0.2.9-beta.1+1.21.1`, `v0.2.9-beta.1+26.1.2`, `v0.2.9-beta.1+26.3` |
+| `v0.2.9+1.21.1` | 1.21.1 only | `v0.2.9+1.21.1` |
+| `v0.2.9+1.21.1-26.1.2` | 1.21.1 and 26.1.2 | `v0.2.9+1.21.1`, `v0.2.9+26.1.2` |
+| `v0.2.9-beta.2+26.1.2-26.3` | 26.1.2 and 26.3 | `v0.2.9-beta.2+26.1.2`, `v0.2.9-beta.2+26.3` |
 
 No Minecraft suffix means every version in `settings.gradle.kts`. After `+`, list one or more Minecraft versions
 separated by `-`. Unknown, repeated or malformed versions stop validation. New configured targets are automatically
@@ -55,7 +55,7 @@ Before uploading each Minecraft version, `scripts/check-published.py` queries Cu
 It recognizes the exact store version name (with or without its leading `v`) or the existing JAR filename, for the
 selected Minecraft version and NeoForge loader. CurseForge file lists are paginated.
 
-If `v0.2.8+1.21.1` was already uploaded and a later GitHub Release uses `v0.2.8`, that version is skipped in each store
+If `v0.2.9+1.21.1` was already uploaded and a later GitHub Release uses `v0.2.9`, that version is skipped in each store
 where it already exists. The 26.1.2 and 26.3 uploads still proceed. If a version exists on only one store, the workflow
 uploads it only to the other store. Existing files, versions and changelogs are not replaced.
 
@@ -127,8 +127,8 @@ CI and build jobs do not receive store secrets. Keep `management` protected with
 ./gradlew :1.21.1:build :26.1.2:build :26.3:build
 ./gradlew :1.21.1:runGameTestServer :26.1.2:runGameTestServer :26.3:runGameTestServer
 bash scripts/validate-release.sh versions
-TAG=v0.2.8 PRERELEASE=false bash scripts/validate-release.sh tag
-TAG=v0.2.8-beta.1+1.21.1-26.1.2 PRERELEASE=true bash scripts/validate-release.sh tag
+TAG=v0.2.9 PRERELEASE=false bash scripts/validate-release.sh tag
+TAG=v0.2.9-beta.1+1.21.1-26.1.2 PRERELEASE=true bash scripts/validate-release.sh tag
 python3 -B scripts/test-release.py
 python3 -B scripts/test-published.py
 ```

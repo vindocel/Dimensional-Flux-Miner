@@ -65,6 +65,7 @@ final class GuideReferences {
             Map.entry("tanks.personal", List.of("minecraft:diamond")),
             Map.entry("tanks.buckets", List.of("minecraft:bucket")),
             Map.entry("tanks.bottles", List.of("minecraft:glass_bottle", "minecraft:experience_bottle", "liquid_experience")),
+            Map.entry("tanks.nautilus", List.of("minecraft:calcite", "minecraft:nautilus_shell", "minecraft:conduit", "liquid_experience")),
             Map.entry("tanks.conversions", List.of("minecraft:sponge", "minecraft:wet_sponge", "minecraft:white_concrete_powder")),
             Map.entry("dimensions.overworld", List.of("basic_dimensional_core", "stabilized_dimensional_core")),
             Map.entry("dimensions.nether", List.of("stabilized_dimensional_core")),

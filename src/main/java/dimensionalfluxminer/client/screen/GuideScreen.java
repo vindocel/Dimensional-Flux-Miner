@@ -579,6 +579,18 @@ public class GuideScreen extends Screen {
         }
     }
 
+    /** A recipe fluid slot includes the exact amount in its tooltip. */
+    //? if >=26.1 {
+    void fluidSlot(GuiGraphicsExtractor g, net.neoforged.neoforge.fluids.FluidStack stack, int x, int y, int mouseX, int mouseY) {
+    //?} else {
+    /*void fluidSlot(GuiGraphics g, net.neoforged.neoforge.fluids.FluidStack stack, int x, int y, int mouseX, int mouseY) {
+    *///?}
+        fluidSlot(g, stack.getFluid(), x, y, mouseX, mouseY);
+        if (mouseX >= x + 1 && mouseX < x + 17 && mouseY >= y + 1 && mouseY < y + 17) {
+            hoveredText = List.of(stack.getHoverName(), Component.literal(stack.getAmount() + " mB"));
+        }
+    }
+
     //? if >=26.1 {
     void textButton(GuiGraphicsExtractor g, int x, int y, int w, int h, Component label, int mouseX, int mouseY) {
     //?} else {

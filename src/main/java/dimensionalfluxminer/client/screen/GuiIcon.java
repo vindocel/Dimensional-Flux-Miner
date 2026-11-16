@@ -26,7 +26,7 @@ enum GuiIcon {
     ENERGY,
     FILTER,
     FLUIDS,
-    ITEMS,
+    ITEMS(1),
     LOCK,
     LOCK_OPEN,
     MINUS,

@@ -1,0 +1,16 @@
+{
+  "type": "dimensionalfluxminer:tank_container",
+  "ingredient": {
+    "item": "minecraft:calcite"
+  },
+  "result": {
+    "id": "minecraft:nautilus_shell",
+    "count": 1
+  },
+  "fluid": {
+    "id": "dimensionalfluxminer:liquid_experience",
+    "amount": 250
+  },
+  "fluid_tag": "c:experience",
+  "filling": true
+}

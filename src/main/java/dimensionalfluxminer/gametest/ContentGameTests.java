@@ -192,7 +192,7 @@ public final class ContentGameTests {
         List<String> ids = List.of("root", "crusher", "electric_furnace", "steel", "slag_recovered", "reinforced_eye", "stronghold",
                 "miner_formed", "first_ore", "ore_filtered", "max_speed", "thousand_per_second", "efficiency_upgrade",
                 "matter_injected", "trash_to_treasure", "column_drained", "scorched_earth", "purple_dive", "warden_friend",
-                "world_drained");
+                "world_drained", "nautilus_shell");
         ServerAdvancementManager advancements = helper.getLevel().getServer().getAdvancements();
         for (String id : ids) {
             helper.assertTrue(advancements.get(DimensionalFluxMiner.id(id)) != null, "advancement missing: " + id);

@@ -75,7 +75,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
     private static final int TAB_BUTTON_LEFT = 5;
     private static final int TAB_BUTTON_TOP = 4;
     /** Material tabs of the side configuration windows (Items, Energy, Fluids...): a larger button in a wider ear. */
-    static final int MATERIAL_TAB_INNER = 22;
+    static final int MATERIAL_TAB_INNER = 20;
     static final int MATERIAL_TAB_SIZE = MATERIAL_TAB_INNER + TAB_SIZE - TAB_INNER;
     /** Rows of the material tabs: the button plus a 4 px gap. */
     static final int MATERIAL_TAB_PITCH = MATERIAL_TAB_INNER + 4;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.9 (since 0.2.8)
+
+- Updated the Minecraft 26.3 build to NeoForge 26.3.0.103.
+- Added a tank recipe: one Calcite block and 250 mB of Liquid Experience produce one Nautilus Shell, explained in the guide.
+- Added Memory of the Ocean, earned by creating a Nautilus Shell in a tank.
+- The guide now shows tank recipe diagrams for experience bottles and Nautilus Shells, with fluid amounts on hover.
+- Fixed tank channel padlocks toggling without Shift on Minecraft 26.3; only Shift + left click changes the mode.
+- Reduced side-configuration material buttons and their metal holders by two pixels in each dimension, preserving native icon sizes.
+- Moved the Items tab chest icon one pixel down for improved visual alignment.
+
 ## 0.2.8 (since 0.2.7)
 
 ### 🧱 Minecraft versions

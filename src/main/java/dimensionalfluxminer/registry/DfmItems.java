@@ -38,20 +38,43 @@ public final class DfmItems {
 
     // Dimensional Tanks
     public static final DeferredItem<DimensionalTankItem> DIMENSIONAL_TANK = ITEMS.registerItem("dimensional_tank",
-            props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_TANK.get(), props));
+            //? if >=26.1 {
+            props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_TANK.get(), props), () -> new Item.Properties().useBlockDescriptionPrefix());
+            //?} else {
+            /*props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_TANK.get(), props));
+            *///?}
     public static final DeferredItem<DimensionalTankItem> DIMENSIONAL_DUAL_TANK = ITEMS.registerItem("dimensional_dual_tank",
-            props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), props));
+            //? if >=26.1 {
+            props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), props), () -> new Item.Properties().useBlockDescriptionPrefix());
+            //?} else {
+            /*props -> new DimensionalTankItem(DfmBlocks.DIMENSIONAL_DUAL_TANK.get(), props));
+            *///?}
     public static final DeferredItem<DimensionalTankItem> CREATIVE_DIMENSIONAL_TANK = ITEMS.registerItem("creative_dimensional_tank",
-            props -> new DimensionalTankItem(DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get(), props.rarity(net.minecraft.world.item.Rarity.EPIC)));
+            //? if >=26.1 {
+            props -> new DimensionalTankItem(DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get(), props),
+            () -> new Item.Properties().useBlockDescriptionPrefix().rarity(net.minecraft.world.item.Rarity.EPIC));
+            //?} else {
+            /*props -> new DimensionalTankItem(DfmBlocks.CREATIVE_DIMENSIONAL_TANK.get(), props.rarity(net.minecraft.world.item.Rarity.EPIC)));
+            *///?}
 
     // Cores and upgrade
-    public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", new Item.Properties().rarity(Rarity.RARE));
+    //? if >=26.1 {
+    public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", () -> new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<Item> STABILIZED_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("stabilized_dimensional_core", () -> new Item.Properties().rarity(Rarity.EPIC));
+    public static final DeferredItem<Item> EFFICIENCY_UPGRADE = ITEMS.registerSimpleItem("efficiency_upgrade", () -> new Item.Properties().rarity(Rarity.EPIC));
+    //?} else {
+    /*public static final DeferredItem<Item> BASIC_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("basic_dimensional_core", new Item.Properties().rarity(Rarity.RARE));
     public static final DeferredItem<Item> STABILIZED_DIMENSIONAL_CORE = ITEMS.registerSimpleItem("stabilized_dimensional_core", new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<Item> EFFICIENCY_UPGRADE = ITEMS.registerSimpleItem("efficiency_upgrade", new Item.Properties().rarity(Rarity.EPIC));
+    *///?}
 
     // Guide
     public static final DeferredItem<GuideBookItem> GUIDE_BOOK = ITEMS.registerItem("guide_book", GuideBookItem::new,
-            new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+            //? if >=26.1 {
+            () -> new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+            //?} else {
+            /*new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+            *///?}
 
     // Materials
     public static final DeferredItem<ReinforcedEnderEyeItem> ENDER_EYE_REINFORCED = ITEMS.registerItem("ender_eye_reinforced", ReinforcedEnderEyeItem::new);
@@ -69,7 +92,11 @@ public final class DfmItems {
     public static final DeferredItem<?> CORRUPTED_SEDIMENT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_SEDIMENT);
     public static final DeferredItem<?> CORRUPTED_GRASS_PLANT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_GRASS_PLANT);
     public static final DeferredItem<BucketItem> CORRUPTED_WATER_BUCKET = ITEMS.registerItem("corrupted_water_bucket",
-            props -> new BucketItem(DfmFluids.CORRUPTED_WATER.get(), props), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1));
+            //? if >=26.1 {
+            props -> new BucketItem(DfmFluids.CORRUPTED_WATER.get(), props), () -> new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1));
+            //?} else {
+            /*props -> new BucketItem(DfmFluids.CORRUPTED_WATER.get(), props), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1));
+            *///?}
 
     private static Map<String, DeferredItem<Item>> registerDusts() {
         Map<String, DeferredItem<Item>> dusts = new LinkedHashMap<>();

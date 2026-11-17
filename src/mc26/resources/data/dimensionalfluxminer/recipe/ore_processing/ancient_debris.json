@@ -1,0 +1,9 @@
+{
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": "minecraft:ancient_debris",
+  "result": {
+    "id": "minecraft:netherite_scrap"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

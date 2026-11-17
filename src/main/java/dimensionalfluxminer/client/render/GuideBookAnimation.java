@@ -2,7 +2,11 @@ package dimensionalfluxminer.client.render;
 
 import dimensionalfluxminer.client.screen.GuideScreen;
 import dimensionalfluxminer.registry.DfmItems;
-import net.minecraft.Util;
+//? if >=26.1 {
+import net.minecraft.util.Util;
+//?} else {
+/*import net.minecraft.Util;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -38,7 +42,11 @@ public final class GuideBookAnimation {
             phaseStart = Util.getMillis() - (phase == Phase.CLOSING ? (long) ((1 - progress()) * DURATION_MS) : 0);
             phase = Phase.OPENING;
         }
-        Minecraft.getInstance().setScreen(new GuideScreen());
+        //? if >=26.1 {
+        Minecraft.getInstance().setScreenAndShow(new GuideScreen());
+        //?} else {
+        /*Minecraft.getInstance().setScreen(new GuideScreen());
+        *///?}
     }
 
     /** The guide screen turned a page: a leaf of the book in the hand turns too, as if the player were reading it. */
@@ -120,7 +128,11 @@ public final class GuideBookAnimation {
 
     /** Cover, leaves and spine rotations (Z, degrees) and the spine drop (pixels). */
     public record Pose(float cover, float leaf1, float leaf2, float spine, float spineDrop) {
-        static final Pose CLOSED = new Pose(0, 0, 0, 0, 0);
+        //? if >=26.1 {
+        public static final Pose CLOSED = new Pose(0, 0, 0, 0, 0);
+        //?} else {
+        /*static final Pose CLOSED = new Pose(0, 0, 0, 0, 0);
+        *///?}
         static final Pose OPEN = new Pose(180, 180, 180, 90, -0.97F);
 
         /** Keyframes of the "abrir" animation. */

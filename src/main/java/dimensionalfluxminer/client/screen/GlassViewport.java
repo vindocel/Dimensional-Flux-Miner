@@ -1,7 +1,12 @@
 package dimensionalfluxminer.client.screen;
 
-import net.minecraft.Util;
+//? if >=26.1 {
+import net.minecraft.util.Util;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
+*///?}
 
 /**
  * The read-out windows of the screens (status of the Miner, contents of the Dimensional Tanks, automation lines of the
@@ -33,7 +38,11 @@ final class GlassViewport {
     }
 
     /** Window of {@code w} x {@code h} at (x, y); the glass starts {@value #INSET} px inside. */
-    static void draw(GuiGraphics g, int x, int y, int w, int h) {
+    //? if >=26.1 {
+    static void draw(GuiGraphicsExtractor g, int x, int y, int w, int h) {
+    //?} else {
+    /*static void draw(GuiGraphics g, int x, int y, int w, int h) {
+    *///?}
         int shade = GuiTheme.chromeColor(EDGE_SHADE);
         int light = GuiTheme.chromeColor(EDGE_LIGHT);
         int corner = GuiTheme.chromeColor(EDGE_CORNER);
@@ -55,7 +64,11 @@ final class GlassViewport {
      * light of the tab metal on the bottom and right, meeting in a middle tone at the two other corners so the ring
      * reads as one piece) and a plain glass with a deep shadow under its top and left edges.
      */
-    static void button(GuiGraphics g, int x, int y, int size) {
+    //? if >=26.1 {
+    static void button(GuiGraphicsExtractor g, int x, int y, int size) {
+    //?} else {
+    /*static void button(GuiGraphics g, int x, int y, int size) {
+    *///?}
         int outline = GuiTheme.chromeColor(BUTTON_OUTLINE);
         g.fill(x, y, x + size, y + size, outline);
         int deep = mix(GuiTheme.icons().glassRim(), 0x000000, 0.55F);
@@ -74,7 +87,11 @@ final class GlassViewport {
      * The glass of {@code w} x {@code h} at (x, y). Its top edge casts a soft shadow on it, or with {@code deep} a deep
      * one, two rows under the top and one column along the left.
      */
-    private static void glass(GuiGraphics g, int gx, int gy, int gw, int gh, boolean deep) {
+    //? if >=26.1 {
+    private static void glass(GuiGraphicsExtractor g, int gx, int gy, int gw, int gh, boolean deep) {
+    //?} else {
+    /*private static void glass(GuiGraphics g, int gx, int gy, int gw, int gh, boolean deep) {
+    *///?}
         IconColor icons = GuiTheme.icons();
         if (gw <= 0 || gh <= 0) {
             return;
@@ -122,7 +139,11 @@ final class GlassViewport {
      * Status lamp of {@value #LED} x {@value #LED} at (x, y), meant for the glass (see {@link #lamp}). With
      * {@code blinkMs} above 0 it blinks: lit, then off for that long each.
      */
-    static void led(GuiGraphics g, int x, int y, int rgb, long blinkMs) {
+    //? if >=26.1 {
+    static void led(GuiGraphicsExtractor g, int x, int y, int rgb, long blinkMs) {
+    //?} else {
+    /*static void led(GuiGraphics g, int x, int y, int rgb, long blinkMs) {
+    *///?}
         boolean lit = blinkMs <= 0 || (Util.getMillis() / blinkMs) % 2 == 0;
         lamp(g, x, y, LED, lit ? rgb : -1);
     }
@@ -132,7 +153,11 @@ final class GlassViewport {
      * light glint, or, with {@code rgb} -1, off: a faint lighter patch of the glass itself, like a light waiting to
      * come on (never a black hole).
      */
-    static void lamp(GuiGraphics g, int x, int y, int size, int rgb) {
+    //? if >=26.1 {
+    static void lamp(GuiGraphicsExtractor g, int x, int y, int size, int rgb) {
+    //?} else {
+    /*static void lamp(GuiGraphics g, int x, int y, int size, int rgb) {
+    *///?}
         IconColor icons = GuiTheme.icons();
         int ring;
         int inside;
@@ -152,7 +177,11 @@ final class GlassViewport {
         pixel(g, x + 1, y + 1, 0xFF000000 | glint);
     }
 
-    private static void pixel(GuiGraphics g, int x, int y, int argb) {
+    //? if >=26.1 {
+    private static void pixel(GuiGraphicsExtractor g, int x, int y, int argb) {
+    //?} else {
+    /*private static void pixel(GuiGraphics g, int x, int y, int argb) {
+    *///?}
         g.fill(x, y, x + 1, y + 1, argb);
     }
 

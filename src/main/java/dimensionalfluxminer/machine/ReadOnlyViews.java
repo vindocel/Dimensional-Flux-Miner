@@ -1,20 +1,31 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+//?}
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.items.IItemHandler;
+//? if >=26.1 {
 
 /**
- * Read-only capability views returned for the {@code null} side (no face). Information tools such as Jade query
- * that side to show a machine's energy and items; nothing can be inserted or extracted through it, so the per-face
- * Side Configuration stays the only way in or out.
+ * Read-only item capability views for information tools that query without a face.
  */
 public final class ReadOnlyViews {
+//?} else {
+/*import net.neoforged.neoforge.items.IItemHandler;
+
+/^* Read-only item capability views for information tools that query without a face. ^/
+public final class ReadOnlyViews {
+*///?}
     private ReadOnlyViews() {
     }
 
-    public static IItemHandler items(IItemHandler source) {
+    //? if >=26.1 {
+    public static ItemSlots items(ItemSlots source) {
+        return new ItemSlots() {
+    //?} else {
+    /*public static IItemHandler items(IItemHandler source) {
         return new IItemHandler() {
+    *///?}
             @Override
             public int getSlots() {
                 return source.getSlots();
@@ -42,40 +53,6 @@ public final class ReadOnlyViews {
 
             @Override
             public boolean isItemValid(int slot, ItemStack stack) {
-                return false;
-            }
-        };
-    }
-
-    public static IEnergyStorage energy(IEnergyStorage source) {
-        return new IEnergyStorage() {
-            @Override
-            public int receiveEnergy(int toReceive, boolean simulate) {
-                return 0;
-            }
-
-            @Override
-            public int extractEnergy(int toExtract, boolean simulate) {
-                return 0;
-            }
-
-            @Override
-            public int getEnergyStored() {
-                return source.getEnergyStored();
-            }
-
-            @Override
-            public int getMaxEnergyStored() {
-                return source.getMaxEnergyStored();
-            }
-
-            @Override
-            public boolean canExtract() {
-                return false;
-            }
-
-            @Override
-            public boolean canReceive() {
                 return false;
             }
         };

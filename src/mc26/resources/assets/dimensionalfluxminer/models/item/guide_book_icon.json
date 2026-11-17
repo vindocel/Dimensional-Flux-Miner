@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dimensionalfluxminer:item/guide_book_icon"
+  }
+}

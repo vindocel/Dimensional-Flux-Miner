@@ -15,14 +15,14 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 ---
 
-## 🆕 New in 0.2.6
+## 🆕 New in 0.2.9
 
-- 🌙 **Light or dark screens**: a Settings tab on every machine picks the screen color, the icon color and the sound volume.
-- 🎨 **Redrawn screens**: new icons, a flat panel set into the frame and separate Auto-Input / Auto-Eject buttons.
-- 💡 **Glowing panels** on the Crusher and the Electric Furnace while they have energy.
-- 🔀 **Polymorph**: pick the result when an item has more than one recipe.
-- 🧪 **Cognition**: the Experience Obelisk takes Liquid Experience.
-- 🚫 Mobs no longer spawn on the machines and tanks.
+- 🐚 **Craft Nautilus Shells** in the single tank with calcite and Liquid Experience.
+- 🏆 **Memory of the Ocean** rewards creating a Nautilus Shell in a tank.
+- 📖 **Visual guide recipes** show Nautilus Shell and experience bottle conversions, with fluid amounts on hover.
+- 🔒 **Tank padlocks on 26.3** now require Shift + left click.
+- 🎨 **Refined side buttons** have smaller frames and an adjusted chest icon.
+- 🧱 **Minecraft 26.3** now uses NeoForge 26.3.0.103.
 
 ---
 
@@ -62,7 +62,8 @@ Place the **Miner Terminal** and right-click it: it builds the other 26 parts fr
 - 🧲 A filter keeps only the ores you want.
 - 🔁 Nine configurable ports with Auto Input / Auto Eject.
 
-![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/f4728923e251dc0e79b6900931f045c11c921096.png)
+![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/a4bbe00ca27f5eaa1769cdf824bb43e238a8489b.png)
+![Miner Terminal screens 2](https://cdn.modrinth.com/data/vTLvFHBt/images/852771063e1f07fd83c4b435f7065a80f439ba1f.png)
 
 ---
 
@@ -74,7 +75,7 @@ Place the **Miner Terminal** and right-click it: it builds the other 26 parts fr
 
 ![Crusher working](https://cdn.modrinth.com/data/vTLvFHBt/images/cf0fef0b9b2c7ab6da479d3c3317f3c7d6b7bf49.png)
 
-![Crusher screen](https://cdn.modrinth.com/data/vTLvFHBt/images/df6c8a04c56248f117de9c47c4a1afbdfd6c547d.png)
+![Crusher screen](https://cdn.modrinth.com/data/vTLvFHBt/images/c7fea63b31e3bf26d97ad84e22e70804893fda77.png)
 
 ---
 
@@ -90,15 +91,16 @@ Three electric lanes that smelt and make alloys.
 
 > 💡 **Crusher + Electric Furnace**: 1 ore → **3** ingots, up to **6** with both upgrades.
 
-![Electric Furnace modes](https://cdn.modrinth.com/data/vTLvFHBt/images/0107ff9cf8884147a10f7a37cca67b6eaa3790b8.png)
+![Electric Furnace modes](https://cdn.modrinth.com/data/vTLvFHBt/images/750ce757274ff2a9a935af03fc7d388fd3c01cf6.png)
 
-![Electric Furnace screen — three lanes](https://cdn.modrinth.com/data/vTLvFHBt/images/872815a4b80a330415cf2b11dec20fb97803de27.png)
+![Electric Furnace screen — three lanes](https://cdn.modrinth.com/data/vTLvFHBt/images/8bdc38e943bf610a301a62fd927d05c9f490d0e4.png)
 
 ---
 
 ## 🛢️ Dimensional Tanks
 
-Fill a tank at home, drain it in the Nether. Tanks with the same **three-color code** share the same liquid, in any dimension.
+Fill a tank at home, drain it in the Nether. Tanks with the same **three-color code** share the same liquid, in any dimension. New tanks come locked, as individual tanks; Shift + click the padlock to open the channel; both stores keep their contents separately. An amber padlock on the block marks individual mode.
+The inventory icon and held tank show the current liquid level, channel colors and padlock.
 
 ![Dimensional Tanks](https://cdn.modrinth.com/data/vTLvFHBt/images/d5d195b620b8977cfdd212247133484c44c1e163.png)
 
@@ -153,7 +155,7 @@ Forge your first **Pure Steel** and the guide is yours. The book opens in your h
 
 ## 🏆 Advancements
 
-**20 advancements**, two of them secret.
+**21 advancements**, two of them secret.
 
 ---
 
@@ -161,9 +163,9 @@ Forge your first **Pure Steel** and the guide is yours. The book opens in your h
 
 | | |
 |---|---|
-| Minecraft | 1.21.1 |
-| Loader | NeoForge 21.1.255+ |
-| Java | 21 |
+| Minecraft | 1.21.1, 26.1.2 and 26.3 |
+| Loader | NeoForge 21.1.266+ (1.21.1), 26.1.2.126+ (26.1.2), 26.3.0.103+ (26.3) |
+| Java | 21 (1.21.1), 25 (26.x) |
 | Required mods | none |
 
 ---

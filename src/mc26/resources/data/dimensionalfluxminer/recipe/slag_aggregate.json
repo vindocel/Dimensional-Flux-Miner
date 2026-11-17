@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "SSS",
+    "SSS",
+    "SSS"
+  ],
+  "key": {
+    "S": "dimensionalfluxminer:slag"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:slag_aggregate",
+    "count": 1
+  }
+}

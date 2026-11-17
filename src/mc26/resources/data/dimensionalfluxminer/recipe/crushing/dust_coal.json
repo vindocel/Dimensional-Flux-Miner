@@ -1,0 +1,8 @@
+{
+  "type": "dimensionalfluxminer:crushing",
+  "ingredient": "minecraft:coal",
+  "result": {
+    "id": "dimensionalfluxminer:dust_coal",
+    "count": 1
+  }
+}

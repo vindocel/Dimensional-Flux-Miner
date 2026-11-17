@@ -43,3 +43,6 @@ logs/
 
 ### Design sources never shipped in this repository ###
 *.bbmodel
+
+### Stonecutter ###
+/.stonecutter/

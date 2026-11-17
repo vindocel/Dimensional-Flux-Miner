@@ -6,8 +6,8 @@ import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 
 /**
  * Dark Mode Everywhere darkens every screen with a shader and recolors dark text. The mod's screens have their own
- * light and dark looks, so they are put on its list of exceptions (every render call made from this mod's classes,
- * text included) through the message it reads from other mods. Nothing happens without it.
+ * light and dark looks, so their draw calls are added to its shader exceptions. ScreenPaletteGuard also suspends
+ * external text and fill overrides while the mod's screens are extracted.
  */
 public final class DarkModeCompat {
     private static final String MOD_ID = "darkmodeeverywhere";

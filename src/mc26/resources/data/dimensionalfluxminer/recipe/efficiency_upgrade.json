@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "HAH",
+    "BCB",
+    "NIN"
+  ],
+  "key": {
+    "H": "minecraft:dragon_head",
+    "A": "minecraft:enchanted_golden_apple",
+    "B": "minecraft:dragon_breath",
+    "C": "minecraft:heavy_core",
+    "N": "minecraft:nether_star",
+    "I": "minecraft:netherite_block"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:efficiency_upgrade",
+    "count": 1
+  }
+}

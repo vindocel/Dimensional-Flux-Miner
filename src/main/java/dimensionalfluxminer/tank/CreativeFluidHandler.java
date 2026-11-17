@@ -4,7 +4,11 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.FluidTanks;
+//?} else {
+/*import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+*///?}
 
 /**
  * The chamber of a creative tank (block or item). Draining gives as much as asked and never lowers the liquid. A tank
@@ -12,7 +16,11 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
  * item itself) the liquid becomes the tank's endless liquid; from pipes and automation it simply disappears, so an
  * empty creative tank is a void.
  */
-public final class CreativeFluidHandler implements IFluidHandler {
+//? if >=26.1 {
+public final class CreativeFluidHandler implements FluidTanks {
+//?} else {
+/*public final class CreativeFluidHandler implements IFluidHandler {
+*///?}
     private final Supplier<FluidStack> stored;
     /** Picks the endless liquid; null voids what comes in. */
     private final Consumer<FluidStack> picker;

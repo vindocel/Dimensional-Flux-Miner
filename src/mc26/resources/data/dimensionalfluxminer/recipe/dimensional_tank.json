@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CEC",
+    "PGP",
+    "CEC"
+  ],
+  "key": {
+    "C": "dimensionalfluxminer:steel_chassis",
+    "E": "dimensionalfluxminer:ender_eye_reinforced",
+    "P": "dimensionalfluxminer:dimensional_port",
+    "G": "dimensionalfluxminer:reinforced_structural_glass"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:dimensional_tank",
+    "count": 1
+  }
+}

@@ -6,6 +6,7 @@ import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.recipe.CrushingRecipe;
 import dimensionalfluxminer.recipe.OreCrushingRecipe;
 import dimensionalfluxminer.recipe.TagResultCooking;
+import dimensionalfluxminer.recipe.TankContainerRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -22,6 +23,9 @@ public final class DfmRecipes {
     public static final DeferredHolder<RecipeType<?>, RecipeType<CrushingRecipe>> CRUSHING = type("crushing");
     public static final DeferredHolder<RecipeType<?>, RecipeType<OreCrushingRecipe>> ORE_CRUSHING = type("ore_crushing");
     public static final DeferredHolder<RecipeType<?>, RecipeType<AlloyingRecipe>> ALLOYING = type("alloying");
+    public static final DeferredHolder<RecipeType<?>, RecipeType<TankContainerRecipe>> TANK_CONTAINER = type("tank_container");
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<TankContainerRecipe>> TANK_CONTAINER_SERIALIZER =
+            serializer("tank_container", TankContainerRecipe.CODEC, TankContainerRecipe.STREAM_CODEC);
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<CrushingRecipe>> CRUSHING_SERIALIZER =
             serializer("crushing", CrushingRecipe.CODEC, CrushingRecipe.STREAM_CODEC);
@@ -41,7 +45,10 @@ public final class DfmRecipes {
 
     private static <T extends Recipe<?>> DeferredHolder<RecipeSerializer<?>, RecipeSerializer<T>> serializer(
             String name, MapCodec<T> codec, StreamCodec<RegistryFriendlyByteBuf, T> streamCodec) {
-        return SERIALIZERS.register(name, () -> new RecipeSerializer<T>() {
+        //? if >=26.1 {
+        return SERIALIZERS.register(name, () -> new RecipeSerializer<>(codec, streamCodec));
+        //?} else {
+        /*return SERIALIZERS.register(name, () -> new RecipeSerializer<T>() {
             @Override
             public MapCodec<T> codec() {
                 return codec;
@@ -52,6 +59,7 @@ public final class DfmRecipes {
                 return streamCodec;
             }
         });
+        *///?}
     }
 
     private DfmRecipes() {

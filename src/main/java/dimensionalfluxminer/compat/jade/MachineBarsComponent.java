@@ -5,7 +5,11 @@ import dimensionalfluxminer.registry.DfmFluids;
 import java.util.Locale;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
@@ -28,16 +32,30 @@ enum MachineBarsComponent implements IBlockComponentProvider {
         if (!data.contains(DfmJadePlugin.ENERGY)) {
             return;
         }
-        long energy = data.getLong(DfmJadePlugin.ENERGY);
+        //? if >=26.1 {
+        long energy = data.getLongOr(DfmJadePlugin.ENERGY, 0L);
+        long capacity = Math.max(1, data.getLongOr(DfmJadePlugin.CAPACITY, 0L));
+        //?} else {
+        /*long energy = data.getLong(DfmJadePlugin.ENERGY);
         long capacity = Math.max(1, data.getLong(DfmJadePlugin.CAPACITY));
+        *///?}
         // The energy fill follows the icon color the player picked for this machine (blue, or purple with purple icons).
+        //? if >=26.1 {
         net.minecraft.core.BlockPos machine = data.contains(DfmJadePlugin.MACHINE)
+                ? net.minecraft.core.BlockPos.of(data.getLongOr(DfmJadePlugin.MACHINE, 0L)) : accessor.getPosition();
+        //?} else {
+        /*net.minecraft.core.BlockPos machine = data.contains(DfmJadePlugin.MACHINE)
                 ? net.minecraft.core.BlockPos.of(data.getLong(DfmJadePlugin.MACHINE)) : accessor.getPosition();
+        *///?}
         tooltip.add(MachineBarElement.energy(energy / (double) capacity,
                 Component.literal(DfmScreen.compact(energy) + " / " + DfmScreen.fe(capacity)),
                 dimensionalfluxminer.client.screen.GuiThemes.icons(machine)));
         if (data.contains(DfmJadePlugin.XP)) {
-            double xp = data.getDouble(DfmJadePlugin.XP);
+            //? if >=26.1 {
+            double xp = data.getDoubleOr(DfmJadePlugin.XP, 0.0);
+            //?} else {
+            /*double xp = data.getDouble(DfmJadePlugin.XP);
+            *///?}
             long millibuckets = Math.round(xp * MB_PER_XP);
             Component text = Component.empty().append(DfmFluids.LIQUID_EXPERIENCE_TYPE.get().getDescription())
                     .append(String.format(Locale.ROOT, ": %,d mB", millibuckets));
@@ -46,7 +64,11 @@ enum MachineBarsComponent implements IBlockComponentProvider {
     }
 
     @Override
-    public ResourceLocation getUid() {
+    //? if >=26.1 {
+    public Identifier getUid() {
+    //?} else {
+    /*public ResourceLocation getUid() {
+    *///?}
         return DfmJadePlugin.UID;
     }
 }

@@ -1,10 +1,19 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+//?}
 import dimensionalfluxminer.machine.math.DynamicEnergyBuffer;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+//? if <26.1 {
+/*import net.neoforged.neoforge.energy.IEnergyStorage;
+*///?}
 
 /** Input-only NeoForge energy view of a {@link DynamicEnergyBuffer}; DFM machines never output FE. */
-public final class MachineEnergyStorage implements IEnergyStorage {
+//? if >=26.1 {
+public final class MachineEnergyStorage implements EnergyStore {
+//?} else {
+/*public final class MachineEnergyStorage implements IEnergyStorage {
+*///?}
     private final DynamicEnergyBuffer buffer;
     private final Runnable onChange;
 

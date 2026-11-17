@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RMR",
+    "MAM",
+    "III"
+  ],
+  "key": {
+    "R": "minecraft:redstone_block",
+    "M": "minecraft:magma_block",
+    "A": "minecraft:blast_furnace",
+    "I": "minecraft:iron_block"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:electric_furnace",
+    "count": 1
+  }
+}

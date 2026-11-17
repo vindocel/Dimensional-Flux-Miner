@@ -6,7 +6,9 @@ import dimensionalfluxminer.registry.DfmItems;
 import dimensionalfluxminer.registry.DfmRecipes;
 import java.util.List;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -14,19 +16,31 @@ import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.FarmBlock;
+//? if >=26.1 {
+import net.minecraft.world.level.block.FarmlandBlock;
+//?} else {
+/*import net.minecraft.world.level.block.FarmBlock;
+*///?}
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
+//? if >=26.1 {
+import net.minecraft.world.item.crafting.RecipeMap;
+//?} else {
+/*import net.minecraft.world.item.crafting.RecipeManager;
+*///?}
 import net.minecraft.world.item.crafting.RecipeType;
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//? if >=26.1 {
+
+//?} else {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 @GameTestHolder(DimensionalFluxMiner.MOD_ID)
 @PrefixGameTestTemplate(false)
+*///?}
 public final class ContentGameTests {
     private ContentGameTests() {
     }
@@ -49,18 +63,39 @@ public final class ContentGameTests {
      */
     @GameTest(template = "empty_small")
     public static void allRecipeDefinitionsLoad(GameTestHelper helper) {
-        RecipeManager recipes = helper.getLevel().getRecipeManager();
+        //? if >=26.1 {
+        RecipeMap recipes = dimensionalfluxminer.recipe.Recipes.map(helper.getLevel());
+        long crafting = recipes.byType(RecipeType.CRAFTING).stream()
+        //?} else {
+        /*RecipeManager recipes = helper.getLevel().getRecipeManager();
         long crafting = recipes.getAllRecipesFor(RecipeType.CRAFTING).stream()
+        *///?}
                 .map(RecipeHolder::id)
-                .filter(id -> id.getNamespace().equals(DimensionalFluxMiner.MOD_ID))
+                //? if >=26.1 {
+                .filter(id -> id.identifier().getNamespace().equals(DimensionalFluxMiner.MOD_ID))
+                //?} else {
+                /*.filter(id -> id.getNamespace().equals(DimensionalFluxMiner.MOD_ID))
+                *///?}
                 .count();
-        int crushing = recipes.getAllRecipesFor(DfmRecipes.CRUSHING.get()).size();
+        //? if >=26.1 {
+        int crushing = recipes.byType(DfmRecipes.CRUSHING.get()).size();
+        int ore = recipes.byType(DfmRecipes.ORE_CRUSHING.get()).size();
+        long alloying = recipes.byType(DfmRecipes.ALLOYING.get()).stream()
+                .filter(h -> h.id().identifier().getNamespace().equals(DimensionalFluxMiner.MOD_ID))
+        //?} else {
+        /*int crushing = recipes.getAllRecipesFor(DfmRecipes.CRUSHING.get()).size();
         int ore = recipes.getAllRecipesFor(DfmRecipes.ORE_CRUSHING.get()).size();
         long alloying = recipes.getAllRecipesFor(DfmRecipes.ALLOYING.get()).stream()
                 .filter(h -> h.id().getNamespace().equals(DimensionalFluxMiner.MOD_ID))
+        *///?}
                 .count();
         var mods = net.neoforged.fml.ModList.get();
-        int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0);
+        //? if >=26.1 {
+        int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0)
+                + (mods.isLoaded("evilcraft") ? 1 : 0);
+        //?} else {
+        /*int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0);
+        *///?}
         int expectedAlloying = 2 + (mods.isLoaded("create") ? 1 : 0);
         helper.assertTrue(crafting == 16, "crafting recipes: " + crafting);
         helper.assertTrue(crushing == 3, "crushing recipes: " + crushing);
@@ -79,7 +114,11 @@ public final class ContentGameTests {
 
     @GameTest(template = "empty_large")
     public static void waterStillHydratesFarmland(GameTestHelper helper) {
-        helper.assertTrue(farmlandMoisture(helper, Blocks.WATER.defaultBlockState()) == FarmBlock.MAX_MOISTURE,
+        //? if >=26.1 {
+        helper.assertTrue(farmlandMoisture(helper, Blocks.WATER.defaultBlockState()) == FarmlandBlock.MAX_MOISTURE,
+        //?} else {
+        /*helper.assertTrue(farmlandMoisture(helper, Blocks.WATER.defaultBlockState()) == FarmBlock.MAX_MOISTURE,
+        *///?}
                 "farmland next to water stayed dry");
         helper.succeed();
     }
@@ -94,10 +133,18 @@ public final class ContentGameTests {
         ServerLevel level = helper.getLevel();
         BlockPos abs = helper.absolutePos(farm);
         for (int i = 0; i < 20; i++) {
-            level.getBlockState(abs).randomTick(level, abs, level.random);
+            //? if >=26.1 {
+            level.getBlockState(abs).randomTick(level, abs, level.getRandom());
+            //?} else {
+            /*level.getBlockState(abs).randomTick(level, abs, level.random);
+            *///?}
         }
         BlockState state = level.getBlockState(abs);
-        return state.is(Blocks.FARMLAND) ? state.getValue(FarmBlock.MOISTURE) : -1;
+        //? if >=26.1 {
+        return state.is(Blocks.FARMLAND) ? state.getValue(FarmlandBlock.MOISTURE) : -1;
+        //?} else {
+        /*return state.is(Blocks.FARMLAND) ? state.getValue(FarmBlock.MOISTURE) : -1;
+        *///?}
     }
 
     /** Sugar cane needs real water beside its ground; Corrupted Water does not count. */
@@ -115,13 +162,37 @@ public final class ContentGameTests {
         helper.succeed();
     }
 
+    //? if >=26.1 {
+    /** Every item of the mod has its name in both language files (the tooltip shows the key otherwise). */
+    @GameTest(template = "empty_small")
+    public static void everyItemHasAName(GameTestHelper helper) {
+        for (String lang : List.of("en_us", "pt_br")) {
+            java.util.Set<String> keys;
+            try (var in = DimensionalFluxMiner.class.getResourceAsStream("/assets/dimensionalfluxminer/lang/" + lang + ".json")) {
+                helper.assertTrue(in != null, lang + ".json found");
+                keys = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8))
+                        .getAsJsonObject().keySet();
+            } catch (java.io.IOException e) {
+                throw new IllegalStateException(e);
+            }
+            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+                var id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
+                if (id.getNamespace().equals(DimensionalFluxMiner.MOD_ID)) {
+                    String key = item.getDescriptionId();
+                    helper.assertTrue(keys.contains(key), id + " has no name in " + lang + " (" + key + ")");
+                }
+            }
+        }
+        helper.succeed();
+    }
+    //?}
     /** Every advancement of the mod loads (its criteria, including the mod's own event trigger, parse). */
     @GameTest(template = "empty_small")
     public static void allAdvancementsLoad(GameTestHelper helper) {
         List<String> ids = List.of("root", "crusher", "electric_furnace", "steel", "slag_recovered", "reinforced_eye", "stronghold",
                 "miner_formed", "first_ore", "ore_filtered", "max_speed", "thousand_per_second", "efficiency_upgrade",
                 "matter_injected", "trash_to_treasure", "column_drained", "scorched_earth", "purple_dive", "warden_friend",
-                "world_drained");
+                "world_drained", "nautilus_shell");
         ServerAdvancementManager advancements = helper.getLevel().getServer().getAdvancements();
         for (String id : ids) {
             helper.assertTrue(advancements.get(DimensionalFluxMiner.id(id)) != null, "advancement missing: " + id);
@@ -131,7 +202,11 @@ public final class ContentGameTests {
                 .count();
         helper.assertTrue(total == ids.size(), "advancements of the mod: " + total);
         // The first Pure Steel hands out the guide (never the world start); the World Breaker an Efficiency Upgrade.
-        helper.assertTrue(advancements.get(DimensionalFluxMiner.id("root")).value().rewards().loot().isEmpty(), "root gives nothing");
+        //? if >=26.1 {
+        helper.assertTrue(advancements.get(DimensionalFluxMiner.id("root")).value().rewards().loot().size() == 0, "root gives nothing");
+        //?} else {
+        /*helper.assertTrue(advancements.get(DimensionalFluxMiner.id("root")).value().rewards().loot().isEmpty(), "root gives nothing");
+        *///?}
         assertReward(helper, advancements, "steel", "rewards/guide_book");
         assertReward(helper, advancements, "world_drained", "rewards/efficiency_upgrade");
         helper.succeed();
@@ -145,7 +220,11 @@ public final class ContentGameTests {
         helper.assertTrue(!new ItemStack(DfmItems.INGOT_STEEL.get()).is(dimensionalfluxminer.registry.DfmTags.Items.common("ingots")),
                 "Pure Steel must not be in c:ingots");
         ItemStack eye = new ItemStack(DfmItems.ENDER_EYE_REINFORCED.get());
-        net.minecraft.core.registries.BuiltInRegistries.ITEM.getTag(steelTag).ifPresent(set -> set.forEach(foreign -> {
+        //? if >=26.1 {
+        net.minecraft.core.registries.BuiltInRegistries.ITEM.get(steelTag).ifPresent(set -> set.forEach(foreign -> {
+        //?} else {
+        /*net.minecraft.core.registries.BuiltInRegistries.ITEM.getTag(steelTag).ifPresent(set -> set.forEach(foreign -> {
+        *///?}
             ItemStack result = craft(helper, List.of(
                     ItemStack.EMPTY, eye, ItemStack.EMPTY,
                     ItemStack.EMPTY, new ItemStack(foreign), ItemStack.EMPTY,
@@ -157,7 +236,13 @@ public final class ContentGameTests {
 
     private static void assertReward(GameTestHelper helper, ServerAdvancementManager advancements, String advancement, String lootTable) {
         ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, DimensionalFluxMiner.id(lootTable));
-        helper.assertTrue(advancements.get(DimensionalFluxMiner.id(advancement)).value().rewards().loot().contains(key),
+        //? if =26.1.2 {
+        helper.assertTrue(advancements.get(DimensionalFluxMiner.id(advancement)).value().rewards().loot().stream().anyMatch(table -> table.equals(key)),
+        //?} else if >=26.3 {
+        /*helper.assertTrue(advancements.get(DimensionalFluxMiner.id(advancement)).value().rewards().loot().stream().anyMatch(table -> table.is(key)),
+        *///?} else {
+        /*helper.assertTrue(advancements.get(DimensionalFluxMiner.id(advancement)).value().rewards().loot().contains(key),
+        *///?}
                 advancement + " does not reward " + lootTable);
         helper.assertTrue(helper.getLevel().getServer().reloadableRegistries().getLootTable(key) != LootTable.EMPTY,
                 "loot table missing: " + lootTable);
@@ -184,8 +269,13 @@ public final class ContentGameTests {
 
     private static ItemStack craft(GameTestHelper helper, List<ItemStack> grid) {
         CraftingInput input = CraftingInput.of(3, 3, grid);
-        return helper.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, helper.getLevel())
+        //? if >=26.1 {
+        return dimensionalfluxminer.recipe.Recipes.first(helper.getLevel(), RecipeType.CRAFTING, input)
+                .map(holder -> holder.value().assemble(input))
+        //?} else {
+        /*return helper.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, helper.getLevel())
                 .map(holder -> holder.value().assemble(input, helper.getLevel().registryAccess()))
+        *///?}
                 .orElse(ItemStack.EMPTY);
     }
 }

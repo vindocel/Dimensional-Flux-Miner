@@ -1,0 +1,7 @@
+{
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": "#c:ores/copper",
+  "result_tag": "c:raw_materials/copper",
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

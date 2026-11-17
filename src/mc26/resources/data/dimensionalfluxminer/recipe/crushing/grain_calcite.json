@@ -1,0 +1,8 @@
+{
+  "type": "dimensionalfluxminer:crushing",
+  "ingredient": "minecraft:calcite",
+  "result": {
+    "id": "dimensionalfluxminer:grain_calcite",
+    "count": 2
+  }
+}

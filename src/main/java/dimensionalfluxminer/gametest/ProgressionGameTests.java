@@ -22,10 +22,16 @@ import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.gametest.framework.GameTest;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
@@ -38,12 +44,16 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//? if <26.1 {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+*///?}
 
 /** Recipe progression, tags, datapack overrides and the ore distribution of the Resource Profiles. */
-@GameTestHolder(DimensionalFluxMiner.MOD_ID)
+//? if <26.1 {
+/*@GameTestHolder(DimensionalFluxMiner.MOD_ID)
 @PrefixGameTestTemplate(false)
+*///?}
 public final class ProgressionGameTests {
     private ProgressionGameTests() {
     }
@@ -52,24 +62,39 @@ public final class ProgressionGameTests {
         if (recipe instanceof AlloyingRecipe alloy) {
             return alloy.ingredients().stream().map(SizedIngredient::ingredient).toList();
         }
-        return recipe.getIngredients().stream().filter(i -> !i.isEmpty()).toList();
+        //? if >=26.1 {
+        return dimensionalfluxminer.recipe.Recipes.ingredients(recipe);
+        //?} else {
+        /*return recipe.getIngredients().stream().filter(i -> !i.isEmpty()).toList();
+        *///?}
     }
 
     @GameTest(template = "empty_small")
     public static void everyRecipeOfTheModHasRealIngredientsAndResults(GameTestHelper helper) {
         var level = helper.getLevel();
         int checked = 0;
-        for (RecipeHolder<?> holder : level.getRecipeManager().getRecipes()) {
+        //? if >=26.1 {
+        for (RecipeHolder<?> holder : dimensionalfluxminer.recipe.Recipes.all(level)) {
+            if (!holder.id().identifier().getNamespace().equals(DimensionalFluxMiner.MOD_ID)) {
+        //?} else {
+        /*for (RecipeHolder<?> holder : level.getRecipeManager().getRecipes()) {
             if (!holder.id().getNamespace().equals(DimensionalFluxMiner.MOD_ID)) {
+        *///?}
                 continue;
             }
             Recipe<?> recipe = holder.value();
             List<Ingredient> list = ingredients(recipe);
             helper.assertTrue(!list.isEmpty(), holder.id() + " has ingredients");
             for (Ingredient ingredient : list) {
-                helper.assertTrue(ingredient.getItems().length > 0, holder.id() + ": an ingredient matches no item");
+                //? if >=26.1 {
+                helper.assertTrue(dimensionalfluxminer.recipe.Recipes.stacks(ingredient).length > 0, holder.id() + ": an ingredient matches no item");
+            }
+            helper.assertTrue(!dimensionalfluxminer.recipe.Recipes.result(level.registryAccess(), recipe).isEmpty()
+                //?} else {
+                /*helper.assertTrue(ingredient.getItems().length > 0, holder.id() + ": an ingredient matches no item");
             }
             helper.assertTrue(!recipe.getResultItem(level.registryAccess()).isEmpty()
+                *///?}
                     || recipe.getType() == DfmRecipes.ORE_CRUSHING.get(), holder.id() + " has a result");
             checked++;
         }
@@ -86,7 +111,11 @@ public final class ProgressionGameTests {
         Map<Item, Integer> step = new HashMap<>();
         Item crusher = DfmItems.MECHANICAL_CRUSHER.get();
         Item furnace = DfmItems.ELECTRIC_FURNACE.get();
-        List<RecipeHolder<?>> recipes = new ArrayList<>(level.getRecipeManager().getRecipes());
+        //? if >=26.1 {
+        List<RecipeHolder<?>> recipes = new ArrayList<>(dimensionalfluxminer.recipe.Recipes.all(level));
+        //?} else {
+        /*List<RecipeHolder<?>> recipes = new ArrayList<>(level.getRecipeManager().getRecipes());
+        *///?}
         boolean changed = true;
         int round = 0;
         while (changed) {
@@ -96,7 +125,11 @@ public final class ProgressionGameTests {
             Set<Item> known = new HashSet<>(step.keySet());
             for (RecipeHolder<?> holder : recipes) {
                 Recipe<?> recipe = holder.value();
-                ItemStack result = recipe.getResultItem(level.registryAccess());
+                //? if >=26.1 {
+                ItemStack result = dimensionalfluxminer.recipe.Recipes.result(level.registryAccess(), recipe);
+                //?} else {
+                /*ItemStack result = recipe.getResultItem(level.registryAccess());
+                *///?}
                 if (result.isEmpty() || !BuiltInRegistries.ITEM.getKey(result.getItem()).getNamespace().equals(DimensionalFluxMiner.MOD_ID)
                         || step.containsKey(result.getItem())) {
                     continue;
@@ -109,7 +142,11 @@ public final class ProgressionGameTests {
                 boolean all = true;
                 for (Ingredient ingredient : ingredients(recipe)) {
                     boolean any = false;
-                    for (ItemStack option : ingredient.getItems()) {
+                    //? if >=26.1 {
+                    for (ItemStack option : dimensionalfluxminer.recipe.Recipes.stacks(ingredient)) {
+                    //?} else {
+                    /*for (ItemStack option : ingredient.getItems()) {
+                    *///?}
                         String ns = BuiltInRegistries.ITEM.getKey(option.getItem()).getNamespace();
                         if (ns.equals("minecraft") || known.contains(option.getItem())) {
                             any = true;
@@ -155,15 +192,28 @@ public final class ProgressionGameTests {
     public static void pureSteelKeepsItsIdentity(GameTestHelper helper) {
         ItemStack steel = new ItemStack(DfmItems.INGOT_STEEL.get());
         for (String tag : List.of("ingots", "ingots/steel")) {
-            helper.assertFalse(steel.is(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", tag))), "Pure Steel is not in c:" + tag);
+            //? if >=26.1 {
+            helper.assertFalse(steel.is(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", tag))), "Pure Steel is not in c:" + tag);
+            //?} else {
+            /*helper.assertFalse(steel.is(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", tag))), "Pure Steel is not in c:" + tag);
+            *///?}
         }
         // Every ingredient of the mod that takes Pure Steel takes only Pure Steel, never the steel of another mod.
         Set<Item> otherSteels = new HashSet<>();
-        BuiltInRegistries.ITEM.getTag(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "ingots/steel")))
+        //? if >=26.1 {
+        BuiltInRegistries.ITEM.get(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "ingots/steel")))
+        //?} else {
+        /*BuiltInRegistries.ITEM.getTag(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "ingots/steel")))
+        *///?}
                 .ifPresent(set -> set.forEach(h -> otherSteels.add(h.value())));
         int checked = 0;
-        for (RecipeHolder<?> holder : helper.getLevel().getRecipeManager().getRecipes()) {
+        //? if >=26.1 {
+        for (RecipeHolder<?> holder : dimensionalfluxminer.recipe.Recipes.all(helper.getLevel())) {
+            if (!holder.id().identifier().getNamespace().equals(DimensionalFluxMiner.MOD_ID)) {
+        //?} else {
+        /*for (RecipeHolder<?> holder : helper.getLevel().getRecipeManager().getRecipes()) {
             if (!holder.id().getNamespace().equals(DimensionalFluxMiner.MOD_ID)) {
+        *///?}
                 continue;
             }
             for (Ingredient ingredient : ingredients(holder.value())) {
@@ -184,28 +234,62 @@ public final class ProgressionGameTests {
     public static void datapackOverridesDisableReweightAndAddResources(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ResourceKey<Level> here = level.dimension();
-        ResourceLocation diamond = ResourceLocation.withDefaultNamespace("diamond");
+        //? if >=26.1 {
+        Identifier diamond = Identifier.withDefaultNamespace("diamond");
+        //?} else {
+        /*ResourceLocation diamond = ResourceLocation.withDefaultNamespace("diamond");
+        *///?}
         List<ProfileOverride> overrides = List.of(
                 // Remove both coal ores, the whole family goes.
-                new ProfileOverride(ResourceLocation.parse("minecraft:coal_ore"), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty()),
+                //? if >=26.1 {
+                new ProfileOverride(Identifier.parse("minecraft:coal_ore"), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty()),
+                new ProfileOverride(Identifier.parse("minecraft:deepslate_coal_ore"), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty()),
+                //?} else {
+                /*new ProfileOverride(ResourceLocation.parse("minecraft:coal_ore"), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty()),
                 new ProfileOverride(ResourceLocation.parse("minecraft:deepslate_coal_ore"), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty()),
+                *///?}
                 // Diamonds take 25 % of the profile.
-                new ProfileOverride(ResourceLocation.parse("minecraft:diamond_ore"), Optional.of(here), Optional.empty(), Optional.of(0.25), true, Optional.empty()),
+                //? if >=26.1 {
+                new ProfileOverride(Identifier.parse("minecraft:diamond_ore"), Optional.of(here), Optional.empty(), Optional.of(0.25), true, Optional.empty()),
+                //?} else {
+                /*new ProfileOverride(ResourceLocation.parse("minecraft:diamond_ore"), Optional.of(here), Optional.empty(), Optional.of(0.25), true, Optional.empty()),
+                *///?}
                 // A resource this dimension does not generate, with its own family and Crusher output.
-                new ProfileOverride(ResourceLocation.parse("minecraft:nether_gold_ore"), Optional.of(here), Optional.of(ResourceLocation.parse("test:custom")),
+                //? if >=26.1 {
+                new ProfileOverride(Identifier.parse("minecraft:nether_gold_ore"), Optional.of(here), Optional.of(Identifier.parse("test:custom")),
+                        Optional.of(0.05), true, Optional.of(Identifier.parse("minecraft:gold_nugget"))),
+                //?} else {
+                /*new ProfileOverride(ResourceLocation.parse("minecraft:nether_gold_ore"), Optional.of(here), Optional.of(ResourceLocation.parse("test:custom")),
                         Optional.of(0.05), true, Optional.of(ResourceLocation.parse("minecraft:gold_nugget"))),
+                *///?}
                 // Without a dimension a new resource is refused.
-                new ProfileOverride(ResourceLocation.parse("minecraft:ancient_debris"), Optional.empty(), Optional.of(ResourceLocation.parse("test:nowhere")),
+                //? if >=26.1 {
+                new ProfileOverride(Identifier.parse("minecraft:ancient_debris"), Optional.empty(), Optional.of(Identifier.parse("test:nowhere")),
+                //?} else {
+                /*new ProfileOverride(ResourceLocation.parse("minecraft:ancient_debris"), Optional.empty(), Optional.of(ResourceLocation.parse("test:nowhere")),
+                *///?}
                         Optional.empty(), true, Optional.empty()));
         ResourceProfile profile = ProfileBuilder.build(level, overrides);
-        helper.assertTrue(profile.family(ResourceLocation.withDefaultNamespace("coal")).isEmpty(), "coal disabled");
+        //? if >=26.1 {
+        helper.assertTrue(profile.family(Identifier.withDefaultNamespace("coal")).isEmpty(), "coal disabled");
+        //?} else {
+        /*helper.assertTrue(profile.family(ResourceLocation.withDefaultNamespace("coal")).isEmpty(), "coal disabled");
+        *///?}
         int total = profile.totalWeight();
         int diamonds = profile.family(diamond).map(ResourceFamily::weight).orElse(0);
         helper.assertTrue(Math.abs(diamonds - 2_500) <= 1 && Math.abs(total - 10_000) <= profile.families().size(), "diamond share 25 %: " + diamonds + " / " + total);
-        var custom = profile.family(ResourceLocation.parse("test:custom"));
+        //? if >=26.1 {
+        var custom = profile.family(Identifier.parse("test:custom"));
+        //?} else {
+        /*var custom = profile.family(ResourceLocation.parse("test:custom"));
+        *///?}
         helper.assertTrue(custom.isPresent() && custom.get().crusherOutput() == Items.GOLD_NUGGET && Math.abs(custom.get().weight() - 500) <= 1,
                 "custom family added with its output and 5 %: " + custom);
-        helper.assertTrue(profile.family(ResourceLocation.parse("test:nowhere")).isEmpty(), "no dimension, no new family");
+        //? if >=26.1 {
+        helper.assertTrue(profile.family(Identifier.parse("test:nowhere")).isEmpty(), "no dimension, no new family");
+        //?} else {
+        /*helper.assertTrue(profile.family(ResourceLocation.parse("test:nowhere")).isEmpty(), "no dimension, no new family");
+        *///?}
         helper.succeed();
     }
 
@@ -275,19 +359,37 @@ public final class ProgressionGameTests {
 
     @GameTest(template = "empty_small")
     public static void onlyOreVariantsOfTheDimensionStoneCount(GameTestHelper helper) {
-        // The terrain comes from the noise settings of each dimension.
+        //? if >=26.1 {
+        // The terrain comes from the noise settings of each dimension (read from the registry: the test world is flat).
+        var registries = helper.getLevel().registryAccess();
+        var noise = registries.lookupOrThrow(Registries.NOISE_SETTINGS);
+        Set<net.minecraft.world.level.block.state.BlockState> netherTerrain = ProfileBuilder.terrainBlocks(
+                noise.getValueOrThrow(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.NETHER), registries);
+        Set<net.minecraft.world.level.block.state.BlockState> endTerrain = ProfileBuilder.terrainBlocks(
+                noise.getValueOrThrow(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.END), registries);
+        //?} else {
+        /*// The terrain comes from the noise settings of each dimension.
         ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
         ServerLevel end = helper.getLevel().getServer().getLevel(Level.END);
         Set<net.minecraft.world.level.block.state.BlockState> netherTerrain = ProfileBuilder.terrainBlocks(nether);
         Set<net.minecraft.world.level.block.state.BlockState> endTerrain = ProfileBuilder.terrainBlocks(end);
+        *///?}
         helper.assertTrue(netherTerrain != null && netherTerrain.contains(net.minecraft.world.level.block.Blocks.NETHERRACK.defaultBlockState())
                 && !netherTerrain.contains(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()), "Nether terrain is netherrack");
         helper.assertTrue(endTerrain != null && endTerrain.contains(net.minecraft.world.level.block.Blocks.END_STONE.defaultBlockState())
                 && !endTerrain.contains(net.minecraft.world.level.block.Blocks.DEEPSLATE.defaultBlockState()), "End terrain is end stone");
         // A vein listing a variant per stone keeps only the variant of the stone that is there.
         var ops = net.minecraft.resources.RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, helper.getLevel().registryAccess());
-        var gold = helper.getLevel().registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE)
+        //? if =26.1.2 {
+        var gold = helper.getLevel().registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE)
+                .getValue(Identifier.withDefaultNamespace("ore_gold"));
+        //?} else if >=26.3 {
+        /*var gold = helper.getLevel().registryAccess().lookupOrThrow(Registries.FEATURE)
+                .getValue(Identifier.withDefaultNamespace("ore_gold"));
+        *///?} else {
+        /*var gold = helper.getLevel().registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE)
                 .get(ResourceLocation.withDefaultNamespace("ore_gold"));
+        *///?}
         var shape = ProfileBuilder.oreShape(gold, ops).orElseThrow();
         var onStone = shape.replacing(Set.of(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState())).targets();
         helper.assertTrue(onStone.size() == 1 && onStone.get(0).is(net.minecraft.world.level.block.Blocks.GOLD_ORE), "stone: gold ore only");
@@ -297,7 +399,11 @@ public final class ProgressionGameTests {
         var stone = ProfileBuilder.rawScores(overworld, helper.getLevel().registryAccess(),
                 Set.of(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()));
         var rack = ProfileBuilder.rawScores(overworld, helper.getLevel().registryAccess(), netherTerrain);
-        ResourceLocation iron = ResourceLocation.withDefaultNamespace("iron");
+        //? if >=26.1 {
+        Identifier iron = Identifier.withDefaultNamespace("iron");
+        //?} else {
+        /*ResourceLocation iron = ResourceLocation.withDefaultNamespace("iron");
+        *///?}
         helper.assertTrue(stone.containsKey(iron) && !rack.containsKey(iron), "iron only where its stone exists");
         helper.succeed();
     }
@@ -305,7 +411,11 @@ public final class ProgressionGameTests {
     @GameTest(template = "empty_small")
     public static void conditionalResourceFilesFollowTheirMods(GameTestHelper helper) {
         // compat/allthemodium_unobtainium.json only loads with Allthemodium installed.
-        ResourceLocation unobtainium = ResourceLocation.fromNamespaceAndPath("allthemodium", "unobtainium_ore");
+        //? if >=26.1 {
+        Identifier unobtainium = Identifier.fromNamespaceAndPath("allthemodium", "unobtainium_ore");
+        //?} else {
+        /*ResourceLocation unobtainium = ResourceLocation.fromNamespaceAndPath("allthemodium", "unobtainium_ore");
+        *///?}
         boolean loaded = dimensionalfluxminer.miner.profile.ResourceProfiles.overrides().stream()
                 .anyMatch(o -> o.resource().equals(unobtainium));
         helper.assertTrue(loaded == net.neoforged.fml.ModList.get().isLoaded("allthemodium"), "Unobtainium entry follows Allthemodium");
@@ -316,27 +426,55 @@ public final class ProgressionGameTests {
 
     private static Set<Holder<Biome>> biomes(ServerLevel level, TagKey<Biome> tag) {
         Set<Holder<Biome>> set = new HashSet<>();
-        level.registryAccess().registryOrThrow(Registries.BIOME).getTagOrEmpty(tag).forEach(set::add);
+        //? if >=26.1 {
+        level.registryAccess().lookupOrThrow(Registries.BIOME).getTagOrEmpty(tag).forEach(set::add);
+        //?} else {
+        /*level.registryAccess().registryOrThrow(Registries.BIOME).getTagOrEmpty(tag).forEach(set::add);
+        *///?}
         return set;
     }
 
     /** Linear normalization (no exponent), for comparison. */
-    private static Map<ResourceLocation, Integer> linear(Map<ResourceLocation, Double> raw) {
+    //? if >=26.1 {
+    private static Map<Identifier, Integer> linear(Map<Identifier, Double> raw) {
+    //?} else {
+    /*private static Map<ResourceLocation, Integer> linear(Map<ResourceLocation, Double> raw) {
+    *///?}
         double sum = raw.values().stream().mapToDouble(v -> Math.max(v, ProfileWeights.EPSILON)).sum();
-        Map<ResourceLocation, Integer> out = new LinkedHashMap<>();
+        //? if >=26.1 {
+        Map<Identifier, Integer> out = new LinkedHashMap<>();
+        //?} else {
+        /*Map<ResourceLocation, Integer> out = new LinkedHashMap<>();
+        *///?}
         raw.forEach((k, v) -> out.put(k, Math.max(1, (int) Math.round(Math.max(v, ProfileWeights.EPSILON) / sum * ProfileWeights.TARGET_TOTAL))));
         return out;
     }
 
-    private static Map<ResourceLocation, Long> roll(Map<ResourceLocation, Integer> weights, long rolls, long seed) {
+    //? if >=26.1 {
+    private static Map<Identifier, Long> roll(Map<Identifier, Integer> weights, long rolls, long seed) {
+    //?} else {
+    /*private static Map<ResourceLocation, Long> roll(Map<ResourceLocation, Integer> weights, long rolls, long seed) {
+    *///?}
         java.util.Random random = new java.util.Random(seed);
-        List<ResourceLocation> keys = new ArrayList<>(weights.keySet());
+        //? if >=26.1 {
+        List<Identifier> keys = new ArrayList<>(weights.keySet());
+        //?} else {
+        /*List<ResourceLocation> keys = new ArrayList<>(weights.keySet());
+        *///?}
         int total = weights.values().stream().mapToInt(Integer::intValue).sum();
-        Map<ResourceLocation, Long> counts = new LinkedHashMap<>();
+        //? if >=26.1 {
+        Map<Identifier, Long> counts = new LinkedHashMap<>();
+        //?} else {
+        /*Map<ResourceLocation, Long> counts = new LinkedHashMap<>();
+        *///?}
         keys.forEach(k -> counts.put(k, 0L));
         for (long i = 0; i < rolls; i++) {
             int r = random.nextInt(total);
-            for (ResourceLocation k : keys) {
+            //? if >=26.1 {
+            for (Identifier k : keys) {
+            //?} else {
+            /*for (ResourceLocation k : keys) {
+            *///?}
                 r -= weights.get(k);
                 if (r < 0) {
                     counts.merge(k, 1L, Long::sum);
@@ -357,9 +495,17 @@ public final class ProgressionGameTests {
         dimensions.put("end", BiomeTags.IS_END);
         for (Map.Entry<String, TagKey<Biome>> dim : dimensions.entrySet()) {
             Set<Holder<Biome>> set = biomes(level, dim.getValue());
-            Map<ResourceLocation, Double> raw = ProfileBuilder.rawScores(set, level.registryAccess());
+            //? if >=26.1 {
+            Map<Identifier, Double> raw = ProfileBuilder.rawScores(set, level.registryAccess());
+            //?} else {
+            /*Map<ResourceLocation, Double> raw = ProfileBuilder.rawScores(set, level.registryAccess());
+            *///?}
             for (boolean vanillaOnly : new boolean[] {true, false}) {
-                Map<ResourceLocation, Double> scores = new LinkedHashMap<>();
+                //? if >=26.1 {
+                Map<Identifier, Double> scores = new LinkedHashMap<>();
+                //?} else {
+                /*Map<ResourceLocation, Double> scores = new LinkedHashMap<>();
+                *///?}
                 raw.forEach((k, v) -> {
                     if (!vanillaOnly || k.getNamespace().equals("minecraft")) {
                         scores.put(k, v);
@@ -369,15 +515,29 @@ public final class ProgressionGameTests {
                     DimensionalFluxMiner.LOGGER.info("Distribution {} ({}): no ore families", dim.getKey(), vanillaOnly ? "vanilla" : "all mods");
                     continue;
                 }
-                Map<ResourceLocation, Integer> weighted = ProfileWeights.normalize(scores);
+                //? if >=26.1 {
+                Map<Identifier, Integer> weighted = ProfileWeights.normalize(scores);
+                Map<Identifier, Integer> lin = linear(scores);
+                Map<Identifier, Long> simulated = roll(weighted, rolls, 42);
+                //?} else {
+                /*Map<ResourceLocation, Integer> weighted = ProfileWeights.normalize(scores);
                 Map<ResourceLocation, Integer> lin = linear(scores);
                 Map<ResourceLocation, Long> simulated = roll(weighted, rolls, 42);
+                *///?}
                 int weightedTotal = weighted.values().stream().mapToInt(Integer::intValue).sum();
                 int linTotal = lin.values().stream().mapToInt(Integer::intValue).sum();
                 StringBuilder line = new StringBuilder();
-                List<ResourceLocation> keys = new ArrayList<>(scores.keySet());
+                //? if >=26.1 {
+                List<Identifier> keys = new ArrayList<>(scores.keySet());
+                //?} else {
+                /*List<ResourceLocation> keys = new ArrayList<>(scores.keySet());
+                *///?}
                 keys.sort((a, b) -> Double.compare(scores.get(b), scores.get(a)));
-                for (ResourceLocation k : keys) {
+                //? if >=26.1 {
+                for (Identifier k : keys) {
+                //?} else {
+                /*for (ResourceLocation k : keys) {
+                *///?}
                     line.append(String.format(java.util.Locale.ROOT, "%n  %-24s raw=%10.4f linear=%6.2f%% profile=%6.2f%% simulated=%7d (%6.2f%%)",
                             k, scores.get(k), 100.0 * lin.get(k) / linTotal, 100.0 * weighted.get(k) / weightedTotal, simulated.get(k),
                             100.0 * simulated.get(k) / rolls));
@@ -385,7 +545,11 @@ public final class ProgressionGameTests {
                 DimensionalFluxMiner.LOGGER.info("Distribution {} ({}, {} biomes, {} rolls):{}", dim.getKey(), vanillaOnly ? "vanilla" : "all mods",
                         set.size(), rolls, line);
                 helper.assertTrue(Math.abs(weightedTotal - ProfileWeights.TARGET_TOTAL) <= scores.size(), "weights normalized");
-                for (ResourceLocation k : keys) {
+                //? if >=26.1 {
+                for (Identifier k : keys) {
+                //?} else {
+                /*for (ResourceLocation k : keys) {
+                *///?}
                     double expected = weighted.get(k) / (double) weightedTotal;
                     double got = simulated.get(k) / (double) rolls;
                     // Within 5 standard deviations of the weighted roll.

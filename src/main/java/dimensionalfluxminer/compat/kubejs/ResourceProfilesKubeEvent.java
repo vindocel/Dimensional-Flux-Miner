@@ -8,7 +8,11 @@ import dimensionalfluxminer.miner.profile.ResourceProfiles;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 
 /**
  * {@code DimensionalFluxMinerEvents.resourceProfiles}: entries of the Resource Profiles, in the same format as the
@@ -52,7 +56,11 @@ public class ResourceProfilesKubeEvent implements KubeEvent {
         add(entry);
     }
 
-    private static void checkItem(ResourceLocation id) {
+    //? if >=26.1 {
+    private static void checkItem(Identifier id) {
+    //?} else {
+    /*private static void checkItem(ResourceLocation id) {
+    *///?}
         if (!BuiltInRegistries.ITEM.containsKey(id)) {
             throw new IllegalArgumentException("Unknown item '" + id + "'");
         }

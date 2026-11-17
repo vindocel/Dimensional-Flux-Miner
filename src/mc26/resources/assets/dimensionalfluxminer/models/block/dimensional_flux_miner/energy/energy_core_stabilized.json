@@ -1,0 +1,16 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "neoforge:obj",
+  "model": "dimensionalfluxminer:models/block/dimensional_flux_miner/geometry/energy.obj",
+  "mtl_override": "dimensionalfluxminer:models/block/dimensional_flux_miner/geometry/materials.mtl",
+  "automatic_culling": false,
+  "shade_quads": true,
+  "flip_v": true,
+  "emissive_ambient": true,
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "dimensionalfluxminer:block/dimensional_flux_miner/dimensional_flux_miner",
+    "core_side_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_violet_active_glow",
+    "core_side": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_violet_body"
+  }
+}

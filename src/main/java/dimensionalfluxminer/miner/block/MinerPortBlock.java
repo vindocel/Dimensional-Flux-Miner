@@ -15,15 +15,19 @@ import net.minecraft.world.level.block.state.BlockState;
  * (see {@code MinerPorts}); like the lower chassis they receive redstone and external tick acceleration.
  */
 public class MinerPortBlock extends MinerPartBlock implements EntityBlock {
-    public static final com.mojang.serialization.MapCodec<MinerPortBlock> CODEC = simpleCodec(MinerPortBlock::new);
+    //? if <26.1 {
+    /*public static final com.mojang.serialization.MapCodec<MinerPortBlock> CODEC = simpleCodec(MinerPortBlock::new);
+    *///?}
 
     public MinerPortBlock(Properties properties) {
         super(properties);
-    }
+    //? if <26.1 {
+    /*}
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() {
         return CODEC;
+    *///?}
     }
 
     @Override
@@ -34,7 +38,11 @@ public class MinerPortBlock extends MinerPartBlock implements EntityBlock {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide || type != DfmBlockEntities.MINER_LINK.get()) {
+        //? if >=26.1 {
+        if (level.isClientSide() || type != DfmBlockEntities.MINER_LINK.get()) {
+        //?} else {
+        /*if (level.isClientSide || type != DfmBlockEntities.MINER_LINK.get()) {
+        *///?}
             return null;
         }
         return (BlockEntityTicker<T>) (BlockEntityTicker<MinerLinkBlockEntity>) MinerLinkBlockEntity::serverTick;

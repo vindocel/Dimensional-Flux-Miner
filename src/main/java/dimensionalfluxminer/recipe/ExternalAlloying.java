@@ -16,15 +16,30 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
+//? if >=26.1 {
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+//?}
 import net.minecraft.resources.RegistryOps;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
+//? if >=26.1 {
+import net.minecraft.world.item.crafting.RecipeMap;
+//?} else {
+/*import net.minecraft.world.item.crafting.RecipeManager;
+*///?}
 import net.minecraft.world.item.crafting.RecipeType;
+//? if >=26.1 {
+import net.minecraft.world.item.crafting.SingleRecipeInput;
+//?}
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
@@ -44,16 +59,28 @@ public final class ExternalAlloying {
     private static final List<String> TIME_KEYS = List.of("time", "processing_ticks", "processingTime", "duration");
     private static final Set<String> NESTED_INGREDIENT = Set.of("ingredient", "base_ingredient", "value");
 
-    private static RecipeManager cachedManager;
+    //? if >=26.1 {
+    private static RecipeMap cachedManager;
+    //?} else {
+    /*private static RecipeManager cachedManager;
+    *///?}
     private static List<RecipeHolder<AlloyingRecipe>> cached = List.of();
 
     private ExternalAlloying() {
     }
 
     /** The mod's own alloying recipes followed by the converted ones of the configured types. */
-    public static synchronized List<RecipeHolder<AlloyingRecipe>> all(RecipeManager manager, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    public static synchronized List<RecipeHolder<AlloyingRecipe>> all(RecipeMap manager, HolderLookup.Provider registries) {
+    //?} else {
+    /*public static synchronized List<RecipeHolder<AlloyingRecipe>> all(RecipeManager manager, HolderLookup.Provider registries) {
+    *///?}
         if (manager != cachedManager) {
-            List<RecipeHolder<AlloyingRecipe>> list = new ArrayList<>(manager.getAllRecipesFor(DfmRecipes.ALLOYING.get()));
+            //? if >=26.1 {
+            List<RecipeHolder<AlloyingRecipe>> list = new ArrayList<>(manager.byType(DfmRecipes.ALLOYING.get()));
+            //?} else {
+            /*List<RecipeHolder<AlloyingRecipe>> list = new ArrayList<>(manager.getAllRecipesFor(DfmRecipes.ALLOYING.get()));
+            *///?}
             list.addAll(convert(manager, registries));
             cached = List.copyOf(list);
             cachedManager = manager;
@@ -63,11 +90,19 @@ public final class ExternalAlloying {
 
     /** The alloy recipe matching the lanes: the mod's own recipes first, then the converted ones. */
     public static Optional<AlloyingRecipe> find(AlloyRecipeInput input, Level level) {
-        Optional<AlloyingRecipe> own = level.getRecipeManager().getRecipeFor(DfmRecipes.ALLOYING.get(), input, level).map(RecipeHolder::value);
+        //? if >=26.1 {
+        Optional<AlloyingRecipe> own = dimensionalfluxminer.recipe.Recipes.first(level, DfmRecipes.ALLOYING.get(), input).map(RecipeHolder::value);
+        //?} else {
+        /*Optional<AlloyingRecipe> own = level.getRecipeManager().getRecipeFor(DfmRecipes.ALLOYING.get(), input, level).map(RecipeHolder::value);
+        *///?}
         if (own.isPresent()) {
             return own;
         }
-        for (RecipeHolder<AlloyingRecipe> holder : all(level.getRecipeManager(), level.registryAccess())) {
+        //? if >=26.1 {
+        for (RecipeHolder<AlloyingRecipe> holder : all(dimensionalfluxminer.recipe.Recipes.map(level), level.registryAccess())) {
+        //?} else {
+        /*for (RecipeHolder<AlloyingRecipe> holder : all(level.getRecipeManager(), level.registryAccess())) {
+        *///?}
             if (holder.value().matches(input, level)) {
                 return Optional.of(holder.value());
             }
@@ -75,21 +110,41 @@ public final class ExternalAlloying {
         return Optional.empty();
     }
 
-    private static List<RecipeHolder<AlloyingRecipe>> convert(RecipeManager manager, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    private static List<RecipeHolder<AlloyingRecipe>> convert(RecipeMap manager, HolderLookup.Provider registries) {
+        List<Identifier> types = DfmConfig.externalAlloyTypes();
+    //?} else {
+    /*private static List<RecipeHolder<AlloyingRecipe>> convert(RecipeManager manager, HolderLookup.Provider registries) {
         List<ResourceLocation> types = DfmConfig.externalAlloyTypes();
+    *///?}
         if (types.isEmpty()) {
             return List.of();
         }
         RegistryOps<JsonElement> ops = registries.createSerializationContext(JsonOps.INSTANCE);
         List<AbstractCookingRecipe> cooking = new ArrayList<>();
-        manager.getAllRecipesFor(RecipeType.SMELTING).forEach(h -> cooking.add(h.value()));
+        //? if >=26.1 {
+        manager.byType(RecipeType.SMELTING).forEach(h -> cooking.add(h.value()));
+        manager.byType(RecipeType.BLASTING).forEach(h -> cooking.add(h.value()));
+        //?} else {
+        /*manager.getAllRecipesFor(RecipeType.SMELTING).forEach(h -> cooking.add(h.value()));
         manager.getAllRecipesFor(RecipeType.BLASTING).forEach(h -> cooking.add(h.value()));
+        *///?}
         List<RecipeHolder<AlloyingRecipe>> out = new ArrayList<>();
-        for (RecipeHolder<?> holder : manager.getRecipes()) {
+        //? if >=26.1 {
+        for (RecipeHolder<?> holder : manager.values()) {
+            Identifier type = BuiltInRegistries.RECIPE_TYPE.getKey(holder.value().getType());
+        //?} else {
+        /*for (RecipeHolder<?> holder : manager.getRecipes()) {
             ResourceLocation type = BuiltInRegistries.RECIPE_TYPE.getKey(holder.value().getType());
+        *///?}
             if (type != null && types.contains(type)) {
                 // Own id, so recipe viewers never mix it up with the original recipe of the other mod.
-                ResourceLocation id = DimensionalFluxMiner.id("external/" + holder.id().getNamespace() + "/" + holder.id().getPath());
+                //? if >=26.1 {
+                Identifier original = holder.id().identifier();
+                ResourceKey<Recipe<?>> id = ResourceKey.create(Registries.RECIPE, DimensionalFluxMiner.id("external/" + original.getNamespace() + "/" + original.getPath()));
+                //?} else {
+                /*ResourceLocation id = DimensionalFluxMiner.id("external/" + holder.id().getNamespace() + "/" + holder.id().getPath());
+                *///?}
                 read(holder.value(), ops).filter(recipe -> !isFurnaceCopy(recipe, cooking, registries))
                         .ifPresent(recipe -> out.add(new RecipeHolder<>(id, recipe)));
             }
@@ -106,13 +161,22 @@ public final class ExternalAlloying {
         if (recipe.ingredients().size() != 1 || recipe.ingredients().getFirst().count() != 1 || recipe.byproduct().isPresent()) {
             return false;
         }
-        ItemStack[] items = recipe.ingredients().getFirst().ingredient().getItems();
+        //? if >=26.1 {
+        ItemStack[] items = dimensionalfluxminer.recipe.Recipes.stacks(recipe.ingredients().getFirst().ingredient());
+        //?} else {
+        /*ItemStack[] items = recipe.ingredients().getFirst().ingredient().getItems();
+        *///?}
         if (items.length == 0) {
             return false;
         }
         for (AbstractCookingRecipe furnace : cooking) {
-            if (!furnace.getIngredients().isEmpty() && furnace.getIngredients().getFirst().test(items[0])
+            //? if >=26.1 {
+            if (furnace.input().test(items[0])
+                    && ItemStack.isSameItem(furnace.assemble(new SingleRecipeInput(items[0])), recipe.result())) {
+            //?} else {
+            /*if (!furnace.getIngredients().isEmpty() && furnace.getIngredients().getFirst().test(items[0])
                     && ItemStack.isSameItem(furnace.getResultItem(registries), recipe.result())) {
+            *///?}
                 return true;
             }
         }
@@ -183,7 +247,11 @@ public final class ExternalAlloying {
                     }
                 }
             }
-            Optional<Ingredient> ingredient = Ingredient.CODEC_NONEMPTY.parse(ops, ingredientJson).result();
+            //? if >=26.1 {
+            Optional<Ingredient> ingredient = Ingredient.CODEC.parse(ops, ingredientJson).result();
+            //?} else {
+            /*Optional<Ingredient> ingredient = Ingredient.CODEC_NONEMPTY.parse(ops, ingredientJson).result();
+            *///?}
             if (ingredient.isEmpty()) {
                 return List.of();
             }
@@ -215,7 +283,11 @@ public final class ExternalAlloying {
         }
         List<ItemStack> out = new ArrayList<>();
         for (JsonElement entry : entries) {
-            Optional<ItemStack> stack = ItemStack.STRICT_CODEC.parse(ops, entry).result();
+            //? if >=26.1 {
+            Optional<ItemStack> stack = ItemStack.CODEC.parse(ops, entry).result();
+            //?} else {
+            /*Optional<ItemStack> stack = ItemStack.STRICT_CODEC.parse(ops, entry).result();
+            *///?}
             if (stack.isEmpty() || stack.get().isEmpty()) {
                 return List.of();
             }

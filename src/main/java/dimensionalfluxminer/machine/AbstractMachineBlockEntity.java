@@ -1,5 +1,11 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.Transfer;
+import dimensionalfluxminer.machine.transfer.SlotStorage;
+//?}
 import dimensionalfluxminer.advancement.DfmAdvancements;
 import dimensionalfluxminer.compat.LogisticsNetworksCompat;
 import dimensionalfluxminer.content.DfmStateProperties;
@@ -34,9 +40,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+//? if <26.1 {
+/*import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
+*///?}
 
 /**
  * Shared behaviour of the single-block machines (Crusher and Electric Furnace): dynamic energy buffer, Rate 1..10,
@@ -45,7 +53,11 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  * whole-block redstone control (ignored / high / low) and external tick acceleration (each extra ticker call in the same game
  * time runs one more complete logical cycle).
  */
-public abstract class AbstractMachineBlockEntity extends BlockEntity implements MenuProvider {
+//? if >=26.1 {
+public abstract class AbstractMachineBlockEntity extends dimensionalfluxminer.content.TagBlockEntity implements MenuProvider {
+//?} else {
+/*public abstract class AbstractMachineBlockEntity extends BlockEntity implements MenuProvider {
+*///?}
     public static final int BUTTON_RATE_DOWN = 0;
     public static final int BUTTON_RATE_UP = 1;
     public static final int BUTTON_AUTO_INPUT = 2;
@@ -80,7 +92,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected final SideConfiguration sides;
     protected final LogicalTickCounter tickCounter = new LogicalTickCounter();
     private final AccelerationDemand accelerationDemand = new AccelerationDemand();
-    protected final ItemStackHandler upgradeSlot = new ItemStackHandler(1) {
+    //? if >=26.1 {
+    protected final SlotStorage upgradeSlot = new SlotStorage(1) {
+    //?} else {
+    /*protected final ItemStackHandler upgradeSlot = new ItemStackHandler(1) {
+    *///?}
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
             return stack.is(DfmItems.EFFICIENCY_UPGRADE.get());
@@ -114,7 +130,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     protected RedstoneMode redstoneMode = RedstoneMode.IGNORED;
     protected String status = "idle";
 
-    private final Map<Direction, IItemHandler> itemHandlers = new EnumMap<>(Direction.class);
+    //? if >=26.1 {
+    private final Map<Direction, ItemSlots> itemHandlers = new EnumMap<>(Direction.class);
+    //?} else {
+    /*private final Map<Direction, IItemHandler> itemHandlers = new EnumMap<>(Direction.class);
+    *///?}
     /** Network node item inputs sharing the dedicated lanes; rebuilt from the nodes, not saved. */
     private final NodeInputLanes nodeLanes = new NodeInputLanes();
     private int nodeLanesProfile = -1;
@@ -122,6 +142,18 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     private final CableActivity cableActivity = new CableActivity(RelativeFace.VALUES.length);
     /** ITEM faces whose route an active cable sets (bit per {@link RelativeFace}); not saved. */
     private int cableSides;
+    //? if >=26.1 {
+
+    /** What other blocks can change through the capabilities, put back if their transaction is cancelled. */
+    private final Transfer.Journal<Object[]> journal = new Transfer.Journal<>(
+            () -> new Object[] {energyBuffer.stored(), energyBuffer.debt(), snapshotContents()},
+            snapshot -> {
+                energyBuffer.setStored((long) snapshot[0]);
+                energyBuffer.setDebt((double) snapshot[1]);
+                restoreContents(snapshot[2]);
+                setChanged();
+            });
+    //?}
 
     protected AbstractMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, SideRules rules) {
         super(type, pos, state);
@@ -179,7 +211,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         return upgradeSlot.getStackInSlot(0).is(DfmItems.EFFICIENCY_UPGRADE.get());
     }
 
-    public ItemStackHandler upgradeSlot() {
+    //? if >=26.1 {
+    public SlotStorage upgradeSlot() {
+    //?} else {
+    /*public ItemStackHandler upgradeSlot() {
+    *///?}
         return upgradeSlot;
     }
 
@@ -211,7 +247,25 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, AbstractMachineBlockEntity be) {
         boolean normalCall = be.tickCounter.register(level.getGameTime());
+        if (normalCall) {
+            dimensionalfluxminer.compat.Ae2Compat.pull(be, be::energyFor);
+        }
         be.logicalCycle(normalCall);
+    //? if <26.1 {
+    /*}
+
+    /^* Breaking or unloading the block also drops what an optional energy network attached to it. ^/
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        dimensionalfluxminer.compat.Ae2Compat.release(this);
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        dimensionalfluxminer.compat.Ae2Compat.release(this);
+    *///?}
     }
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, AbstractMachineBlockEntity be) {
@@ -511,7 +565,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
      * noticed ({@link CablePortItemHandler}); a fixed face only when it has an item route. The {@code null} side is a
      * read-only view of every input and output (information tools such as Jade).
      */
-    public IItemHandler itemHandlerFor(Direction side) {
+    //? if >=26.1 {
+    public ItemSlots itemHandlerFor(Direction side) {
+    //?} else {
+    /*public IItemHandler itemHandlerFor(Direction side) {
+    *///?}
         if (side == null) {
             return ReadOnlyViews.items(createItemHandler(SideRoute.ITEM_INPUT_OUTPUT_ALL));
         }
@@ -527,7 +585,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     }
 
     /** The face's route handler plus probe slots for what the route lacks. */
-    private IItemHandler cablePort(RelativeFace face, SideRoute route) {
+    //? if >=26.1 {
+    private ItemSlots cablePort(RelativeFace face, SideRoute route) {
+    //?} else {
+    /*private IItemHandler cablePort(RelativeFace face, SideRoute route) {
+    *///?}
         SideRoute probe = route == SideRoute.NONE ? SideRoute.ITEM_INPUT_OUTPUT_ALL
                 : route.insertsItems() && !route.extractsItems() ? SideRoute.ITEM_OUTPUT
                 : route.extractsItems() && !route.insertsItems() ? SideRoute.ITEM_INPUT_ALL
@@ -546,14 +608,28 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
                 });
     }
 
-    protected abstract IItemHandler createItemHandler(SideRoute route);
+    //? if >=26.1 {
+    protected abstract ItemSlots createItemHandler(SideRoute route);
 
-    /** Energy input on configured faces; the {@code null} side is a read-only view of the buffer. */
-    public IEnergyStorage energyFor(Direction side) {
-        if (side == null) {
-            return ReadOnlyViews.energy(energy);
-        }
-        if (route(side, Transmission.ENERGY) != SideRoute.ENERGY_INPUT) {
+    public Transfer.Journal<Object[]> journal() {
+        return journal;
+    }
+
+    /** Copy of the items (and other contents) the capabilities reach. */
+    protected abstract Object snapshotContents();
+
+    protected abstract void restoreContents(Object snapshot);
+    //?} else {
+    /*protected abstract IItemHandler createItemHandler(SideRoute route);
+    *///?}
+
+    /** Energy input on configured faces. The Jade integration reads the buffer directly. */
+    //? if >=26.1 {
+    public EnergyStore energyFor(Direction side) {
+    //?} else {
+    /*public IEnergyStorage energyFor(Direction side) {
+    *///?}
+        if (side == null || route(side, Transmission.ENERGY) != SideRoute.ENERGY_INPUT) {
             return null;
         }
         return energy;
@@ -716,8 +792,13 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     // ---------------------------------------------------------------- persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveTag(tag, registries);
+    //?} else {
+    /*protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+    *///?}
         tag.putLong("energy", energyBuffer.stored());
         tag.putDouble("energy_debt", energyBuffer.debt());
         tag.putInt("rate", rate);
@@ -730,18 +811,35 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadTag(tag, registries);
+        energyBuffer.setStored(tag.getLongOr("energy", 0L));
+        energyBuffer.setDebt(tag.getDoubleOr("energy_debt", 0.0));
+        rate =RateScale.clampLevel(tag.contains("rate") ? tag.getIntOr("rate", 0) : RateScale.MIN_LEVEL);
+        autoInput = tag.getBooleanOr("auto_input", false);
+        autoEject = tag.getBooleanOr("auto_eject", false);
+    //?} else {
+    /*protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         energyBuffer.setStored(tag.getLong("energy"));
         energyBuffer.setDebt(tag.getDouble("energy_debt"));
         rate =RateScale.clampLevel(tag.contains("rate") ? tag.getInt("rate") : RateScale.MIN_LEVEL);
         autoInput = tag.getBoolean("auto_input");
         autoEject = tag.getBoolean("auto_eject");
+    *///?}
         // Saves from before the split: one Auto Eject moved items and fluids, so the fluids keep that setting.
-        autoEjectFluid = tag.contains("auto_eject_fluid") ? tag.getBoolean("auto_eject_fluid") : autoEject;
+        //? if >=26.1 {
+        autoEjectFluid = tag.contains("auto_eject_fluid") ? tag.getBooleanOr("auto_eject_fluid", false) : autoEject;
+        redstoneMode = RedstoneMode.byName(tag.getStringOr("redstone_mode", ""));
+        sides.load(tag.getCompoundOrEmpty("sides"));
+        upgradeSlot.deserializeNBT(registries, tag.getCompoundOrEmpty("upgrade"));
+        //?} else {
+        /*autoEjectFluid = tag.contains("auto_eject_fluid") ? tag.getBoolean("auto_eject_fluid") : autoEject;
         redstoneMode = RedstoneMode.byName(tag.getString("redstone_mode"));
         sides.load(tag.getCompound("sides"));
         upgradeSlot.deserializeNBT(registries, tag.getCompound("upgrade"));
+        *///?}
         itemHandlers.clear();
     }
 
@@ -753,7 +851,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    protected void readUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    //?} else {
+    /*public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    *///?}
         readClientData(tag, registries);
     }
 
@@ -762,13 +864,15 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
+    //? if <26.1 {
+    /*@Override
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
             readClientData(tag, registries);
         }
     }
+    *///?}
 
     /** Minimal render data for clients tracking the chunk (visual descriptors only). */
     protected void writeClientData(CompoundTag tag, HolderLookup.Provider registries) {
@@ -778,7 +882,11 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     }
 
     protected void syncToClients() {
-        if (level != null && !level.isClientSide) {
+        //? if >=26.1 {
+        if (level != null && !level.isClientSide()) {
+        //?} else {
+        /*if (level != null && !level.isClientSide) {
+        *///?}
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
@@ -800,4 +908,12 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     }
 
     protected abstract void collectDrops(List<ItemStack> drops);
+    //? if >=26.1 {
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        dropContents();
+    }
+    //?}
 }

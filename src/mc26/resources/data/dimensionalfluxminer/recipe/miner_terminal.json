@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CPC",
+    "PPP",
+    "CPC"
+  ],
+  "key": {
+    "C": "dimensionalfluxminer:steel_chassis",
+    "P": "minecraft:glass_pane"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:miner_terminal",
+    "count": 1
+  }
+}

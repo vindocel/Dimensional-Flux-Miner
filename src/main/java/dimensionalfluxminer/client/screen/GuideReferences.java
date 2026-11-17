@@ -17,7 +17,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
@@ -40,20 +44,17 @@ final class GuideReferences {
             Map.entry("materials.steel", List.of("ingot_steel", "electric_furnace", "dust_iron", "dust_coal", "grain_calcite", "slag")),
             Map.entry("materials.slag", List.of("slag", "slag_aggregate", "electric_furnace", "ingot_steel")),
             Map.entry("materials.parts", List.of("quantum_core", "miner_terminal")),
-            Map.entry("materials.dusts", List.of("mechanical_crusher")),
             Map.entry("crusher.ores", List.of("efficiency_upgrade")),
             Map.entry("crusher.dusts", List.of("minecraft:coal", "minecraft:calcite", "ingot_steel")),
             Map.entry("electric_furnace.modes", List.of("slag", "ingot_steel")),
             Map.entry("electric_furnace.bulk", List.of("efficiency_upgrade")),
             Map.entry("electric_furnace.xp", List.of("liquid_experience")),
-            Map.entry("electric_furnace.xp_pipes", List.of("liquid_experience")),
             Map.entry("electric_furnace.multiply", List.of("mechanical_crusher", "electric_furnace", "minecraft:iron_ingot", "minecraft:gold_ingot",
                     "minecraft:copper_ingot")),
             Map.entry("assembly.layers", List.of("dimensional_port", "steel_chassis", "miner_terminal", "quantum_core",
                     "reinforced_structural_glass", "ventilation_unit")),
             Map.entry("assembly.front", List.of("miner_terminal", "stabilized_dimensional_core")),
             Map.entry("assembly.build", List.of("miner_terminal")),
-            Map.entry("miner.matter", List.of("minecraft:obsidian")),
             Map.entry("miner.matter_ores", List.of("minecraft:diamond", "minecraft:emerald", "minecraft:ancient_debris")),
             Map.entry("miner.matter_upgrade", List.of("efficiency_upgrade")),
             Map.entry("miner.terminal", List.of("miner_terminal")),
@@ -63,6 +64,9 @@ final class GuideReferences {
             Map.entry("tanks.dual", List.of("dimensional_dual_tank")),
             Map.entry("tanks.personal", List.of("minecraft:diamond")),
             Map.entry("tanks.buckets", List.of("minecraft:bucket")),
+            Map.entry("tanks.bottles", List.of("minecraft:glass_bottle", "minecraft:experience_bottle", "liquid_experience")),
+            Map.entry("tanks.nautilus", List.of("minecraft:calcite", "minecraft:nautilus_shell", "minecraft:conduit", "liquid_experience")),
+            Map.entry("tanks.conversions", List.of("minecraft:sponge", "minecraft:wet_sponge", "minecraft:white_concrete_powder")),
             Map.entry("dimensions.overworld", List.of("basic_dimensional_core", "stabilized_dimensional_core")),
             Map.entry("dimensions.nether", List.of("stabilized_dimensional_core")),
             Map.entry("dimensions.end", List.of("stabilized_dimensional_core", "minecraft:end_stone", "minecraft:purpur_block")),
@@ -77,17 +81,29 @@ final class GuideReferences {
             Map.entry("blight.avoid", List.of("stabilized_dimensional_core")));
 
     /** Items already referenced in the chapter being built: only the first mention is marked. */
-    private static final Set<ResourceLocation> SEEN = new HashSet<>();
+    //? if >=26.1 {
+    private static final Set<Identifier> SEEN = new HashSet<>();
+    //?} else {
+    /*private static final Set<ResourceLocation> SEEN = new HashSet<>();
+    *///?}
 
     /** What a reference shows: an item, or a fluid that has no item of its own. */
     record Target(ItemStack stack, Fluid fluid, Component name) {
     }
 
     /** A referenced word on one line, in pixels from the start of the line. */
-    record Span(int start, int end, ResourceLocation id) {
+    //? if >=26.1 {
+    record Span(int start, int end, Identifier id) {
+    //?} else {
+    /*record Span(int start, int end, ResourceLocation id) {
+    *///?}
     }
 
-    private record Alias(String text, ResourceLocation id) {
+    //? if >=26.1 {
+    private record Alias(String text, Identifier id) {
+    //?} else {
+    /*private record Alias(String text, ResourceLocation id) {
+    *///?}
     }
 
     private GuideReferences() {
@@ -148,7 +164,11 @@ final class GuideReferences {
         }
         List<Alias> aliases = new ArrayList<>();
         for (String entry : allowed) {
-            ResourceLocation id = entry.contains(":") ? ResourceLocation.parse(entry) : DimensionalFluxMiner.id(entry);
+            //? if >=26.1 {
+            Identifier id = entry.contains(":") ? Identifier.parse(entry) : DimensionalFluxMiner.id(entry);
+            //?} else {
+            /*ResourceLocation id = entry.contains(":") ? ResourceLocation.parse(entry) : DimensionalFluxMiner.id(entry);
+            *///?}
             Target target = target(id);
             if (target == null) {
                 continue;
@@ -198,13 +218,25 @@ final class GuideReferences {
     }
 
     /** The item (or fluid) behind an id, or null when nothing is registered under it. */
-    static Target target(ResourceLocation id) {
+    //? if >=26.1 {
+    static Target target(Identifier id) {
+    //?} else {
+    /*static Target target(ResourceLocation id) {
+    *///?}
         if (BuiltInRegistries.ITEM.containsKey(id)) {
-            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id));
+            //? if >=26.1 {
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(id));
+            //?} else {
+            /*ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id));
+            *///?}
             return new Target(stack, null, stack.getHoverName());
         }
         if (BuiltInRegistries.FLUID.containsKey(id)) {
-            Fluid fluid = BuiltInRegistries.FLUID.get(id);
+            //? if >=26.1 {
+            Fluid fluid = BuiltInRegistries.FLUID.getValue(id);
+            //?} else {
+            /*Fluid fluid = BuiltInRegistries.FLUID.get(id);
+            *///?}
             return new Target(ItemStack.EMPTY, fluid, fluid.getFluidType().getDescription());
         }
         return null;
@@ -221,7 +253,11 @@ final class GuideReferences {
             String id = insertion != null && insertion.startsWith(PREFIX) ? insertion.substring(PREFIX.length()) : null;
             if (!Objects.equals(id, current[0])) {
                 if (current[0] != null) {
-                    out.add(new Span(start[0], x[0], ResourceLocation.parse(current[0])));
+                    //? if >=26.1 {
+                    out.add(new Span(start[0], x[0], Identifier.parse(current[0])));
+                    //?} else {
+                    /*out.add(new Span(start[0], x[0], ResourceLocation.parse(current[0])));
+                    *///?}
                 }
                 current[0] = id;
                 start[0] = x[0];
@@ -230,7 +266,11 @@ final class GuideReferences {
             return true;
         });
         if (current[0] != null) {
-            out.add(new Span(start[0], x[0], ResourceLocation.parse(current[0])));
+            //? if >=26.1 {
+            out.add(new Span(start[0], x[0], Identifier.parse(current[0])));
+            //?} else {
+            /*out.add(new Span(start[0], x[0], ResourceLocation.parse(current[0])));
+            *///?}
         }
         return out;
     }

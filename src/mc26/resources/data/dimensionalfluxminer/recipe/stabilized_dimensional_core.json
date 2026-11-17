@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BLB",
+    "LSL",
+    "BLB"
+  ],
+  "key": {
+    "B": "dimensionalfluxminer:basic_dimensional_core",
+    "L": "minecraft:lodestone",
+    "S": "minecraft:beacon"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:stabilized_dimensional_core",
+    "count": 1
+  }
+}

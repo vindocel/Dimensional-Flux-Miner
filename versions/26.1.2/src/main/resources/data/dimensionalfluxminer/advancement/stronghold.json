@@ -1,0 +1,17 @@
+{
+  "parent": "dimensionalfluxminer:reinforced_eye",
+  "display": {
+    "icon": { "id": "minecraft:end_portal_frame" },
+    "title": { "translate": "advancements.dimensionalfluxminer.stronghold.title" },
+    "description": { "translate": "advancements.dimensionalfluxminer.stronghold.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "followed_the_eye": { "trigger": "dimensionalfluxminer:event", "conditions": { "event": "reinforced_eye_used" } },
+    "inside_stronghold": { "trigger": "minecraft:location", "conditions": { "player": { "location": { "structures": "minecraft:stronghold" } } } }
+  },
+  "requirements": [ [ "followed_the_eye" ], [ "inside_stronghold" ] ]
+}

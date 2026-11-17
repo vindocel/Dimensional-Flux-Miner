@@ -1,6 +1,7 @@
 name: Publish Mod
 
-# Publication only occurs when a GitHub Release is published.
+# Publish a GitHub Release to all configured Minecraft versions, one version, or a selected group.
+# Every selected artifact must pass its build and GameTests before publishing starts.
 on:
   release:
     types: [published]
@@ -13,21 +14,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-publish:
-    name: Build, validate and publish
+  resolve:
+    name: Resolve release targets
     runs-on: ubuntu-latest
-    environment: management
-
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      release_type: ${{ steps.release.outputs.release_type }}
+      matrix: ${{ steps.release.outputs.matrix }}
     steps:
       - name: Checkout exact release tag
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
-          # All branches, to check that the tag belongs to the release target branch.
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Resolve tag, release channel, Minecraft and branch
+      - name: Resolve tag, release channel and Minecraft versions
         id: release
         shell: bash
         env:
@@ -36,11 +38,27 @@ jobs:
           TARGET: ${{ github.event.release.target_commitish }}
         run: bash scripts/validate-release.sh tag
 
-      - name: Set up Java 21
+  build:
+    name: Build and validate ${{ matrix.minecraft }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
+    steps:
+      - name: Checkout exact release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Set up Java
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: |
+            21
+            25
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -50,22 +68,69 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Clean build
+      - name: Clean build of the selected Minecraft version
         env:
-          RELEASE_VERSION: ${{ steps.release.outputs.version }}
-        run: ./gradlew clean build "-Prelease_version=$RELEASE_VERSION" --console=plain
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+          MINECRAFT: ${{ matrix.minecraft }}
+        run: ./gradlew ":$MINECRAFT:clean" ":$MINECRAFT:build" "-Prelease_version=$RELEASE_VERSION" --console=plain
 
       - name: GameTests
         shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+          MINECRAFT: ${{ matrix.minecraft }}
         run: |
           set -euo pipefail
-          ./gradlew runGameTestServer --console=plain | tee gametest.log
+          ./gradlew ":$MINECRAFT:runGameTestServer" "-Prelease_version=$RELEASE_VERSION" --console=plain | tee gametest.log
           grep -q "required tests passed" gametest.log
 
       - name: Validate artifact
+        id: artifact
         shell: bash
         env:
-          VERSION: ${{ steps.release.outputs.version }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          MINECRAFT: ${{ matrix.minecraft }}
+        run: bash scripts/validate-release.sh artifact
+
+      - name: Save validated artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.minecraft }}
+          path: ${{ steps.artifact.outputs.jar }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish ${{ matrix.publish_version }}
+    needs: [resolve, build]
+    runs-on: ubuntu-latest
+    environment: management
+    concurrency:
+      group: stores-${{ matrix.publish_version }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
+    steps:
+      - name: Checkout exact release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Download validated artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ matrix.minecraft }}
+          path: versions/${{ matrix.minecraft }}/build/libs
+
+      - name: Validate downloaded artifact
+        id: artifact
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          MINECRAFT: ${{ matrix.minecraft }}
         run: bash scripts/validate-release.sh artifact
 
       - name: Verify publishing configuration
@@ -84,20 +149,46 @@ jobs:
             fi
           done
 
-      - name: Publish to CurseForge and Modrinth
+      - name: Check existing store versions
+        id: existing
+        env:
+          CURSEFORGE_ID: ${{ vars.ID_DO_CURSEFORGE }}
+          MODRINTH_ID: ${{ vars.ID_DO_MODRINTH }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          MINECRAFT: ${{ matrix.minecraft }}
+        run: python3 scripts/check-published.py
+
+      - name: Publish to CurseForge
+        if: steps.existing.outputs.curseforge == 'true'
         uses: Kira-NT/mc-publish@v3.3.1
         with:
           curseforge-id: ${{ vars.ID_DO_CURSEFORGE }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          modrinth-id: ${{ vars.ID_DO_MODRINTH }}
-          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: build/libs/!(*-@(dev|sources|javadoc)).jar
-          name: ${{ github.event.release.name }}
-          version: ${{ github.event.release.tag_name }}
-          version-type: ${{ steps.release.outputs.release_type }}
+          files: ${{ steps.artifact.outputs.jar }}
+          name: ${{ matrix.publish_version }}
+          version: ${{ matrix.publish_version }}
+          version-type: ${{ needs.resolve.outputs.release_type }}
           changelog: ${{ github.event.release.body }}
           loaders: neoforge
-          game-versions: ${{ steps.release.outputs.minecraft_version }}
+          game-versions: ${{ matrix.minecraft }}
           game-version-filter: none
-          java: 21
+          java: ${{ matrix.java_version }}
+          fail-mode: fail
+
+      - name: Publish to Modrinth
+        if: steps.existing.outputs.modrinth == 'true'
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          modrinth-id: ${{ vars.ID_DO_MODRINTH }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: ${{ steps.artifact.outputs.jar }}
+          name: ${{ matrix.publish_version }}
+          version: ${{ matrix.publish_version }}
+          version-type: ${{ needs.resolve.outputs.release_type }}
+          changelog: ${{ github.event.release.body }}
+          loaders: neoforge
+          game-versions: ${{ matrix.minecraft }}
+          game-version-filter: none
+          java: ${{ matrix.java_version }}
           fail-mode: fail

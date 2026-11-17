@@ -77,6 +77,24 @@ public interface SideRules {
     };
 
     List<SideRoute> FLUID_SINGLE = List.of(SideRoute.NONE, SideRoute.FLUID_INPUT, SideRoute.FLUID_OUTPUT, SideRoute.FLUID_INPUT_OUTPUT);
+    List<SideRoute> CONTAINERS = List.of(SideRoute.NONE,
+            SideRoute.CONTAINER_DRAIN_INPUT, SideRoute.CONTAINER_DRAIN_OUTPUT, SideRoute.CONTAINER_DRAIN_BOTH,
+            SideRoute.CONTAINER_FILL_INPUT, SideRoute.CONTAINER_FILL_OUTPUT, SideRoute.CONTAINER_FILL_BOTH);
+    /** The ordinary single tank also exposes its two container slots. */
+    SideRules TANK_CONTAINERS = new SideRules() {
+        @Override
+        public List<SideRoute> allowed(RelativeFace face, Transmission transmission, int profile) {
+            if (face == RelativeFace.FRONT) {
+                return List.of();
+            }
+            return transmission == Transmission.ITEM ? CONTAINERS : TANK_SINGLE.allowed(face, transmission, profile);
+        }
+
+        @Override
+        public SideRoute defaultRoute(RelativeFace face, Transmission transmission, int profile) {
+            return TANK_SINGLE.defaultRoute(face, transmission, profile);
+        }
+    };
     List<SideRoute> FLUID_DUAL = List.of(SideRoute.NONE, SideRoute.FLUID_A_INPUT, SideRoute.FLUID_A_OUTPUT, SideRoute.FLUID_A_INPUT_OUTPUT,
             SideRoute.FLUID_B_INPUT, SideRoute.FLUID_B_OUTPUT, SideRoute.FLUID_B_INPUT_OUTPUT);
 

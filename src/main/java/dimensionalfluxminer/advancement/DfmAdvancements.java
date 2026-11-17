@@ -7,7 +7,11 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+//? if <26.3 {
 import net.minecraft.advancements.CriterionTrigger;
+//?} else {
+/*import net.minecraft.advancements.triggers.CriterionTrigger;
+*///?}
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
@@ -33,6 +37,7 @@ public final class DfmAdvancements {
     public static final String WARDEN_HEALED = "warden_healed";
     public static final String WORLD_DRAINED = "world_drained";
     public static final String SLAG_RECOVERED = "slag_recovered";
+    public static final String NAUTILUS_SHELL_CREATED = "nautilus_shell_created";
     /** A Reinforced Eye of Ender flew towards a stronghold (the advancement also needs the player inside one). */
     public static final String REINFORCED_EYE_USED = "reinforced_eye_used";
 

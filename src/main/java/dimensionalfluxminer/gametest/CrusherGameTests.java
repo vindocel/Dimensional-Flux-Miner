@@ -1,5 +1,10 @@
 package dimensionalfluxminer.gametest;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.EnergyStore;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.Transfer;
+//?}
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.DfmStateProperties;
 import dimensionalfluxminer.content.MachineState;
@@ -15,20 +20,26 @@ import dimensionalfluxminer.registry.DfmItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.gametest.framework.GameTest;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+//? if >=26.1 {
+
+//?} else {
+/*import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.items.IItemHandler;
 
 @GameTestHolder(DimensionalFluxMiner.MOD_ID)
 @PrefixGameTestTemplate(false)
+*///?}
 public final class CrusherGameTests {
     private static final BlockPos MACHINE = new BlockPos(2, 1, 2);
 
@@ -38,7 +49,11 @@ public final class CrusherGameTests {
     static MechanicalCrusherBlockEntity place(GameTestHelper helper) {
         BlockState state = DfmBlocks.MECHANICAL_CRUSHER.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
         helper.setBlock(MACHINE, state);
-        MechanicalCrusherBlockEntity be = helper.getBlockEntity(MACHINE);
+        //? if >=26.1 {
+        MechanicalCrusherBlockEntity be = TestSupport.blockEntity(helper, MACHINE);
+        //?} else {
+        /*MechanicalCrusherBlockEntity be = helper.getBlockEntity(MACHINE);
+        *///?}
         be.setRate(10);
         be.energyBuffer().setTarget(be.effectivePowerLimit() * 10);
         be.energyBuffer().setStored(be.effectivePowerLimit() * 10);
@@ -52,12 +67,21 @@ public final class CrusherGameTests {
     @GameTest(template = "empty_small")
     public static void recipeOptionsStartWithTheDefault(GameTestHelper helper) {
         var level = helper.getLevel();
-        var manager = level.getRecipeManager();
+        //? if <26.1 {
+        /*var manager = level.getRecipeManager();
+        *///?}
         java.util.List<ItemStack> inputs = new java.util.ArrayList<>();
-        manager.getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.CRUSHING.get())
+        //? if >=26.1 {
+        dimensionalfluxminer.recipe.Recipes.byType(level, dimensionalfluxminer.registry.DfmRecipes.CRUSHING.get())
+                .forEach(h -> inputs.addAll(java.util.List.of(dimensionalfluxminer.recipe.Recipes.stacks(h.value().ingredient()))));
+        dimensionalfluxminer.recipe.Recipes.byType(level, dimensionalfluxminer.registry.DfmRecipes.ORE_CRUSHING.get())
+                .forEach(h -> inputs.addAll(java.util.List.of(dimensionalfluxminer.recipe.Recipes.stacks(h.value().ingredient()))));
+        //?} else {
+        /*manager.getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.CRUSHING.get())
                 .forEach(h -> inputs.addAll(java.util.List.of(h.value().ingredient().getItems())));
         manager.getAllRecipesFor(dimensionalfluxminer.registry.DfmRecipes.ORE_CRUSHING.get())
                 .forEach(h -> inputs.addAll(java.util.List.of(h.value().ingredient().getItems())));
+        *///?}
         helper.assertFalse(inputs.isEmpty(), "the mod ships explicit crushing recipes");
         for (ItemStack input : inputs) {
             for (boolean upgrade : new boolean[] {false, true}) {
@@ -130,20 +154,37 @@ public final class CrusherGameTests {
     @GameTest(template = "empty_small")
     public static void metalDustsSmeltIntoTheInstalledIngots(GameTestHelper helper) {
         var level = helper.getLevel();
-        var recipes = level.getRecipeManager();
+        //? if >=26.1 {
+        var recipes = dimensionalfluxminer.recipe.Recipes.map(level);
+        //?} else {
+        /*var recipes = level.getRecipeManager();
+        *///?}
         for (String metal : java.util.List.of("iron", "gold", "copper", "tin", "lead", "silver", "uranium", "aluminum", "nickel", "osmium", "zinc")) {
             var tag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
-                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "ingots/" + metal));
+                    //? if >=26.1 {
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "ingots/" + metal));
+            boolean hasIngot = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(tag).map(set -> set.size() > 0).orElse(false);
+                    //?} else {
+                    /*net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "ingots/" + metal));
             boolean hasIngot = net.minecraft.core.registries.BuiltInRegistries.ITEM.getTag(tag).map(set -> set.size() > 0).orElse(false);
+                    *///?}
             var input = new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(DfmItems.DUSTS.get(metal).get()));
             for (var type : java.util.List.of(net.minecraft.world.item.crafting.RecipeType.SMELTING, net.minecraft.world.item.crafting.RecipeType.BLASTING)) {
-                var recipe = recipes.getRecipeFor(type, input, level);
+                //? if >=26.1 {
+                var recipe = recipes.getRecipesFor(type, input, level).findFirst();
+                //?} else {
+                /*var recipe = recipes.getRecipeFor(type, input, level);
+                *///?}
                 if (!hasIngot) {
                     helper.assertTrue(recipe.isEmpty(), metal + " dust has no " + type + " recipe without an ingot");
                     continue;
                 }
                 helper.assertTrue(recipe.isPresent(), metal + " dust has a " + type + " recipe");
-                ItemStack result = recipe.get().value().assemble(input, level.registryAccess());
+                //? if >=26.1 {
+                ItemStack result = recipe.get().value().assemble(input);
+                //?} else {
+                /*ItemStack result = recipe.get().value().assemble(input, level.registryAccess());
+                *///?}
                 helper.assertTrue(result.is(tag), metal + " dust " + type + " gives a c:ingots/" + metal + " item, got " + result);
             }
         }
@@ -177,11 +218,25 @@ public final class CrusherGameTests {
         // The configurable faces have an item handler for the cables to find, but with no route it moves nothing.
         Direction front = be.facing();
         be.output().insert(new ItemStack(Items.GRAVEL), 4, false);
+        //? if >=26.1 {
+        helper.assertTrue(Transfer.energy(helper.getLevel(), abs, null) == null, "no unsided energy view");
+        //?} else {
+        /*helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, null) == null,
+                "no unsided energy view");
+        *///?}
         for (Direction dir : Direction.values()) {
             boolean energyExpected = dir != front && dir != Direction.UP;
-            helper.assertTrue((helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, dir) != null) == energyExpected,
+            //? if >=26.1 {
+            helper.assertTrue((Transfer.energy(helper.getLevel(), abs, dir) != null) == energyExpected,
+            //?} else {
+            /*helper.assertTrue((helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, dir) != null) == energyExpected,
+            *///?}
                     "default energy on " + dir);
-            IItemHandler items = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, dir);
+            //? if >=26.1 {
+            ItemSlots items = Transfer.items(helper.getLevel(), abs, dir);
+            //?} else {
+            /*IItemHandler items = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, dir);
+            *///?}
             helper.assertTrue((items != null) == (dir != front), "item handler on " + dir);
             if (items != null && dir != Direction.UP) {
                 for (int slot = 0; slot < items.getSlots(); slot++) {
@@ -191,7 +246,11 @@ public final class CrusherGameTests {
             }
         }
         be.output().clear();
-        IItemHandler top = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, Direction.UP);
+        //? if >=26.1 {
+        ItemSlots top = Transfer.items(helper.getLevel(), abs, Direction.UP);
+        //?} else {
+        /*IItemHandler top = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, Direction.UP);
+        *///?}
         helper.assertTrue(top.insertItem(0, new ItemStack(Items.COAL), true).isEmpty(), "top accepts inputs");
         helper.assertFalse(be.configureSide(RelativeFace.UP, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "top never outputs");
         helper.assertFalse(be.configureSide(RelativeFace.FRONT, Transmission.ITEM, SideRoute.ITEM_INPUT_ALL), "front is locked");
@@ -200,8 +259,13 @@ public final class CrusherGameTests {
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.ITEM, SideRoute.ITEM_INPUT_OUTPUT_ALL), "left item route");
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.ENERGY, SideRoute.ENERGY_INPUT), "left energy route");
 
-        IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, left);
+        //? if >=26.1 {
+        ItemSlots handler = Transfer.items(helper.getLevel(), abs, left);
+        EnergyStore energy = Transfer.energy(helper.getLevel(), abs, left);
+        //?} else {
+        /*IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, left);
         IEnergyStorage energy = helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, left);
+        *///?}
         helper.assertTrue(handler != null && energy != null, "left exposes item + energy at once");
         helper.assertTrue(energy.canReceive() && !energy.canExtract(), "energy is input-only");
         // Invalid process inputs are rejected; the upgrade is never swallowed as input.
@@ -224,8 +288,13 @@ public final class CrusherGameTests {
         BlockPos abs = helper.absolutePos(MACHINE);
         Direction left = RelativeFace.LEFT.toDirection(be.facing());
         Direction back = RelativeFace.BACK.toDirection(be.facing());
-        helper.assertTrue(pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, left)) == 0, "nothing leaves before the route");
+        //? if >=26.1 {
+        helper.assertTrue(pull(Transfer.items(level, abs, left)) == 0, "nothing leaves before the route");
+        helper.assertTrue(push(Transfer.items(level, abs, back), new ItemStack(Items.COAL)) == 0,
+        //?} else {
+        /*helper.assertTrue(pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, left)) == 0, "nothing leaves before the route");
         helper.assertTrue(push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, back), new ItemStack(Items.COAL)) == 0,
+        *///?}
                 "nothing enters before the route");
         helper.runAfterDelay(20, () -> {
             helper.assertTrue(be.route(RelativeFace.LEFT, Transmission.ITEM) == SideRoute.ITEM_OUTPUT, "the pulling cable got the output");
@@ -234,8 +303,13 @@ public final class CrusherGameTests {
             helper.assertTrue(be.cableSides() == both && be.sides().locked(RelativeFace.LEFT, Transmission.ITEM)
                     && be.sides().locked(RelativeFace.BACK, Transmission.ITEM), "locked while the cables are active");
             helper.assertFalse(be.sides().cycle(RelativeFace.LEFT, Transmission.ITEM, be.itemProfile(), true), "a locked face does not cycle");
-            helper.assertTrue(pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, left)) > 0, "the pulling cable now gets items");
+            //? if >=26.1 {
+            helper.assertTrue(pull(Transfer.items(level, abs, left)) > 0, "the pulling cable now gets items");
+            helper.assertTrue(push(Transfer.items(level, abs, back), new ItemStack(Items.COAL)) > 0,
+            //?} else {
+            /*helper.assertTrue(pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, left)) > 0, "the pulling cable now gets items");
             helper.assertTrue(push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, back), new ItemStack(Items.COAL)) > 0,
+            *///?}
                     "the pushing cable now feeds the input");
         });
         // Quiet cables free the faces; the routes stay.
@@ -248,7 +322,11 @@ public final class CrusherGameTests {
     }
 
     /** What a pulling cable takes from every slot of a face. */
-    static int pull(IItemHandler handler) {
+    //? if >=26.1 {
+    static int pull(ItemSlots handler) {
+    //?} else {
+    /*static int pull(IItemHandler handler) {
+    *///?}
         int taken = 0;
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             taken += handler.extractItem(slot, 64, false).getCount();
@@ -257,7 +335,11 @@ public final class CrusherGameTests {
     }
 
     /** What a pushing cable puts into a face, trying every slot. */
-    static int push(IItemHandler handler, ItemStack stack) {
+    //? if >=26.1 {
+    static int push(ItemSlots handler, ItemStack stack) {
+    //?} else {
+    /*static int push(IItemHandler handler, ItemStack stack) {
+    *///?}
         ItemStack left = stack.copy();
         for (int slot = 0; slot < handler.getSlots() && !left.isEmpty(); slot++) {
             left = handler.insertItem(slot, left, false);
@@ -339,13 +421,33 @@ public final class CrusherGameTests {
         // Every ore feature, vanilla or with its own configuration type from another mod, yields its target blocks.
         var registries = helper.getLevel().registryAccess();
         var ops = net.minecraft.resources.RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, registries);
-        var features = registries.registryOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE);
+        //? if =26.1.2 {
+        var features = registries.lookupOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE);
+        //?} else if >=26.3 {
+        /*var features = registries.lookupOrThrow(net.minecraft.core.registries.Registries.FEATURE);
+        *///?} else {
+        /*var features = registries.registryOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE);
+        *///?}
         int checked = 0;
-        for (var entry : features.entrySet()) {
+        //? if =26.1.2 {
+        for (var entry : features.listElements().toList()) {
+            var feature = entry.value();
+            boolean declaresTargets = net.minecraft.world.level.levelgen.feature.ConfiguredFeature.DIRECT_CODEC.encodeStart(ops, feature).result()
+                    .filter(json -> json instanceof com.google.gson.JsonObject root
+                            && (root.get("config") instanceof com.google.gson.JsonObject nested ? nested : root).get("targets") instanceof com.google.gson.JsonArray targets && !targets.isEmpty()
+        //?} else if >=26.3 {
+        /*for (var entry : features.listElements().toList()) {
+            var feature = entry.value();
+            boolean declaresTargets = net.minecraft.world.level.levelgen.feature.Feature.DIRECT_CODEC.encodeStart(ops, feature).result()
+                    .filter(json -> json instanceof com.google.gson.JsonObject root
+                            && (root.get("config") instanceof com.google.gson.JsonObject nested ? nested : root).get("targets") instanceof com.google.gson.JsonArray targets && !targets.isEmpty()
+        *///?} else {
+        /*for (var entry : features.entrySet()) {
             var feature = entry.getValue();
             boolean declaresTargets = net.minecraft.world.level.levelgen.feature.ConfiguredFeature.DIRECT_CODEC.encodeStart(ops, feature).result()
                     .filter(json -> json.isJsonObject() && json.getAsJsonObject().get("config") instanceof com.google.gson.JsonObject config
                             && config.get("targets") instanceof com.google.gson.JsonArray targets && !targets.isEmpty()
+        *///?}
                             && targets.get(0) instanceof com.google.gson.JsonObject first && first.has("state"))
                     .isPresent();
             if (!declaresTargets) {
@@ -353,7 +455,11 @@ public final class CrusherGameTests {
             }
             var shape = dimensionalfluxminer.miner.profile.ProfileBuilder.oreShape(feature, ops);
             helper.assertTrue(shape.isPresent() && !shape.get().targets().isEmpty() && shape.get().size() > 0,
-                    "ore targets of " + entry.getKey().location());
+                    //? if >=26.1 {
+                    "ore targets of " + entry.key().identifier());
+                    //?} else {
+                    /*"ore targets of " + entry.getKey().location());
+                    *///?}
             checked++;
         }
         helper.assertTrue(checked > 0, "vanilla ore features checked");
@@ -429,13 +535,24 @@ public final class CrusherGameTests {
             be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT);
             CompoundTag data = new CompoundTag();
             be.writeMenuData(data, helper.getLevel().registryAccess());
-            helper.assertTrue(data.getBoolean("auto_input") == step[0] && data.getBoolean("auto_eject") == step[1],
+            //? if >=26.1 {
+            helper.assertTrue(data.getBooleanOr("auto_input", false) == step[0] && data.getBooleanOr("auto_eject", false) == step[1],
+            //?} else {
+            /*helper.assertTrue(data.getBoolean("auto_input") == step[0] && data.getBoolean("auto_eject") == step[1],
+            *///?}
                     "automation cycle step " + java.util.Arrays.toString(step));
         }
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_IO_PREVIOUS);
         CompoundTag back = new CompoundTag();
         be.writeMenuData(back, helper.getLevel().registryAccess());
-        helper.assertTrue(back.getBoolean("auto_input") && back.getBoolean("auto_eject"), "OFF goes back to input + eject");
+        //? if >=26.1 {
+        helper.assertTrue(back.getBooleanOr("auto_input", false) && back.getBooleanOr("auto_eject", false), "OFF goes back to input + eject");
+        //?} else {
+        /*helper.assertTrue(back.getBoolean("auto_input") && back.getBoolean("auto_eject"), "OFF goes back to input + eject");
+        *///?}
         helper.succeed();
     }
 }
+//? if <26.1 {
+
+//?}

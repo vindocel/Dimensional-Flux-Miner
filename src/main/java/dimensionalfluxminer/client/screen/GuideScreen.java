@@ -1,23 +1,44 @@
 package dimensionalfluxminer.client.screen;
 
+//? if >=26.1 {
+import net.minecraft.client.renderer.RenderPipelines;
+//?}
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.List;
-import net.minecraft.Util;
+//? if >=26.1 {
+import net.minecraft.util.Util;
+//?} else {
+/*import net.minecraft.Util;
+*///?}
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+//? if >=26.1 {
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
-import org.lwjgl.glfw.GLFW;
+//? if >=26.1 {
+import com.mojang.blaze3d.platform.InputConstants;
+//?} else {
+/*import org.lwjgl.glfw.GLFW;
+*///?}
 
 /**
  * The Dimensional Flux Guide as an open book in the colors of its model: steel covers, cream pages, a violet ribbon
@@ -56,10 +77,17 @@ public class GuideScreen extends Screen {
     private static final int VIOLET_LIGHT = 0xFFC6A5FF;
 
     private static final long TURN_MS = 380;
-    private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
+    //? if >=26.1 {
+    private static final Identifier PAGE_FORWARD = Identifier.withDefaultNamespace("widget/page_forward");
+    private static final Identifier PAGE_FORWARD_HOVER = Identifier.withDefaultNamespace("widget/page_forward_highlighted");
+    private static final Identifier PAGE_BACKWARD = Identifier.withDefaultNamespace("widget/page_backward");
+    private static final Identifier PAGE_BACKWARD_HOVER = Identifier.withDefaultNamespace("widget/page_backward_highlighted");
+    //?} else {
+    /*private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HOVER = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
     private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");
     private static final ResourceLocation PAGE_BACKWARD_HOVER = ResourceLocation.withDefaultNamespace("widget/page_backward_highlighted");
+    *///?}
     private static final int ARROW_W = 23;
     private static final int ARROW_H = 13;
 
@@ -79,7 +107,11 @@ public class GuideScreen extends Screen {
     private GuideElement dragTarget;
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private List<Component> hoveredText = List.of();
-    private ResourceLocation hoveredReference;
+    //? if >=26.1 {
+    private Identifier hoveredReference;
+    //?} else {
+    /*private ResourceLocation hoveredReference;
+    *///?}
 
     public GuideScreen() {
         super(Component.translatable("item.dimensionalfluxminer.guide_book"));
@@ -127,23 +159,6 @@ public class GuideScreen extends Screen {
         turnFrom = -1;
     }
 
-    /** Boxes opened to show their full text (see {@link GuideElements.Expandable}), kept while the game runs. */
-    private static final java.util.Set<String> EXPANDED = new java.util.HashSet<>();
-
-    static boolean expanded(String key) {
-        return EXPANDED.contains(key);
-    }
-
-    /** Opens or closes a box and lays the book out again on the same spread (the change only adds or removes text). */
-    void toggleExpanded(String key) {
-        if (!EXPANDED.remove(key)) {
-            EXPANDED.add(key);
-        }
-        playClick();
-        book = GuideBook.build(this, GuideContent.chapters(), contentW, contentH);
-        spread = Mth.clamp(spread, 0, book.spreads() - 1);
-    }
-
     private int leftPageX() {
         return bookX + COVER;
     }
@@ -181,8 +196,13 @@ public class GuideScreen extends Screen {
     // ------------------------------------------------------------------ rendering
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    //? if >=26.1 {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
+    //?} else {
+    /*public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
+    *///?}
         hoveredStack = ItemStack.EMPTY;
         hoveredText = List.of();
         hoveredReference = null;
@@ -207,14 +227,26 @@ public class GuideScreen extends Screen {
         if (reference != null) {
             renderReference(g, reference, mouseX, mouseY);
         } else if (!hoveredStack.isEmpty()) {
-            g.renderTooltip(font, hoveredStack, mouseX, mouseY);
+            //? if >=26.1 {
+            g.setTooltipForNextFrame(font, hoveredStack, mouseX, mouseY);
+            //?} else {
+            /*g.renderTooltip(font, hoveredStack, mouseX, mouseY);
+            *///?}
         } else if (!hoveredText.isEmpty()) {
-            g.renderComponentTooltip(font, hoveredText, mouseX, mouseY);
+            //? if >=26.1 {
+            g.setComponentTooltipForNextFrame(font, hoveredText, mouseX, mouseY);
+            //?} else {
+            /*g.renderComponentTooltip(font, hoveredText, mouseX, mouseY);
+            *///?}
         }
     }
 
     /** Steel covers with beveled edges, reinforced corners, rivets and the spine between them, and the page block. */
-    private void renderCover(GuiGraphics g) {
+    //? if >=26.1 {
+    private void renderCover(GuiGraphicsExtractor g) {
+    //?} else {
+    /*private void renderCover(GuiGraphics g) {
+    *///?}
         int x0 = bookX;
         int y0 = bookY;
         int x1 = bookX + bookW;
@@ -243,7 +275,11 @@ public class GuideScreen extends Screen {
     }
 
     /** A page: paper with the shade of the spine, its elements and its number. */
-    private void renderPage(GuiGraphics g, int index, int x, boolean left, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    private void renderPage(GuiGraphicsExtractor g, int index, int x, boolean left, int mouseX, int mouseY) {
+    //?} else {
+    /*private void renderPage(GuiGraphics g, int index, int x, boolean left, int mouseX, int mouseY) {
+    *///?}
         int y = pageY();
         g.fill(x, y, x + pageW, y + pageH, PAPER);
         g.fill(left ? x : x + pageW - 1, y, left ? x + 1 : x + pageW, y + pageH, PAPER_LIGHT);
@@ -266,7 +302,11 @@ public class GuideScreen extends Screen {
         }
         String number = Integer.toString(index + 1);
         int footerY = y + pageH - 11;
-        g.drawString(font, number, left ? x + PAD_X : x + pageW - PAD_X - font.width(number), footerY, GuideElements.MUTED, false);
+        //? if >=26.1 {
+        g.text(font, number, left ? x + PAD_X : x + pageW - PAD_X - font.width(number), footerY, GuideElements.MUTED, false);
+        //?} else {
+        /*g.drawString(font, number, left ? x + PAD_X : x + pageW - PAD_X - font.width(number), footerY, GuideElements.MUTED, false);
+        *///?}
         if (page.chapter() >= 0) {
             Component name = Component.translatable("guide.dimensionalfluxminer.chapter." + book.chapters.get(page.chapter()).id());
             int nameW = contentW - 2 * (font.width(number) + 6);
@@ -278,7 +318,11 @@ public class GuideScreen extends Screen {
      * The turning sheet: forward, the right page lifts from the spine and lands on the left showing its back (the
      * target's left page); backward, the opposite. Underneath, the target pages are already in place.
      */
-    private void renderTurn(GuiGraphics g, float progress) {
+    //? if >=26.1 {
+    private void renderTurn(GuiGraphicsExtractor g, float progress) {
+    //?} else {
+    /*private void renderTurn(GuiGraphics g, float progress) {
+    *///?}
         boolean forward = turnTo > turnFrom;
         float eased = (float) (0.5 - 0.5 * Math.cos(Math.PI * progress));
         float angle = eased * 180.0F;
@@ -306,31 +350,55 @@ public class GuideScreen extends Screen {
         float squash = Math.max(0.02F, Math.abs(cos));
         float lift = 1.0F + 0.04F * Mth.sin(angle * Mth.DEG_TO_RAD);
         int sx = spineX();
-        g.pose().pushPose();
+        //? if >=26.1 {
+        g.pose().pushMatrix();
+        g.pose().translate(sx, pageY() + pageH / 2.0F);
+        g.pose().scale(squash, lift);
+        g.pose().translate(-sx, -(pageY() + pageH / 2.0F));
+        //?} else {
+        /*g.pose().pushPose();
         g.pose().translate(sx, pageY() + pageH / 2.0F, 300);
         g.pose().scale(squash, lift, 1.0F);
         g.pose().translate(-sx, -(pageY() + pageH / 2.0F), 0);
+        *///?}
         renderPage(g, pageIndex, onLeft ? leftPageX() : rightPageX(), onLeft, -1, -1);
         // The sheet darkens as it stands up.
         int shade = (int) (0x70 * (1.0F - squash));
         int px = onLeft ? leftPageX() : rightPageX();
         g.fill(px, pageY(), px + pageW, pageY() + pageH, shade << 24 | 0x22232F);
-        g.pose().popPose();
+        //? if >=26.1 {
+        g.pose().popMatrix();
+        //?} else {
+        /*g.pose().popPose();
+        *///?}
     }
 
     /** The violet ribbon hanging over the right page: back to the contents. */
-    private void renderRibbon(GuiGraphics g, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    private void renderRibbon(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+    //?} else {
+    /*private void renderRibbon(GuiGraphics g, int mouseX, int mouseY) {
+    *///?}
         int x = ribbonX();
         int y = bookY;
         boolean hover = overRibbon(mouseX, mouseY);
         int length = hover ? 22 : 18;
-        g.pose().pushPose();
+        //? if >=26.1 {
+        g.pose().pushMatrix();
+        g.pose().translate(0, 0);
+        //?} else {
+        /*g.pose().pushPose();
         g.pose().translate(0, 0, 400);
+        *///?}
         g.fill(x, y, x + 6, y + length, VIOLET);
         g.fill(x + 1, y, x + 2, y + length, VIOLET_LIGHT);
         g.fill(x, y + length, x + 2, y + length + 2, VIOLET);
         g.fill(x + 4, y + length, x + 6, y + length + 2, VIOLET);
-        g.pose().popPose();
+        //? if >=26.1 {
+        g.pose().popMatrix();
+        //?} else {
+        /*g.pose().popPose();
+        *///?}
         if (hover) {
             hoveredText = List.of(Component.translatable("guide.dimensionalfluxminer.index.back"));
         }
@@ -344,14 +412,26 @@ public class GuideScreen extends Screen {
         return mouseX >= ribbonX() && mouseX < ribbonX() + 6 && mouseY >= bookY && mouseY < bookY + 24;
     }
 
-    private void renderArrows(GuiGraphics g, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    private void renderArrows(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+    //?} else {
+    /*private void renderArrows(GuiGraphics g, int mouseX, int mouseY) {
+    *///?}
         if (spread > 0) {
             boolean hover = overBack(mouseX, mouseY);
-            g.blitSprite(hover ? PAGE_BACKWARD_HOVER : PAGE_BACKWARD, backX(), arrowY(), ARROW_W, ARROW_H);
+            //? if >=26.1 {
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, hover ? PAGE_BACKWARD_HOVER : PAGE_BACKWARD, backX(), arrowY(), ARROW_W, ARROW_H);
+            //?} else {
+            /*g.blitSprite(hover ? PAGE_BACKWARD_HOVER : PAGE_BACKWARD, backX(), arrowY(), ARROW_W, ARROW_H);
+            *///?}
         }
         if (spread < book.spreads() - 1) {
             boolean hover = overForward(mouseX, mouseY);
-            g.blitSprite(hover ? PAGE_FORWARD_HOVER : PAGE_FORWARD, forwardX(), arrowY(), ARROW_W, ARROW_H);
+            //? if >=26.1 {
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, hover ? PAGE_FORWARD_HOVER : PAGE_FORWARD, forwardX(), arrowY(), ARROW_W, ARROW_H);
+            //?} else {
+            /*g.blitSprite(hover ? PAGE_FORWARD_HOVER : PAGE_FORWARD, forwardX(), arrowY(), ARROW_W, ARROW_H);
+            *///?}
         }
     }
 
@@ -379,13 +459,23 @@ public class GuideScreen extends Screen {
     // ------------------------------------------------------------------ helpers for the elements
 
     /** Slot frame with an item; hovering it shows the item tooltip. */
-    void itemSlot(GuiGraphics g, ItemStack stack, int x, int y, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    void itemSlot(GuiGraphicsExtractor g, ItemStack stack, int x, int y, int mouseX, int mouseY) {
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, DfmScreen.SlotKind.NORMAL.sprite, x, y, 18, 18);
+    //?} else {
+    /*void itemSlot(GuiGraphics g, ItemStack stack, int x, int y, int mouseX, int mouseY) {
         g.blitSprite(DfmScreen.SlotKind.NORMAL.sprite, x, y, 18, 18);
+    *///?}
         if (stack.isEmpty()) {
             return;
         }
-        g.renderItem(stack, x + 1, y + 1);
+        //? if >=26.1 {
+        g.item(stack, x + 1, y + 1);
+        g.itemDecorations(font, stack, x + 1, y + 1);
+        //?} else {
+        /*g.renderItem(stack, x + 1, y + 1);
         g.renderItemDecorations(font, stack, x + 1, y + 1);
+        *///?}
         if (mouseX >= x + 1 && mouseX < x + 17 && mouseY >= y + 1 && mouseY < y + 17) {
             g.fill(x + 1, y + 1, x + 17, y + 17, 0x80FFFFFF);
             hoveredStack = stack;
@@ -393,12 +483,25 @@ public class GuideScreen extends Screen {
     }
 
     /** An item reference in the text is under the mouse: its icon and name are shown this frame. */
-    void hoverReference(ResourceLocation id) {
+    /** Tooltip shown this frame (a link's destination, for example). */
+    void hoverText(Component text) {
+        hoveredText = List.of(text);
+    }
+
+    //? if >=26.1 {
+    void hoverReference(Identifier id) {
+    //?} else {
+    /*void hoverReference(ResourceLocation id) {
+    *///?}
         hoveredReference = id;
     }
 
     /** Tooltip of an item reference: the item (or fluid) drawn large, with its name beside it. */
-    private void renderReference(GuiGraphics g, GuideReferences.Target reference, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    private void renderReference(GuiGraphicsExtractor g, GuideReferences.Target reference, int mouseX, int mouseY) {
+    //?} else {
+    /*private void renderReference(GuiGraphics g, GuideReferences.Target reference, int mouseX, int mouseY) {
+    *///?}
         Component name = reference.stack().isEmpty() ? reference.name()
                 : reference.name().copy().withStyle(reference.stack().getRarity().getStyleModifier());
         int w = 32 + 6 + font.width(name);
@@ -408,25 +511,49 @@ public class GuideScreen extends Screen {
             x = Math.max(4, mouseX - 12 - w);
         }
         int y = Mth.clamp(mouseY - 12, 4, height - h - 4);
-        g.pose().pushPose();
+        //? if >=26.1 {
+        g.nextStratum();
+        g.pose().pushMatrix();
+        TooltipRenderUtil.extractTooltipBackground(g, x, y, w, h, null);
+        g.pose().pushMatrix();
+        g.pose().translate(x, y);
+        g.pose().scale(2.0F, 2.0F);
+        //?} else {
+        /*g.pose().pushPose();
         g.pose().translate(0, 0, 400);
         TooltipRenderUtil.renderTooltipBackground(g, x, y, w, h, 0);
         g.pose().pushPose();
         g.pose().translate(x, y, 0);
         g.pose().scale(2.0F, 2.0F, 1.0F);
+        *///?}
         if (!reference.stack().isEmpty()) {
-            g.renderItem(reference.stack(), 0, 0);
+            //? if >=26.1 {
+            g.item(reference.stack(), 0, 0);
+            //?} else {
+            /*g.renderItem(reference.stack(), 0, 0);
+            *///?}
         } else {
             fluidIcon(g, reference.fluid(), 0, 0);
         }
-        g.pose().popPose();
+        //? if >=26.1 {
+        g.pose().popMatrix();
+        g.text(font, name, x + 38, y + 12, 0xFFFFFFFF, true);
+        g.pose().popMatrix();
+        //?} else {
+        /*g.pose().popPose();
         g.pose().translate(0, 0, 200);
         g.drawString(font, name, x + 38, y + 12, 0xFFFFFFFF, true);
         g.pose().popPose();
+        *///?}
     }
 
     /** The still texture of a fluid, 16 × 16, tinted. */
-    private void fluidIcon(GuiGraphics g, Fluid fluid, int x, int y) {
+    //? if >=26.1 {
+    private void fluidIcon(GuiGraphicsExtractor g, Fluid fluid, int x, int y) {
+        TextureAtlasSprite sprite = dimensionalfluxminer.client.render.FluidSprites.still(fluid);
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, 16, 16, dimensionalfluxminer.client.render.FluidSprites.tint(fluid));
+    //?} else {
+    /*private void fluidIcon(GuiGraphics g, Fluid fluid, int x, int y) {
         IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
         TextureAtlasSprite sprite = minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(ext.getStillTexture());
         int tint = ext.getTintColor();
@@ -434,11 +561,17 @@ public class GuideScreen extends Screen {
         g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, ((tint >>> 24) & 0xFF) / 255.0F);
         g.blit(x, y, 0, 16, 16, sprite);
         g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+    *///?}
     }
 
     /** Slot frame with the still texture of a fluid; hovering it shows the fluid's name. */
-    void fluidSlot(GuiGraphics g, Fluid fluid, int x, int y, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    void fluidSlot(GuiGraphicsExtractor g, Fluid fluid, int x, int y, int mouseX, int mouseY) {
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, DfmScreen.SlotKind.NORMAL.sprite, x, y, 18, 18);
+    //?} else {
+    /*void fluidSlot(GuiGraphics g, Fluid fluid, int x, int y, int mouseX, int mouseY) {
         g.blitSprite(DfmScreen.SlotKind.NORMAL.sprite, x, y, 18, 18);
+    *///?}
         fluidIcon(g, fluid, x + 1, y + 1);
         if (mouseX >= x + 1 && mouseX < x + 17 && mouseY >= y + 1 && mouseY < y + 17) {
             g.fill(x + 1, y + 1, x + 17, y + 17, 0x80FFFFFF);
@@ -446,19 +579,47 @@ public class GuideScreen extends Screen {
         }
     }
 
-    void textButton(GuiGraphics g, int x, int y, int w, int h, Component label, int mouseX, int mouseY) {
+    /** A recipe fluid slot includes the exact amount in its tooltip. */
+    //? if >=26.1 {
+    void fluidSlot(GuiGraphicsExtractor g, net.neoforged.neoforge.fluids.FluidStack stack, int x, int y, int mouseX, int mouseY) {
+    //?} else {
+    /*void fluidSlot(GuiGraphics g, net.neoforged.neoforge.fluids.FluidStack stack, int x, int y, int mouseX, int mouseY) {
+    *///?}
+        fluidSlot(g, stack.getFluid(), x, y, mouseX, mouseY);
+        if (mouseX >= x + 1 && mouseX < x + 17 && mouseY >= y + 1 && mouseY < y + 17) {
+            hoveredText = List.of(stack.getHoverName(), Component.literal(stack.getAmount() + " mB"));
+        }
+    }
+
+    //? if >=26.1 {
+    void textButton(GuiGraphicsExtractor g, int x, int y, int w, int h, Component label, int mouseX, int mouseY) {
+    //?} else {
+    /*void textButton(GuiGraphics g, int x, int y, int w, int h, Component label, int mouseX, int mouseY) {
+    *///?}
         textButton(g, x, y, w, h, label, mouseX, mouseY, true);
     }
 
-    void textButton(GuiGraphics g, int x, int y, int w, int h, Component label, int mouseX, int mouseY, boolean active) {
+    //? if >=26.1 {
+    void textButton(GuiGraphicsExtractor g, int x, int y, int w, int h, Component label, int mouseX, int mouseY, boolean active) {
+    //?} else {
+    /*void textButton(GuiGraphics g, int x, int y, int w, int h, Component label, int mouseX, int mouseY, boolean active) {
+    *///?}
         boolean hover = active && mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
-        RenderSystem.enableBlend();
+        //? if >=26.1 {
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, !active ? DfmScreen.BUTTON_DISABLED : hover ? DfmScreen.BUTTON_HIGHLIGHTED : DfmScreen.BUTTON_NORMAL, x, y, w, h);
+        //?} else {
+        /*RenderSystem.enableBlend();
         g.blitSprite(!active ? DfmScreen.BUTTON_DISABLED : hover ? DfmScreen.BUTTON_HIGHLIGHTED : DfmScreen.BUTTON_NORMAL, x, y, w, h);
+        *///?}
         fittedText(g, label, x + 3, y + (h - 8) / 2, w - 6, active ? DfmScreen.BUTTON_TEXT : DfmScreen.BUTTON_TEXT_INACTIVE, true);
     }
 
     /** One line of text, shrunk to fit {@code maxWidth}. */
-    void fittedText(GuiGraphics g, Component text, int x, int y, int maxWidth, int color) {
+    //? if >=26.1 {
+    void fittedText(GuiGraphicsExtractor g, Component text, int x, int y, int maxWidth, int color) {
+    //?} else {
+    /*void fittedText(GuiGraphics g, Component text, int x, int y, int maxWidth, int color) {
+    *///?}
         fittedText(g, text, x, y, maxWidth, color, false);
     }
 
@@ -466,7 +627,11 @@ public class GuideScreen extends Screen {
      * One line of text at its normal size. When it does not fit, it slides from one end to the other inside its
      * width, like the long names on the machine screens; only while a page turns (no clipping then) is it shrunk.
      */
-    void fittedText(GuiGraphics g, Component text, int x, int y, int maxWidth, int color, boolean center) {
+    //? if >=26.1 {
+    void fittedText(GuiGraphicsExtractor g, Component text, int x, int y, int maxWidth, int color, boolean center) {
+    //?} else {
+    /*void fittedText(GuiGraphics g, Component text, int x, int y, int maxWidth, int color, boolean center) {
+    *///?}
         int w = font.width(text);
         if (w > maxWidth && maxWidth > 0 && !turning()) {
             int overflow = w - maxWidth;
@@ -475,17 +640,32 @@ public class GuideScreen extends Screen {
             double phase = Math.sin(Math.PI / 2 * Math.cos(2 * Math.PI * seconds / period)) / 2 + 0.5;
             int offset = (int) Math.round(Mth.lerp(phase, 0, overflow));
             g.enableScissor(x, y - 1, x + maxWidth, y + font.lineHeight + 1);
-            g.drawString(font, text, x - offset, y, color, false);
+            //? if >=26.1 {
+            g.text(font, text, x - offset, y, color, false);
+            //?} else {
+            /*g.drawString(font, text, x - offset, y, color, false);
+            *///?}
             g.disableScissor();
             return;
         }
         float scale = w > maxWidth && w > 0 ? (float) maxWidth / w : 1.0F;
-        g.pose().pushPose();
+        //? if >=26.1 {
+        g.pose().pushMatrix();
+        //?} else {
+        /*g.pose().pushPose();
+        *///?}
         float drawX = center ? x + (maxWidth - w * scale) / 2.0F : x;
-        g.pose().translate(drawX, y + (1 - scale) * 4, 0);
+        //? if >=26.1 {
+        g.pose().translate(drawX, y + (1 - scale) * 4);
+        g.pose().scale(scale, scale);
+        g.text(font, text, 0, 0, color, false);
+        g.pose().popMatrix();
+        //?} else {
+        /*g.pose().translate(drawX, y + (1 - scale) * 4, 0);
         g.pose().scale(scale, scale, 1);
         g.drawString(font, text, 0, 0, color, false);
         g.pose().popPose();
+        *///?}
     }
 
     void playClick() {
@@ -495,7 +675,14 @@ public class GuideScreen extends Screen {
     // ------------------------------------------------------------------ input
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    //? if >=26.1 {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button() == InputConstants.MOUSE_BUTTON_RIGHT ? 1 : 0;
+    //?} else {
+    /*public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    *///?}
         if (turning()) {
             return true;
         }
@@ -526,24 +713,44 @@ public class GuideScreen extends Screen {
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        //? if >=26.1 {
+        return super.mouseClicked(event, doubleClick);
+        //?} else {
+        /*return super.mouseClicked(mouseX, mouseY, button);
+        *///?}
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    //? if >=26.1 {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+    //?} else {
+    /*public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    *///?}
         if (dragTarget != null && dragTarget.drag(this, dragX, dragY)) {
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        //? if >=26.1 {
+        return super.mouseDragged(event, dragX, dragY);
+        //?} else {
+        /*return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        *///?}
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    //? if >=26.1 {
+    public boolean mouseReleased(MouseButtonEvent event) {
+    //?} else {
+    /*public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    *///?}
         if (dragTarget instanceof GuideMultiblock.Viewer viewer) {
             viewer.release();
         }
         dragTarget = null;
-        return super.mouseReleased(mouseX, mouseY, button);
+        //? if >=26.1 {
+        return super.mouseReleased(event);
+        //?} else {
+        /*return super.mouseReleased(mouseX, mouseY, button);
+        *///?}
     }
 
     @Override
@@ -557,17 +764,33 @@ public class GuideScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    //? if >=26.1 {
+    public boolean keyPressed(KeyEvent event) {
+        switch (event.key()) {
+            case InputConstants.KEY_RIGHT, InputConstants.KEY_PAGEDOWN -> turnTo(spread + 1);
+            case InputConstants.KEY_LEFT, InputConstants.KEY_PAGEUP -> turnTo(spread - 1);
+            case InputConstants.KEY_HOME -> turnTo(0);
+    //?} else {
+    /*public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         switch (keyCode) {
             case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_PAGE_DOWN -> turnTo(spread + 1);
             case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_PAGE_UP -> turnTo(spread - 1);
             case GLFW.GLFW_KEY_HOME -> turnTo(0);
+    *///?}
             default -> {
-                if (minecraft != null && minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+                //? if >=26.1 {
+                if (minecraft != null && minecraft.options.keyInventory.matches(event)) {
+                //?} else {
+                /*if (minecraft != null && minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+                *///?}
                     onClose();
                     return true;
                 }
-                return super.keyPressed(keyCode, scanCode, modifiers);
+                //? if >=26.1 {
+                return super.keyPressed(event);
+                //?} else {
+                /*return super.keyPressed(keyCode, scanCode, modifiers);
+                *///?}
             }
         }
         return true;

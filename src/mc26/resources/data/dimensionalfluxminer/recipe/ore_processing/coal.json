@@ -1,0 +1,9 @@
+{
+  "type": "dimensionalfluxminer:ore_crushing",
+  "ingredient": "#c:ores/coal",
+  "result": {
+    "id": "minecraft:coal"
+  },
+  "base_count": 2,
+  "efficiency_upgrade_count": 3
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SDS",
+    "DCD",
+    "SDS"
+  ],
+  "key": {
+    "S": "dimensionalfluxminer:ingot_steel",
+    "D": "minecraft:diamond",
+    "C": "minecraft:end_crystal"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:basic_dimensional_core",
+    "count": 1
+  }
+}

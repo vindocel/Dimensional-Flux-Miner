@@ -1,0 +1,12 @@
+{
+  "type": "dimensionalfluxminer:tank_container",
+  "ingredient": "minecraft:blue_concrete_powder",
+  "result": {
+    "id": "minecraft:blue_concrete"
+  },
+  "fluid": {
+    "id": "minecraft:water",
+    "amount": 1000
+  },
+  "filling": true
+}

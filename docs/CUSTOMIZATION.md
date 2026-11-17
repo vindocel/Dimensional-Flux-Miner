@@ -9,13 +9,19 @@ it, but you should know how to edit a text file and how to put a folder inside a
 
 | | |
 |---|---|
-| Minecraft | 1.21.1 |
-| NeoForge | 21.1.255 |
+| Minecraft | 1.21.1, 26.1.2 and 26.3 |
+| NeoForge | 21.1.266, 26.1.2.126 and 26.3.0.103 |
 | Mod ID | `dimensionalfluxminer` |
-| Datapack format | `48` |
+| Datapack format | `48` (1.21.1), `101` (26.1.2) |
 
 Other references: gameplay numbers in [BALANCE.md](BALANCE.md), code layout in [ARCHITECTURE.md](ARCHITECTURE.md),
 the player-facing overview in the [README](../README.md).
+Machine screen appearance is a local player preference, separate from server configuration and KubeJS. The settings
+window offers white, blue, purple or a custom RGB color using HSV sliders and hexadecimal input. Apply confirms a
+draft; Cancel discards it. The custom choice starts orange. Icons, display glass/text and the lit part of active toggles follow the accent; switch handles stay neutral. The local file
+`config/dimensionalfluxminer-themes.json` keeps preset IDs in `allIcons`/`accents` and 24-bit custom RGB values in
+`allCustomColor`/`customColors`. The global/individual switch preserves the current RGB; volume stays per machine.
+Resource packs can replace the single white icon sources, including `icon_white/minus.png` and `plus.png`.
 
 > [!NOTE]
 > Every option, field and limit in this guide was checked against the mod's code. If something is not listed here,
@@ -132,6 +138,7 @@ wrong type is corrected back to its default and a warning is written to the log.
 | `corruption.claimFailurePolicy` | `"deny"` or `"ignore"` | `"deny"` | n/a | n/a |
 | `tank.personalItem` | item ID | `"minecraft:diamond"` | n/a | n/a |
 | `tank.anarchyMode` | true / false | `false` | n/a | n/a |
+| `tank.containerTicks` | integer | `5` | `1` | `1200` |
 
 ### How the ten speed levels work
 
@@ -355,6 +362,7 @@ Which blocks and creatures are affected is controlled by tags, see [7](#7-dimens
 |---|---|
 | `tank.personalItem` | Item that makes a tank's code personal (a channel of its own for the player who used it, apart from the public one with the same colors). Sneaking and using the tank with an empty hand makes it public again and gives the item back. An unknown ID falls back to the diamond |
 | `tank.anarchyMode` | `true`: a broken personal tank drops as a public tank plus the personal item. `false` (default): the item keeps the owner |
+| `tank.containerTicks` | Game ticks per container conversion in each single tank slot; default 5 (0.25 s at 20 TPS). Timers are independent and saved; extra calls in the same tick do not accelerate them. New items restart their slot's timer; blocked operations retry after another interval. This applies to the two GUI slots, including buckets and data recipes; direct player fluid interactions and fluid pipes keep their existing behavior |
 
 ```toml
 [tank]
@@ -426,12 +434,18 @@ My_DFM_Datapack/
         └── tags/
 ```
 
-`pack.mcmeta` for Minecraft 1.21.1 (data pack format `48`):
+The JSON examples of this guide use the 26.x formats (string ingredients such as `"#c:ores/zinc"`). On 1.21.1, write
+ingredients as objects (`{"item": "minecraft:coal"}`, `{"tag": "c:ores/zinc"}`) and loot tables, item models and
+`pack.mcmeta` in the 1.21.1 formats (`"pack_format": 48`).
+
+`pack.mcmeta` for Minecraft 26.1.2 (data pack format `101`, declared with `min_format` and `max_format`; on 26.3 use that
+version's data pack format):
 
 ```json
 {
   "pack": {
-    "pack_format": 48,
+    "min_format": 101,
+    "max_format": 101,
     "description": "My Dimensional Flux Miner tweaks"
   }
 }
@@ -872,6 +886,7 @@ check the dimension's Resource Profile.
 | `dimensionalfluxminer:alloying` | Electric Furnace, alloy profile | `ingredients`, `result`, `byproduct`, `processing_ticks`, `experience` |
 | `dimensionalfluxminer:tag_smelting` | Furnace and the Electric Furnace's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
 | `dimensionalfluxminer:tag_blasting` | Blast furnace and the Electric Furnace's lanes | `ingredient`, `result_tag`, `experience`, `cookingtime` |
+| `dimensionalfluxminer:tank_container` | Ordinary single tank container slots | `ingredient`, `result`, `fluid`, `filling`, optional `fluid_tag` |
 
 The mod's own recipes are in `data/dimensionalfluxminer/recipe/`. Their IDs follow the path:
 `ore_processing/iron.json` is the recipe `dimensionalfluxminer:ore_processing/iron`.
@@ -894,7 +909,7 @@ with the upgrade) applies only when the input is in `c:raw_materials/<m>` and th
 
 | Field | Required | Type | Meaning |
 |---|---|---|---|
-| `ingredient` | Yes | Ingredient (`{"item": ...}`, `{"tag": ...}` or a list of them) | The ore |
+| `ingredient` | Yes | Ingredient (`"namespace:item"`, `"#namespace:tag"` or a list of item IDs) | The ore |
 | `result` | One of the two | Item stack (`{"id": ...}`) | A fixed product. Its `count` is ignored: the counts below decide |
 | `result_tag` | One of the two | Item tag ID | The product is the first item of the tag, so it follows whatever mod provides it |
 | `base_count` | No | Integer ≥ 1 | Products per ore without the upgrade. Default `2` |
@@ -912,7 +927,7 @@ until a mod fills the tag.
     { "type": "neoforge:mod_loaded", "modid": "create" }
   ],
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": { "tag": "c:ores/zinc" },
+  "ingredient": "#c:ores/zinc",
   "result_tag": "c:raw_materials/zinc",
   "base_count": 2,
   "efficiency_upgrade_count": 3
@@ -925,7 +940,7 @@ until a mod fills the tag.
 ```json
 {
   "type": "dimensionalfluxminer:ore_crushing",
-  "ingredient": { "tag": "c:ores/diamond" },
+  "ingredient": "#c:ores/diamond",
   "result": { "id": "minecraft:diamond" },
   "base_count": 1,
   "efficiency_upgrade_count": 2
@@ -961,9 +976,9 @@ is not defined, so avoid overlaps.
 {
   "type": "dimensionalfluxminer:alloying",
   "ingredients": [
-    { "ingredient": { "item": "minecraft:blackstone" }, "count": 1 },
-    { "ingredient": { "tag": "c:nuggets/gold" }, "count": 4 },
-    { "ingredient": { "item": "minecraft:magma_cream" }, "count": 1 }
+    { "ingredient": "minecraft:blackstone", "count": 1 },
+    { "ingredient": "#c:nuggets/gold", "count": 4 },
+    { "ingredient": "minecraft:magma_cream", "count": 1 }
   ],
   "result": { "id": "minecraft:gilded_blackstone", "count": 1 },
   "byproduct": { "id": "minecraft:gold_nugget", "count": 1, "chance": 0.25 },
@@ -986,7 +1001,7 @@ This recipe has 4 work units (its largest count), so with the default settings o
 ```json
 {
   "type": "dimensionalfluxminer:crushing",
-  "ingredient": { "item": "minecraft:blaze_rod" },
+  "ingredient": "minecraft:blaze_rod",
   "result": { "id": "minecraft:blaze_powder", "count": 3 }
 }
 ```
@@ -1012,12 +1027,57 @@ The recipe does nothing while the tag is empty. Add the same condition the mod u
     { "type": "neoforge:not", "value": { "type": "neoforge:tag_empty", "tag": "c:ingots/tin" } }
   ],
   "type": "dimensionalfluxminer:tag_blasting",
-  "ingredient": { "item": "dimensionalfluxminer:dust_tin" },
+  "ingredient": "dimensionalfluxminer:dust_tin",
   "result_tag": "c:ingots/tin",
   "experience": 0.7,
   "cookingtime": 100
 }
 ```
+
+### Container conversion recipes
+
+The ordinary single tank tries matching `tank_container` recipes before native fluid-container capabilities.
+`filling: true` consumes fluid in the blue slot; `false` produces it in the red slot. Each execution consumes one
+input item, produces exactly one result and transfers the entire specified fluid amount, or changes nothing.
+The two slots and their completion flags belong to the placed tank; only liquid is shared by its channel.
+The dual and creative tanks have no container slots.
+
+Default filling recipe (`data/dimensionalfluxminer/recipe/tank_container/fill_experience_bottle.json`):
+
+```json
+{
+  "type": "dimensionalfluxminer:tank_container",
+  "ingredient": "minecraft:glass_bottle",
+  "result": { "id": "minecraft:experience_bottle" },
+  "fluid": { "id": "dimensionalfluxminer:liquid_experience", "amount": 250 },
+  "fluid_tag": "c:experience",
+  "filling": true
+}
+```
+
+`tank_container/drain_experience_bottle` reverses this conversion. Replace both recipes to change the default
+250 mB cost consistently. Ingredients use the usual item/tag syntax; result count must be one, fluid amount positive.
+`fluid_tag` is an optional fluid tag ID without `#`. A matching fluid already stored in the tank is consumed or
+replenished instead of the canonical `fluid.id`, preserving its type and components. An empty tank receives the
+canonical fluid when draining an item. An experience bottle therefore adds to existing tagged XP, including
+another mod's XP; an empty tank receives the DFM's Liquid Experience. Without `fluid_tag`, the exact
+fluid/component requirement stays unchanged.
+
+`tank_container/fill_nautilus_shell` consumes one calcite block and 250 mB of fluid from `c:experience` in the
+blue slot to produce one nautilus shell, with no reverse conversion. Override its JSON to rebalance it, or use
+`event.recipes.dimensionalfluxminer.tank_container('minecraft:nautilus_shell', 'minecraft:calcite',
+  Fluid.of('dimensionalfluxminer:liquid_experience', 250), true).fluidTag('c:experience')` in KubeJS.
+
+Other defaults: `fill_sponge` / `drain_sponge` transfer 1 000 mB of water; `fill_<color>_concrete` consumes 1 000 mB
+of water for one powder of that color; `fill_nutritious_stick` consumes 1 000 mB of nutrient distillation for one
+stick and is loaded only with Ender IO installed. Concrete and nutritious sticks have no reverse conversion.
+Face routing selects the red or blue slot and input, output or both. Item Auto Input/Eject are separate from fluid
+automation and default to off; passive item transfers still work. Automation extracts completed containers only.
+Tank items themselves are excluded from generic container slots to avoid moving a shared channel into itself.
+Clicking the arrow between the slots opens the conversion category in JEI or REI.
+These pages use the tank screen's animated fluid gauges; hovering a gauge shows the recipe's fluid amount.
+The two slots use the server setting `tank.containerTicks`. It is also available to KubeJS config overrides:
+`event.set('tank.containerTicks', 5)` in `DimensionalFluxMinerEvents.config`; no recipe field is required.
 
 ### 6.5 Replacing and removing recipes
 
@@ -1247,7 +1307,7 @@ Everything below uses standard Minecraft and NeoForge data. KubeJS scripts can d
 - items: `create:zinc_ore`;
 - blocks: `create:limestone`;
 - dimensions: `minecraft:the_nether`, `allthemodium:the_other`;
-- tags: `#c:ores/zinc` in data maps, `"tag": "c:ores/zinc"` in ingredients, `c:raw_materials/zinc` in `result_tag`.
+- tags: `#c:ores/zinc` in data maps, `"#c:ores/zinc"` in ingredients, `c:raw_materials/zinc` in `result_tag`.
 
 **When the other mod may be missing:**
 
@@ -1391,7 +1451,8 @@ My_DFM_Datapack/
 ```json
 {
   "pack": {
-    "pack_format": 48,
+    "min_format": 101,
+    "max_format": 101,
     "description": "My modpack's Dimensional Flux Miner tweaks"
   }
 }
@@ -1423,9 +1484,9 @@ My_DFM_Datapack/
 {
   "type": "dimensionalfluxminer:alloying",
   "ingredients": [
-    { "ingredient": { "item": "minecraft:blackstone" }, "count": 1 },
-    { "ingredient": { "tag": "c:nuggets/gold" }, "count": 4 },
-    { "ingredient": { "item": "minecraft:magma_cream" }, "count": 1 }
+    { "ingredient": "minecraft:blackstone", "count": 1 },
+    { "ingredient": "#c:nuggets/gold", "count": 4 },
+    { "ingredient": "minecraft:magma_cream", "count": 1 }
   ],
   "result": { "id": "minecraft:gilded_blackstone", "count": 1 },
   "byproduct": { "id": "minecraft:gold_nugget", "count": 1, "chance": 0.25 },
@@ -1498,7 +1559,7 @@ configuration file and the datapacks of this guide do. Without it, nothing chang
 
 | | |
 |---|---|
-| KubeJS | 2101.7 or newer (NeoForge 1.21.1) |
+| KubeJS | 2101.7.2 or newer on 1.21.1; 26.1.2-8.0.8 or newer on 26.x |
 | Where | `kubejs/server_scripts/<any name>.js` in the instance or server folder |
 | Apply | `/reload`, or restart |
 | Errors | `logs/kubejs/server.log`, with the file and line |
@@ -1506,7 +1567,7 @@ configuration file and the datapacks of this guide do. Without it, nothing chang
 | Change | In a script | Same rules as |
 |---|---|---|
 | Server options | `DimensionalFluxMinerEvents.config` ([15.1](#151-server-options)) | [2](#2-the-server-configuration-file) |
-| Recipes of the five types | `ServerEvents.recipes` with `event.recipes.dimensionalfluxminer.*` ([15.2](#152-recipes)) | [6](#6-recipes) |
+| Recipes of the six types | `ServerEvents.recipes` with `event.recipes.dimensionalfluxminer.*` ([15.2](#152-recipes)) | [6](#6-recipes) |
 | Dimensional Matter values | `DimensionalFluxMinerEvents.matterValues` ([15.3](#153-dimensional-matter-values)) | [5](#5-dimensional-matter-values) |
 | Resource Profiles | `DimensionalFluxMinerEvents.resourceProfiles` ([15.4](#154-resource-profiles)) | [4](#4-resource-profiles-the-ores-the-miner-makes) |
 | Block and entity tags | `ServerEvents.tags` ([15.5](#155-tags)) | [7](#7-dimensional-death-block-tags), [8](#8-entity-tags) |
@@ -1538,7 +1599,7 @@ DimensionalFluxMinerEvents.config(event => {
 
 ### 15.2 Recipes
 
-KubeJS knows the five recipe types of the mod. The arguments come in the order below; every other field has a
+KubeJS knows the six recipe types of the mod. The arguments come in the order below; every other field has a
 function of its own.
 
 | Type | Script | Functions |
@@ -1548,10 +1609,17 @@ function of its own.
 | `alloying` | `alloying(result, [ingredients])`, one to three ingredients, `'4x #c:nuggets/gold'` for a count | `.byproduct({id, count, chance})`, `.processingTicks(n)` (or `.time(n)`), `.xp(n)` |
 | `tag_smelting` | `tag_smelting(resultTag, ingredient)` | `.xp(n)`, `.cookingTime(n)` |
 | `tag_blasting` | `tag_blasting(resultTag, ingredient)` | `.xp(n)`, `.cookingTime(n)` |
+| `tank_container` | `tank_container(result, ingredient, fluid, filling)` | All four arguments required; result count 1; positive fluid amount; optional `.fluidTag('c:experience')` |
 
 ```js
 ServerEvents.recipes(event => {
   const dfm = event.recipes.dimensionalfluxminer
+
+  // Single tank: replace the default experience bottle filling recipe.
+  dfm.tank_container('minecraft:experience_bottle', 'minecraft:glass_bottle',
+    Fluid.of('dimensionalfluxminer:liquid_experience', 250), true)
+    .fluidTag('c:experience')
+    .id('dimensionalfluxminer:tank_container/fill_experience_bottle')
 
   // Crusher: a fixed result.
   dfm.crushing('3x minecraft:blaze_powder', 'minecraft:blaze_rod').id('my_modpack:crushing/blaze_rod')

@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 
 /**
  * {@code DimensionalFluxMinerEvents.matterValues}: changes the {@code dimensionalfluxminer:matter_value} data map. The
@@ -40,7 +44,11 @@ public class MatterValuesKubeEvent implements KubeEvent {
         if (!dimensions.isEmpty()) {
             JsonArray dims = new JsonArray();
             for (String dimension : dimensions) {
-                if (ResourceLocation.tryParse(dimension) == null) {
+                //? if >=26.1 {
+                if (Identifier.tryParse(dimension) == null) {
+                //?} else {
+                /*if (ResourceLocation.tryParse(dimension) == null) {
+                *///?}
                     throw new IllegalArgumentException("Invalid dimension id '" + dimension + "'");
                 }
                 dims.add(dimension);
@@ -65,7 +73,11 @@ public class MatterValuesKubeEvent implements KubeEvent {
 
     private static String checkedKey(String item) {
         boolean tag = item.startsWith("#");
-        ResourceLocation id = ResourceLocation.tryParse(tag ? item.substring(1) : item);
+        //? if >=26.1 {
+        Identifier id = Identifier.tryParse(tag ? item.substring(1) : item);
+        //?} else {
+        /*ResourceLocation id = ResourceLocation.tryParse(tag ? item.substring(1) : item);
+        *///?}
         if (id == null) {
             throw new IllegalArgumentException("Invalid item id '" + item + "'");
         }

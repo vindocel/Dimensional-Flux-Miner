@@ -1,20 +1,34 @@
 package dimensionalfluxminer.menu;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.SlotsSlot;
+//?}
 import java.util.function.Predicate;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /**
  * Real container slot shown inside a floating screen window. The client screen moves it with the window and hides
  * it while the window is closed; the server always keeps it active.
  */
-public class WindowSlot extends SlotItemHandler {
+//? if >=26.1 {
+public class WindowSlot extends SlotsSlot {
+//?} else {
+/*public class WindowSlot extends SlotItemHandler {
+*///?}
     private final Predicate<ItemStack> filter;
     private final int maxStack;
     private boolean shown = true;
 
-    public WindowSlot(IItemHandler handler, int index, Predicate<ItemStack> filter, int maxStack) {
+    //? if >=26.1 {
+    public WindowSlot(ItemSlots handler, int index, Predicate<ItemStack> filter, int maxStack) {
+    //?} else {
+    /*public WindowSlot(IItemHandler handler, int index, Predicate<ItemStack> filter, int maxStack) {
+    *///?}
         super(handler, index, 0, 0);
         this.filter = filter;
         this.maxStack = maxStack;

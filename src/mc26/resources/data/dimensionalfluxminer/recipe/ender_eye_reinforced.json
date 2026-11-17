@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " S ",
+    "SES",
+    " S "
+  ],
+  "key": {
+    "S": "dimensionalfluxminer:ingot_steel",
+    "E": "minecraft:ender_eye"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:ender_eye_reinforced",
+    "count": 1
+  }
+}

@@ -185,12 +185,21 @@ public final class SideConfiguration {
     public void load(CompoundTag tag) {
         resetToDefaults();
         for (int p = 0; p < PROFILES; p++) {
-            read(tag.getList("item_" + p, Tag.TAG_STRING), item[p]);
+            //? if >=26.1 {
+            read(tag.getListOrEmpty("item_" + p), item[p]);
+        }
+        read(tag.getListOrEmpty("energy"), energy);
+        read(tag.getListOrEmpty("redstone"), redstone);
+        read(tag.getListOrEmpty("experience"), experience);
+        read(tag.getListOrEmpty("fluid"), fluid);
+            //?} else {
+            /*read(tag.getList("item_" + p, Tag.TAG_STRING), item[p]);
         }
         read(tag.getList("energy", Tag.TAG_STRING), energy);
         read(tag.getList("redstone", Tag.TAG_STRING), redstone);
         read(tag.getList("experience", Tag.TAG_STRING), experience);
         read(tag.getList("fluid", Tag.TAG_STRING), fluid);
+            *///?}
     }
 
     private static ListTag write(SideRoute[] routes) {
@@ -204,7 +213,11 @@ public final class SideConfiguration {
     private static void read(ListTag list, SideRoute[] target) {
         for (int i = 0; i < target.length && i < list.size(); i++) {
             try {
-                target[i] = SideRoute.valueOf(list.getString(i));
+                //? if >=26.1 {
+                target[i] = SideRoute.valueOf(list.getStringOr(i, ""));
+                //?} else {
+                /*target[i] = SideRoute.valueOf(list.getString(i));
+                *///?}
             } catch (IllegalArgumentException ignored) {
                 // Unknown route name: keep the default for that face.
             }

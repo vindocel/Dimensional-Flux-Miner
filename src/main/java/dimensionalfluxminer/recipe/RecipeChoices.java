@@ -8,7 +8,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,7 +26,11 @@ public final class RecipeChoices {
     /** True while a recipe-selection integration is installed; set once at startup. */
     private static volatile boolean enabled;
 
-    private final Map<Item, ResourceLocation> chosen = new LinkedHashMap<>();
+    //? if >=26.1 {
+    private final Map<Item, Identifier> chosen = new LinkedHashMap<>();
+    //?} else {
+    /*private final Map<Item, ResourceLocation> chosen = new LinkedHashMap<>();
+    *///?}
     /** Bumped on every change; machines compare it to drop the recipes they remembered. */
     private int version;
 
@@ -35,11 +43,19 @@ public final class RecipeChoices {
     }
 
     /** Recipe chosen for the item of {@code input}, or null to use the default one. */
-    public ResourceLocation chosen(ItemStack input) {
+    //? if >=26.1 {
+    public Identifier chosen(ItemStack input) {
+    //?} else {
+    /*public ResourceLocation chosen(ItemStack input) {
+    *///?}
         return enabled && !input.isEmpty() ? chosen.get(input.getItem()) : null;
     }
 
-    public void choose(ItemStack input, ResourceLocation recipe) {
+    //? if >=26.1 {
+    public void choose(ItemStack input, Identifier recipe) {
+    //?} else {
+    /*public void choose(ItemStack input, ResourceLocation recipe) {
+    *///?}
         if (!input.isEmpty() && !recipe.equals(chosen.put(input.getItem(), recipe))) {
             version++;
         }
@@ -50,14 +66,23 @@ public final class RecipeChoices {
     }
 
     /** One recipe that accepts an input, with what one operation makes. */
-    public record Option(ResourceLocation id, ItemStack result) {
+    //? if >=26.1 {
+    public record Option(Identifier id, ItemStack result) {
+    //?} else {
+    /*public record Option(ResourceLocation id, ItemStack result) {
+    *///?}
     }
 
     /** The input whose recipe can be chosen and every recipe that accepts it, the default one first. */
     public record Offer(ItemStack input, List<Option> options) {
         /** The chosen option when it still accepts the input, otherwise the default one. */
-        public ResourceLocation selected(RecipeChoices choices) {
+        //? if >=26.1 {
+        public Identifier selected(RecipeChoices choices) {
+            Identifier id = choices.chosen(input);
+        //?} else {
+        /*public ResourceLocation selected(RecipeChoices choices) {
             ResourceLocation id = choices.chosen(input);
+        *///?}
             return id != null && options.stream().anyMatch(o -> o.id().equals(id)) ? id : options.getFirst().id();
         }
     }
@@ -70,7 +95,11 @@ public final class RecipeChoices {
         Optional<Offer> recipeOffer();
 
         /** Chooses {@code recipe} for the input of the current offer; false when it is not one of its options. */
-        default boolean chooseRecipe(ResourceLocation recipe) {
+        //? if >=26.1 {
+        default boolean chooseRecipe(Identifier recipe) {
+        //?} else {
+        /*default boolean chooseRecipe(ResourceLocation recipe) {
+        *///?}
             Optional<Offer> offer = recipeOffer();
             if (offer.isEmpty() || offer.get().options().stream().noneMatch(o -> o.id().equals(recipe))) {
                 return false;
@@ -101,12 +130,23 @@ public final class RecipeChoices {
     /** Reads {@code recipe_choices}; machines saved without it simply have no choice. */
     public void load(CompoundTag tag) {
         chosen.clear();
-        ListTag list = tag.getList("recipe_choices", Tag.TAG_COMPOUND);
+        //? if >=26.1 {
+        ListTag list = tag.getListOrEmpty("recipe_choices");
+        //?} else {
+        /*ListTag list = tag.getList("recipe_choices", Tag.TAG_COMPOUND);
+        *///?}
         for (int i = 0; i < list.size(); i++) {
-            CompoundTag entry = list.getCompound(i);
+            //? if >=26.1 {
+            CompoundTag entry = list.getCompoundOrEmpty(i);
+            Identifier item = Identifier.tryParse(entry.getStringOr("item", ""));
+            Identifier recipe = Identifier.tryParse(entry.getStringOr("recipe", ""));
+            Item resolved = item == null ? Items.AIR : BuiltInRegistries.ITEM.getValue(item);
+            //?} else {
+            /*CompoundTag entry = list.getCompound(i);
             ResourceLocation item = ResourceLocation.tryParse(entry.getString("item"));
             ResourceLocation recipe = ResourceLocation.tryParse(entry.getString("recipe"));
             Item resolved = item == null ? Items.AIR : BuiltInRegistries.ITEM.get(item);
+            *///?}
             if (resolved != Items.AIR && recipe != null) {
                 chosen.put(resolved, recipe);
             }

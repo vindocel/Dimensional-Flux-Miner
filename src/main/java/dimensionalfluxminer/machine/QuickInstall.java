@@ -1,5 +1,8 @@
 package dimensionalfluxminer.machine;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.SlotStorage;
+//?}
 import dimensionalfluxminer.miner.MinerControllerBlockEntity;
 import dimensionalfluxminer.miner.MinerLinkBlockEntity;
 import dimensionalfluxminer.miner.block.MinerPartBlock;
@@ -14,7 +17,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.items.ItemStackHandler;
+//? if <26.1 {
+/*import net.neoforged.neoforge.items.ItemStackHandler;
+*///?}
 
 /**
  * Sneak + right click with an Efficiency Upgrade on a machine (or any block of a formed Miner) installs it directly in
@@ -39,11 +44,20 @@ public final class QuickInstall {
             return;
         }
         event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide));
+        //? if >=26.1 {
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        if (!level.isClientSide()) {
+        //?} else {
+        /*event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide));
         if (!level.isClientSide) {
+        *///?}
             Component message = install(player, level, pos, stack);
             if (message != null) {
-                player.displayClientMessage(message, true);
+                //? if >=26.1 {
+                player.sendOverlayMessage(message);
+                //?} else {
+                /*player.displayClientMessage(message, true);
+                *///?}
             }
         }
     }
@@ -65,7 +79,11 @@ public final class QuickInstall {
                 return Component.translatable("message.dimensionalfluxminer.quick_install.not_formed");
             }
         }
-        ItemStackHandler slot;
+        //? if >=26.1 {
+        SlotStorage slot;
+        //?} else {
+        /*ItemStackHandler slot;
+        *///?}
         if (be instanceof MinerControllerBlockEntity miner) {
             slot = upgrade ? miner.upgradeSlot() : miner.coreSlot();
         } else if (be instanceof AbstractMachineBlockEntity machine && upgrade) {

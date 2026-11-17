@@ -49,9 +49,9 @@ final class GuideContent {
         Builder b = new Builder("start");
         b.heading("welcome").text("welcome");
         b.heading("energy").text("energy");
+        b.modTip("reactors", "Bigger Reactors Rework", "https://www.curseforge.com/minecraft/mc-mods/biggerreactors-rework");
         b.heading("path").text("path");
         b.heading("interface").text("interface").text("slots");
-        b.tip("viewer");
         b.heading("breaking").text("breaking");
         b.heading("guide").text("guide");
         b.crafting("guide_book");
@@ -70,7 +70,6 @@ final class GuideContent {
             b.crafting(part);
         }
         b.heading("cores").crafting("basic_dimensional_core").crafting("stabilized_dimensional_core").crafting("efficiency_upgrade");
-        b.heading("dusts").text("dusts");
         return b.chapter(DfmItems.INGOT_STEEL);
     }
 
@@ -94,10 +93,9 @@ final class GuideContent {
         b.heading("split").text("split");
         b.heading("outputs").text("outputs");
         b.heading("lanes").text("lanes");
-        b.heading("xp").text("xp").text("xp_pipes");
+        b.heading("xp").text("xp");
         b.viewer("viewer", RecipeViewers.ALLOYING, RecipeViewers.SMELTING);
         b.tip("multiply");
-        b.tip("external");
         return b.chapter(DfmItems.ELECTRIC_FURNACE);
     }
 
@@ -175,17 +173,16 @@ final class GuideContent {
         b.heading("auto").text("auto");
         b.heading("redstone").text("redstone");
         b.heading("cables").text("cables");
-        b.heading("network").compat("network", "network", "lanes");
-        b.heading("recipes").compat("recipes", "recipes");
-        b.heading("accel").text("accel");
         return b.chapter(DfmItems.DIMENSIONAL_PORT);
     }
 
     private static Chapter tanks() {
         Builder b = new Builder("tanks");
         b.item(DfmItems.DIMENSIONAL_TANK, "about").crafting("dimensional_tank");
+        b.text("containers").text("bottles").tankConversion("fill_experience_bottle");
+        b.text("nautilus").tankConversion("fill_nautilus_shell").text("conversions");
         b.heading("dual").item(DfmItems.DIMENSIONAL_DUAL_TANK, "dual").crafting("dimensional_dual_tank");
-        b.heading("code").text("code").text("code_change").text("clear");
+        b.heading("code").text("code").text("code_change").text("local").text("clear");
         b.heading("personal").text("personal");
         b.heading("buckets").text("buckets").text("bucket_mode");
         b.heading("pipes").text("pipes").text("pipes_dual");
@@ -257,7 +254,11 @@ final class GuideContent {
             }
             List<Row> list = new ArrayList<>();
             for (var entry : BuiltInRegistries.ITEM.getDataMap(DfmDataMaps.MATTER_VALUE).entrySet()) {
-                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.getKey()));
+                //? if >=26.1 {
+                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(entry.getKey()));
+                //?} else {
+                /*ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(entry.getKey()));
+                *///?}
                 if (stack.isEmpty() || stack.is(DfmTags.Items.common("ores"))) {
                     continue;
                 }
@@ -266,7 +267,11 @@ final class GuideContent {
                     continue;
                 }
                 DfmDataMaps.MatterValue value = entry.getValue();
-                String dimensionId = value.dimensions().isEmpty() ? "any" : value.dimensions().getFirst().location().getPath();
+                //? if >=26.1 {
+                String dimensionId = value.dimensions().isEmpty() ? "any" : value.dimensions().getFirst().identifier().getPath();
+                //?} else {
+                /*String dimensionId = value.dimensions().isEmpty() ? "any" : value.dimensions().getFirst().location().getPath();
+                *///?}
                 list.add(new Row(stack.getHoverName().getString(), dimensionOrder(dimensionId),
                         Component.translatable("guide.dimensionalfluxminer.dimension." + dimensionId).getString(), value.units()));
             }
@@ -353,19 +358,9 @@ final class GuideContent {
             return this;
         }
 
-        /**
-         * Compatibility box: the summary {@code <name>_summary} and a button that shows the {@code details} paragraphs
-         * under it while open.
-         */
-        Builder compat(String name, String... details) {
-            String box = id + "." + name;
-            elements.add(new GuideElements.Expandable(box, Component.translatable("guide.dimensionalfluxminer.compat"),
-                    key("", name + "_summary")));
-            if (GuideScreen.expanded(box)) {
-                for (String detail : details) {
-                    text(detail);
-                }
-            }
+        /** Tip about another mod of the author: the mod name is a link to its page. */
+        Builder modTip(String name, String mod, String url) {
+            elements.add(new GuideElements.Note(Component.literal(mod), key("", name), GuideElements.TIP, url));
             return this;
         }
 
@@ -381,7 +376,11 @@ final class GuideContent {
         /** A row of slots, each cycling once a second through its items (a block and its variants, the ores...). */
         Builder cycling(List<? extends List<? extends ItemLike>> slots) {
             elements.add(new GuideElements.ItemRow(() -> {
-                long tick = net.minecraft.Util.getMillis() / 1000;
+                //? if >=26.1 {
+                long tick = net.minecraft.util.Util.getMillis() / 1000;
+                //?} else {
+                /*long tick = net.minecraft.Util.getMillis() / 1000;
+                *///?}
                 List<ItemStack> list = new ArrayList<>();
                 for (List<? extends ItemLike> slot : slots) {
                     list.add(new ItemStack(slot.get((int) (tick % slot.size()))));
@@ -402,12 +401,21 @@ final class GuideContent {
             return this;
         }
 
+        Builder tankConversion(String recipe) {
+            elements.add(new GuideElements.TankConversion(DimensionalFluxMiner.id("tank_container/" + recipe)));
+            return this;
+        }
+
         Builder crafting(String recipe) {
             elements.add(new GuideElements.Crafting(DimensionalFluxMiner.id(recipe)));
             return this;
         }
 
-        Builder viewer(String name, net.minecraft.resources.ResourceLocation... categories) {
+        //? if >=26.1 {
+        Builder viewer(String name, net.minecraft.resources.Identifier... categories) {
+        //?} else {
+        /*Builder viewer(String name, net.minecraft.resources.ResourceLocation... categories) {
+        *///?}
             elements.add(new GuideElements.ViewerButton(key("", name), categories));
             return this;
         }

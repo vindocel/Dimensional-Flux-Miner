@@ -1,4 +1,5 @@
-package dimensionalfluxminer.mixin;
+//? if <26.1 {
+/*package dimensionalfluxminer.mixin;
 
 import dimensionalfluxminer.registry.DfmFluids;
 import net.minecraft.tags.FluidTags;
@@ -10,11 +11,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
+/^*
  * Corrupted Water counts as water for entities. NeoForge answers the vanilla "in water" / "eyes in water" checks with
  * the vanilla water fluid type only, ignoring the {@code minecraft:water} tag; with Corrupted Water added here, every
  * water behaviour applies to it as well: splash, swimming, extinguishing, underwater sounds, fog and air.
- */
+ ^/
 @Mixin(Entity.class)
 public abstract class EntityCorruptedWaterMixin {
     @Inject(method = "updateFluidHeightAndDoFluidPushing(Lnet/minecraft/tags/TagKey;D)Z", at = @At("RETURN"), cancellable = true)
@@ -33,3 +34,5 @@ public abstract class EntityCorruptedWaterMixin {
         }
     }
 }
+
+*///?}

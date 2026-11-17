@@ -7,7 +7,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.GameRules;
+//? if >=26.1 {
+import net.minecraft.world.level.gamerules.GameRules;
+//?} else {
+/*import net.minecraft.world.level.GameRules;
+*///?}
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.material.FluidState;
@@ -53,6 +57,9 @@ public final class DfmFluids {
                     .fallDistanceModifier(0.0F)
                     .canExtinguish(true)
                     .canDrown(true)
+                    //? if >=26.1 {
+                    .isWaterLike(true)
+                    //?}
                     .canSwim(true)
                     .supportsBoating(true)
                     // The blight withers land plants: it never hydrates farmland or sugar cane.
@@ -65,15 +72,24 @@ public final class DfmFluids {
                     .sound(SoundActions.FLUID_VAPORIZE, SoundEvents.FIRE_EXTINGUISH)) {
                 @Override
                 public boolean canConvertToSource(FluidState state, LevelReader reader, BlockPos pos) {
-                    if (reader instanceof Level level) {
+                    //? if >=26.1 {
+                    if (reader instanceof net.minecraft.server.level.ServerLevel level) {
+                        return level.getGameRules().get(GameRules.WATER_SOURCE_CONVERSION);
+                    //?} else {
+                    /*if (reader instanceof Level level) {
                         return level.getGameRules().getBoolean(GameRules.RULE_WATER_SOURCE_CONVERSION);
+                    *///?}
                     }
                     return super.canConvertToSource(state, reader, pos);
                 }
 
                 @Override
                 public boolean isVaporizedOnPlacement(Level level, BlockPos pos, FluidStack stack) {
-                    return level.dimensionType().ultraWarm();
+                    //? if >=26.1 {
+                    return level.environmentAttributes().getValue(net.minecraft.world.attribute.EnvironmentAttributes.WATER_EVAPORATES, pos);
+                    //?} else {
+                    /*return level.dimensionType().ultraWarm();
+                    *///?}
                 }
 
                 /** As in water: drowned, guardians, fish and the like breathe in it; the others drown. */

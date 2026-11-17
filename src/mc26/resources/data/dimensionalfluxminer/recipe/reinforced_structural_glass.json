@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SGS",
+    "GBG",
+    "SGS"
+  ],
+  "key": {
+    "S": "dimensionalfluxminer:ingot_steel",
+    "G": "minecraft:glass",
+    "B": "minecraft:blaze_rod"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:reinforced_structural_glass",
+    "count": 1
+  }
+}

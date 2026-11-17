@@ -6,7 +6,11 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -36,7 +40,11 @@ final class MinerAttempts {
     private MinerAttempts() {
     }
 
-    static Result run(long attempts, ResourceProfile profile, RandomSource random, Set<ResourceLocation> filter, boolean upgrade,
+    //? if >=26.1 {
+    static Result run(long attempts, ResourceProfile profile, RandomSource random, Set<Identifier> filter, boolean upgrade,
+    //?} else {
+    /*static Result run(long attempts, ResourceProfile profile, RandomSource random, Set<ResourceLocation> filter, boolean upgrade,
+    *///?}
                       MatterBuffer matter, BooleanSupplier refill, MinerOutput output) {
         long executed = 0;
         boolean missed = false;

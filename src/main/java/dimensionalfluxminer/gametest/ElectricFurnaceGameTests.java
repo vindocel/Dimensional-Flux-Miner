@@ -1,5 +1,10 @@
 package dimensionalfluxminer.gametest;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.FluidTanks;
+import dimensionalfluxminer.machine.transfer.ItemSlots;
+import dimensionalfluxminer.machine.transfer.Transfer;
+//?}
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
@@ -14,7 +19,9 @@ import dimensionalfluxminer.recipe.RecipeChoices;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.gametest.framework.GameTest;
+//? if <26.1 {
+/*import net.minecraft.gametest.framework.GameTest;
+*///?}
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,13 +29,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+//? if >=26.1 {
+
+//?} else {
+/*import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.items.IItemHandler;
 
 @GameTestHolder(DimensionalFluxMiner.MOD_ID)
 @PrefixGameTestTemplate(false)
+*///?}
 public final class ElectricFurnaceGameTests {
     private static final BlockPos MACHINE = new BlockPos(2, 1, 2);
 
@@ -38,7 +49,11 @@ public final class ElectricFurnaceGameTests {
     static ElectricFurnaceBlockEntity place(GameTestHelper helper) {
         BlockState state = DfmBlocks.ELECTRIC_FURNACE.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
         helper.setBlock(MACHINE, state);
-        ElectricFurnaceBlockEntity be = helper.getBlockEntity(MACHINE);
+        //? if >=26.1 {
+        ElectricFurnaceBlockEntity be = TestSupport.blockEntity(helper, MACHINE);
+        //?} else {
+        /*ElectricFurnaceBlockEntity be = helper.getBlockEntity(MACHINE);
+        *///?}
         be.setRate(10);
         be.energyBuffer().setTarget(be.effectivePowerLimit() * 10);
         be.energyBuffer().setStored(be.effectivePowerLimit() * 10);
@@ -49,7 +64,11 @@ public final class ElectricFurnaceGameTests {
     public static void rawPairsGiveBulkBonusAndBaseXp(GameTestHelper helper) {
         // Furnace copies made by other alloy machines never turn raw ore into an "alloy" without the bonus.
         var raw = new dimensionalfluxminer.recipe.AlloyRecipeInput(new ItemStack(Items.RAW_IRON), ItemStack.EMPTY, ItemStack.EMPTY);
-        for (var h : dimensionalfluxminer.recipe.ExternalAlloying.all(helper.getLevel().getRecipeManager(), helper.getLevel().registryAccess())) {
+        //? if >=26.1 {
+        for (var h : dimensionalfluxminer.recipe.ExternalAlloying.all(dimensionalfluxminer.recipe.Recipes.map(helper.getLevel()), helper.getLevel().registryAccess())) {
+        //?} else {
+        /*for (var h : dimensionalfluxminer.recipe.ExternalAlloying.all(helper.getLevel().getRecipeManager(), helper.getLevel().registryAccess())) {
+        *///?}
             helper.assertFalse(h.value().matches(raw, helper.getLevel()), "raw iron is no alloy: " + h.id());
         }
         ElectricFurnaceBlockEntity be = place(helper);
@@ -127,8 +146,13 @@ public final class ElectricFurnaceGameTests {
             return;
         }
         var registry = net.minecraft.core.registries.BuiltInRegistries.ITEM;
-        var alloy = registry.get(net.minecraft.resources.ResourceLocation.parse("create:andesite_alloy"));
+        //? if >=26.1 {
+        var alloy = registry.getValue(net.minecraft.resources.Identifier.parse("create:andesite_alloy"));
+        var zinc = registry.getValue(net.minecraft.resources.Identifier.parse("create:zinc_nugget"));
+        //?} else {
+        /*var alloy = registry.get(net.minecraft.resources.ResourceLocation.parse("create:andesite_alloy"));
         var zinc = registry.get(net.minecraft.resources.ResourceLocation.parse("create:zinc_nugget"));
+        *///?}
         ElectricFurnaceBlockEntity be = place(helper);
         be.setMode(ElectricFurnaceMode.ALLOY);
         be.input(0).insert(new ItemStack(Items.ANDESITE), 2, false);
@@ -165,7 +189,11 @@ public final class ElectricFurnaceGameTests {
         be.handleButton(null, ElectricFurnaceBlockEntity.BUTTON_MODE_BACK);
         helper.assertTrue(be.mode() == ElectricFurnaceMode.ALLOY, "back to ALLOY");
         helper.assertTrue(be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT), "output face");
-        IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(MACHINE),
+        //? if >=26.1 {
+        ItemSlots handler = Transfer.items(helper.getLevel(), helper.absolutePos(MACHINE),
+        //?} else {
+        /*IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(MACHINE),
+        *///?}
                 RelativeFace.BACK.toDirection(be.facing()));
         boolean found = false;
         for (int slot = 0; slot < handler.getSlots(); slot++) {
@@ -230,6 +258,10 @@ public final class ElectricFurnaceGameTests {
     public static void takingResultsByHandCollectsTheExperience(GameTestHelper helper) {
         ElectricFurnaceBlockEntity be = place(helper);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        //? if >=26.1 {
+        // Next to the machine: the orbs need a loaded chunk (there are no spawn chunks to hold the origin).
+        player.snapTo(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(new BlockPos(1, 1, 1))));
+        //?}
         be.output(0).insert(new ItemStack(Items.IRON_INGOT), 3, false);
         be.experience().setMilli(2100);
         be.handleButton(player, ElectricFurnaceBlockEntity.BUTTON_TAKE_OUTPUT);
@@ -238,7 +270,11 @@ public final class ElectricFurnaceGameTests {
                 player.getBoundingBox().inflate(2));
         // Orbs of the same value may merge into one orb counting several ("Count" in its data).
         int total = orbs.stream().mapToInt(orb -> orb.getValue()
-                * Math.max(1, orb.saveWithoutId(new net.minecraft.nbt.CompoundTag()).getInt("Count"))).sum();
+                //? if >=26.1 {
+                * Math.max(1, TestSupport.save(orb, helper.getLevel().registryAccess()).getIntOr("Count", 0))).sum();
+                //?} else {
+                /** Math.max(1, orb.saveWithoutId(new net.minecraft.nbt.CompoundTag()).getInt("Count"))).sum();
+                *///?}
         helper.assertTrue(total == 2 || total == 3, "2.1 XP paid as 2 or 3 points, got " + total);
         helper.succeed();
     }
@@ -260,12 +296,23 @@ public final class ElectricFurnaceGameTests {
     @GameTest(template = "empty_small", timeoutTicks = 200)
     public static void alloysOfOtherModsRunInTheElectricFurnace(GameTestHelper helper) {
         var level = helper.getLevel();
-        var manager = level.getRecipeManager();
+        //? if <26.1 {
+        /*var manager = level.getRecipeManager();
+        *///?}
         var types = dimensionalfluxminer.DfmConfig.externalAlloyTypes();
-        long originals = manager.getRecipes().stream()
+        //? if >=26.1 {
+        var manager = dimensionalfluxminer.recipe.Recipes.map(level);
+        long originals = manager.values().stream()
+        //?} else {
+        /*long originals = manager.getRecipes().stream()
+        *///?}
                 .filter(h -> types.contains(net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(h.value().getType()))).count();
         var external = dimensionalfluxminer.recipe.ExternalAlloying.all(manager, level.registryAccess()).stream()
-                .filter(h -> h.id().getPath().startsWith("external/")).toList();
+                //? if >=26.1 {
+                .filter(h -> h.id().identifier().getPath().startsWith("external/")).toList();
+                //?} else {
+                /*.filter(h -> h.id().getPath().startsWith("external/")).toList();
+                *///?}
         if (originals == 0) {
             helper.assertTrue(external.isEmpty(), "nothing converted without the other mods");
             helper.succeed();
@@ -275,14 +322,22 @@ public final class ElectricFurnaceGameTests {
         helper.assertFalse(external.isEmpty(), "alloys of other mods converted (" + originals + " recipes of the configured types)");
         // A converted alloy whose ingredients all exist in this instance, run for real in Alloy Only mode.
         var recipe = external.stream().map(h -> h.value())
-                .filter(r -> r.ingredients().stream().allMatch(s -> s.ingredient().getItems().length > 0)
+                //? if >=26.1 {
+                .filter(r -> r.ingredients().stream().allMatch(s -> dimensionalfluxminer.recipe.Recipes.stacks(s.ingredient()).length > 0)
+                //?} else {
+                /*.filter(r -> r.ingredients().stream().allMatch(s -> s.ingredient().getItems().length > 0)
+                *///?}
                         && r.ingredients().stream().allMatch(s -> s.count() <= 64))
                 .findFirst().orElseThrow();
         ElectricFurnaceBlockEntity be = place(helper);
         be.setMode(ElectricFurnaceMode.ALLOY);
         for (int i = 0; i < recipe.ingredients().size(); i++) {
             var sized = recipe.ingredients().get(i);
-            ItemStack stack = sized.ingredient().getItems()[0];
+            //? if >=26.1 {
+            ItemStack stack = dimensionalfluxminer.recipe.Recipes.stacks(sized.ingredient())[0];
+            //?} else {
+            /*ItemStack stack = sized.ingredient().getItems()[0];
+            *///?}
             helper.assertTrue(be.insertLane(i, stack.copyWithCount(sized.count()), false).isEmpty(), "ingredient " + stack + " accepted");
         }
         helper.succeedWhen(() -> helper.assertTrue(be.alloyMain().countOf(recipe.result()) >= recipe.result().getCount(),
@@ -353,7 +408,11 @@ public final class ElectricFurnaceGameTests {
         helper.assertTrue(be.configureSide(RelativeFace.LEFT, Transmission.EXPERIENCE, SideRoute.XP_OUTPUT), "xp on same face");
         Direction left = RelativeFace.LEFT.toDirection(be.facing());
         BlockPos abs = helper.absolutePos(MACHINE);
-        IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, left);
+        //? if >=26.1 {
+        ItemSlots handler = Transfer.items(helper.getLevel(), abs, left);
+        //?} else {
+        /*IItemHandler handler = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, abs, left);
+        *///?}
         helper.assertTrue(handler != null, "item handler");
         helper.assertTrue(handler.insertItem(0, new ItemStack(DfmItems.GRAIN_CALCITE.get(), 4), false).isEmpty(), "inserted");
         helper.assertTrue(be.input(1).firstCount() == 4 && be.input(0).isEmpty() && be.input(2).isEmpty(), "went only to lane 2");
@@ -361,8 +420,16 @@ public final class ElectricFurnaceGameTests {
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             helper.assertTrue(handler.extractItem(slot, 64, true).isEmpty(), "dedicated lane never outputs items");
         }
-        helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, left) != null, "energy coexists");
+        //? if >=26.1 {
+        helper.assertTrue(Transfer.energy(helper.getLevel(), abs, left) != null, "energy coexists");
+        helper.assertTrue(Transfer.energy(helper.getLevel(), abs, null) == null, "no unsided energy view");
+        helper.assertTrue(Transfer.fluids(helper.getLevel(), abs, left) != null, "xp coexists");
+        //?} else {
+        /*helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, left) != null, "energy coexists");
+        helper.assertTrue(helper.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, abs, null) == null,
+                "no unsided energy view");
         helper.assertTrue(helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, abs, left) != null, "xp coexists");
+        *///?}
         helper.succeed();
     }
 
@@ -376,16 +443,26 @@ public final class ElectricFurnaceGameTests {
         var level = helper.getLevel();
         BlockPos abs = helper.absolutePos(MACHINE);
         // A cable pulling from an empty face and one pulling from the input face; a pipe pushing into another empty face.
-        CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.LEFT.toDirection(be.facing())));
+        //? if >=26.1 {
+        CrusherGameTests.pull(Transfer.items(level, abs, RelativeFace.LEFT.toDirection(be.facing())));
+        CrusherGameTests.pull(Transfer.items(level, abs, RelativeFace.RIGHT.toDirection(be.facing())));
+        helper.assertTrue(CrusherGameTests.push(Transfer.items(level, abs, RelativeFace.BACK.toDirection(be.facing())),
+        //?} else {
+        /*CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.LEFT.toDirection(be.facing())));
         CrusherGameTests.pull(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.RIGHT.toDirection(be.facing())));
         helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+        *///?}
                 new ItemStack(Items.RAW_IRON)) == 0, "nothing enters before the route");
         helper.runAfterDelay(20, () -> {
             helper.assertTrue(be.route(RelativeFace.LEFT, Transmission.ITEM) == SideRoute.ITEM_OUTPUT, "pulled face: output");
             helper.assertTrue(be.route(RelativeFace.RIGHT, Transmission.ITEM) == SideRoute.ITEM_INPUT_OUTPUT_ALL, "input kept, output added");
             helper.assertTrue(be.route(RelativeFace.BACK, Transmission.ITEM) == SideRoute.ITEM_INPUT_ALL, "pushed face: input");
             helper.assertTrue(be.route(RelativeFace.UP, Transmission.ITEM) == SideRoute.NONE, "untouched face stays empty");
-            helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+            //? if >=26.1 {
+            helper.assertTrue(CrusherGameTests.push(Transfer.items(level, abs, RelativeFace.BACK.toDirection(be.facing())),
+            //?} else {
+            /*helper.assertTrue(CrusherGameTests.push(level.getCapability(Capabilities.ItemHandler.BLOCK, abs, RelativeFace.BACK.toDirection(be.facing())),
+            *///?}
                     new ItemStack(Items.RAW_IRON)) == 1, "the pipe now feeds the furnace");
             helper.succeed();
         });
@@ -397,14 +474,27 @@ public final class ElectricFurnaceGameTests {
         be.configureSide(RelativeFace.BACK, Transmission.EXPERIENCE, SideRoute.XP_OUTPUT);
         be.experience().setMilli(1234);
         Direction back = RelativeFace.BACK.toDirection(be.facing());
-        IFluidHandler fluid = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(MACHINE), back);
+        //? if >=26.1 {
+        FluidTanks fluid = Transfer.fluids(helper.getLevel(), helper.absolutePos(MACHINE), back);
+        //?} else {
+        /*IFluidHandler fluid = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(MACHINE), back);
+        *///?}
         helper.assertTrue(fluid != null, "fluid handler on XP_OUTPUT face");
-        helper.assertTrue(fluid.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 100), IFluidHandler.FluidAction.EXECUTE) == 0, "no XP input");
+        //? if >=26.1 {
+        helper.assertTrue(fluid.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 100), FluidTanks.FluidAction.EXECUTE) == 0, "no XP input");
+        FluidStack drained = fluid.drain(1000, FluidTanks.FluidAction.EXECUTE);
+        //?} else {
+        /*helper.assertTrue(fluid.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 100), IFluidHandler.FluidAction.EXECUTE) == 0, "no XP input");
         FluidStack drained = fluid.drain(1000, IFluidHandler.FluidAction.EXECUTE);
+        *///?}
         helper.assertTrue(drained.getAmount() == 24 && drained.is(DfmFluids.LIQUID_EXPERIENCE.get()), "24 mB drained");
         helper.assertTrue(be.experience().milli() == 34, "fraction below 1 mB stays stored");
         helper.assertTrue(DfmFluids.LIQUID_EXPERIENCE.get().defaultFluidState().is(net.minecraft.tags.FluidTags.create(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "experience"))), "#c:experience");
+                //? if >=26.1 {
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "experience"))), "#c:experience");
+                //?} else {
+                /*net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "experience"))), "#c:experience");
+                *///?}
         helper.succeed();
     }
 
@@ -420,14 +510,26 @@ public final class ElectricFurnaceGameTests {
         // The item mode cycle (OFF -> input -> eject -> both) never touches the fluid Auto Eject.
         for (int i = 0; i < 4; i++) {
             be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_IO_NEXT);
-            helper.assertFalse(menuData(helper, be).getBoolean("auto_eject_fluid"), "item cycle leaves fluids off");
+            //? if >=26.1 {
+            helper.assertFalse(menuData(helper, be).getBooleanOr("auto_eject_fluid", false), "item cycle leaves fluids off");
+            //?} else {
+            /*helper.assertFalse(menuData(helper, be).getBoolean("auto_eject_fluid"), "item cycle leaves fluids off");
+            *///?}
         }
         helper.assertTrue(be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID), "fluid toggle");
         var data = menuData(helper, be);
-        helper.assertTrue(data.getBoolean("auto_eject_fluid") && !data.getBoolean("auto_input") && !data.getBoolean("auto_eject"),
+        //? if >=26.1 {
+        helper.assertTrue(data.getBooleanOr("auto_eject_fluid", false) && !data.getBooleanOr("auto_input", false) && !data.getBooleanOr("auto_eject", false),
+        //?} else {
+        /*helper.assertTrue(data.getBoolean("auto_eject_fluid") && !data.getBoolean("auto_input") && !data.getBoolean("auto_eject"),
+        *///?}
                 "fluid Auto Eject on, items still off");
         be.handleButton(null, AbstractMachineBlockEntity.BUTTON_AUTO_EJECT_FLUID);
-        helper.assertFalse(menuData(helper, be).getBoolean("auto_eject_fluid"), "fluid toggle back off");
+        //? if >=26.1 {
+        helper.assertFalse(menuData(helper, be).getBooleanOr("auto_eject_fluid", false), "fluid toggle back off");
+        //?} else {
+        /*helper.assertFalse(menuData(helper, be).getBoolean("auto_eject_fluid"), "fluid toggle back off");
+        *///?}
 
         // Items eject on their own: results leave, the liquid XP stays stored while the fluid Auto Eject is off.
         be.configureSide(RelativeFace.BACK, Transmission.ITEM, SideRoute.ITEM_OUTPUT);
@@ -451,12 +553,25 @@ public final class ElectricFurnaceGameTests {
         be.setAutoEject(true);
         net.minecraft.nbt.CompoundTag old = be.saveWithoutMetadata(registries);
         old.remove("auto_eject_fluid");
-        be.loadWithComponents(old, registries);
+        //? if >=26.1 {
+        TestSupport.load(be, old, registries);
+        helper.assertTrue(menuData(helper, be).getBooleanOr("auto_eject_fluid", false), "a save from before the split ejected XP with the items");
+        //?} else {
+        /*be.loadWithComponents(old, registries);
         helper.assertTrue(menuData(helper, be).getBoolean("auto_eject_fluid"), "a save from before the split ejected XP with the items");
+        *///?}
         be.setAutoEjectFluid(false);
-        be.loadWithComponents(be.saveWithoutMetadata(registries), registries);
+        //? if >=26.1 {
+        TestSupport.load(be, be.saveWithoutMetadata(registries), registries);
+        //?} else {
+        /*be.loadWithComponents(be.saveWithoutMetadata(registries), registries);
+        *///?}
         var data = menuData(helper, be);
-        helper.assertTrue(data.getBoolean("auto_eject") && !data.getBoolean("auto_eject_fluid"), "new saves keep each setting");
+        //? if >=26.1 {
+        helper.assertTrue(data.getBooleanOr("auto_eject", false) && !data.getBooleanOr("auto_eject_fluid", false), "new saves keep each setting");
+        //?} else {
+        /*helper.assertTrue(data.getBoolean("auto_eject") && !data.getBoolean("auto_eject_fluid"), "new saves keep each setting");
+        *///?}
         helper.succeed();
     }
 
@@ -467,17 +582,33 @@ public final class ElectricFurnaceGameTests {
             helper.succeed();
             return;
         }
-        var obelisk = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.parse("cognition:experience_obelisk"));
+        //? if >=26.1 {
+        var obelisk = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.Identifier.parse("cognition:experience_obelisk"));
+        //?} else {
+        /*var obelisk = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.ResourceLocation.parse("cognition:experience_obelisk"));
+        *///?}
         BlockPos pos = new BlockPos(1, 1, 1);
         helper.setBlock(pos, obelisk.defaultBlockState());
-        IFluidHandler handler = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(pos), null);
+        //? if >=26.1 {
+        FluidTanks handler = Transfer.fluids(helper.getLevel(), helper.absolutePos(pos), null);
+        //?} else {
+        /*IFluidHandler handler = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(pos), null);
+        *///?}
         for (Direction side : Direction.values()) {
             if (handler == null) {
-                handler = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(pos), side);
+                //? if >=26.1 {
+                handler = Transfer.fluids(helper.getLevel(), helper.absolutePos(pos), side);
+                //?} else {
+                /*handler = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, helper.absolutePos(pos), side);
+                *///?}
             }
         }
         helper.assertTrue(handler != null, "the obelisk has a fluid handler");
-        int filled = handler.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 200), IFluidHandler.FluidAction.SIMULATE);
+        //? if >=26.1 {
+        int filled = handler.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 200), FluidTanks.FluidAction.SIMULATE);
+        //?} else {
+        /*int filled = handler.fill(new FluidStack(DfmFluids.LIQUID_EXPERIENCE.get(), 200), IFluidHandler.FluidAction.SIMULATE);
+        *///?}
         helper.assertTrue(filled == 200, "the obelisk takes Liquid Experience, filled " + filled);
         helper.succeed();
     }

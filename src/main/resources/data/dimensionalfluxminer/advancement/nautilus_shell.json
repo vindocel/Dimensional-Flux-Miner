@@ -1,0 +1,26 @@
+{
+  "parent": "dimensionalfluxminer:steel",
+  "display": {
+    "icon": {
+      "id": "minecraft:nautilus_shell"
+    },
+    "title": {
+      "translate": "advancements.dimensionalfluxminer.nautilus_shell.title"
+    },
+    "description": {
+      "translate": "advancements.dimensionalfluxminer.nautilus_shell.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "created": {
+      "trigger": "dimensionalfluxminer:event",
+      "conditions": {
+        "event": "nautilus_shell_created"
+      }
+    }
+  }
+}

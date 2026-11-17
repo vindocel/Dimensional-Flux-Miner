@@ -1,5 +1,10 @@
 package dimensionalfluxminer.tank;
 
+//? if >=26.1 {
+import dimensionalfluxminer.machine.transfer.FluidTanks;
+import dimensionalfluxminer.machine.transfer.TagStacks;
+import dimensionalfluxminer.machine.transfer.Transfer;
+//?}
 import dimensionalfluxminer.machine.AbstractMachineBlockEntity;
 import dimensionalfluxminer.machine.side.RelativeFace;
 import dimensionalfluxminer.machine.side.SideConfiguration;
@@ -34,22 +39,44 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidActionResult;
+//? if <26.1 {
+/*import net.neoforged.neoforge.fluids.FluidActionResult;
+*///?}
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidUtil;
+//? if <26.1 {
+/*import net.neoforged.neoforge.fluids.FluidUtil;
+*///?}
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+//? if >=26.1 {
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+import net.neoforged.neoforge.transfer.resource.ResourceStack;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+//?} else {
+/*import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+*///?}
 
 /**
  * A Dimensional Tank: an endpoint of the channel named by its kind and its three-color code. The liquid is kept in
- * {@link TankChannels}, never here, so every tank with the same kind and code (in any dimension) sees and changes the
- * same content. No energy, no processing. Each face carries the liquid of one chamber (Side Configuration) and the
+ * {@link TankChannels} while connected, so tanks with the same kind and code share content across dimensions.
+ * Closing the channel lock selects independent chambers persisted with this block and its item.
+ * No energy. The ordinary single tank also converts containers in two local slots.
+ * Each face carries the liquid of one chamber (Side Configuration) and the
  * liquids have their own Auto Input and Auto Eject (default OFF); capabilities stay available with both OFF.
  * <p>
  * The creative tank has no channel and no code: it keeps one liquid in the block and gives it without end
  * ({@link CreativeFluidHandler}).
  */
-public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvider {
+//? if >=26.1 {
+public class DimensionalTankBlockEntity extends dimensionalfluxminer.content.TagBlockEntity implements MenuProvider {
+//?} else {
+/*public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvider {
+*///?}
     /** {@code BUTTON_CODE_BASE + position * 16 + dye color id}: picks the color of one code position. */
     public static final int BUTTON_CODE_BASE = 3000;
     /** {@code BUTTON_CONTAINER + chamber}: the carried container is emptied into (or filled from) that chamber. */
@@ -64,30 +91,109 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
      * deleted for every tank with the code; the creative tank forgets its liquid.
      */
     public static final int BUTTON_CLEAR = 3300;
+    public static final int BUTTON_CHANNEL_LOCK = 3400;
     /** Client updates of the liquids at most every this many ticks. */
     private static final int SYNC_INTERVAL = 2;
 
     private final TankKind kind;
     private final SideConfiguration sides;
+    private final TankContainerSlots containers = new TankContainerSlots(this);
+    private boolean autoInputItems;
+    private boolean autoEjectItems;
+
+    public TankContainerSlots containers() {
+        return containers;
+    }
+
+    //? if >=26.1 {
+    public dimensionalfluxminer.machine.transfer.ItemSlots itemFor(Direction side) {
+    //?} else {
+    /*/^* Item handler of a world side: the container slot of the face's route (single tank only); read-only without a face. ^/
+    public IItemHandler itemFor(Direction side) {
+    *///?}
+        if (kind != TankKind.SINGLE) {
+            return null;
+        }
+        return side == null ? containers.readOnly()
+                : containers.face(sides.get(RelativeFace.of(facing(), side), Transmission.ITEM, 0));
+    }
+
+    public boolean configureItems(RelativeFace face, SideRoute route) {
+        if (kind != TankKind.SINGLE || !sides.set(face, Transmission.ITEM, 0, route)) {
+            return false;
+        }
+        onSidesChanged();
+        return true;
+    }
+    //? if <26.1 {
+
+    /*public boolean autoInputItems() {
+        return autoInputItems;
+    }
+
+    public boolean autoEjectItems() {
+        return autoEjectItems;
+    }
+
+    *///?}
     private TankCode code = TankCode.DEFAULT;
     private boolean autoInputFluid;
     private boolean autoEjectFluid;
     /** Server: the channel of the current code, looked up again when the code changes. */
     private TankChannels.Channel channel;
+    private TankChannels.Channel local;
+    private boolean channelLocked;
     private int syncedVersion = -1;
     /** Game time of the last client update; starts far enough back for the first tick to send one (no overflow). */
     private long lastSync = -SYNC_INTERVAL;
     /** Client: the chambers last received from the server. */
     private FluidStack[] clientChambers;
-    private final Map<Direction, IFluidHandler> handlers = new EnumMap<>(Direction.class);
+    //? if >=26.1 {
+    private final Map<Direction, FluidTanks> handlers = new EnumMap<>(Direction.class);
+    //?} else {
+    /*private final Map<Direction, IFluidHandler> handlers = new EnumMap<>(Direction.class);
+    *///?}
     /** Creative tank: its endless liquid (amount = capacity), and a version bumped on every change. */
     private FluidStack creativeFluid = FluidStack.EMPTY;
     private int creativeVersion;
+    //? if >=26.1 {
+
+    /** The chambers of the channel (and the creative liquid), put back if a transaction of another block that changed them is cancelled. */
+    private final Transfer.Journal<Object[]> journal = new Transfer.Journal<>(() -> {
+        TankChannels.Channel c = channel();
+        FluidStack[] copy = new FluidStack[c == null ? 0 : c.chambers()];
+        for (int i = 0; i < copy.length; i++) {
+            copy[i] = c.get(i).copy();
+        }
+        return new Object[] {c, copy, creativeFluid.copy(), containers.snapshot(), containers.completionSnapshot(), containers.progressSnapshot()};
+    }, snapshot -> {
+        if (snapshot[0] instanceof TankChannels.Channel c) {
+            FluidStack[] copy = (FluidStack[]) snapshot[1];
+            for (int i = 0; i < copy.length; i++) {
+                c.set(i, copy[i]);
+            }
+        }
+        containers.restore((ItemStack[]) snapshot[3]);
+        containers.restoreCompletion((boolean[]) snapshot[4]);
+        containers.restoreProgress((int[]) snapshot[5]);
+        FluidStack creative = (FluidStack) snapshot[2];
+        if (!FluidStack.matches(creative, creativeFluid)) {
+            creativeFluid = creative;
+            creativeVersion++;
+        }
+    });
+
+    public Transfer.Journal<Object[]> journal() {
+        return journal;
+    }
+    //?}
 
     public DimensionalTankBlockEntity(BlockPos pos, BlockState state) {
         super(DfmBlockEntities.DIMENSIONAL_TANK.get(), pos, state);
         this.kind = state.getBlock() instanceof DimensionalTankBlock block ? block.kind() : TankKind.SINGLE;
-        this.sides = new SideConfiguration(kind == TankKind.DUAL ? SideRules.TANK_DUAL : SideRules.TANK_SINGLE);
+        this.local = TankChannels.local(kind, this::setChanged);
+        this.sides = new SideConfiguration(kind == TankKind.DUAL ? SideRules.TANK_DUAL
+                : kind == TankKind.SINGLE ? SideRules.TANK_CONTAINERS : SideRules.TANK_SINGLE);
         this.clientChambers = emptyChambers(kind);
     }
 
@@ -105,6 +211,27 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
 
     public TankCode code() {
         return code;
+    }
+
+    public boolean channelLocked() {
+        return channelLocked;
+    }
+
+    /** Switches storage without moving fluid between the shared channel and this block. */
+    public boolean setChannelLocked(boolean locked) {
+        if (kind.creative() || channelLocked == locked) {
+            return false;
+        }
+        channelLocked = locked;
+        syncedVersion = -1;
+        handlers.clear();
+        if (level != null) {
+            level.invalidateCapabilities(worldPosition);
+        }
+        setChanged();
+        updateLight();
+        syncToClients();
+        return true;
     }
 
     public Direction facing() {
@@ -135,7 +262,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
 
     /** Points the tank at another channel. The content of both channels stays where it is. The creative tank has no channel. */
     public void setCode(TankCode code) {
-        if (kind.creative() || code.equals(this.code)) {
+        if (kind.creative() || channelLocked || code.equals(this.code)) {
             return;
         }
         boolean sameChannel = code.sameChannel(this.code);
@@ -154,7 +281,7 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
      * stack is not the personal item.
      */
     public boolean makePersonal(Player player, ItemStack source) {
-        if (kind.creative() || code.personal() || !source.is(dimensionalfluxminer.DfmConfig.tankPersonalItem())) {
+        if (kind.creative() || channelLocked || code.personal() || !source.is(dimensionalfluxminer.DfmConfig.tankPersonalItem())) {
             return false;
         }
         setCode(code.withOwner(player));
@@ -164,9 +291,27 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         return true;
     }
 
+    //? if >=26.1 {
+    /** Anarchy mode: the drop is public (see the components), so the personal item drops apart. */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null && !level.isClientSide() && kind == TankKind.SINGLE) {
+            for (int slot = 0; slot < containers.getSlots(); slot++) {
+                net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), containers.getStackInSlot(slot));
+                containers.setStackInSlot(slot, ItemStack.EMPTY);
+            }
+        }
+        if (level != null && dimensionalfluxminer.DfmConfig.tankAnarchyMode() && code().personal()) {
+            net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
+                    new ItemStack(dimensionalfluxminer.DfmConfig.tankPersonalItem()));
+        }
+    }
+
+    //?}
     /** Makes a personal code public again and gives the personal item back (none in creative). */
     public boolean makePublic(Player player) {
-        if (!code.personal()) {
+        if (channelLocked || !code.personal()) {
             return false;
         }
         setCode(code.withoutOwner());
@@ -176,9 +321,20 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         return true;
     }
 
-    /** Server: the channel of this tank (null on the client, outside a server or for the creative tank). */
+    /** Server: the active shared or local storage (null on the client or for the creative tank). */
     public TankChannels.Channel channel() {
-        if (channel == null && !kind.creative() && level != null && !level.isClientSide && level.getServer() != null) {
+        //? if >=26.1 {
+        if (channelLocked && !kind.creative() && level != null && !level.isClientSide()) {
+        //?} else {
+        /*if (channelLocked && !kind.creative() && level != null && !level.isClientSide) {
+        *///?}
+            return local;
+        }
+        //? if >=26.1 {
+        if (channel == null && !kind.creative() && level != null && !level.isClientSide() && level.getServer() != null) {
+        //?} else {
+        /*if (channel == null && !kind.creative() && level != null && !level.isClientSide && level.getServer() != null) {
+        *///?}
             channel = TankChannels.get(level.getServer()).channel(kind, code);
         }
         return channel;
@@ -186,7 +342,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
 
     /** Liquid of a chamber: the channel on the server, the last update on the client. Do not modify it. */
     public FluidStack chamber(int index) {
-        if (level != null && level.isClientSide) {
+        //? if >=26.1 {
+        if (level != null && level.isClientSide()) {
+        //?} else {
+        /*if (level != null && level.isClientSide) {
+        *///?}
             return index < clientChambers.length ? clientChambers[index] : FluidStack.EMPTY;
         }
         if (kind.creative()) {
@@ -197,7 +357,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** Full access to one chamber (both directions), as used by buckets and the screen. */
-    public IFluidHandler chamberHandler(int index) {
+    //? if >=26.1 {
+    public FluidTanks chamberHandler(int index) {
+    //?} else {
+    /*public IFluidHandler chamberHandler(int index) {
+    *///?}
         return kind.creative() ? CreativeFluidHandler.forPlayer(this) : new ChamberFluidHandler(this::channel, index, true, true);
     }
 
@@ -225,7 +389,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** Handler of a face or of the automation: on the creative tank, liquid from outside is voided while it is empty. */
-    private IFluidHandler handler(int chamber, java.util.function.BooleanSupplier fills, boolean drains) {
+    //? if >=26.1 {
+    private FluidTanks handler(int chamber, java.util.function.BooleanSupplier fills, boolean drains) {
+    //?} else {
+    /*private IFluidHandler handler(int chamber, java.util.function.BooleanSupplier fills, boolean drains) {
+    *///?}
         return kind.creative() ? new CreativeFluidHandler(() -> chamber(0), null, fills, drains)
                 : new ChamberFluidHandler(this::channel, chamber, fills, drains);
     }
@@ -277,6 +445,10 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         if (be.autoInputFluid || be.autoEjectFluid) {
             be.automation();
         }
+        if (be.kind == TankKind.SINGLE) {
+            be.itemAutomation();
+            be.containers.tick();
+        }
         int version = be.contentVersion();
         long now = level.getGameTime();
         if (version >= 0 && version != be.syncedVersion && now - be.lastSync >= SYNC_INTERVAL) {
@@ -284,6 +456,71 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
             be.lastSync = now;
             be.syncToClients();
             be.updateLight();
+        }
+    }
+
+    //? if >=26.1 {
+    private void itemAutomation() {
+    //?} else {
+    /*/^* Auto Input pulls a new container into, and Auto Eject pushes a finished one out of, the slot of each face. ^/
+    private void itemAutomation() {
+    *///?}
+        if (!autoInputItems && !autoEjectItems) {
+            return;
+        }
+        for (RelativeFace face : RelativeFace.VALUES) {
+            SideRoute route = sides.get(face, Transmission.ITEM, 0);
+            if (route.containerSlot() < 0) {
+                continue;
+            }
+            //? if >=26.1 {
+            var own = Transfer.exposeItems(containers.face(route), journal);
+            //?} else {
+            /*IItemHandler own = containers.face(route);
+            *///?}
+            Direction direction = face.toDirection(facing());
+            //? if <26.1 {
+            /*BlockPos target = worldPosition.relative(direction);
+            if (!level.isLoaded(target)) {
+                continue;
+            }
+            IItemHandler neighbor = level.getCapability(Capabilities.ItemHandler.BLOCK, target, direction.getOpposite());
+            if (neighbor == null) {
+                continue;
+            }
+            *///?}
+            if (autoEjectItems && route.extractsContainers()) {
+                //? if >=26.1 {
+                Transfer.moveContainer(level, worldPosition, direction, own, false);
+                //?} else {
+                /*moveOne(own, neighbor);
+                *///?}
+            }
+            if (autoInputItems && route.insertsContainers()) {
+                //? if >=26.1 {
+                Transfer.moveContainer(level, worldPosition, direction, own, true);
+            }
+                //?} else {
+                /*moveOne(neighbor, own);
+            }
+        }
+    }
+
+    /^* Moves one item from the first slot of {@code from} that {@code to} fully accepts. ^/
+    private static void moveOne(IItemHandler from, IItemHandler to) {
+        for (int slot = 0; slot < from.getSlots(); slot++) {
+            ItemStack one = from.extractItem(slot, 1, true);
+            if (one.isEmpty() || !ItemHandlerHelper.insertItem(to, one, true).isEmpty()) {
+                continue;
+            }
+            ItemStack taken = from.extractItem(slot, 1, false);
+            ItemStack left = ItemHandlerHelper.insertItem(to, taken, false);
+            if (!left.isEmpty()) {
+                // Should not happen after the simulation; put it back where it came from.
+                from.insertItem(slot, left, false);
+            }
+            return;
+                *///?}
         }
     }
 
@@ -305,16 +542,32 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
             if (!level.isLoaded(target)) {
                 continue;
             }
-            IFluidHandler neighbor = level.getCapability(Capabilities.FluidHandler.BLOCK, target, side.getOpposite());
+            //? if >=26.1 {
+            FluidTanks neighbor = Transfer.fluids(level, target, side.getOpposite());
+            //?} else {
+            /*IFluidHandler neighbor = level.getCapability(Capabilities.FluidHandler.BLOCK, target, side.getOpposite());
+            *///?}
             if (neighbor == null) {
                 continue;
             }
-            IFluidHandler own = handler(chamber, () -> true, true);
+            //? if >=26.1 {
+            FluidTanks own = handler(chamber, () -> true, true);
+            //?} else {
+            /*IFluidHandler own = handler(chamber, () -> true, true);
+            *///?}
             if (in) {
-                FluidUtil.tryFluidTransfer(own, neighbor, Integer.MAX_VALUE, true);
+                //? if >=26.1 {
+                FluidTanks.move(own, neighbor, Integer.MAX_VALUE);
+                //?} else {
+                /*FluidUtil.tryFluidTransfer(own, neighbor, Integer.MAX_VALUE, true);
+                *///?}
             }
             if (out) {
-                FluidUtil.tryFluidTransfer(neighbor, own, Integer.MAX_VALUE, true);
+                //? if >=26.1 {
+                FluidTanks.move(neighbor, own, Integer.MAX_VALUE);
+                //?} else {
+                /*FluidUtil.tryFluidTransfer(neighbor, own, Integer.MAX_VALUE, true);
+                *///?}
             }
         }
     }
@@ -327,7 +580,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
      * would otherwise send part of the ejected liquid straight back (the last mB bouncing between tank and pipe). The
      * {@code null} side is a read-only view of every chamber (information tools).
      */
-    public IFluidHandler fluidFor(Direction side) {
+    //? if >=26.1 {
+    public FluidTanks fluidFor(Direction side) {
+    //?} else {
+    /*public IFluidHandler fluidFor(Direction side) {
+    *///?}
         if (side == null) {
             return new ReadOnlyChambers();
         }
@@ -350,7 +607,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** Every chamber, nothing can be inserted or extracted. */
-    private final class ReadOnlyChambers implements IFluidHandler {
+    //? if >=26.1 {
+    private final class ReadOnlyChambers implements FluidTanks {
+    //?} else {
+    /*private final class ReadOnlyChambers implements IFluidHandler {
+    *///?}
         @Override
         public int getTanks() {
             return kind.chambers();
@@ -401,6 +662,12 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
 
     /** Applies a validated GUI button press on the server. */
     public boolean handleButton(Player player, int id) {
+        if (id == BUTTON_CHANNEL_LOCK) {
+            return setChannelLocked(!channelLocked);
+        }
+        if (channelLocked && (id == BUTTON_PERSONAL || id >= BUTTON_CODE_BASE && id < BUTTON_CODE_BASE + TankCode.POSITIONS * 16)) {
+            return false;
+        }
         if (kind.creative() && (id == BUTTON_PERSONAL || id >= BUTTON_CODE_BASE && id < BUTTON_CODE_BASE + TankCode.POSITIONS * 16)) {
             // No channels on the creative tank.
             return false;
@@ -460,31 +727,51 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
             setChanged();
             return true;
         }
+        if (kind == TankKind.SINGLE && id == AbstractMachineBlockEntity.BUTTON_AUTO_INPUT) {
+            autoInputItems = !autoInputItems;
+            setChanged();
+            return true;
+        }
+        if (kind == TankKind.SINGLE && id == AbstractMachineBlockEntity.BUTTON_AUTO_EJECT) {
+            autoEjectItems = !autoEjectItems;
+            setChanged();
+            return true;
+        }
         int sideBase = AbstractMachineBlockEntity.BUTTON_SIDE_BASE;
         if (id >= sideBase && id < sideBase + RelativeFace.VALUES.length * 16) {
             int local = id - sideBase;
             int transmission = (local % 16) / 2;
-            if (transmission != Transmission.FLUID.ordinal()) {
+            if (transmission != Transmission.FLUID.ordinal() && !(kind == TankKind.SINGLE && transmission == Transmission.ITEM.ordinal())) {
                 return false;
             }
-            if (sides.cycle(RelativeFace.VALUES[local / 16], Transmission.FLUID, 0, local % 2 == 0)) {
+            if (sides.cycle(RelativeFace.VALUES[local / 16], Transmission.VALUES[transmission], 0, local % 2 == 0)) {
                 onSidesChanged();
                 return true;
             }
             return false;
         }
-        if (id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR + Transmission.FLUID.ordinal()
-                || id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL) {
+        if (id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR_ALL) {
             sides.clear(Transmission.FLUID, 0);
+            sides.clear(Transmission.ITEM, 0);
             onSidesChanged();
             return true;
         }
-        int batch = AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + Transmission.FLUID.ordinal() * 2;
-        if (id == batch || id == batch + 1) {
-            SideRoute target = sides.batchTarget(Transmission.FLUID, 0, id == batch);
-            if (sides.applyAll(Transmission.FLUID, 0, target)) {
+        for (Transmission transmission : new Transmission[] {Transmission.ITEM, Transmission.FLUID}) {
+            if (transmission == Transmission.ITEM && kind != TankKind.SINGLE) {
+                continue;
+            }
+            if (id == AbstractMachineBlockEntity.BUTTON_SIDE_CLEAR + transmission.ordinal()) {
+                sides.clear(transmission, 0);
                 onSidesChanged();
                 return true;
+            }
+            int batch = AbstractMachineBlockEntity.BUTTON_SIDE_BATCH + transmission.ordinal() * 2;
+            if (id == batch || id == batch + 1) {
+                SideRoute target = sides.batchTarget(transmission, 0, id == batch);
+                if (sides.applyAll(transmission, 0, target)) {
+                    onSidesChanged();
+                    return true;
+                }
             }
         }
         return false;
@@ -495,21 +782,49 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
      * from it. One container at a time; the result goes back to the cursor (or the inventory).
      */
     private boolean useCarried(Player player, int chamber) {
-        AbstractContainerMenu menu = player.containerMenu;
+        //? if >=26.1 {
+        if (player.containerMenu.getCarried().isEmpty() || level == null) {
+        //?} else {
+        /*AbstractContainerMenu menu = player.containerMenu;
         ItemStack carried = menu.getCarried();
         if (carried.isEmpty()) {
+        *///?}
             return false;
         }
-        ItemStack one = carried.copyWithCount(1);
+        //? if >=26.1 {
+        ResourceHandler<FluidResource> item = ItemAccess.forPlayerCursor(player, player.containerMenu).oneByOne()
+                .getCapability(Capabilities.Fluid.ITEM);
+        if (item == null) {
+        //?} else {
+        /*ItemStack one = carried.copyWithCount(1);
         IFluidHandler handler = chamberHandler(chamber);
         FluidActionResult result = FluidUtil.tryEmptyContainer(one, handler, Integer.MAX_VALUE, player, true);
         if (!result.isSuccess()) {
             result = FluidUtil.tryFillContainer(one, handler, Integer.MAX_VALUE, player, true);
         }
         if (!result.isSuccess()) {
+        *///?}
             return false;
         }
-        carried.shrink(1);
+        //? if >=26.1 {
+        ResourceHandler<FluidResource> tank = Transfer.exposeFluids(chamberHandler(chamber), journal);
+        try (Transaction transaction = Transaction.openRoot()) {
+            boolean pickup = false;
+            ResourceStack<FluidResource> moved = ResourceHandlerUtil.moveFirst(item, tank, resource -> true, Integer.MAX_VALUE, transaction);
+            if (moved == null) {
+                pickup = true;
+                moved = ResourceHandlerUtil.moveFirst(tank, item, resource -> true, Integer.MAX_VALUE, transaction);
+            }
+            if (moved == null) {
+                return false;
+            }
+            transaction.commit();
+            FluidUtil.triggerSoundAndGameEvent(moved.resource(), level, player.position(), player, pickup);
+            return true;
+        }
+    }
+        //?} else {
+        /*carried.shrink(1);
         if (carried.isEmpty()) {
             menu.setCarried(result.getResult());
         } else {
@@ -518,8 +833,10 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         return true;
     }
 
+        *///?}
     /** Snapshot sent to open menus (server -> client). */
     public void writeMenuData(CompoundTag tag, HolderLookup.Provider registries) {
+        tag.putBoolean("channel_locked", channelLocked);
         tag.putString("kind", kind.id());
         tag.put("code", code.save());
         tag.put("chambers", writeChambers(registries));
@@ -527,12 +844,18 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         tag.putBoolean("auto_input_fluid", autoInputFluid);
         tag.putBoolean("auto_eject_fluid", autoEjectFluid);
         tag.put("sides", sides.save());
+        tag.putBoolean("auto_input", autoInputItems);
+        tag.putBoolean("auto_eject", autoEjectItems);
     }
 
     private ListTag writeChambers(HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (int i = 0; i < kind.chambers(); i++) {
-            list.add(chamber(i).saveOptional(registries));
+            //? if >=26.1 {
+            list.add(dimensionalfluxminer.machine.transfer.TagStacks.save(registries, chamber(i)));
+            //?} else {
+            /*list.add(chamber(i).saveOptional(registries));
+            *///?}
         }
         return list;
     }
@@ -540,7 +863,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     public static FluidStack[] readChambers(ListTag list, int count, HolderLookup.Provider registries) {
         FluidStack[] result = new FluidStack[count];
         for (int i = 0; i < count; i++) {
-            result[i] = i < list.size() ? FluidStack.parseOptional(registries, list.getCompound(i)) : FluidStack.EMPTY;
+            //? if >=26.1 {
+            result[i] = i < list.size() ? dimensionalfluxminer.machine.transfer.TagStacks.parseFluid(registries, list.getCompoundOrEmpty(i)) : FluidStack.EMPTY;
+            //?} else {
+            /*result[i] = i < list.size() ? FluidStack.parseOptional(registries, list.getCompound(i)) : FluidStack.EMPTY;
+            *///?}
         }
         return result;
     }
@@ -548,27 +875,92 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     // ---------------------------------------------------------------- persistence
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    protected void saveTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveTag(tag, registries);
+    //?} else {
+    /*protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+    *///?}
+        tag.putBoolean("channel_locked", channelLocked);
+        ListTag localChambers = new ListTag();
+        for (int i = 0; i < kind.chambers(); i++) {
+            //? if >=26.1 {
+            localChambers.add(TagStacks.save(registries, local.get(i)));
+            //?} else {
+            /*localChambers.add(local.get(i).saveOptional(registries));
+            *///?}
+        }
+        tag.put("local_chambers", localChambers);
         tag.put("code", code.save());
         tag.put("sides", sides.save());
+        tag.putBoolean("auto_input", autoInputItems);
+        tag.putBoolean("auto_eject", autoEjectItems);
         tag.putBoolean("auto_input_fluid", autoInputFluid);
         tag.putBoolean("auto_eject_fluid", autoEjectFluid);
+        if (kind == TankKind.SINGLE) {
+            tag.put("containers", containers.serializeNBT(registries));
+        }
         if (!creativeFluid.isEmpty()) {
-            tag.put("creative_fluid", creativeFluid.save(registries));
+            //? if >=26.1 {
+            tag.put("creative_fluid", TagStacks.save(registries, creativeFluid));
+            //?} else {
+            /*tag.put("creative_fluid", creativeFluid.save(registries));
+            *///?}
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    protected void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadTag(tag, registries);
+        channelLocked = !kind.creative() && tag.getBooleanOr("channel_locked", false);
+    //?} else {
+    /*protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        code = tag.contains("code", Tag.TAG_COMPOUND) ? TankCode.load(tag.getCompound("code")) : TankCode.DEFAULT;
+        channelLocked = !kind.creative() && tag.getBoolean("channel_locked");
+    *///?}
+        local = TankChannels.local(kind, this::setChanged);
+        //? if >=26.1 {
+        FluidStack[] savedLocal = readChambers(tag.getListOrEmpty("local_chambers"), kind.chambers(), registries);
+        //?} else {
+        /*FluidStack[] savedLocal = readChambers(tag.getList("local_chambers", Tag.TAG_COMPOUND), kind.chambers(), registries);
+        *///?}
+        for (int i = 0; i < savedLocal.length; i++) {
+            local.set(i, savedLocal[i].copyWithAmount(Math.min(kind.capacity(), savedLocal[i].getAmount())));
+        }
+        syncedVersion = -1;
+        //? if >=26.1 {
+        code = tag.getCompound("code").map(TankCode::load).orElse(TankCode.DEFAULT);
+        sides.load(tag.getCompoundOrEmpty("sides"));
+        autoInputItems = tag.getBooleanOr("auto_input", false);
+        autoEjectItems = tag.getBooleanOr("auto_eject", false);
+        //?} else {
+        /*code = tag.contains("code", Tag.TAG_COMPOUND) ? TankCode.load(tag.getCompound("code")) : TankCode.DEFAULT;
         sides.load(tag.getCompound("sides"));
+        autoInputItems = tag.getBoolean("auto_input");
+        autoEjectItems = tag.getBoolean("auto_eject");
+        *///?}
+        if (kind == TankKind.SINGLE) {
+            //? if >=26.1 {
+            containers.load(registries, tag.getCompoundOrEmpty("containers"));
+        }
+        autoInputFluid = tag.getBooleanOr("auto_input_fluid", false);
+        autoEjectFluid = tag.getBooleanOr("auto_eject_fluid", false);
+            //?} else {
+            /*containers.load(registries, tag.getCompound("containers"));
+        }
         autoInputFluid = tag.getBoolean("auto_input_fluid");
         autoEjectFluid = tag.getBoolean("auto_eject_fluid");
+            *///?}
         creativeFluid = FluidStack.EMPTY;
-        if (kind.creative() && tag.contains("creative_fluid", Tag.TAG_COMPOUND)) {
+        //? if >=26.1 {
+        if (kind.creative()) {
+            creativeFluid = tag.getCompound("creative_fluid").map(t -> TagStacks.parseFluid(registries, t)).orElse(FluidStack.EMPTY);
+        //?} else {
+        /*if (kind.creative() && tag.contains("creative_fluid", Tag.TAG_COMPOUND)) {
             creativeFluid = FluidStack.parseOptional(registries, tag.getCompound("creative_fluid"));
+        *///?}
             if (!creativeFluid.isEmpty()) {
                 creativeFluid = creativeFluid.copyWithAmount(kind.capacity());
             }
@@ -579,7 +971,11 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentInput input) {
+    //? if >=26.1 {
+    protected void applyImplicitComponents(net.minecraft.core.component.DataComponentGetter input) {
+    //?} else {
+    /*protected void applyImplicitComponents(DataComponentInput input) {
+    *///?}
         super.applyImplicitComponents(input);
         if (kind.creative()) {
             SimpleFluidContent fluid = input.get(DfmDataComponents.CREATIVE_TANK_FLUID.get());
@@ -589,6 +985,13 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
         TankCode stored = input.get(DfmDataComponents.TANK_CODE.get());
+        // A new tank item (no code yet) is placed locked; a broken tank keeps its state.
+        Boolean locked = input.get(DfmDataComponents.TANK_CHANNEL_LOCKED.get());
+        channelLocked = locked != null ? locked : stored == null;
+        for (int i = 0; i < kind.chambers(); i++) {
+            SimpleFluidContent fluid = input.get(i == 0 ? DfmDataComponents.TANK_LOCAL_A.get() : DfmDataComponents.TANK_LOCAL_B.get());
+            local.set(i, fluid == null ? FluidStack.EMPTY : fluid.copy().copyWithAmount(Math.min(kind.capacity(), fluid.getAmount())));
+        }
         if (stored != null) {
             code = stored;
             channel = null;
@@ -606,13 +1009,37 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         }
         // Anarchy mode: a broken personal tank comes back public (the block drops the personal item apart).
         components.set(DfmDataComponents.TANK_CODE.get(), dimensionalfluxminer.DfmConfig.tankAnarchyMode() ? code.withoutOwner() : code);
+        if (channelLocked) {
+            components.set(DfmDataComponents.TANK_CHANNEL_LOCKED.get(), true);
+        }
+        if (!channelLocked) {
+            for (int i = 0; i < kind.chambers(); i++) {
+                components.set(i == 0 ? DfmDataComponents.TANK_DISPLAY_A.get() : DfmDataComponents.TANK_DISPLAY_B.get(),
+                        SimpleFluidContent.copyOf(chamber(i)));
+            }
+        }
+        for (int i = 0; i < kind.chambers(); i++) {
+            if (!local.get(i).isEmpty()) {
+                components.set(i == 0 ? DfmDataComponents.TANK_LOCAL_A.get() : DfmDataComponents.TANK_LOCAL_B.get(), SimpleFluidContent.copyOf(local.get(i)));
+            }
+        }
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    //? if >=26.1 {
+    public void removeComponentsFromTag(net.minecraft.world.level.storage.ValueOutput output) {
+        output.discard("code");
+        output.discard("creative_fluid");
+        output.discard("channel_locked");
+        output.discard("local_chambers");
+    //?} else {
+    /*@SuppressWarnings("deprecation")
     public void removeComponentsFromTag(CompoundTag tag) {
         tag.remove("code");
         tag.remove("creative_fluid");
+        tag.remove("channel_locked");
+        tag.remove("local_chambers");
+    *///?}
     }
 
     // ---------------------------------------------------------------- client sync
@@ -620,13 +1047,18 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
+        tag.putBoolean("channel_locked", channelLocked);
         tag.put("code", code.save());
         tag.put("chambers", writeChambers(registries));
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    //? if >=26.1 {
+    protected void readUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    //?} else {
+    /*public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+    *///?}
         readClientData(tag, registries);
     }
 
@@ -635,22 +1067,35 @@ public class DimensionalTankBlockEntity extends BlockEntity implements MenuProvi
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
+    //? if <26.1 {
+    /*@Override
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
             readClientData(tag, registries);
         }
     }
+    *///?}
 
     private void readClientData(CompoundTag tag, HolderLookup.Provider registries) {
+        //? if >=26.1 {
+        channelLocked = !kind.creative() && tag.getBooleanOr("channel_locked", false);
+        code = TankCode.load(tag.getCompoundOrEmpty("code"));
+        clientChambers = readChambers(tag.getListOrEmpty("chambers"), kind.chambers(), registries);
+        //?} else {
+        /*channelLocked = !kind.creative() && tag.getBoolean("channel_locked");
         code = TankCode.load(tag.getCompound("code"));
         clientChambers = readChambers(tag.getList("chambers", Tag.TAG_COMPOUND), kind.chambers(), registries);
+        *///?}
         updateLight();
     }
 
     private void syncToClients() {
-        if (level != null && !level.isClientSide) {
+        //? if >=26.1 {
+        if (level != null && !level.isClientSide()) {
+        //?} else {
+        /*if (level != null && !level.isClientSide) {
+        *///?}
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }

@@ -10,7 +10,11 @@ import java.util.List;
 import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+//? if >=26.1 {
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+//?} else {
+/*import net.minecraft.client.gui.GuiGraphics;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -97,12 +101,22 @@ final class MinerSideWindow extends DfmScreen.Window {
     }
 
     @Override
-    protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    //? if >=26.1 {
+    protected void render(GuiGraphicsExtractor g, int x, int y, int mouseX, int mouseY) {
+    //?} else {
+    /*protected void render(GuiGraphics g, int x, int y, int mouseX, int mouseY) {
+    *///?}
         CompoundTag d = data.get();
         MinerPorts ports = new MinerPorts();
-        ports.load(d.getCompound("ports"));
+        //? if >=26.1 {
+        ports.load(d.getCompoundOrEmpty("ports"));
+        int connected = d.getIntOr("energy_connected", 0);
+        boolean stabilized = "STABILIZED".equals(d.getStringOr("core", ""));
+        //?} else {
+        /*ports.load(d.getCompound("ports"));
         int connected = d.getInt("energy_connected");
         boolean stabilized = "STABILIZED".equals(d.getString("core"));
+        *///?}
         boolean items = current == Transmission.ITEM;
 
         // Items and Energy tabs, each always in its own place; the current one is gray and sunk, like the tab of an open window.
@@ -120,8 +134,13 @@ final class MinerSideWindow extends DfmScreen.Window {
         screen.innerScreen(g, x + 38, y + 22, 80, 12);
         Component screenText;
         if (items) {
-            boolean input = d.getBoolean("auto_input");
+            //? if >=26.1 {
+            boolean input = d.getBooleanOr("auto_input", false);
+            boolean eject = d.getBooleanOr("auto_eject", false);
+            //?} else {
+            /*boolean input = d.getBoolean("auto_input");
             boolean eject = d.getBoolean("auto_eject");
+            *///?}
             String mode = input ? eject ? "both" : "input" : eject ? "eject" : "off";
             screenText = Component.translatable("gui.dimensionalfluxminer.side_config.auto." + mode);
         } else {
@@ -131,8 +150,13 @@ final class MinerSideWindow extends DfmScreen.Window {
         screen.fitted(g, screenText, x + 41, y + 25, 74, DfmScreen.screenText(), 0.8F, false);
 
         // Automation of the item ports: two switches, Auto Input (Matter Input face) and Auto Eject (Item Output face).
-        boolean input = d.getBoolean("auto_input");
+        //? if >=26.1 {
+        boolean input = d.getBooleanOr("auto_input", false);
+        boolean eject = d.getBooleanOr("auto_eject", false);
+        //?} else {
+        /*boolean input = d.getBoolean("auto_input");
         boolean eject = d.getBoolean("auto_eject");
+        *///?}
         screen.imageButton(g, x + SideConfigWindow.INPUT_BUTTON_X, y + 6, DfmScreen.SMALL_BUTTON, GuiIcon.AUTO_INJECT, items, input,
                 mouseX, mouseY, () -> MinerControllerBlockEntity.BUTTON_AUTO_INPUT, null,
                 () -> switchTooltip(items, Component.translatable("gui.dimensionalfluxminer.auto_input", MachineText.onOff(input)),
@@ -151,9 +175,15 @@ final class MinerSideWindow extends DfmScreen.Window {
         if (neighbors == null) {
             neighbors = neighborItems();
         }
-        int nodeItems = d.getInt("node_item_faces");
+        //? if >=26.1 {
+        int nodeItems = d.getIntOr("node_item_faces", 0);
+        int nodeEnergy = d.getIntOr("node_energy_faces", 0);
+        int cables = d.getIntOr("cable_faces", 0);
+        //?} else {
+        /*int nodeItems = d.getInt("node_item_faces");
         int nodeEnergy = d.getInt("node_energy_faces");
         int cables = d.getInt("cable_faces");
+        *///?}
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             int[] p = POSITIONS[face.ordinal()];
             boolean node = ((items ? nodeItems : nodeEnergy) & face.bit()) != 0;
@@ -170,7 +200,11 @@ final class MinerSideWindow extends DfmScreen.Window {
      *              be changed here
      * @param cable it is a cable that pulls from or pushes into the face
      */
-    private void face(GuiGraphics g, MinerPorts ports, MinerPorts.Face face, int connected, boolean stabilized, boolean items,
+    //? if >=26.1 {
+    private void face(GuiGraphicsExtractor g, MinerPorts ports, MinerPorts.Face face, int connected, boolean stabilized, boolean items,
+    //?} else {
+    /*private void face(GuiGraphics g, MinerPorts ports, MinerPorts.Face face, int connected, boolean stabilized, boolean items,
+    *///?}
                       boolean node, boolean cable, int x, int y, int mouseX, int mouseY) {
         boolean output = ports.isOutput(face);
         boolean matter = ports.isMatter(face);
@@ -224,19 +258,35 @@ final class MinerSideWindow extends DfmScreen.Window {
             g.fill(x + SIDE / 2, y + 2, x + SIDE - 2, y + SIDE - 2, 0xC0000000 | MATTER_COLOR);
         }
         if (!neighbor.isEmpty()) {
-            g.renderItem(neighbor, x + 2, y + 2);
+            //? if >=26.1 {
+            g.item(neighbor, x + 2, y + 2);
+            //?} else {
+            /*g.renderItem(neighbor, x + 2, y + 2);
+            *///?}
         }
         if (node) {
             // Set by a network node: a frame around the button, like the one drawn on the port.
-            g.pose().pushPose();
+            //? if >=26.1 {
+            g.pose().pushMatrix();
+            g.pose().translate(0, 0);
+            g.outline(x, y, SIDE, SIDE, 0xFF52D9DB);
+            g.pose().popMatrix();
+            //?} else {
+            /*g.pose().pushPose();
             g.pose().translate(0, 0, 200);
             g.renderOutline(x, y, SIDE, SIDE, 0xFF52D9DB);
             g.pose().popPose();
+            *///?}
         }
     }
 
-    /** Pick-block item of the block touching every face, indexed by face ordinal (empty for air). */
+    //? if >=26.1 {
+    /** Item of the block touching every face ({@link NeighborIcon}), indexed by face ordinal (empty for air). */
     private ItemStack[] neighborItems() {
+    //?} else {
+    /*/^* Item ({@link NeighborIcon}) of the block touching every face, indexed by face ordinal (empty for air). ^/
+    private ItemStack[] neighborItems() {
+    *///?}
         ItemStack[] result = new ItemStack[MinerPorts.Face.VALUES.length];
         java.util.Arrays.fill(result, ItemStack.EMPTY);
         Minecraft mc = Minecraft.getInstance();
@@ -254,11 +304,7 @@ final class MinerSideWindow extends DfmScreen.Window {
         for (MinerPorts.Face face : MinerPorts.Face.VALUES) {
             Direction out = face.outward(front);
             BlockPos other = face.owner(layout.core(), front).relative(out);
-            BlockState state = level.getBlockState(other);
-            if (!state.isAir()) {
-                BlockHitResult hit = new BlockHitResult(other.getCenter().relative(out.getOpposite(), 0.5), out.getOpposite(), other, false);
-                result[face.ordinal()] = state.getCloneItemStack(hit, level, other, mc.player);
-            }
+            result[face.ordinal()] = NeighborIcon.of(level, other, out.getOpposite());
         }
         return result;
     }

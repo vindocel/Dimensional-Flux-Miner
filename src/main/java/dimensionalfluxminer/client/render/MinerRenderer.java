@@ -9,16 +9,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import net.minecraft.client.renderer.LevelRenderer;
+//? if >=26.1 {
+import net.minecraft.client.renderer.SubmitNodeCollector;
+//?} else {
+/*import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+*///?}
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+//? if >=26.1 {
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+//? if >=26.1 {
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
+//?} else {
+/*import net.minecraft.resources.ResourceLocation;
+*///?}
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
+//? if >=26.1 {
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
+//?}
 
 /**
  * Draws the formed machine once at the controller. Standby/unpowered stages use the static {@code states}
@@ -28,7 +47,11 @@ import net.minecraft.world.phys.AABB;
  * speed up from rest, leaning into their tilt; after processing ends they slow down, straighten out and stop on
  * an aligned pose (square cages, every quarter turn).
  */
-public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEntity> {
+//? if >=26.1 {
+public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEntity, MinerRenderer.State> {
+//?} else {
+/*public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEntity> {
+*///?}
     private static final String[] PARTS = {"states", "body", "outer", "inner", "energy"};
     private static final float[] STAGE_SPEED = {0.0F, 1.0F, 1.25F, 1.5F, 1.75F, 2.0F};
     private static final double HYSTERESIS = 0.03;
@@ -41,8 +64,13 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
     public MinerRenderer(BlockEntityRendererProvider.Context context) {
     }
 
-    public static List<ResourceLocation> models() {
+    //? if >=26.1 {
+    public static List<Identifier> models() {
+        List<Identifier> list = new ArrayList<>();
+    //?} else {
+    /*public static List<ResourceLocation> models() {
         List<ResourceLocation> list = new ArrayList<>();
+    *///?}
         for (String part : PARTS) {
             for (MinerVisualStage stage : MinerVisualStage.values()) {
                 list.add(model(part, stage));
@@ -51,21 +79,81 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         return list;
     }
 
-    private static ResourceLocation model(String part, MinerVisualStage stage) {
+    //? if >=26.1 {
+    private static Identifier model(String part, MinerVisualStage stage) {
+    //?} else {
+    /*private static ResourceLocation model(String part, MinerVisualStage stage) {
+    *///?}
         return DimensionalFluxMiner.id("block/dimensional_flux_miner/" + part + "/" + stage.key());
     }
 
+    //? if >=26.1 {
+    /** What a frame needs of the machine, read (and the cage spin advanced) before drawing. */
+    public static class State extends BlockEntityRenderState {
+        boolean formed;
+        MinerVisualStage stage = MinerVisualStage.NO_ENERGY;
+        Direction front = Direction.SOUTH;
+        BlockPos origin = BlockPos.ZERO;
+        int fullLight;
+        boolean moving;
+        float angle;
+        float scale = 1.0F;
+        float tilt;
+        int portLooks;
+        int[] nodeColors = new int[0];
+    }
+
+    //?}
     @Override
-    public void render(MinerControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+    //? if >=26.1 {
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(MinerControllerBlockEntity be, State state, float partialTick, Vec3 cameraPosition,
+                                   ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(be, state, partialTick, cameraPosition, breakProgress);
+        state.formed = be.formed() && be.getLevel() != null;
+        if (!state.formed) {
+    //?} else {
+    /*public void render(MinerControllerBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         if (!be.formed() || be.getLevel() == null) {
+    *///?}
             return;
         }
+        //? if >=26.1 {
+        int light = state.lightCoords;
+        //?}
         MinerVisualStage stage = be.visualStage();
         Direction front = be.clientFront();
         BlockPos core = be.corePos();
-        BlockPos origin = core.below().subtract(be.getBlockPos());
+        //? if >=26.1 {
+        state.stage = stage;
+        state.front = front;
+        state.origin = core.below().subtract(be.getBlockPos());
+        //?} else {
+        /*BlockPos origin = core.below().subtract(be.getBlockPos());
+        *///?}
         // Sample the light at the center and in front of the terminal; the controller block itself may be dark.
-        int coreLight = LevelRenderer.getLightColor(be.getLevel(), core);
+        //? if =26.1.2 {
+        int coreLight = net.minecraft.client.renderer.LevelRenderer.getLightCoords(be.getLevel(), core);
+        int frontLight = net.minecraft.client.renderer.LevelRenderer.getLightCoords(be.getLevel(), be.getBlockPos().relative(front));
+        state.fullLight = LightCoordsUtil.pack(
+                Math.max(LightCoordsUtil.block(light), Math.max(LightCoordsUtil.block(coreLight), LightCoordsUtil.block(frontLight))),
+                Math.max(LightCoordsUtil.sky(light), Math.max(LightCoordsUtil.sky(coreLight), LightCoordsUtil.sky(frontLight))));
+        state.portLooks = be.portLooks();
+        state.nodeColors = be.nodeColors();
+        //?} else if >=26.3 {
+        /*int coreLight = LightCoordsUtil.getLightCoords(be.getLevel(), core);
+        int frontLight = LightCoordsUtil.getLightCoords(be.getLevel(), be.getBlockPos().relative(front));
+        state.fullLight = LightCoordsUtil.pack(
+                Math.max(LightCoordsUtil.block(light), Math.max(LightCoordsUtil.block(coreLight), LightCoordsUtil.block(frontLight))),
+                Math.max(LightCoordsUtil.sky(light), Math.max(LightCoordsUtil.sky(coreLight), LightCoordsUtil.sky(frontLight))));
+        state.portLooks = be.portLooks();
+        state.nodeColors = be.nodeColors();
+        *///?} else {
+        /*int coreLight = LevelRenderer.getLightColor(be.getLevel(), core);
         int frontLight = LevelRenderer.getLightColor(be.getLevel(), be.getBlockPos().relative(front));
         int fullLight = LightTexture.pack(
                 Math.max(LightTexture.block(light), Math.max(LightTexture.block(coreLight), LightTexture.block(frontLight))),
@@ -76,13 +164,18 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         pose.translate(0.5, 0, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
         pose.translate(-0.5, 0, -0.5);
+        *///?}
         // Spinning up while processing; once it stops, the moving parts brake onto an aligned pose.
         Spin spin = spins.get(be);
         if (stage.processing() && spin == null) {
             spin = new Spin();
             spins.put(be, spin);
         }
-        boolean moving = false;
+        //? if >=26.1 {
+        state.moving = false;
+        //?} else {
+        /*boolean moving = false;
+        *///?}
         if (spin != null) {
             float now = be.getLevel().getGameTime() + partialTick;
             double wanted = 0;
@@ -94,28 +187,113 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
             if (!stage.processing() && spin.atRestPose()) {
                 spins.remove(be);
             } else {
-                moving = true;
+                //? if >=26.1 {
+                state.moving = true;
+                //?} else {
+                /*moving = true;
+                *///?}
             }
         }
-        ModelRendering.render(pose, buffers, ModelRendering.model(model(moving ? "body" : "states", stage)), fullLight, overlay);
+        //? if >=26.1 {
+        if (state.moving) {
+            state.angle = (float) (spin.angle % 360.0);
+        //?} else {
+        /*ModelRendering.render(pose, buffers, ModelRendering.model(model(moving ? "body" : "states", stage)), fullLight, overlay);
         pose.popPose();
         // Configured ports of the lower layer, drawn in world axes over the casing.
         MinerPortRenderer.render(pose, buffers, be.portLooks(), be.nodeColors(), front, fullLight);
 
         if (moving) {
             float angle = (float) (spin.angle % 360.0);
+        *///?}
             float seconds = (be.getLevel().getGameTime() - be.animationStartTick() + partialTick) / 20.0F;
             // The core breathes with the rotation: full at running speed, still at rest.
-            float scale = 1.0F + (breathing(seconds) - 1.0F) * spin.intensity();
+            //? if >=26.1 {
+            state.scale = 1.0F + (breathing(seconds) - 1.0F) * spin.intensity();
+            //?} else {
+            /*float scale = 1.0F + (breathing(seconds) - 1.0F) * spin.intensity();
+            *///?}
             // The cages lean into their running tilt as they speed up and straighten out as they stop.
-            float tilt = spin.tilt();
+            //? if =26.1.2 {
+            state.tilt = spin.tilt();
+        }
+    }
+
+    @Override
+    public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
+        if (!state.formed) {
+            return;
+        }
+        MinerVisualStage stage = state.stage;
+        Direction front = state.front;
+        int fullLight = state.fullLight;
+        int overlay = OverlayTexture.NO_OVERLAY;
+        pose.pushPose();
+        pose.translate(state.origin.getX(), state.origin.getY(), state.origin.getZ());
+        pose.pushPose();
+        pose.translate(0.5, 0, 0.5);
+        pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
+        pose.translate(-0.5, 0, -0.5);
+        ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay);
+        pose.popPose();
+        // Configured ports of the lower layer, drawn in world axes over the casing.
+        MinerPortRenderer.render(pose, collector, state.portLooks, state.nodeColors, front, fullLight);
+
+        if (state.moving) {
+            float angle = state.angle;
+            float tilt = state.tilt;
+            //?} else if >=26.3 {
+            /*state.tilt = spin.tilt();
+        }
+    }
+
+    @Override
+    public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
+        if (!state.formed) {
+            return;
+        }
+        MinerVisualStage stage = state.stage;
+        Direction front = state.front;
+        int fullLight = state.fullLight;
+        int overlay = OverlayTexture.NO_OVERLAY;
+        pose.pushPose();
+        pose.translate(state.origin.getX(), state.origin.getY(), state.origin.getZ());
+        pose.pushPose();
+        pose.translate(0.5, 0, 0.5);
+        pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
+        pose.translate(-0.5, 0, -0.5);
+        ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay);
+        pose.popPose();
+        // Configured ports of the lower layer, drawn in world axes over the casing.
+        MinerPortRenderer.render(pose, collector, state.portLooks, state.nodeColors, front, fullLight);
+
+        if (state.moving) {
+            float angle = state.angle;
+            float tilt = state.tilt;
+            *///?} else {
+            /*float tilt = spin.tilt();
+            *///?}
             pose.pushPose();
             pose.translate(PIVOT.x, PIVOT.y, PIVOT.z);
+            //? if =26.1.2 {
             pose.mulPose(Axis.YP.rotationDegrees(movingPoseY(front)));
+            renderMoving(pose, collector, model("outer", stage), 35 * tilt, angle, 20 * tilt, 1.0F, fullLight, overlay);
+            renderMoving(pose, collector, model("inner", stage), -25 * tilt, -2 * angle, 45 * tilt, 1.0F, fullLight, overlay);
+            //?} else if >=26.3 {
+            /*pose.rotate(Axis.YP.rotationDegrees(movingPoseY(front)));
+            renderMoving(pose, collector, model("outer", stage), 35 * tilt, angle, 20 * tilt, 1.0F, fullLight, overlay);
+            renderMoving(pose, collector, model("inner", stage), -25 * tilt, -2 * angle, 45 * tilt, 1.0F, fullLight, overlay);
+            *///?} else {
+            /*pose.mulPose(Axis.YP.rotationDegrees(movingPoseY(front)));
             renderMoving(pose, buffers, model("outer", stage), 35 * tilt, angle, 20 * tilt, 1.0F, fullLight, overlay);
             renderMoving(pose, buffers, model("inner", stage), -25 * tilt, -2 * angle, 45 * tilt, 1.0F, fullLight, overlay);
+            *///?}
             if (stage.hasCore()) {
-                renderMoving(pose, buffers, model("energy", stage), -25 * tilt, -2 * angle, 45 * tilt, scale, fullLight, overlay);
+                //? if >=26.1 {
+                renderMoving(pose, collector, model("energy", stage), -25 * tilt, -2 * angle, 45 * tilt, state.scale, fullLight, overlay);
+                //?} else {
+                /*renderMoving(pose, buffers, model("energy", stage), -25 * tilt, -2 * angle, 45 * tilt, scale, fullLight, overlay);
+                *///?}
             }
             pose.popPose();
         }
@@ -123,14 +301,28 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
     }
 
     /** OBJ moving parts are centered at zero; Euler ZYX order: Rz * Ry * Rx. */
-    private static void renderMoving(PoseStack pose, MultiBufferSource buffers, ResourceLocation model, float rx, float ry, float rz,
+    //? if >=26.1 {
+    private static void renderMoving(PoseStack pose, SubmitNodeCollector collector, Identifier model, float rx, float ry, float rz,
+    //?} else {
+    /*private static void renderMoving(PoseStack pose, MultiBufferSource buffers, ResourceLocation model, float rx, float ry, float rz,
+    *///?}
                                      float scale, int light, int overlay) {
         pose.pushPose();
+        //? if <26.3 {
         pose.mulPose(Axis.ZP.rotationDegrees(rz));
         pose.mulPose(Axis.YP.rotationDegrees(ry));
         pose.mulPose(Axis.XP.rotationDegrees(rx));
+        //?} else {
+        /*pose.rotate(Axis.ZP.rotationDegrees(rz));
+        pose.rotate(Axis.YP.rotationDegrees(ry));
+        pose.rotate(Axis.XP.rotationDegrees(rx));
+        *///?}
         pose.scale(scale, scale, scale);
-        ModelRendering.render(pose, buffers, ModelRendering.model(model), light, overlay);
+        //? if >=26.1 {
+        ModelRendering.render(pose, collector, ModelRendering.model(model), light, overlay);
+        //?} else {
+        /*ModelRendering.render(pose, buffers, ModelRendering.model(model), light, overlay);
+        *///?}
         pose.popPose();
     }
 
@@ -156,7 +348,11 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
     }
 
     @Override
-    public boolean shouldRenderOffScreen(MinerControllerBlockEntity be) {
+    //? if >=26.1 {
+    public boolean shouldRenderOffScreen() {
+    //?} else {
+    /*public boolean shouldRenderOffScreen(MinerControllerBlockEntity be) {
+    *///?}
         return true;
     }
 

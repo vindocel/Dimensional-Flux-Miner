@@ -40,10 +40,14 @@ Release title or the combined tag. The JAR keeps the existing name
 ## Publishing a release
 
 1. Commit and push to `production` (to `main` after the merge, for a stable release); wait for CI to pass.
-2. On GitHub, open **Releases → Draft a new release**.
+2. On GitHub, open **Releases â†’ Draft a new release**.
 3. Choose a tag using the table above, and select `production` for alpha/beta or `main` for stable.
 4. Write the release notes. The same text becomes the changelog of each selected store upload.
 5. Set **Pre-release** to match the channel, then publish the GitHub Release.
+
+A **Re-run jobs** action uses the original commit and workflow, so it does not pick up later fixes.
+After committing and pushing a workflow fix, publish a new release tag pointing to the corrected commit.
+For example, `v0.2.9-beta.2` publishes beta.2 store versions; it does not update beta.1.
 
 The workflow resolves the selection, then builds, runs GameTests and validates each selected JAR in separate jobs.
 Only after **every selected build passes** can the store upload jobs start. The validated artifacts are transferred
@@ -53,7 +57,11 @@ between jobs and checked again before upload. Only the upload jobs use the `mana
 
 Before uploading each Minecraft version, `scripts/check-published.py` queries CurseForge and Modrinth independently.
 It recognizes the exact store version name (with or without its leading `v`) or the existing JAR filename, for the
-selected Minecraft version and NeoForge loader. CurseForge file lists are paginated.
+selected Minecraft version and NeoForge loader. CurseForge metadata temporarily comes from the public
+[CFWidget API](https://cfwidget.com/#api), without a read key; Modrinth still uses its official API.
+CFWidget caches responses for up to one hour. A recently uploaded file may therefore be absent: avoid
+individual/grouped releases or reruns for the same store version within that window, and verify the
+CurseForge file list before retrying. A missing result is not a guarantee against duplicate uploads.
 
 If `v0.2.9+1.21.1` was already uploaded and a later GitHub Release uses `v0.2.9`, that version is skipped in each store
 where it already exists. The 26.1.2 and 26.3 uploads still proceed. If a version exists on only one store, the workflow
@@ -106,16 +114,14 @@ The `management` environment holds:
 | Kind | Name | Purpose |
 |---|---|---|
 | Secret | `CURSEFORGE_TOKEN` | Existing CurseForge author upload token |
-| Optional secret | `CURSEFORGE_API_KEY` | Separate Core API read key, only if the existing token is not accepted for lookups |
 | Secret | `MODRINTH_TOKEN` | Modrinth version lookup and upload |
 | Variable | `ID_DO_CURSEFORGE` | Numeric CurseForge project ID |
 | Variable | `ID_DO_MODRINTH` | Modrinth project ID or slug |
 
-The workflow reuses `CURSEFORGE_TOKEN` for the CurseForge lookup by default. The upload API uses `X-Api-Token`,
-whereas the [Core API](https://docs.curseforge.com/rest-api/) requires `x-api-key`. A secret's name does not identify
-which credential it contains. If the existing credential is rejected by the Core API, the workflow stops rather
-than uploading blindly; a separate read key may then be set as the optional `CURSEFORGE_API_KEY` in `management`.
-Obtain that read key through the [CurseForge Core API console](https://console.curseforge.com/).
+`CURSEFORGE_TOKEN` is used only for uploads through `X-Api-Token`. The temporary CFWidget metadata
+lookup sends no credentials. An official CurseForge Core API key has been requested; switching back to
+the official API will require a code/workflow change and a separate `CURSEFORGE_API_KEY` read secret
+in `management`. Adding that secret alone does not switch this workflow.
 Keep credentials in GitHub secrets, never in source or release notes.
 
 The [Modrinth version-list API](https://docs.modrinth.com/api/operations/getprojectversions/) uses the existing token.

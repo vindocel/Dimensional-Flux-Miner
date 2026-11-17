@@ -25,29 +25,23 @@ def matches_name(value, publish_version):
     return isinstance(value, str) and value.removeprefix("v") == publish_version.removeprefix("v")
 
 
-def curseforge_exists(project, key, minecraft, publish_version, filename):
-    index = 0
-    while True:
-        query = urlencode({"gameVersion": minecraft, "modLoaderType": 6, "pageSize": 50, "index": index})
-        result = fetch_json(f"https://api.curseforge.com/v1/mods/{quote(project, safe='')}/files?{query}",
-                            {"x-api-key": key})
-        files = result["data"]
-        pagination = result["pagination"]
-        if not isinstance(files, list):
-            raise ValueError("Invalid CurseForge file list")
-        for file in files:
-            if minecraft in file["gameVersions"] and (
-                    matches_name(file["displayName"], publish_version) or file["fileName"] == filename):
-                return True
-        count = int(pagination["resultCount"])
-        total = int(pagination["totalCount"])
-        if count != len(files) or count < 0 or total < 0:
-            raise ValueError("Invalid CurseForge pagination")
-        index += count
-        if index >= total:
-            return False
-        if count == 0:
-            raise ValueError("Incomplete CurseForge file list")
+def curseforge_exists(project, minecraft, publish_version, filename):
+    result = fetch_json(f"https://api.cfwidget.com/{quote(project, safe='')}", {})
+    if not isinstance(result, dict) or result.get("id") != int(project):
+        raise ValueError("Invalid CFWidget project")
+    files = result.get("files")
+    if not isinstance(files, list):
+        raise ValueError("Invalid CFWidget file list")
+    # Validate the whole response before allowing either store to upload.
+    for file in files:
+        if (not isinstance(file, dict) or not isinstance(file.get("versions"), list)
+                or not all(isinstance(value, str) for value in file["versions"])
+                or not isinstance(file.get("display"), str)
+                or not isinstance(file.get("name"), str)):
+            raise ValueError("Invalid CFWidget file")
+    return any(minecraft in file["versions"] and "NeoForge" in file["versions"] and (
+        matches_name(file["display"], publish_version) or file["name"] == filename)
+        for file in files)
 
 
 def modrinth_exists(project, token, minecraft, publish_version, filename):
@@ -65,15 +59,15 @@ def modrinth_exists(project, token, minecraft, publish_version, filename):
     return False
 
 
-def publication_plan(curseforge_id, api_key, modrinth_id, token, minecraft, version, mod_id):
-    if not all((curseforge_id, api_key, modrinth_id, token, minecraft, version, mod_id)):
+def publication_plan(curseforge_id, modrinth_id, token, minecraft, version, mod_id):
+    if not all((curseforge_id, modrinth_id, token, minecraft, version, mod_id)):
         raise ValueError("Missing store lookup configuration")
     if not curseforge_id.isdecimal() or not re.fullmatch(r"[A-Za-z0-9_-]+", modrinth_id):
         raise ValueError("Invalid store project ID")
     publish_version = f"v{version}+{minecraft}"
     filename = f"{mod_id}-{minecraft}-{version}.jar"
     # Finish both reads before emitting any outputs.
-    curseforge = curseforge_exists(curseforge_id, api_key, minecraft, publish_version, filename)
+    curseforge = curseforge_exists(curseforge_id, minecraft, publish_version, filename)
     modrinth = modrinth_exists(modrinth_id, token, minecraft, publish_version, filename)
     return {"curseforge": not curseforge, "modrinth": not modrinth}
 
@@ -83,7 +77,6 @@ def main():
                       if "=" in line and not line.startswith("#"))
     plan = publication_plan(
         os.environ.get("CURSEFORGE_ID", ""),
-        os.environ.get("CURSEFORGE_API_KEY") or os.environ.get("CURSEFORGE_TOKEN", ""),
         *(os.environ.get(key, "") for key in ("MODRINTH_ID", "MODRINTH_TOKEN", "MINECRAFT", "VERSION")),
         properties["mod_id"])
     output = "".join(f"{store}={str(publish).lower()}\n" for store, publish in plan.items())
@@ -100,7 +93,6 @@ if __name__ == "__main__":
         # Do not echo HTTP response bodies or authentication headers.
         reason = str(error) if isinstance(error, RuntimeError) else "Invalid store response or configuration."
         print(f"::error::Could not verify existing store versions. {reason} "
-              "The CurseForge lookup uses CURSEFORGE_TOKEN unless CURSEFORGE_API_KEY is set. "
-              "If the Core API rejects that credential, provide its read key as CURSEFORGE_API_KEY. "
+              "The temporary CurseForge lookup uses the public CFWidget API without credentials. "
               "No upload was started.", file=sys.stderr)
         sys.exit(1)

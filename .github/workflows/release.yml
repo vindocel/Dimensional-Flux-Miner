@@ -139,7 +139,6 @@ jobs:
           CURSEFORGE_ID: ${{ vars.ID_DO_CURSEFORGE }}
           MODRINTH_ID: ${{ vars.ID_DO_MODRINTH }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
           set -euo pipefail
@@ -154,8 +153,6 @@ jobs:
         id: existing
         env:
           CURSEFORGE_ID: ${{ vars.ID_DO_CURSEFORGE }}
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           MODRINTH_ID: ${{ vars.ID_DO_MODRINTH }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           VERSION: ${{ needs.resolve.outputs.version }}

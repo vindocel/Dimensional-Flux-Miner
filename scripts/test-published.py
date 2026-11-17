@@ -17,13 +17,12 @@ NAME = "v0.2.8+1.21.1"
 FILE = "dimensionalfluxminer-1.21.1-0.2.8.jar"
 
 
-def cf_page(files, total=None):
-    return {"data": files, "pagination": {"resultCount": len(files),
-                                          "totalCount": len(files) if total is None else total}}
+def cf_page(files, project=123):
+    return {"id": project, "files": files}
 
 
-def cf_file(name=NAME, filename=FILE, mc=MC):
-    return {"displayName": name, "fileName": filename, "gameVersions": [mc, "NeoForge"]}
+def cf_file(name=NAME, filename=FILE, mc=MC, loader="NeoForge"):
+    return {"display": name, "name": filename, "versions": [mc, loader]}
 
 
 def mr_version(name=NAME, filename=FILE, mc=MC, loader="neoforge"):
@@ -33,7 +32,7 @@ def mr_version(name=NAME, filename=FILE, mc=MC, loader="neoforge"):
 
 class PublishedChecks(unittest.TestCase):
     def plan(self):
-        return published.publication_plan("123", "read-key", "project", "token", MC, VERSION,
+        return published.publication_plan("123", "project", "token", MC, VERSION,
                                           "dimensionalfluxminer")
 
     @patch.object(published, "fetch_json")
@@ -80,14 +79,15 @@ class PublishedChecks(unittest.TestCase):
         self.assertEqual(self.plan(), {"curseforge": True, "modrinth": True})
 
     @patch.object(published, "fetch_json")
-    def test_curseforge_pagination(self, fetch):
-        fetch.side_effect = [cf_page([cf_file(name="old", filename="old.jar")], total=2),
-                             cf_page([cf_file()], total=2), []]
+    def test_cfwidget_public_endpoint_without_credentials(self, fetch):
+        fetch.side_effect = [cf_page([cf_file()]), []]
         self.assertEqual(self.plan(), {"curseforge": False, "modrinth": True})
-        self.assertIn("index=1", fetch.call_args_list[1].args[0])
-        self.assertEqual(fetch.call_args_list[0].args[1], {"x-api-key": "read-key"})
-        self.assertIn("gameVersion=1.21.1", fetch.call_args_list[0].args[0])
-        self.assertIn("modLoaderType=6", fetch.call_args_list[0].args[0])
+        self.assertEqual(fetch.call_args_list[0].args, ("https://api.cfwidget.com/123", {}))
+
+    @patch.object(published, "fetch_json")
+    def test_wrong_curseforge_loader_does_not_match(self, fetch):
+        fetch.side_effect = [cf_page([cf_file(loader="Forge")]), []]
+        self.assertEqual(self.plan(), {"curseforge": True, "modrinth": True})
 
     @patch.object(published, "fetch_json")
     def test_lookup_failure_does_not_produce_plan(self, fetch):
@@ -97,15 +97,19 @@ class PublishedChecks(unittest.TestCase):
                 self.plan()
 
     @patch.object(published, "fetch_json")
-    def test_truncated_page_stops_upload(self, fetch):
-        fetch.return_value = cf_page([], total=2)
-        with self.assertRaises(ValueError):
-            self.plan()
+    def test_invalid_cfwidget_response_stops_upload(self, fetch):
+        for response in (None, {}, {"id": 123}, cf_page([], project=456),
+                         cf_page({}), cf_page([{}]), cf_page([cf_file(), {}]),
+                         cf_page([{**cf_file(), "versions": "1.21.1"}])):
+            with self.subTest(response=response):
+                fetch.return_value = response
+                with self.assertRaises(ValueError):
+                    self.plan()
 
     @patch.object(published, "fetch_json")
-    def test_missing_key_never_queries(self, fetch):
+    def test_missing_configuration_never_queries(self, fetch):
         with self.assertRaises(ValueError):
-            published.publication_plan("123", "", "project", "token", MC, VERSION, "dimensionalfluxminer")
+            published.publication_plan("", "project", "token", MC, VERSION, "dimensionalfluxminer")
         fetch.assert_not_called()
 
     @patch.object(published, "urlopen")
@@ -117,26 +121,17 @@ class PublishedChecks(unittest.TestCase):
 
     @patch.object(published, "publication_plan")
     @patch("builtins.print")
-    def test_existing_token_is_reused_by_default(self, printing, plan):
+    def test_cfwidget_needs_no_curseforge_secret(self, printing, plan):
         plan.return_value = {"curseforge": False, "modrinth": True}
         with tempfile.TemporaryDirectory(prefix="dfm-store-check-") as folder:
             output = Path(folder) / "outputs.txt"
-            with patch.dict(os.environ, {"CURSEFORGE_TOKEN": "existing-upload-key",
-                                         "GITHUB_OUTPUT": str(output)}, clear=True):
+            with patch.dict(os.environ, {"CURSEFORGE_ID": "123", "MODRINTH_ID": "project",
+                                         "MODRINTH_TOKEN": "token", "MINECRAFT": MC,
+                                         "VERSION": VERSION, "GITHUB_OUTPUT": str(output)}, clear=True):
                 published.main()
-            self.assertEqual(plan.call_args.args[1], "existing-upload-key")
+            self.assertEqual(plan.call_args.args, ("123", "project", "token", MC, VERSION,
+                                                   "dimensionalfluxminer"))
             self.assertEqual(output.read_text(), "curseforge=false\nmodrinth=true\n")
-
-    @patch.object(published, "publication_plan")
-    @patch("builtins.print")
-    def test_optional_read_key_takes_precedence(self, printing, plan):
-        plan.return_value = {"curseforge": False, "modrinth": False}
-        with tempfile.TemporaryDirectory(prefix="dfm-store-check-") as folder:
-            with patch.dict(os.environ, {"CURSEFORGE_TOKEN": "upload-key",
-                                         "CURSEFORGE_API_KEY": "read-key",
-                                         "GITHUB_OUTPUT": str(Path(folder) / "outputs.txt")}, clear=True):
-                published.main()
-            self.assertEqual(plan.call_args.args[1], "read-key")
 
 
 if __name__ == "__main__":

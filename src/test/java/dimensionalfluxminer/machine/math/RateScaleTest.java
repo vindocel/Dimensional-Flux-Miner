@@ -7,27 +7,27 @@ import org.junit.jupiter.api.Test;
 class RateScaleTest {
     @Test
     void crusherPowerAndThroughputMatchContract() {
-        // 20 000 FE per operation (10 000 with the upgrade), 1 operation / 200 ticks -> 64 per tick.
-        long[] power = {100, 286, 818, 2_339, 6_690, 19_133, 54_719, 156_494, 447_562, 1_280_000};
-        long[] efficiency = {50, 143, 409, 1_170, 3_345, 9_567, 27_360, 78_247, 223_781, 640_000};
+        // 2 400 FE per operation (1 200 with the upgrade), 1 operation / 200 ticks -> 64 per tick.
+        long[] power = {12, 34, 98, 281, 803, 2_296, 6_566, 18_779, 53_707, 153_600};
+        long[] efficiency = {6, 17, 49, 140, 401, 1_148, 3_283, 9_390, 26_854, 76_800};
         double[] ops = {0.005, 0.014299691, 0.040896235, 0.11696071, 0.334500412, 0.95665054, 2.735961515, 7.824681114, 22.378105176, 64.0};
         for (int n = 1; n <= 10; n++) {
             double rate = RateScale.value(n, 0.005, 64);
             assertEquals(ops[n - 1], rate, 1e-6, "ops " + n);
-            assertEquals(power[n - 1], RateScale.powerLimit(RateScale.power(rate, 20_000)), "power " + n);
-            assertEquals(efficiency[n - 1], RateScale.powerLimit(RateScale.power(rate, 10_000)), "efficiency " + n);
+            assertEquals(power[n - 1], RateScale.powerLimit(RateScale.power(rate, 2_400)), "power " + n);
+            assertEquals(efficiency[n - 1], RateScale.powerLimit(RateScale.power(rate, 1_200)), "efficiency " + n);
         }
     }
 
     @Test
     void electricFurnaceProfilesFollowTheWorkOfAStandardRecipe() {
-        // Standard recipe (200 ticks). Alloy: 30 000 FE per execution; furnace: 50 000 / 3 FE per item, three lanes.
-        long[] alloy = {150, 429, 1_227, 3_509, 10_035, 28_700, 82_079, 234_740, 671_343, 1_920_000};
-        long[] furnace = {250, 715, 2_045, 5_848, 16_725, 47_833, 136_798, 391_234, 1_118_905, 3_200_000};
+        // Standard recipe (200 ticks). Alloy: 3 000 FE per execution; furnace: 2 000 FE per item, three lanes.
+        long[] alloy = {15, 43, 123, 351, 1_004, 2_870, 8_208, 23_474, 67_134, 192_000};
+        long[] furnace = {30, 86, 245, 702, 2_007, 5_740, 16_416, 46_948, 134_269, 384_000};
         for (int n = 1; n <= 10; n++) {
             double lane = RateScale.electricFurnaceOperationsPerTick(n, 200, 64);
-            assertEquals(alloy[n - 1], RateScale.powerLimit(RateScale.power(lane, 30_000)), "alloy " + n);
-            assertEquals(furnace[n - 1], RateScale.powerLimit(3 * RateScale.power(lane, 50_000 / 3.0)), "furnace " + n);
+            assertEquals(alloy[n - 1], RateScale.powerLimit(RateScale.power(lane, 3_000)), "alloy " + n);
+            assertEquals(furnace[n - 1], RateScale.powerLimit(3 * RateScale.power(lane, 2_000)), "furnace " + n);
         }
     }
 
@@ -36,8 +36,8 @@ class RateScaleTest {
         for (int n = 1; n <= 10; n++) {
             double fast = RateScale.electricFurnaceOperationsPerTick(n, 100, 64);
             double standard = RateScale.electricFurnaceOperationsPerTick(n, 200, 64);
-            assertEquals(30_000, RateScale.power(fast, 30_000) / fast, 1e-6);
-            assertEquals(30_000, RateScale.power(standard, 30_000) / standard, 1e-6);
+            assertEquals(3_000, RateScale.power(fast, 3_000) / fast, 1e-6);
+            assertEquals(3_000, RateScale.power(standard, 3_000) / standard, 1e-6);
         }
         assertEquals(2 * RateScale.electricFurnaceOperationsPerTick(1, 200, 64), RateScale.electricFurnaceOperationsPerTick(1, 100, 64), 1e-12);
     }

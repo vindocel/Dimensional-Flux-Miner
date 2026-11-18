@@ -149,7 +149,8 @@ final class GuideContent {
         b.heading("miner").add(minerTable()).text("miner_note");
         b.heading("crusher").add(crusherTable()).text("crusher_note");
         b.heading("electric_furnace").add(electricFurnaceTable()).text("electric_furnace_note");
-        b.heading("upgrade").item(DfmItems.EFFICIENCY_UPGRADE, "upgrade_about").text("upgrade");
+        b.heading("alloy").add(alloyTable()).text("alloy_note");
+        b.heading("upgrade").item(DfmItems.EFFICIENCY_UPGRADE, "upgrade_about").text("upgrade").text("settings");
         return b.chapter(DfmItems.EFFICIENCY_UPGRADE);
     }
 
@@ -235,10 +236,25 @@ final class GuideContent {
             List<List<String>> rows = new ArrayList<>();
             for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
                 double lane = dimensionalfluxminer.furnace.ElectricFurnaceEnergy.laneOperationsPerTick(level, STANDARD_RECIPE_TICKS) * 20;
-                // Furnace profile with the three lanes busy, the larger of the two profiles.
+                // Furnace profile with the three lanes busy for a standard 200-tick recipe.
                 rows.add(List.of(Integer.toString(level),
                         DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.furnaceStandardPower(level, false))),
                         DfmScreen.compact(RateScale.powerLimit(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.furnaceStandardPower(level, true))), number(lane)));
+            }
+            return rows;
+        });
+    }
+
+    private static GuideElement alloyTable() {
+        return new GuideElements.Table(headers("level", "fe", "fe_upgrade", "operations"), new float[] {0.6F, 1.0F, 1.2F, 1.1F}, () -> {
+            List<List<String>> rows = new ArrayList<>();
+            for (int level = RateScale.MIN_LEVEL; level <= RateScale.MAX_LEVEL; level++) {
+                double executions = dimensionalfluxminer.furnace.ElectricFurnaceEnergy.laneOperationsPerTick(level,
+                        dimensionalfluxminer.recipe.AlloyingRecipe.DEFAULT_PROCESSING_TICKS);
+                rows.add(List.of(Integer.toString(level),
+                        DfmScreen.compact(RateScale.powerLimit(executions * dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyEnergyPerUnit(level, false))),
+                        DfmScreen.compact(RateScale.powerLimit(executions * dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyEnergyPerUnit(level, true))),
+                        number(executions * 20)));
             }
             return rows;
         });

@@ -32,7 +32,7 @@ public final class DfmConfig {
     public static final ModConfigSpec.LongValue MINER_ENERGY_PER_ATTEMPT = BUILDER
             .comment("Dimensional Flux Miner: FE spent by every mining attempt, at every Flux Rate (FE/t = attempts per tick x this).",
                     "Attempts rejected by the filter or lost to a full output also cost it. Replaces the old minimumFEPerTick/maximumFEPerTick.")
-            .defineInRange("miner.energyPerAttempt", 200_000L, 1L, MAX_ENERGY_PER_OPERATION);
+            .defineInRange("miner.energyPerAttempt", 24_000L, 1L, MAX_ENERGY_PER_OPERATION);
     public static final ModConfigSpec.DoubleValue MINER_MIN_RATE = BUILDER
             .comment("Dimensional Flux Miner: mining attempts per logical tick at Flux Rate 1 (minimumProductionRate).")
             .defineInRange("miner.minimumProductionRate", 0.0125, 0.0001, 64.0);
@@ -43,16 +43,16 @@ public final class DfmConfig {
     public static final ModConfigSpec.LongValue CRUSHER_ENERGY_PER_OPERATION = BUILDER
             .comment("Mechanical Crusher: FE spent by every input item crushed, at every Rate (the Efficiency Upgrade halves it).",
                     "Rate 1 = 1 operation / 200 ticks, Rate 10 = 64 operations per tick. Replaces the old minimumFEPerTick/maximumFEPerTick.")
-            .defineInRange("crusher.energyPerOperation", 20_000L, 1L, MAX_ENERGY_PER_OPERATION);
+            .defineInRange("crusher.energyPerOperation", 2_400L, 1L, MAX_ENERGY_PER_OPERATION);
 
     public static final ModConfigSpec.LongValue ELECTRIC_FURNACE_ALLOY_ENERGY = BUILDER
             .comment("Electric Furnace: FE spent by one standard alloy execution (one unit of each ingredient), at every Rate.",
                     "A recipe asking for N units of an ingredient counts as N units of work. The Efficiency Upgrade halves it.")
-            .defineInRange("electric_furnace.alloyEnergyPerOperation", 30_000L, 1L, MAX_ENERGY_PER_OPERATION);
+            .defineInRange("electric_furnace.alloyEnergyPerOperation", 3_000L, 1L, MAX_ENERGY_PER_OPERATION);
     public static final ModConfigSpec.LongValue ELECTRIC_FURNACE_FURNACE_ENERGY = BUILDER
             .comment("Electric Furnace: FE spent by three items smelted in the furnace lanes (one item costs a third of it), at every Rate.",
                     "The Efficiency Upgrade halves it. Replaces the old electric_furnace.minimumFEPerTick/maximumFEPerTick.")
-            .defineInRange("electric_furnace.furnaceEnergyPerThreeItems", 50_000L, 1L, MAX_ENERGY_PER_OPERATION);
+            .defineInRange("electric_furnace.furnaceEnergyPerThreeItems", 6_000L, 1L, MAX_ENERGY_PER_OPERATION);
 
     // Optional tables of the ten speed levels. Empty (the default) keeps the curves above; a table must list all ten
     // levels, otherwise it is ignored with a warning. A speed table replaces the geometric speed curve, a power table
@@ -181,6 +181,8 @@ public final class DfmConfig {
      * scripts that set them are loaded, are never written to the file, and are sent to the clients (guide numbers).
      */
     private static volatile Map<String, Object> overrides = Map.of();
+    private static volatile Map<String, Object> remoteValues = Map.of();
+    private static volatile java.util.Set<String> remoteScripted = java.util.Set.of();
     private static volatile Map<String, ModConfigSpec.ConfigValue<?>> keys;
 
     /** Every option of the file, by key. */
@@ -227,14 +229,14 @@ public final class DfmConfig {
         if (raw == null) {
             return null;
         }
-        if (def instanceof Long) {
-            return raw instanceof Number n && Double.isFinite(n.doubleValue()) && n.doubleValue() == Math.rint(n.doubleValue())
-                    ? (Object) n.longValue() : null;
-        }
-        if (def instanceof Integer) {
-            return raw instanceof Number n && Double.isFinite(n.doubleValue()) && n.doubleValue() == Math.rint(n.doubleValue())
-                    && n.doubleValue() >= Integer.MIN_VALUE && n.doubleValue() <= Integer.MAX_VALUE
-                    ? (Object) n.intValue() : null;
+        if (def instanceof Long || def instanceof Integer) {
+            if (!(raw instanceof Number)) return null;
+            try {
+                java.math.BigDecimal number = new java.math.BigDecimal(raw.toString());
+                return def instanceof Long ? (Object) number.longValueExact() : (Object) number.intValueExact();
+            } catch (ArithmeticException | NumberFormatException invalid) {
+                return null;
+            }
         }
         if (def instanceof Double) {
             return raw instanceof Number n ? (Object) n.doubleValue() : null;
@@ -272,16 +274,108 @@ public final class DfmConfig {
         return overrides;
     }
 
+    public static Map<String, Object> fileValues() {
+        Map<String, Object> values = new java.util.LinkedHashMap<>();
+        keys().forEach((key, option) -> values.put(key, SPEC.isLoaded() ? option.get() : option.getDefault()));
+        return Map.copyOf(values);
+    }
+
+    public static Map<String, Object> effectiveValues() {
+        Map<String, Object> values = new java.util.LinkedHashMap<>(fileValues());
+        values.putAll(remoteValues);
+        values.putAll(overrides);
+        return Map.copyOf(values);
+    }
+
+    public static java.util.Set<String> scriptedKeys() {
+        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer() != null
+                ? overrides.keySet() : remoteScripted;
+    }
+
+    /** A remote snapshot is separate from the integrated server's sparse script overrides. */
+    public static void acceptRemoteValues(Map<String, Object> values, java.util.Set<String> scripted) {
+        if (!values.keySet().equals(keys().keySet()) || !values.keySet().containsAll(scripted)) {
+            throw new IllegalArgumentException("Incomplete configuration snapshot");
+        }
+        if (net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer() == null) {
+            remoteValues = Map.copyOf(values);
+            remoteScripted = java.util.Set.copyOf(scripted);
+            invalidateCaches();
+        }
+    }
+
+    public static void clearRemoteValues() {
+        remoteValues = Map.of();
+        remoteScripted = java.util.Set.of();
+        invalidateCaches();
+    }
+
+    /** Typed editor validation; decimal strings preserve exact long values. */
+    public static Object checkedValue(String key, Object raw) {
+        var option = keys().get(key);
+        if (option == null) throw new IllegalArgumentException("Unknown option: " + key);
+        Object fallback = option.getDefault();
+        try {
+            if (fallback instanceof Number) {
+                java.math.BigDecimal number = new java.math.BigDecimal(raw.toString().trim());
+                raw = fallback instanceof Long ? (Object) number.longValueExact()
+                        : fallback instanceof Integer ? (Object) number.intValueExact() : (Object) number.doubleValue();
+            } else if (fallback instanceof List<?> && raw instanceof Iterable<?> items) {
+                List<Object> list = new java.util.ArrayList<>();
+                for (Object item : items) {
+                    String text = item.toString().trim();
+                    if (text.isEmpty()) continue;
+                    if (text.length() > 256 || list.size() >= 1024) throw new IllegalArgumentException("List too large");
+                    if (key.endsWith("ByLevel")) {
+                        java.math.BigDecimal number = new java.math.BigDecimal(text);
+                        list.add(key.endsWith("speedByLevel") ? (Object) number.doubleValue() : (Object) number.longValueExact());
+                    } else list.add(text);
+                }
+                if (key.endsWith("ByLevel") && !list.isEmpty() && list.size() != LEVELS)
+                    throw new IllegalArgumentException("A level table needs exactly ten values");
+                raw = List.copyOf(list);
+            }
+            return checkedOverride(key, raw);
+        } catch (ArithmeticException | NumberFormatException invalid) {
+            throw new IllegalArgumentException("Invalid number for " + key, invalid);
+        }
+    }
+
+    /** Validates everything before applying, saves on the server thread and retains script ownership. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void saveValues(Map<String, ?> changes) {
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null || !server.isSameThread() || !SPEC.isLoaded())
+            throw new IllegalStateException("Server configuration is not editable here");
+        if (changes.keySet().stream().anyMatch(overrides::containsKey))
+            throw new IllegalStateException("A script controls one of the changed options");
+        Map<String, Object> checked = new java.util.LinkedHashMap<>();
+        changes.forEach((key, raw) -> checked.put(key, checkedValue(key, raw)));
+        if (checked.isEmpty()) return;
+        var before = fileValues();
+        try {
+            checked.forEach((key, value) -> ((ModConfigSpec.ConfigValue) keys().get(key)).set(value));
+            keys().get(checked.keySet().iterator().next()).save();
+        } catch (RuntimeException failure) {
+            before.forEach((key, value) -> ((ModConfigSpec.ConfigValue) keys().get(key)).set(value));
+            invalidateCaches();
+            throw failure;
+        }
+        invalidateCaches();
+        dimensionalfluxminer.network.ConfigOverridesPayload.sendToAll();
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T value(ModConfigSpec.ConfigValue<T> config) {
         Map<String, Object> current = overrides;
+        Object remote = remoteValues.get(String.join(".", config.getPath()));
         if (!current.isEmpty()) {
             Object override = current.get(String.join(".", config.getPath()));
             if (override != null) {
                 return (T) override;
             }
         }
-        return SPEC.isLoaded() ? config.get() : config.getDefault();
+        return remote != null ? (T) remote : SPEC.isLoaded() ? config.get() : config.getDefault();
     }
 
     /** The corruption rules of the configuration, parsed once (they are read for every corrupted block and water flow). */
@@ -319,6 +413,9 @@ public final class DfmConfig {
     public static void onConfigChanged(net.neoforged.fml.event.config.ModConfigEvent event) {
         if (event.getConfig().getSpec() == SPEC) {
             invalidateCaches();
+            if (!(event instanceof net.neoforged.fml.event.config.ModConfigEvent.Unloading)) {
+                dimensionalfluxminer.network.ConfigOverridesPayload.sendToAll();
+            }
         }
     }
 
@@ -341,7 +438,8 @@ public final class DfmConfig {
      * default curve. Parsed once per configuration load.
      */
     public static LevelTable levelTable(ModConfigSpec.ConfigValue<List<? extends Number>> config) {
-        if (!SPEC.isLoaded() && !overrides.containsKey(String.join(".", config.getPath()))) {
+        if (!SPEC.isLoaded() && !overrides.containsKey(String.join(".", config.getPath()))
+                && !remoteValues.containsKey(String.join(".", config.getPath()))) {
             return null;
         }
         return LEVEL_TABLES.computeIfAbsent(config, c -> {

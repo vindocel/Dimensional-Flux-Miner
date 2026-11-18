@@ -17,6 +17,9 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 ## 🆕 New in 0.2.9
 
+- ⚙️ **New configuration screen** in Mods: four tabs, clear explanations, animated switches, list editors and resets. Edit gameplay settings in a loaded singleplayer world and save with Done; multiplayer and script-controlled settings are read-only.
+- ⚡ **Lower default energy costs**: 88% less FE for mining, crushing and smelting; 90% less for alloys, at the same speeds.
+
 - 🐚 **Craft Nautilus Shells** in the single tank with calcite and Liquid Experience.
 - 🏆 **Memory of the Ocean** rewards creating a Nautilus Shell in a tank.
 - 📖 **Visual guide recipes** show Nautilus Shell and experience bottle conversions, with fluid amounts on hover.

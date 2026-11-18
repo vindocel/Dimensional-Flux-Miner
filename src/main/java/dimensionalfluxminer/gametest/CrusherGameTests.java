@@ -129,7 +129,7 @@ public final class CrusherGameTests {
             be.input().insert(new ItemStack(Items.DIAMOND_ORE), 4, false);
             helper.runAfterDelay(3, () -> {
                 helper.assertTrue(be.output().countOf(new ItemStack(Items.DIAMOND)) == 12, "4 diamond ores -> 12 diamonds with upgrade");
-                helper.assertTrue(be.effectivePowerLimit() == 640_000, "upgrade halves FE at Rate 10 (64 x 10 000)");
+                helper.assertTrue(be.effectivePowerLimit() == 76_800, "upgrade halves FE at Rate 10 (64 x 1 200)");
                 helper.succeed();
             });
         });

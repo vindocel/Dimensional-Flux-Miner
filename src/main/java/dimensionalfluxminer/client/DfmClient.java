@@ -129,7 +129,7 @@ public final class DfmClient {
         //?}
         // Script values of the configuration belong to the server just left.
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
-                (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut loggingOut) -> dimensionalfluxminer.DfmConfig.setOverrides(java.util.Map.of()));
+                (net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut loggingOut) -> dimensionalfluxminer.DfmConfig.clearRemoteValues());
         //? if <26.1 {
         /*event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(DfmFluids.CORRUPTED_WATER.get(), RenderType.translucent());
@@ -148,6 +148,7 @@ public final class DfmClient {
     /** Pipelines of the dark look of the machine screens. */
     @SubscribeEvent
     static void onRegisterPipelines(RegisterRenderPipelinesEvent event) {
+        dimensionalfluxminer.client.config.ConfigPaint.registerPipelines(event);
         event.registerPipeline(GuiTheme.DARK_PIPELINE);
         event.registerPipeline(GuiTheme.LIGHT_PIPELINE);
         event.registerPipeline(dimensionalfluxminer.client.screen.IconPalette.PIPELINE);

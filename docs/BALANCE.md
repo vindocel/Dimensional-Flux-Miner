@@ -19,12 +19,16 @@ less FE than the level needs, it works proportionally slower and never for free.
 
 | Machine | Cost per operation | Config key |
 |---|---|---|
-| Miner | 200 000 FE per attempt (filtered and lost attempts included) | `miner.energyPerAttempt` |
-| Crusher | 20 000 FE per input item | `crusher.energyPerOperation` |
-| Electric Furnace, furnace | 50 000 / 3 FE per item | `electric_furnace.furnaceEnergyPerThreeItems` |
-| Electric Furnace, alloy | 30 000 FE per work unit | `electric_furnace.alloyEnergyPerOperation` |
+| Miner | 24 000 FE per attempt (filtered and lost attempts included) | `miner.energyPerAttempt` |
+| Crusher | 2 400 FE per input item | `crusher.energyPerOperation` |
+| Electric Furnace, furnace | 2 000 FE per item | `electric_furnace.furnaceEnergyPerThreeItems` |
+| Electric Furnace, alloy | 3 000 FE per work unit | `electric_furnace.alloyEnergyPerOperation` |
 
 The Efficiency Upgrade halves the Crusher and Electric Furnace costs and leaves the Miner unchanged.
+The furnace config stores the cost of three inputs: `6000` FE, or `2000` FE per input.
+
+Existing server TOML values and KubeJS overrides remain explicit settings. To adopt these defaults in an existing
+world, update the four energy keys listed above (and remove any per-level power overrides that should no longer apply).
 
 These are the mod's defaults. A modpack can replace the speed curve, the FE/t of every level, or both, with tables of
 all ten levels (`speedByLevel`, `powerByLevel`): see the
@@ -37,16 +41,16 @@ Operations per tick, operations per second and FE/t without the upgrade. The Ele
 
 | Rate | Miner attempts/s | Miner FE/t | Crusher items/s | Crusher FE/t | Electric Furnace items/s per lane | Furnace FE/t (3 lanes) | Alloy FE/t |
 |---|---|---|---|---|---|---|---|
-| 1 | 0.25 | 2 500 | 0.10 | 100 | 0.10 | 250 | 150 |
-| 2 | 0.65 | 6 458 | 0.29 | 286 | 0.29 | 715 | 429 |
-| 3 | 1.67 | 16 681 | 0.82 | 818 | 0.82 | 2 045 | 1 227 |
-| 4 | 4.31 | 43 089 | 2.34 | 2 339 | 2.34 | 5 848 | 3 509 |
-| 5 | 11.13 | 111 302 | 6.69 | 6 690 | 6.69 | 16 725 | 10 035 |
-| 6 | 28.75 | 287 505 | 19.13 | 19 133 | 19.13 | 47 833 | 28 700 |
-| 7 | 74.27 | 742 654 | 54.72 | 54 719 | 54.72 | 136 798 | 82 079 |
-| 8 | 191.83 | 1 918 350 | 156.49 | 156 494 | 156.49 | 391 234 | 234 740 |
-| 9 | 495.53 | 4 955 288 | 447.56 | 447 562 | 447.56 | 1 118 905 | 671 343 |
-| 10 | 1 280 | 12 800 000 | 1 280 | 1 280 000 | 1 280 | 3 200 000 | 1 920 000 |
+| 1 | 0.25 | 300 | 0.10 | 12 | 0.10 | 30 | 15 |
+| 2 | 0.65 | 775 | 0.29 | 34 | 0.29 | 86 | 43 |
+| 3 | 1.67 | 2 002 | 0.82 | 98 | 0.82 | 245 | 123 |
+| 4 | 4.31 | 5 171 | 2.34 | 281 | 2.34 | 702 | 351 |
+| 5 | 11.13 | 13 356 | 6.69 | 803 | 6.69 | 2 007 | 1 004 |
+| 6 | 28.75 | 34 501 | 19.13 | 2 296 | 19.13 | 5 740 | 2 870 |
+| 7 | 74.27 | 89 119 | 54.72 | 6 566 | 54.72 | 16 416 | 8 208 |
+| 8 | 191.83 | 230 202 | 156.49 | 18 779 | 156.49 | 46 948 | 23 474 |
+| 9 | 495.53 | 594 635 | 447.56 | 53 707 | 447.56 | 134 269 | 67 134 |
+| 10 | 1 280 | 1 536 000 | 1 280 | 153 600 | 1 280 | 384 000 | 192 000 |
 
 - Miner: 0.0125 attempts per tick at Rate 1 (`miner.minimumProductionRate`) up to 64 per logical cycle at Rate 10
   (`miner.maximumProductionRate`, can be lowered, never raised above 64).
@@ -72,8 +76,8 @@ also accepts what the extra cycles of one game time use.
 | Alloy + Furnace (default) | runs an alloy when the lanes hold one, otherwise every lane smelts on its own |
 | Alloy Only | 1–3 counted ingredients make one operation with a main result and an optional byproduct |
 
-- Furnace energy: `50 000 / 3 FE × input items`, only on the lanes that work (a raw pair 2 → 3 pays 2 items).
-- Alloy energy: `30 000 FE × work units`, where the work units are the largest ingredient count of the recipe.
+- Furnace energy: `2 000 FE × input items`, only on the lanes that work (a raw pair 2 → 3 pays 2 items).
+- Alloy energy: `3 000 FE × work units`, where the work units are the largest ingredient count of the recipe.
 - One job is charged with one profile, never both, and never by the mode button.
 - Raw ore bonus: 2 raw → 3 ingots; with the Efficiency Upgrade 1 raw → 2 ingots. Only for raw → ingot recipes with a
   single result.

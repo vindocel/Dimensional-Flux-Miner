@@ -33,7 +33,7 @@ Resource packs can replace the single white icon sources, including `icon_white/
 
 **Part I: Server configuration**
 
-1. [Four ways to change the mod](#1-four-ways-to-change-the-mod)
+1. [Six ways to change the mod](#1-six-ways-to-change-the-mod)
 2. [The server configuration file](#2-the-server-configuration-file)
    - [2.1 Dimensional Flux Miner](#21-dimensional-flux-miner)
    - [2.2 Mechanical Crusher](#22-mechanical-crusher)
@@ -71,10 +71,11 @@ Resource packs can replace the single white icon sources, including `icon_white/
 
 # Part I: Server configuration
 
-## 1. Five ways to change the mod
+## 1. Six ways to change the mod
 
 | Mechanism | What it is | What it changes in this mod | Needs a restart? |
 |---|---|---|---|
+| **In-game editor** | Mods → Dimensional Flux Miner → Config | Local appearance preferences and the server options below in a loaded singleplayer world | No; external alloy recipe types still require `/reload` |
 | **Server configuration** | The file `dimensionalfluxminer-server.toml` | Energy costs, speed and FE/t of every level, alloy recipe types of other mods, Dimensional Death switches and protections | No, in most cases (see [2](#when-a-change-is-applied)) |
 | **Datapack** | A folder or zip of JSON files loaded with the world | Ores the Miner makes, Dimensional Matter values, recipes, block and entity tags | No: `/reload` |
 | **KubeJS** (optional mod) | Server scripts in `kubejs/server_scripts/` | Everything of the two rows above, from one script ([15](#15-kubejs-scripts)) | No: `/reload` |
@@ -88,6 +89,14 @@ Resource packs can replace the single white icon sources, including `icon_white/
 
 ## 2. The server configuration file
 
+### In-game editor
+
+The Mods configuration screen has Appearance, Miner, Machines, and World & Tanks tabs. A row's help panel explains its purpose, default and numeric limits. Switches change booleans, list buttons open a separate editor, and the reset arrow restores one option. Defaults and Undo affect only the current tab's draft. List Done returns to that draft; only the main Done saves. Escape cancels. Invalid numbers stay visible and block saving; level lists accept either no entries (the built-in curve) or exactly ten valid entries.
+
+Server settings can be saved only while a singleplayer world is loaded. The main menu and multiplayer show them read-only. Values owned by KubeJS show their effective values and cannot be replaced through this screen. Remote clients receive the server's effective settings for the guide and editor; editing does not send a remote write request. Appearance changes use `dimensionalfluxminer-themes.json` and retain per-machine choices.
+
+Updating the mod preserves existing TOML values. To adopt the lower energy costs in an existing world, reset the four energy options and press Done, or edit the file as described in [Balance](BALANCE.md#speed-and-energy). Explicit speed and power curves also remain active until reset.
+
 ### Where it is
 
 NeoForge creates `dimensionalfluxminer-server.toml` the first time the mod loads a world or a server starts. It is a
@@ -98,7 +107,7 @@ NeoForge creates `dimensionalfluxminer-server.toml` the first time the mod loads
 |---|---|---|
 | Singleplayer | `<instance>/config/dimensionalfluxminer-server.toml` | `<instance>/saves/<world>/serverconfig/dimensionalfluxminer-server.toml` |
 | Dedicated server | `<server>/config/dimensionalfluxminer-server.toml` | `<server>/<level-name>/serverconfig/dimensionalfluxminer-server.toml` |
-| Development (this repository) | `run/config/dimensionalfluxminer-server.toml` | `run/saves/<world>/serverconfig/` or `run/world/serverconfig/` |
+| Development (this repository) | `run/<minecraft>/config/dimensionalfluxminer-server.toml` | `run/<minecraft>/saves/<world>/serverconfig/` |
 
 A file placed in a world's `serverconfig` folder overrides the main file for that world only. NeoForge writes a
 `readme.txt` there that explains the same rule.
@@ -118,16 +127,24 @@ NeoForge checks every entry against its type and range when it loads the file. A
 wrong type is corrected back to its default and a warning is written to the log. Read the log after editing. Section
 [11](#11-internal-limits-and-invalid-values) lists the extra checks the mod makes itself.
 
+### Adopting the lower energy defaults in an existing world
+
+Version 0.2.9 changes defaults without overwriting an existing server TOML or KubeJS override. Set
+`miner.energyPerAttempt = 24000`, `crusher.energyPerOperation = 2400`,
+`electric_furnace.alloyEnergyPerOperation = 3000` and `electric_furnace.furnaceEnergyPerThreeItems = 6000`
+to adopt the new balance. The furnace value covers three input items (2000 FE each). Keep per-level power lists empty
+to use fixed costs; a nonempty power list or a KubeJS override continues to take precedence.
+
 ### All options
 
 | Key | Type | Default | Minimum | Maximum |
 |---|---|---|---|---|
 | `miner.minimumProductionRate` | decimal | `0.0125` | `0.0001` | `64.0` |
 | `miner.maximumProductionRate` | decimal | `64.0` | `0.0001` | `64.0` |
-| `miner.energyPerAttempt` | integer (FE) | `200000` | `1` | `1000000000` |
-| `crusher.energyPerOperation` | integer (FE) | `20000` | `1` | `1000000000` |
-| `electric_furnace.alloyEnergyPerOperation` | integer (FE) | `30000` | `1` | `1000000000` |
-| `electric_furnace.furnaceEnergyPerThreeItems` | integer (FE) | `50000` | `1` | `1000000000` |
+| `miner.energyPerAttempt` | integer (FE) | `24000` | `1` | `1000000000` |
+| `crusher.energyPerOperation` | integer (FE) | `2400` | `1` | `1000000000` |
+| `electric_furnace.alloyEnergyPerOperation` | integer (FE) | `3000` | `1` | `1000000000` |
+| `electric_furnace.furnaceEnergyPerThreeItems` | integer (FE) | `6000` | `1` | `1000000000` |
 | `electric_furnace.externalAlloyRecipeTypes` | list of recipe type IDs | `["enderio:alloy_smelting", "oritech:foundry"]` | empty list | n/a |
 | `miner.speedByLevel`, `crusher.speedByLevel`, `electric_furnace.speedByLevel` | empty, or a list of exactly 10 decimals (operations per tick) | `[]` | `0.0001` each | `64` each |
 | `miner.powerByLevel`, `crusher.powerByLevel`, `electric_furnace.furnacePowerByLevel`, `electric_furnace.alloyPowerByLevel` | empty, or a list of exactly 10 integers (FE/t) | `[]` | `1` each | `64000000000` each |
@@ -380,19 +397,19 @@ The full file with its default values:
 [miner]
 	minimumProductionRate = 0.0125
 	maximumProductionRate = 64.0
-	energyPerAttempt = 200000
+	energyPerAttempt = 24000
 	speedByLevel = []
 	powerByLevel = []
 
 [crusher]
-	energyPerOperation = 20000
+	energyPerOperation = 2400
 	speedByLevel = []
 	powerByLevel = []
 
 [electric_furnace]
 	externalAlloyRecipeTypes = ["enderio:alloy_smelting", "oritech:foundry"]
-	alloyEnergyPerOperation = 30000
-	furnaceEnergyPerThreeItems = 50000
+	alloyEnergyPerOperation = 3000
+	furnaceEnergyPerThreeItems = 6000
 	speedByLevel = []
 	furnacePowerByLevel = []
 	alloyPowerByLevel = []

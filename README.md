@@ -224,6 +224,8 @@ Tank items show the active liquid level and their channel colors or padlock in t
 
 ## ⚡ Speed and the Efficiency Upgrade
 
+Default energy costs are lower in 0.2.9: mining, crushing and furnace smelting use 88% less FE, and alloying uses 90% less, at the same speeds. Existing server settings are preserved; see [Balance](docs/BALANCE.md#speed-and-energy) for costs and updating an existing configuration.
+
 There is **no speed upgrade to craft**. Every machine has a **speed selector from 1 to 10** (the tab with colored strips): every operation costs the same energy at every level, so a higher level works faster and asks for more FE/t in the same proportion, with no discount and no penalty. Your power generation is the only limit, so the same machine follows you from the first ingot to the last dragon. A machine only spends the energy of the work it really does.
 
 | Machine | Cost per operation | Speed 1 | Speed 10 |
@@ -311,9 +313,11 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ## 🧩 Configuration and datapacks
 
+Open **Mods → Dimensional Flux Miner → Config** for the four-tab configuration screen. Appearance preferences are local; gameplay settings can be edited while a singleplayer world is loaded. Hover or focus a row for its explanation, default and limits. **Done** saves, **Escape** discards; remote server rules and KubeJS-controlled values are read-only.
+
 Modpack creators, modders and server administrators can customize machine settings, dimensional resource profiles, Matter values, recipes, corruption tags and compatibility.
 
-Everything can also be done from a KubeJS server script (optional). For supported options, limits, JSON/TOML/KubeJS
+Server configuration and datapack customization can also be handled by a KubeJS server script (optional). For supported options, limits, JSON/TOML/KubeJS
 examples and datapack instructions, see the **[Complete Customization Guide](docs/CUSTOMIZATION.md)**.
 
 ---

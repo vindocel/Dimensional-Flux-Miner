@@ -2,6 +2,11 @@
 
 ## 0.2.9 (since 0.2.8)
 
+- Added a full-screen configuration editor under Mods, with four tabs, animated switches, contextual help, validated lists and per-option resets. Changes apply only with Done; server options are editable in a loaded singleplayer world, and script-controlled values remain read-only.
+- Server clients now receive the effective configuration and script ownership, so the guide and configuration screen show the server's actual values.
+- Reduced default energy costs by 88% for mining, crushing and furnace smelting, and by 90% for alloying; speeds and upgrade bonuses are unchanged. Existing server configuration values are preserved; see the Balance reference to adopt the new defaults.
+- Added a live alloy-energy table to the guide and clarified mining attempts versus ore output.
+
 - Updated the Minecraft 26.3 build to NeoForge 26.3.0.103.
 - Added a tank recipe: one Calcite block and 250 mB of Liquid Experience produce one Nautilus Shell, explained in the guide.
 - Added Memory of the Ocean, earned by creating a Nautilus Shell in a tank.

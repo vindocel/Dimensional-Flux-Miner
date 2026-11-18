@@ -178,7 +178,7 @@ public final class EnergyGameTests {
 
                 // A table that does not list the ten levels never mixes with the default curve.
                 double defaultPower = MinerControllerBlockEntity.curve().levelPower(10);
-                helper.assertTrue(near(12_800_000, defaultPower), "partial Miner table ignored, got " + defaultPower);
+                helper.assertTrue(near(1_536_000, defaultPower), "partial Miner table ignored, got " + defaultPower);
             } finally {
                 dimensionalfluxminer.DfmConfig.CRUSHER_SPEED_BY_LEVEL.set(List.of());
                 dimensionalfluxminer.DfmConfig.CRUSHER_POWER_BY_LEVEL.set(List.of());
@@ -190,6 +190,53 @@ public final class EnergyGameTests {
         });
     }
 
+    @GameTest(template = "empty_small")
+    public static void configurationEditorValidatesDraftTypesAndKeepsScriptOwnership(GameTestHelper helper) {
+        var before = dimensionalfluxminer.DfmConfig.overrides();
+        try {
+            helper.assertTrue(dimensionalfluxminer.DfmConfig.checkedValue("miner.energyPerAttempt", "24000").equals(24000L), "typed whole FE");
+            helper.assertTrue(dimensionalfluxminer.DfmConfig.checkedValue("miner.minimumProductionRate", "0.0125").equals(0.0125), "decimal speed");
+            for (String invalid : List.of("24.5", "NaN", "9223372036854775808", "0")) {
+                boolean rejected = false;
+                try { dimensionalfluxminer.DfmConfig.checkedValue("miner.energyPerAttempt", invalid); }
+                catch (IllegalArgumentException expected) { rejected = true; }
+                helper.assertTrue(rejected, "invalid FE draft rejected: " + invalid);
+            }
+            boolean partial = false;
+            try { dimensionalfluxminer.DfmConfig.checkedValue("miner.powerByLevel", List.of("100", "200")); }
+            catch (IllegalArgumentException expected) { partial = true; }
+            helper.assertTrue(partial, "partial level lists remain invalid in the editor");
+            dimensionalfluxminer.DfmConfig.setOverrides(java.util.Map.of("miner.energyPerAttempt", 27000L));
+            var payload = dimensionalfluxminer.network.ConfigOverridesPayload.current();
+            var root = com.google.gson.JsonParser.parseString(payload.json()).getAsJsonObject();
+            helper.assertTrue(root.get("miner.energyPerAttempt").getAsLong() == 27000L, "snapshot contains effective values");
+            dimensionalfluxminer.DfmConfig.acceptRemoteValues(dimensionalfluxminer.DfmConfig.effectiveValues(), java.util.Set.of("miner.energyPerAttempt"));
+            helper.assertTrue(dimensionalfluxminer.DfmConfig.overrides().size() == 1, "server does not replace sparse overrides with its own snapshot");
+            boolean locked = false;
+            try { dimensionalfluxminer.DfmConfig.saveValues(java.util.Map.of("miner.energyPerAttempt", 24000L)); }
+            catch (IllegalStateException expected) { locked = true; }
+            helper.assertTrue(locked, "script ownership rechecked when saving");
+        } finally { dimensionalfluxminer.DfmConfig.setOverrides(before); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty_small")
+    public static void configurationSavePersistsFileValuesWithoutChangingOverrides(GameTestHelper helper) {
+        var before = dimensionalfluxminer.DfmConfig.fileValues();
+        var scripted = dimensionalfluxminer.DfmConfig.overrides();
+        try {
+            dimensionalfluxminer.DfmConfig.setOverrides(java.util.Map.of());
+            dimensionalfluxminer.DfmConfig.saveValues(java.util.Map.of("miner.energyPerAttempt", "24001"));
+            helper.assertTrue(dimensionalfluxminer.DfmConfig.fileValues().get("miner.energyPerAttempt").equals(24001L), "file value saved");
+            helper.assertTrue(dimensionalfluxminer.DfmConfig.energy(dimensionalfluxminer.DfmConfig.MINER_ENERGY_PER_ATTEMPT) == 24001L, "runtime follows saved value");
+            helper.assertTrue(dimensionalfluxminer.DfmConfig.overrides().isEmpty(), "file save creates no script override");
+        } finally {
+            dimensionalfluxminer.DfmConfig.saveValues(java.util.Map.of("miner.energyPerAttempt", before.get("miner.energyPerAttempt")));
+            dimensionalfluxminer.DfmConfig.setOverrides(scripted);
+        }
+        helper.succeed();
+    }
+
     // ---------------------------------------------------------------- Crusher
 
     @GameTest(template = "empty_small", timeoutTicks = 200)
@@ -199,7 +246,7 @@ public final class EnergyGameTests {
         helper.runAfterDelay(1, () -> {
             for (boolean upgrade : new boolean[] {false, true}) {
                 be.upgradeSlot().setStackInSlot(0, upgrade ? new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()) : ItemStack.EMPTY);
-                double cost = upgrade ? 10_000 : 20_000;
+                double cost = upgrade ? 1_200 : 2_400;
                 for (int level = 1; level <= 10; level++) {
                     be.setRate(level);
                     double ops = MechanicalCrusherBlockEntity.operationsPerTick(level);
@@ -243,13 +290,13 @@ public final class EnergyGameTests {
             be.input().clear();
             be.input().insert(new ItemStack(Items.IRON_INGOT), 64, false);
             be.energyBuffer().setDebt(0);
-            // Rate 10 asks for 1 280 000 FE/t; 30 000 FE pay for one operation and a half.
-            be.energyBuffer().setStored(30_000);
+            // Rate 10 asks for 153 600 FE/t; 3 600 FE pay for one operation and a half.
+            be.energyBuffer().setStored(3_600);
             double progress = be.workProgress();
             cycle(helper, be);
             long made = be.output().countOf(dust);
             double work = made + be.workProgress() - progress;
-            helper.assertTrue(near(1.5, work), "1.5 operations of work for 30 000 FE, got " + work);
+            helper.assertTrue(near(1.5, work), "1.5 operations of work for 3 600 FE, got " + work);
             helper.assertTrue(be.energyBuffer().available() < 1.0, "everything was spent on that work");
             for (int i = 0; i < 5; i++) {
                 cycle(helper, be);
@@ -269,8 +316,8 @@ public final class EnergyGameTests {
             be.input().clear();
             be.input().insert(new ItemStack(Items.IRON_INGOT), 64, false);
             be.energyBuffer().setDebt(0);
-            // Exactly one Rate-10 cycle of energy: 64 x 20 000 FE.
-            be.energyBuffer().setStored(1_280_000);
+            // Exactly one Rate-10 cycle of energy: 64 x 2 400 FE.
+            be.energyBuffer().setStored(153_600);
             cycle(helper, be);
             long first = be.output().countOf(dust);
             be.output().clear();
@@ -341,14 +388,14 @@ public final class EnergyGameTests {
                     double debt = be.energyBuffer().debt();
                     cycle(helper, be);
                     double tick = spent(be.energyBuffer(), stored, debt);
-                    double expected = lanes * lane * 50_000 / 3.0;
+                    double expected = lanes * lane * 2_000;
                     helper.assertTrue(near(expected, tick), "Rate " + level + ", " + lanes + " lane(s): " + expected + " FE/t, got " + tick);
                 }
             }
             be.setRate(1);
-            helper.assertTrue(be.effectivePowerLimit() == 250, "Rate 1 furnace profile: 250 FE/t, got " + be.effectivePowerLimit());
+            helper.assertTrue(be.effectivePowerLimit() == 30, "Rate 1 furnace profile: 30 FE/t, got " + be.effectivePowerLimit());
             be.setRate(10);
-            helper.assertTrue(be.effectivePowerLimit() == 3_200_000, "Rate 10 furnace profile (3 x 64 per tick): 3 200 000 FE/t, got " + be.effectivePowerLimit());
+            helper.assertTrue(be.effectivePowerLimit() == 384_000, "Rate 10 furnace profile (3 x 64 per tick): 384 000 FE/t, got " + be.effectivePowerLimit());
             helper.succeed();
         });
     }
@@ -361,7 +408,7 @@ public final class EnergyGameTests {
             // Sand smelts in 200 ticks; raw iron blasts in 100 ticks (and runs in pairs of 2 raw -> 3 ingots without the upgrade).
             for (boolean upgrade : new boolean[] {false, true}) {
                 be.upgradeSlot().setStackInSlot(0, upgrade ? new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()) : ItemStack.EMPTY);
-                double cost = (upgrade ? 25_000 : 50_000) / 3.0;
+                double cost = (upgrade ? 3_000 : 6_000) / 3.0;
                 for (ItemStack item : List.of(new ItemStack(Items.SAND), new ItemStack(Items.RAW_IRON))) {
                     for (int level : new int[] {1, 4, 7, 10}) {
                         be.setRate(level);
@@ -402,22 +449,22 @@ public final class EnergyGameTests {
         ElectricFurnaceBlockEntity be = ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
             helper.assertTrue(be.setMode(ElectricFurnaceMode.ALLOY), "ALLOY mode");
-            helper.assertTrue(be.effectivePowerLimit() == 1_920_000, "Rate 10 alloy profile (64 per tick): 1 920 000 FE/t, got " + be.effectivePowerLimit());
+            helper.assertTrue(be.effectivePowerLimit() == 192_000, "Rate 10 alloy profile (64 per tick): 192 000 FE/t, got " + be.effectivePowerLimit());
             be.setRate(1);
-            helper.assertTrue(be.effectivePowerLimit() == 150, "Rate 1 alloy profile: 150 FE/t, got " + be.effectivePowerLimit());
+            helper.assertTrue(be.effectivePowerLimit() == 15, "Rate 1 alloy profile: 15 FE/t, got " + be.effectivePowerLimit());
             // An execution asking for two units of an ingredient is two units of work and costs twice as much.
             AlloyingRecipe single = new AlloyingRecipe(List.of(new SizedIngredient(Ingredient.of(Items.IRON_INGOT), 1)),
                     new ItemStack(Items.IRON_BLOCK), Optional.empty(), 200, 0F);
             AlloyingRecipe twice = new AlloyingRecipe(List.of(new SizedIngredient(Ingredient.of(Items.IRON_INGOT), 2),
                     new SizedIngredient(Ingredient.of(Items.COAL), 1)), new ItemStack(Items.IRON_BLOCK), Optional.empty(), 50, 0F);
-            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(single, 10, false) == 30_000, "standard execution 30 000 FE");
-            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(single, 10, true) == 15_000, "upgrade: 15 000 FE");
-            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyWorkUnits(twice) == 2 && dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(twice, 10, false) == 60_000,
-                    "two units of work: 60 000 FE, whatever the duration");
-            // Steel (100 ticks) run for real: 30 000 FE per execution at every Rate, 15 000 with the upgrade.
+            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(single, 10, false) == 3_000, "standard execution 3 000 FE");
+            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(single, 10, true) == 1_500, "upgrade: 1 500 FE");
+            helper.assertTrue(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyWorkUnits(twice) == 2 && dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(twice, 10, false) == 6_000,
+                    "two units of work: 6 000 FE, whatever the duration");
+            // Steel (100 ticks) run for real: 3 000 FE per execution at every Rate, 1 500 with the upgrade.
             for (boolean upgrade : new boolean[] {false, true}) {
                 be.upgradeSlot().setStackInSlot(0, upgrade ? new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()) : ItemStack.EMPTY);
-                double cost = upgrade ? 15_000 : 30_000;
+                double cost = upgrade ? 1_500 : 3_000;
                 for (int level : new int[] {1, 3, 6, 9}) {
                     be.setRate(level);
                     be.energyBuffer().setStored(PLENTY);
@@ -469,7 +516,7 @@ public final class EnergyGameTests {
                 double debt = be.energyBuffer().debt();
                 cycle(helper, be);
                 double alloy = spent(be.energyBuffer(), stored, debt);
-                double expectedAlloy = RateScale.electricFurnaceOperationsPerTick(4, 100, ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 30_000;
+                double expectedAlloy = RateScale.electricFurnaceOperationsPerTick(4, 100, ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 3_000;
                 helper.assertTrue(near(expectedAlloy, alloy), "alloy profile " + expectedAlloy + ", got " + alloy);
                 // The lanes smelt on their own: only the furnace profile is billed.
                 be.input(0).clear();
@@ -480,7 +527,7 @@ public final class EnergyGameTests {
                 debt = be.energyBuffer().debt();
                 cycle(helper, be);
                 double furnace = spent(be.energyBuffer(), stored, debt);
-                double expectedFurnace = 3 * RateScale.electricFurnaceOperationsPerTick(4, 200, ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 50_000 / 3.0;
+                double expectedFurnace = 3 * RateScale.electricFurnaceOperationsPerTick(4, 200, ElectricFurnaceBlockEntity.RATE_TEN_OPERATIONS_PER_LANE) * 2_000;
                 helper.assertTrue(near(expectedFurnace, furnace), "furnace profile " + expectedFurnace + ", got " + furnace);
             }
             helper.succeed();
@@ -580,7 +627,7 @@ public final class EnergyGameTests {
     @GameTest(template = "empty_large", timeoutTicks = 200)
     public static void minerChargesTheSameFePerAttemptAtEveryFluxRate(GameTestHelper helper) {
         MinerControllerBlockEntity c = runningMiner(helper);
-        long[] expected = {2_500, 6_458, 16_681, 43_089, 111_302, 287_505, 742_654, 1_918_350, 4_955_288, 12_800_000};
+        long[] expected = {300, 775, 2_002, 5_171, 13_356, 34_501, 89_119, 230_202, 594_635, 1_536_000};
         helper.runAfterDelay(1, () -> {
             for (int level = 1; level <= 10; level++) {
                 c.setRate(level);
@@ -597,12 +644,12 @@ public final class EnergyGameTests {
                     attempts += minerCycle(c);
                     if (i == 0) {
                         double tick = spent(c.energyBuffer(), stored, debt) - before;
-                        helper.assertTrue(near(rate * 200_000, tick), "Flux Rate " + level + " one cycle costs " + rate * 200_000 + ", got " + tick);
+                        helper.assertTrue(near(rate * 24_000, tick), "Flux Rate " + level + " one cycle costs " + rate * 24_000 + ", got " + tick);
                     }
                 }
                 double work = attempts + c.workProgress() - progress;
                 double perAttempt = spent(c.energyBuffer(), stored, debt) / work;
-                helper.assertTrue(attempts > 0 && Math.abs(perAttempt - 200_000) < 0.2, "Flux Rate " + level + ": " + perAttempt + " FE per attempt");
+                helper.assertTrue(attempts > 0 && Math.abs(perAttempt - 24_000) < 0.2, "Flux Rate " + level + ": " + perAttempt + " FE per attempt");
             }
             helper.succeed();
         });
@@ -614,8 +661,8 @@ public final class EnergyGameTests {
         helper.runAfterDelay(1, () -> {
             c.setRate(10);
             c.energyBuffer().setDebt(0);
-            // 12 800 000 FE pay for exactly one Rate-10 cycle (64 attempts), however many cycles are requested.
-            c.energyBuffer().setStored(12_800_000);
+            // 1 536 000 FE pay for exactly one Rate-10 cycle (64 attempts), however many cycles are requested.
+            c.energyBuffer().setStored(1_536_000);
             double progress = c.workProgress();
             long attempts = 0;
             for (int i = 0; i < 6; i++) {
@@ -625,11 +672,11 @@ public final class EnergyGameTests {
             helper.assertTrue(Math.abs(work - 64) < 1e-6 && attempts <= 64, "64 attempts of work, got " + work + " (" + attempts + " whole)");
             helper.assertTrue(c.energyBuffer().available() < 1.0, "the energy is all spent");
             // Half an attempt of energy: half an attempt of progress, nothing for free.
-            c.energyBuffer().setStored(100_000);
+            c.energyBuffer().setStored(12_000);
             double half = c.workProgress();
             long more = minerCycle(c);
             double gained = more + c.workProgress() - half;
-            helper.assertTrue(Math.abs(gained - 0.5) < 1e-6, "100 000 FE = half an attempt, got " + gained);
+            helper.assertTrue(Math.abs(gained - 0.5) < 1e-6, "12 000 FE = half an attempt, got " + gained);
             helper.succeed();
         });
     }
@@ -647,7 +694,7 @@ public final class EnergyGameTests {
             double progress = c.workProgress();
             long attempts = minerCycle(c);
             double work = attempts + c.workProgress() - progress;
-            helper.assertTrue(near(work * 200_000, spent(c.energyBuffer(), stored, debt)), "every attempt is billed, kept or filtered");
+            helper.assertTrue(near(work * 24_000, spent(c.energyBuffer(), stored, debt)), "every attempt is billed, kept or filtered");
             helper.assertTrue(attempts == 64, "a Rate-10 cycle makes 64 attempts, got " + attempts);
             helper.succeed();
         });

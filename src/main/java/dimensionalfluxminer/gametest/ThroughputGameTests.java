@@ -100,7 +100,7 @@ public final class ThroughputGameTests {
     }
 
     @GameTest(template = "empty_small")
-    public static void threeLanesSustain192PerTickAt3200000Fe(GameTestHelper helper) {
+    public static void threeLanesSustain192PerTickAt384000Fe(GameTestHelper helper) {
         ElectricFurnaceGameTests.place(helper);
         helper.runAfterDelay(1, () -> {
             ElectricFurnaceBlockEntity be = furnace(helper);
@@ -121,7 +121,7 @@ public final class ThroughputGameTests {
             }
             double perTick = spent(be.energyBuffer(), stored, debt) / ticks;
             helper.assertTrue(made == 192L * ticks, "192 operations per tick over " + ticks + " ticks, got " + made);
-            helper.assertTrue(Math.abs(perTick - 3_200_000) < 1, "3 200 000 FE/t, got " + perTick);
+            helper.assertTrue(Math.abs(perTick - 384_000) < 1, "384 000 FE/t, got " + perTick);
             helper.succeed();
         });
     }
@@ -228,13 +228,13 @@ public final class ThroughputGameTests {
             }
             helper.assertTrue(steel == 64L * ticks && slag == 64L * ticks, "64 steel + 64 slag per tick: " + steel + " / " + slag);
             double perTick = spent(be.energyBuffer(), stored, debt) / ticks;
-            helper.assertTrue(Math.abs(perTick - 1_920_000) < 1, "1 920 000 FE/t, got " + perTick);
+            helper.assertTrue(Math.abs(perTick - 192_000) < 1, "192 000 FE/t, got " + perTick);
             // A recipe asking for two units of an ingredient runs half the executions (and costs twice per execution).
             AlloyingRecipe twice = new AlloyingRecipe(List.of(new SizedIngredient(Ingredient.of(Items.IRON_INGOT), 2),
                     new SizedIngredient(Ingredient.of(Items.COAL), 1)), new ItemStack(Items.IRON_BLOCK), Optional.empty(), 200, 0F);
             helper.assertTrue(Math.abs(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionsPerTick(10, twice) - 32) < 1e-9, "two units: 32 executions per tick");
             helper.assertTrue(Math.abs(dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionsPerTick(10, twice) * dimensionalfluxminer.furnace.ElectricFurnaceEnergy.alloyExecutionEnergy(twice, 10, false)
-                    - 1_920_000) < 1e-3, "same FE/t: 32 x 60 000");
+                    - 192_000) < 1e-3, "same FE/t: 32 x 6 000");
             helper.succeed();
         });
     }
@@ -257,7 +257,7 @@ public final class ThroughputGameTests {
             helper.assertTrue(be.output(0).countOf(glass) == 64 && be.input(0).firstCount() == 40,
                     "24 smelted into the free room, 40 left: " + be.output(0).countOf(glass) + " / " + be.input(0).firstCount());
             double fe = spent(be.energyBuffer(), stored, debt);
-            helper.assertTrue(fe <= 25 * 50_000 / 3.0 + 1, "FE only for the work that fit: " + fe);
+            helper.assertTrue(fe <= 25 * 2_000 + 1, "FE only for the work that fit: " + fe);
             // Full: nothing consumed, nothing spent.
             stored = be.energyBuffer().stored();
             debt = be.energyBuffer().debt();
@@ -311,7 +311,7 @@ public final class ThroughputGameTests {
                 }
             }
             helper.assertTrue(made == 4 * 192, "every accelerated cycle runs 192: " + made);
-            helper.assertTrue(Math.abs(spent(be.energyBuffer(), stored, debt) - 4 * 3_200_000) < 1, "and pays for it");
+            helper.assertTrue(Math.abs(spent(be.energyBuffer(), stored, debt) - 4 * 384_000) < 1, "and pays for it");
             helper.succeed();
         });
     }
@@ -323,7 +323,7 @@ public final class ThroughputGameTests {
             ElectricFurnaceBlockEntity be = furnace(helper);
             be.energyBuffer().setDebt(0);
             // A third of the FE of a Rate-10 tick: about 21 of the 64 items of each lane.
-            be.energyBuffer().setStored(3_200_000 / 3);
+            be.energyBuffer().setStored(384_000 / 3);
             for (int lane = 0; lane < ElectricFurnaceBlockEntity.LANES; lane++) {
                 be.input(lane).insert(new ItemStack(Items.SAND), 64, false);
             }

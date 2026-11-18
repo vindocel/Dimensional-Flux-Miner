@@ -65,7 +65,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `recipe` | Recipe types (`crushing`, `ore_crushing`, `alloying`, `tag_smelting`, `tag_blasting`) and the reader of other mods' alloy recipes |
 | `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) and `Waterlogging`, shared by every waterloggable machine, tank and Miner part |
 | `advancement` | Custom advancement trigger, including nearby-player awards after completed tank conversions |
-| `network` | Payloads (menu sync, Miner assembly outline, formation burst, configuration values set by scripts) |
+| `network` | Payloads (menu sync, Miner assembly outline, formation burst, effective configuration and script ownership) |
 | `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `rei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded), `ae2` (all three versions: `Ae2Power` joins the ME network only through an adjacent energy cell or a quartz fiber facing the side; `Ae2Parts` gives the side screens the part facing the machine; `Ae2TestParts` places cables for the GameTests), always called through `compat.Ae2Compat` |
 | `mixin` | Corrupted Water particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
 | `client` | Renderers, screens, the guide (including live tank conversion diagrams and fluid-amount tooltips), sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI, REI and Jade plugins are client side and may use it |
@@ -105,6 +105,8 @@ machine by world, dimension and position); `ThemeWindow` is the Settings tab's w
 `src/test/java` holds the JUnit tests. They see no Minecraft class, so only pure math is tested there.
 
 ## The machines
+
+`client.config` registers the Mods configuration factory and keeps an opening snapshot separate from the editable draft. `DfmConfigScreen` groups appearance and real server options into four tabs; `ConfigListScreen` returns only validated local lists. `ConfigPaint` uses exact-color GUI pipelines on 26.x, with version-specific shaders for RenderPearl on 26.3. `GuiThemes` exposes global preferences without a machine position. Server saves run on the integrated server thread, validate every changed key, reject script-owned keys and broadcast effective values. `DfmConfig` keeps received values and script ownership separate from the local sparse KubeJS overrides; an integrated server never imports its own complete snapshot as overrides. No remote editing packet exists.
 
 ### Crusher and Electric Furnace
 

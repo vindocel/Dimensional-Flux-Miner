@@ -36,6 +36,13 @@ public final class DimensionalFluxMiner {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public DimensionalFluxMiner(IEventBus modBus, ModContainer container) {
+        //? if >=26.1 {
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist().isClient()) {
+        //?} else {
+        /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+        *///?}
+            dimensionalfluxminer.client.config.DfmConfigScreen.register(container);
+        }
         DfmBlocks.BLOCKS.register(modBus);
         DfmItems.ITEMS.register(modBus);
         DfmDataComponents.COMPONENTS.register(modBus);

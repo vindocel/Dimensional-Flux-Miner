@@ -150,6 +150,30 @@ public final class GuiThemes {
         save();
     }
 
+    /** Global preferences without a synthetic device position or changes to per-device maps. */
+    public static Map<String, Object> globalPreferences() {
+        load();
+        return Map.of("appearance.dark", allDark, "appearance.shared", applyToAll,
+                "appearance.icons", allIcons.id(), "appearance.color", String.format(java.util.Locale.ROOT, "%06X", allCustomColor));
+    }
+
+    public static void setGlobalPreferences(Map<String, Object> values) {
+        load();
+        boolean oldDark = allDark, oldShared = applyToAll;
+        IconColor oldIcons = allIcons;
+        int oldColor = allCustomColor;
+        try {
+            allDark = (boolean) values.get("appearance.dark");
+            applyToAll = (boolean) values.get("appearance.shared");
+            allIcons = IconColor.valueOf(((String) values.get("appearance.icons")).toUpperCase(java.util.Locale.ROOT));
+            allCustomColor = Integer.parseInt((String) values.get("appearance.color"), 16);
+            writePreferences();
+        } catch (RuntimeException failure) {
+            allDark = oldDark; applyToAll = oldShared; allIcons = oldIcons; allCustomColor = oldColor;
+            throw failure;
+        }
+    }
+
     private static String key(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
         String world;
@@ -221,6 +245,13 @@ public final class GuiThemes {
     }
 
     private static void save() {
+        try { writePreferences(); }
+        catch (java.io.UncheckedIOException failure) {
+            DimensionalFluxMiner.LOGGER.warn("Could not save {}", path(), failure);
+        }
+    }
+
+    private static void writePreferences() {
         JsonObject json = new JsonObject();
         json.addProperty("applyToAll", applyToAll);
         json.addProperty("allDark", allDark);
@@ -242,7 +273,7 @@ public final class GuiThemes {
         try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             GSON.toJson(json, writer);
         } catch (IOException e) {
-            DimensionalFluxMiner.LOGGER.warn("Could not save {}", path, e);
+            throw new java.io.UncheckedIOException("Could not save appearance preferences", e);
         }
     }
 }

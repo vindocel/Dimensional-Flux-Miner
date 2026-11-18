@@ -119,7 +119,7 @@ public final class ElectricFurnaceGameTests {
         ElectricFurnaceBlockEntity be = place(helper);
         be.upgradeSlot().setStackInSlot(0, new ItemStack(DfmItems.EFFICIENCY_UPGRADE.get()));
         // Furnace profile, three lanes of 64 items/tick at 25 000 / 3 FE per item.
-        helper.assertTrue(be.effectivePowerLimit() == 1_600_000, "Rate 10 with upgrade = 1600000 FE/t, got " + be.effectivePowerLimit());
+        helper.assertTrue(be.effectivePowerLimit() == 192_000, "Rate 10 with upgrade = 192000 FE/t, got " + be.effectivePowerLimit());
         be.input(1).insert(new ItemStack(Items.RAW_GOLD), 3, false);
         helper.succeedWhen(() -> helper.assertTrue(be.output(1).countOf(new ItemStack(Items.GOLD_INGOT)) == 6, "3 raw gold -> 6 ingots"));
     }

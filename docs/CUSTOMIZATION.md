@@ -91,7 +91,7 @@ Resource packs can replace the single white icon sources, including `icon_white/
 
 ### In-game editor
 
-The Mods configuration screen has Appearance, Miner, Machines, and World & Tanks tabs. A row's help panel explains its purpose, default and numeric limits. Switches change booleans, list buttons open a separate editor, and the reset arrow restores one option. Defaults and Undo affect only the current tab's draft. List Done returns to that draft; only the main Done saves. Escape cancels. Invalid numbers stay visible and block saving; level lists accept either no entries (the built-in curve) or exactly ten valid entries.
+The Mods configuration screen has Appearance, Miner, Machines, and World & Tanks tabs. A row's help panel explains its purpose, default and numeric limits, with an example picture when the option has a visible effect. Switches change booleans, list buttons open a separate editor, and the reset arrow restores one option. Defaults and Undo affect only the current tab's draft. List Done returns to that draft; only the main Done saves. Escape cancels. Invalid numbers stay visible and block saving; level lists accept either no entries (the built-in curve) or exactly ten valid entries.
 
 Server settings can be saved only while a singleplayer world is loaded. The main menu and multiplayer show them read-only. Values owned by KubeJS show their effective values and cannot be replaced through this screen. Remote clients receive the server's effective settings for the guide and editor; editing does not send a remote write request. Appearance changes use `dimensionalfluxminer-themes.json` and retain per-machine choices.
 

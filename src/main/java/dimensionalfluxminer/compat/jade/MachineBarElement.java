@@ -77,17 +77,22 @@ final class MachineBarElement extends ResizeableElement {
     /** Energy fill in the player's icon color for this machine; null for the fluid bars. */
     //? if >=26.1 {
     private final Identifier energySheet;
-
-    private MachineBarElement(double fraction, Component text, Fluid fluid, Identifier energySheet) {
     //?} else {
     /*private final ResourceLocation energySheet;
+    *///?}
+    /** Vertex color of the energy fill (the machine's custom color, otherwise white). */
+    private final int energyTint;
 
-    private MachineBarElement(double fraction, Component text, Fluid fluid, ResourceLocation energySheet) {
+    //? if >=26.1 {
+    private MachineBarElement(double fraction, Component text, Fluid fluid, Identifier energySheet, int energyTint) {
+    //?} else {
+    /*private MachineBarElement(double fraction, Component text, Fluid fluid, ResourceLocation energySheet, int energyTint) {
     *///?}
         this.fraction = Mth.clamp(fraction, 0, 1);
         this.text = text;
         this.fluid = fluid;
         this.energySheet = energySheet;
+        this.energyTint = energyTint;
         //? if >=26.1 {
         int width = Minecraft.getInstance().font.width(text) + 2 * TEXT_PADDING;
         // The fields themselves: Jade's size(...) returns a sized wrapper and leaves this element at 0 x 0.
@@ -98,12 +103,12 @@ final class MachineBarElement extends ResizeableElement {
         //?}
     }
 
-    static MachineBarElement energy(double fraction, Component text, IconColor icons) {
-        return new MachineBarElement(fraction, text, null, icons.energySheet());
+    static MachineBarElement energy(double fraction, Component text, IconColor icons, int energyTint) {
+        return new MachineBarElement(fraction, text, null, icons.energySheet(), energyTint);
     }
 
     static MachineBarElement fluid(Fluid fluid, double fraction, Component text) {
-        return new MachineBarElement(fraction, text, fluid, null);
+        return new MachineBarElement(fraction, text, fluid, null, 0xFFFFFFFF);
     }
 
     //? if >=26.1 {
@@ -179,16 +184,24 @@ final class MachineBarElement extends ResizeableElement {
             *///?}
                 THICKNESS, ENERGY_FRAME_LENGTH);
         int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
+        //? if <26.1 {
+        /*g.setColor(((energyTint >> 16) & 0xFF) / 255.0F, ((energyTint >> 8) & 0xFF) / 255.0F, (energyTint & 0xFF) / 255.0F, 1.0F);
+        *///?}
         for (int drawn = 0; drawn < filled; drawn += ENERGY_FILL_LENGTH) {
             int piece = Math.min(ENERGY_FILL_LENGTH, filled - drawn);
             //? if >=26.1 {
             g.blit(RenderPipelines.GUI_TEXTURED, energySheet, ENERGY_BORDER, ENERGY_BORDER + area - drawn - piece, 0,
+                    frame * ENERGY_FILL_LENGTH + ENERGY_FILL_LENGTH - piece, ENERGY_FILL_THICKNESS, piece,
+                    ENERGY_FILL_THICKNESS, ENERGY_FILL_LENGTH * ENERGY_FRAMES, energyTint);
             //?} else {
             /*g.blit(energySheet, ENERGY_BORDER, ENERGY_BORDER + area - drawn - piece, 0,
-            *///?}
                     frame * ENERGY_FILL_LENGTH + ENERGY_FILL_LENGTH - piece, ENERGY_FILL_THICKNESS, piece,
                     ENERGY_FILL_THICKNESS, ENERGY_FILL_LENGTH * ENERGY_FRAMES);
+            *///?}
         }
+        //? if <26.1 {
+        /*g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        *///?}
         //? if >=26.1 {
         g.pose().popMatrix();
         //?} else {

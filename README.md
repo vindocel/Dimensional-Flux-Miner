@@ -190,7 +190,7 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 
 ---
 
-Machine screen icons share one white source image. Choose white, blue, purple or a custom color with HSV sliders and a hex field; display glass/text and the lit parts of toggles follow the accent, while switch handles stay neutral. Selected icon buttons use a darker accent for contrast. Colored details stay unchanged, and furnace display accents remain cyan with white icons.
+Machine screen icons share one white source image. Choose white, blue, purple or a custom color with HSV sliders and a hex field; display glass/text, the energy bar and the lit parts of toggles follow the accent, while switch handles stay neutral. Selected icon buttons use a darker accent for contrast. Colored details stay unchanged, and furnace display accents remain cyan with white icons.
 
 ## 🛢️ Dimensional Tanks
 
@@ -294,6 +294,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 - 🔍 **Jade**: input / output items, the machines' own animated energy bar and the Electric Furnace's stored XP in mB.
 - ⚡ **Applied Energistics 2** (optional): the Crusher, the Electric Furnace and the Miner's energy ports draw AE from an energy cell touching them or from a quartz fiber on the cable face toward them (1 AE = 2 FE, no channel). ME cables do not connect to them.
 - 🧪 **Cognition**: the Experience Obelisk takes the Electric Furnace's Liquid Experience directly.
+- 🌀 **Dimensional Flux** (optional): adds a second Quantum Core recipe with a Dimensional Block in place of the Conduit; both recipes give the same core.
 - 🔀 **Polymorph** (optional, 1.21.1 only until it ships for 26.x): when an item in the Crusher or the Electric Furnace has more than one recipe, a button near the outputs lets you pick the result; the pick is kept per item on that machine.
 - ⏩ **Tick accelerators** (e.g. Soul Surge): every extra ticker call runs one more complete cycle at full FE cost; on the Miner only the eight bottom blocks around the terminal (the seven ports and the center chassis) are receivers.
 - 🌍 **Ores of other mods**: the Miner reads the ore features of other mods that declare `targets[].state`; the Crusher and Electric Furnace work through the common tags.
@@ -313,7 +314,7 @@ Dimensional energy is the glue that holds the world together. Where the Basic co
 
 ## 🧩 Configuration and datapacks
 
-Open **Mods → Dimensional Flux Miner → Config** for the four-tab configuration screen. Appearance preferences are local; gameplay settings can be edited while a singleplayer world is loaded. Hover or focus a row for its explanation, default and limits. **Done** saves, **Escape** discards; remote server rules and KubeJS-controlled values are read-only.
+Open **Mods → Dimensional Flux Miner → Config** for the four-tab configuration screen. Appearance preferences are local; gameplay settings can be edited while a singleplayer world is loaded. Hover or focus a row for its explanation, default, limits and, where useful, an example picture. **Done** saves, **Escape** discards; remote server rules and KubeJS-controlled values are read-only.
 
 Modpack creators, modders and server administrators can customize machine settings, dimensional resource profiles, Matter values, recipes, corruption tags and compatibility.
 

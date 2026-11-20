@@ -11,7 +11,8 @@ import net.minecraft.resources.Identifier;
 /**
  * Icon color the player picks for a machine screen; white is the default. The energy fill (screens and Jade), the
  * text and glass of the read-out windows, the volume bar and the outline of the button under the mouse are blue with white and
- * blue icons, purple with purple icons. Every choice uses the same source artwork and a runtime palette.
+ * blue icons, purple with purple icons, and the chosen color with a custom color. Every choice uses the same source
+ * artwork and a runtime palette.
  */
 public enum IconColor {
     WHITE(0xFFFFFFFF, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
@@ -20,7 +21,7 @@ public enum IconColor {
             0x14243A, 0x1F3852, 0x0F1A2B),
     PURPLE(0xFF9366DE, 0xFFB592FF, 0xFF9366DE, 0xFF784AB9, "energy_shimmer_sheet_purple",
             0x1E1430, 0x2E1F4A, 0x170F24),
-    CUSTOM(0xFFEF8B32, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
+    CUSTOM(0xFFEF8B32, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet_neutral",
             0x14243A, 0x1F3852, 0x0F1A2B);
 
     private final int preview;
@@ -106,7 +107,17 @@ public enum IconColor {
         return this == CUSTOM ? GuiTheme.customRim() : glassRim;
     }
 
-    /** Shimmering energy fill (42 frames of 8 x 66). */
+    /** Vertex color of the energy fill: the chosen color over the gray sheet with a custom color, otherwise white. */
+    public int energyTint(int customRgb) {
+        return this == CUSTOM ? 0xFF000000 | customRgb : 0xFFFFFFFF;
+    }
+
+    /** Vertex color of the energy fill on the screen being drawn. */
+    int energyTint() {
+        return energyTint(GuiTheme.customRgb());
+    }
+
+    /** Shimmering energy fill (42 frames of 8 x 66); gray with a custom color, tinted by {@link #energyTint}. */
     //? if >=26.1 {
     public Identifier energySheet() {
     //?} else {

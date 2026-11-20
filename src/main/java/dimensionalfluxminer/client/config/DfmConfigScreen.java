@@ -55,6 +55,7 @@ public final class DfmConfigScreen extends Screen {
         opened.putAll(ConfigSettings.effectiveServerValues());
         opened.putAll(GuiThemes.globalPreferences());
         draft.putAll(opened);
+        ConfigPreview.reset();
     }
 
     static Component text(String key, Object... args) {
@@ -218,7 +219,8 @@ public final class DfmConfigScreen extends Screen {
                 y = paragraph(g, text("range", DfmConfig.keys().get(selected.key).getSpec().getRange().toString()), y + 4, ConfigStyle.MUTED);
             if (scripted(selected)) y = paragraph(g, text("scripted"), y + 4, ConfigStyle.ACCENT);
             else if (!editable(selected) && !selected.client) y = paragraph(g, text("server_read_only"), y + 4, ConfigStyle.MUTED);
-            if (errors.containsKey(selected.key)) paragraph(g, text("invalid_value"), y + 4, 0xFFFF7777);
+            if (errors.containsKey(selected.key)) y = paragraph(g, text("invalid_value"), y + 4, 0xFFFF7777);
+            ConfigPreview.draw(g, selected.key, draft.get(selected.key), panelX + 8, y + 8, panelWidth - 16, height - 60 - (y + 8));
         }
         if (!saveError.getString().isEmpty()) paragraph(g, saveError, contentTop + 8, 0xFFFF7777);
         List<Option> current = options.stream().filter(option -> option.tab == tab).toList();

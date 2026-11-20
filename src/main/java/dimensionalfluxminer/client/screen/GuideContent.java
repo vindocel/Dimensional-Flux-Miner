@@ -68,6 +68,10 @@ final class GuideContent {
         for (String part : List.of("reinforced_structural_glass", "steel_chassis", "ventilation_unit", "dimensional_port",
                 "quantum_core", "miner_terminal")) {
             b.crafting(part);
+            // Alternative core recipe, loaded only with Dimensional Flux installed.
+            if (part.equals("quantum_core") && net.neoforged.fml.ModList.get().isLoaded("dimensionalflux")) {
+                b.crafting("quantum_core_dimensional_block");
+            }
         }
         b.heading("cores").crafting("basic_dimensional_core").crafting("stabilized_dimensional_core").crafting("efficiency_upgrade");
         return b.chapter(DfmItems.INGOT_STEEL);

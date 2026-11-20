@@ -110,6 +110,11 @@ public final class GuiThemes {
         save();
     }
 
+    /** Vertex color of the energy fill of the machine at {@code pos} (its custom color, otherwise white). */
+    public static int energyTint(BlockPos pos) {
+        return icons(pos).energyTint(customRgb(pos));
+    }
+
     static int customRgb(BlockPos pos) {
         load();
         return applyToAll ? allCustomColor : CUSTOM_COLORS.getOrDefault(key(pos), allCustomColor);

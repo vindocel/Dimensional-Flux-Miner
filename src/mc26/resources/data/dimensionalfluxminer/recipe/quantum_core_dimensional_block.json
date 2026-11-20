@@ -1,0 +1,24 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "dimensionalflux"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ERE",
+    "RCR",
+    "ERE"
+  ],
+  "key": {
+    "E": "dimensionalfluxminer:ender_eye_reinforced",
+    "R": "dimensionalfluxminer:reinforced_structural_glass",
+    "C": "dimensionalflux:dimensional_block"
+  },
+  "result": {
+    "id": "dimensionalfluxminer:quantum_core",
+    "count": 1
+  }
+}

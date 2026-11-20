@@ -111,13 +111,18 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         return GuiTheme.icons().screenText();
     }
 
-    /** Energy fill of the icon color of the screen being drawn. */
+    /** Energy fill of the icon color of the screen being drawn; drawn with {@link #energyTint()}. */
     //? if >=26.1 {
     static Identifier energySheet() {
     //?} else {
     /*static ResourceLocation energySheet() {
     *///?}
         return GuiTheme.icons().energySheet();
+    }
+
+    /** Vertex color of the energy fill: the custom color over the gray sheet, otherwise white. */
+    static int energyTint() {
+        return GuiTheme.icons().energyTint();
     }
     static final int ENERGY_FRAME_HEIGHT = 72;
     static final int ENERGY_FILL_HEIGHT = 66;
@@ -1070,12 +1075,16 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
         int filled = (int) Math.round(area * Mth.clamp(fraction, 0, 1));
         if (filled > 0) {
             int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
+            int tint = energyTint();
             //? if >=26.1 {
             g.blit(RenderPipelines.GUI_TEXTURED, energySheet(), x + 3, y + 3 + area - filled, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - filled,
+                    8, filled, 8, ENERGY_FILL_HEIGHT * ENERGY_FRAMES, tint);
             //?} else {
-            /*g.blit(energySheet(), x + 3, y + 3 + area - filled, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - filled,
-            *///?}
+            /*g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, 1.0F);
+            g.blit(energySheet(), x + 3, y + 3 + area - filled, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - filled,
                     8, filled, 8, ENERGY_FILL_HEIGHT * ENERGY_FRAMES);
+            g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+            *///?}
         }
     }
 
@@ -1177,15 +1186,23 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
                 *///?}
         });
         int frame = (int) ((Util.getMillis() / ENERGY_FRAME_MS) % ENERGY_FRAMES);
+        int tint = energyTint();
+        //? if <26.1 {
+        /*g.setColor(((tint >> 16) & 0xFF) / 255.0F, ((tint >> 8) & 0xFF) / 255.0F, (tint & 0xFF) / 255.0F, 1.0F);
+        *///?}
         for (int drawn = 0; drawn < filled; drawn += ENERGY_FILL_HEIGHT) {
             int piece = Math.min(ENERGY_FILL_HEIGHT, filled - drawn);
             //? if >=26.1 {
             g.blit(RenderPipelines.GUI_TEXTURED, energySheet(), border, border + area - drawn - piece, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - piece,
+                    8, piece, 8, ENERGY_FILL_HEIGHT * ENERGY_FRAMES, tint);
             //?} else {
             /*g.blit(energySheet(), border, border + area - drawn - piece, 0, frame * ENERGY_FILL_HEIGHT + ENERGY_FILL_HEIGHT - piece,
-            *///?}
                     8, piece, 8, ENERGY_FILL_HEIGHT * ENERGY_FRAMES);
+            *///?}
         }
+        //? if <26.1 {
+        /*g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        *///?}
         //? if >=26.1 {
         g.pose().popMatrix();
         //?} else {

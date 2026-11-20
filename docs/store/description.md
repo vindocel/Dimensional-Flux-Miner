@@ -17,8 +17,10 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 ## 🆕 New in 0.2.9
 
-- ⚙️ **New configuration screen** in Mods: four tabs, clear explanations, animated switches, list editors and resets. Edit gameplay settings in a loaded singleplayer world and save with Done; multiplayer and script-controlled settings are read-only.
+- ⚙️ **New configuration screen** in Mods: four tabs, clear explanations with example pictures, animated switches, list editors and resets. Edit gameplay settings in a loaded singleplayer world and save with Done; multiplayer and script-controlled settings are read-only.
 - ⚡ **Lower default energy costs**: 88% less FE for mining, crushing and smelting; 90% less for alloys, at the same speeds.
+- 🎨 **Custom icon color** now also tints the energy bar, on screens and in Jade.
+- 🌀 **Dimensional Flux installed?** The Quantum Core can also be crafted with a Dimensional Block instead of a Conduit.
 
 - 🐚 **Craft Nautilus Shells** in the single tank with calcite and Liquid Experience.
 - 🏆 **Memory of the Ocean** rewards creating a Nautilus Shell in a tank.

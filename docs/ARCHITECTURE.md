@@ -224,6 +224,7 @@ caches one per dimension and rebuilds them on reload; it combines the datapack e
 | Class | Responsibility |
 |---|---|
 | `CorruptionService` | Converts a column: terrain, plants, the whole column checked before anything changes |
+| `PaleTreeCorruption` | 26.1.2 and 26.3: finds the natural tree over a corrupted column and plans its pale oak conversion, Creaking Heart and the swap of vines for pale hanging moss |
 | `WaterCorruption` | Which water corrupts and how a water position becomes Corrupted Water (also used by the fluid itself) |
 | `ProtectionService` | Whether a position may be corrupted: config switches, spawn protection, regions, claims |
 | `compat.claims` | `ClaimAdapters` finds the installed claim mods; `FtbChunksAdapter`, `OpenPacAdapter` query them by reflection |
@@ -237,6 +238,7 @@ caches one per dimension and rebuilds them on reload; it combines the datapack e
 | `data/<ns>/dimensional_miner_resources/*.json` | `ResourceProfiles` (overrides and dimension rules) |
 | `data/<ns>/data_maps/item/matter_value.json` | `MatterValues` |
 | `data/dimensionalfluxminer/tags/block/corrupt*.json` | `CorruptionService` |
+| `src/mc26/resources/data/dimensionalfluxminer/tags/block/corruptible_{logs,wood,stripped_logs,stripped_wood,leaves,vines}.json` | `PaleTreeCorruption` |
 | recipe types | `crusher`, `electric_furnace`, `recipe` |
 | `data/dimensionalfluxminer/kubejs/recipe_schema/*.json` | KubeJS only: the script form of each recipe type |
 

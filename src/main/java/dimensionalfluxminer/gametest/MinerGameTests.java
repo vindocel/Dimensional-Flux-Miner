@@ -50,7 +50,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.capabilities.Capabilities;
 //? if >=26.1 {
-
+import dimensionalfluxminer.miner.corruption.PaleTreeCorruption;
+import net.minecraft.util.RandomSource;
 //?} else {
 /*import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -966,10 +967,11 @@ public final class MinerGameTests {
         helper.setBlock(new BlockPos(5, 2, 1), Blocks.SAND);
         helper.setBlock(new BlockPos(5, 3, 1), Blocks.WATER);
         helper.setBlock(new BlockPos(5, 4, 1), Blocks.WATER);
-        // Column D: ground covered by a tree and a roof is corrupted through the cover.
+        // Column D: ground covered by a log, placed leaves and a roof is corrupted through the cover (placed leaves:
+        // not a natural tree, so the log stays as it is).
         helper.setBlock(new BlockPos(7, 1, 1), Blocks.GRASS_BLOCK);
         helper.setBlock(new BlockPos(7, 2, 1), Blocks.OAK_LOG);
-        helper.setBlock(new BlockPos(7, 3, 1), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(7, 3, 1), Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true));
         helper.setBlock(new BlockPos(7, 4, 1), Blocks.OAK_PLANKS);
         // Column E: natural ground that does not corrupt (sandstone) is not drainable.
         helper.setBlock(new BlockPos(1, 3, 3), Blocks.SANDSTONE);
@@ -1012,6 +1014,101 @@ public final class MinerGameTests {
         helper.assertFalse(CorruptionService.corrupt(level, a.getX(), a.getZ(), null), "an already corrupted column gives nothing");
         helper.succeed();
     }
+
+    //? if >=26.1 {
+    @GameTest(template = "empty_large", skyAccess = true)
+    public static void naturalTreesTurnPale(GameTestHelper helper) {
+        // Tree T: five oak logs crowned by natural leaves (persistent=false), as grown by the world or a sapling.
+        helper.setBlock(new BlockPos(2, 1, 2), Blocks.GRASS_BLOCK);
+        helper.setBlock(new BlockPos(3, 1, 2), Blocks.GRASS_BLOCK);
+        for (int y = 2; y <= 6; y++) {
+            helper.setBlock(new BlockPos(2, y, 2), Blocks.OAK_LOG);
+        }
+        var natural = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.DISTANCE, 1);
+        BlockPos[] crown = {new BlockPos(1, 6, 2), new BlockPos(3, 6, 2), new BlockPos(2, 6, 1), new BlockPos(2, 6, 3),
+                new BlockPos(2, 7, 2)};
+        for (BlockPos leaf : crown) {
+            helper.setBlock(leaf, natural);
+        }
+        // Vines clinging to the west leaf and hanging one block below it.
+        var vine = Blocks.VINE.defaultBlockState().setValue(BlockStateProperties.EAST, true);
+        helper.setBlock(new BlockPos(0, 6, 2), vine);
+        helper.setBlock(new BlockPos(0, 5, 2), vine);
+        // Build B: oak logs under placed leaves (persistent=true) is a player build and never turns pale.
+        helper.setBlock(new BlockPos(6, 1, 2), Blocks.GRASS_BLOCK);
+        for (int y = 2; y <= 4; y++) {
+            helper.setBlock(new BlockPos(6, y, 2), Blocks.OAK_LOG);
+        }
+        helper.setBlock(new BlockPos(6, 5, 2), Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true));
+
+        var level = helper.getLevel();
+        // The Creaking Heart roll: some fixed seed plans a heart in a trunk log with pale logs above and below.
+        BlockPos leafColumn = helper.absolutePos(new BlockPos(3, 6, 2));
+        List<BlockPos> cover = List.of(leafColumn);
+        boolean heartPlanned = false;
+        boolean mossPlanned = false;
+        for (int seed = 0; seed < 2000 && !(heartPlanned && mossPlanned); seed++) {
+            for (CorruptionService.Conversion c : PaleTreeCorruption.planTree(level, cover, RandomSource.create(seed))) {
+                if (c.to().is(Blocks.PALE_HANGING_MOSS)) {
+                    // Moss hangs straight down from a crown leaf (under the four side leaves, at y 5, 4 or 3).
+                    boolean underLeaf = false;
+                    for (BlockPos leaf : crown) {
+                        for (int drop = 1; drop <= PaleTreeCorruption.MOSS_MAX_LENGTH; drop++) {
+                            underLeaf |= c.pos().equals(helper.absolutePos(leaf.below(drop)));
+                        }
+                    }
+                    helper.assertTrue(underLeaf, "pale hanging moss under a leaf, got " + c.pos());
+                    mossPlanned = true;
+                }
+                if (c.to().is(Blocks.CREAKING_HEART)) {
+                    // Compared in absolute positions: relativePos inverts rotated tests wrongly on 26.1.2.
+                    boolean inTrunk = false;
+                    for (int y = 3; y <= 5; y++) {
+                        inTrunk |= c.pos().equals(helper.absolutePos(new BlockPos(2, y, 2)));
+                    }
+                    helper.assertTrue(inTrunk, "heart inside the trunk, got " + c.pos());
+                    helper.assertTrue(c.to().getValue(BlockStateProperties.NATURAL), "natural heart");
+                    heartPlanned = true;
+                }
+            }
+        }
+        helper.assertTrue(heartPlanned, "a Creaking Heart is planned for some trees");
+        helper.assertTrue(mossPlanned, "a tree with vines gets pale hanging moss");
+
+        // Corrupting the column under one leaf turns the whole tree pale.
+        helper.assertTrue(CorruptionService.corrupt(level, leafColumn.getX(), leafColumn.getZ(), null), "column under the crown corrupted");
+        int hearts = 0;
+        for (int y = 2; y <= 6; y++) {
+            var state = level.getBlockState(helper.absolutePos(new BlockPos(2, y, 2)));
+            if (state.is(Blocks.CREAKING_HEART)) {
+                hearts++;
+            } else {
+                helper.assertTrue(state.is(Blocks.PALE_OAK_LOG), "trunk log turned pale at y " + y);
+            }
+        }
+        helper.assertTrue(hearts <= 1, "at most one Creaking Heart per tree");
+        for (BlockPos leaf : crown) {
+            var state = level.getBlockState(helper.absolutePos(leaf));
+            helper.assertTrue(state.is(Blocks.PALE_OAK_LEAVES), "leaf turned pale at " + leaf);
+            helper.assertFalse(state.getValue(BlockStateProperties.PERSISTENT), "pale leaves stay natural");
+            helper.assertTrue(state.getValue(BlockStateProperties.DISTANCE) == 1, "leaf distance kept");
+        }
+        helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS.get(), new BlockPos(3, 1, 2));
+        helper.assertBlockNotPresent(Blocks.VINE, new BlockPos(0, 6, 2));
+        helper.assertBlockNotPresent(Blocks.VINE, new BlockPos(0, 5, 2));
+        // The trunk column (already pale tree) still corrupts its ground and changes nothing else.
+        BlockPos trunk = helper.absolutePos(new BlockPos(2, 1, 2));
+        helper.assertTrue(CorruptionService.plan(level, trunk.getX(), trunk.getZ()).tree().isEmpty(), "a pale tree is not converted again");
+
+        BlockPos build = helper.absolutePos(new BlockPos(6, 1, 2));
+        helper.assertTrue(CorruptionService.corrupt(level, build.getX(), build.getZ(), null), "build column corrupted");
+        for (int y = 2; y <= 4; y++) {
+            helper.assertBlockPresent(Blocks.OAK_LOG, new BlockPos(6, y, 2));
+        }
+        helper.assertBlockPresent(Blocks.OAK_LEAVES, new BlockPos(6, 5, 2));
+        helper.succeed();
+    }
+    //?}
 
     @GameTest(template = "empty_small")
     public static void resourceProfileFamiliesAreWeightedAndCrushable(GameTestHelper helper) {

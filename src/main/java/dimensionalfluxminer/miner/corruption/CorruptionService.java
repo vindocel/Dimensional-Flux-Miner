@@ -21,7 +21,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
  *     <li>decorative vegetation above the terrain is handled separately and never counts toward depth;</li>
  *     <li>up to 3 contiguous water layers from the exposed surface, never following deep water further;</li>
  *     <li>then exactly 3 full terrain blocks;</li>
- *     <li>blacklisted blocks and block entities are never converted.</li>
+ *     <li>blacklisted blocks and block entities are never converted;</li>
+ *     <li>on 26.1.2 and 26.3, the first natural tree met in the cover turns into pale oak ({@link PaleTreeCorruption}).</li>
  * </ul>
  * One successfully corrupted column is one logical corruption unit = 64 DM, whatever the number of blocks.
  */
@@ -31,6 +32,11 @@ public final class CorruptionService {
     /** Cover blocks (trees, buildings, machines) the corruption looks through to reach the ground. */
     public static final int MAX_COVER = 32;
     private static final int REMOVE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
+    /**
+     * Pale tree blocks are swapped without neighbour or shape updates: leaves keep the distance they had (pale logs are
+     * logs too) and nothing attached to the tree pops off as drops.
+     */
+    private static final int TREE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private CorruptionService() {
     }
@@ -43,7 +49,8 @@ public final class CorruptionService {
     public record Vegetation(BlockPos base, BlockPos upper, BlockState to) {
     }
 
-    public record ColumnPlan(List<Conversion> conversions, List<Vegetation> vegetation) {
+    /** {@code tree}: pale conversion of the tree standing over the column (always empty on 1.21.1). */
+    public record ColumnPlan(List<Conversion> conversions, List<Vegetation> vegetation, List<Conversion> tree) {
         public boolean drainable() {
             return !conversions.isEmpty();
         }
@@ -59,9 +66,10 @@ public final class CorruptionService {
         /*int min = level.getMinBuildHeight();
         *///?}
         List<BlockPos> decorative = new ArrayList<>();
-        BlockPos ground = findGround(level, x, z, decorative);
+        List<BlockPos> cover = new ArrayList<>();
+        BlockPos ground = findGround(level, x, z, decorative, cover);
         if (ground == null) {
-            return new ColumnPlan(List.of(), List.of());
+            return new ColumnPlan(List.of(), List.of(), List.of());
         }
         BlockPos.MutableBlockPos pos = ground.mutable();
         int waterLayers = 0;
@@ -89,7 +97,8 @@ public final class CorruptionService {
         if (!conversions.isEmpty() && waterLayers == 0) {
             planVegetation(level, decorative, surface, vegetation);
         }
-        return new ColumnPlan(List.copyOf(conversions), List.copyOf(vegetation));
+        List<Conversion> tree = conversions.isEmpty() ? List.of() : PaleTreeCorruption.plan(level, cover);
+        return new ColumnPlan(List.copyOf(conversions), List.copyOf(vegetation), tree);
     }
 
     /**
@@ -97,7 +106,7 @@ public final class CorruptionService {
      * column it inspects.
      */
     public static boolean drainable(ServerLevel level, int x, int z) {
-        BlockPos ground = findGround(level, x, z, null);
+        BlockPos ground = findGround(level, x, z, null, null);
         if (ground == null) {
             return false;
         }
@@ -130,10 +139,10 @@ public final class CorruptionService {
      * more than {@link #MAX_COVER} cover blocks stand above it.
      */
     public static BlockPos ground(ServerLevel level, int x, int z) {
-        return findGround(level, x, z, new ArrayList<>());
+        return findGround(level, x, z, new ArrayList<>(), null);
     }
 
-    private static BlockPos findGround(ServerLevel level, int x, int z, List<BlockPos> decorative) {
+    private static BlockPos findGround(ServerLevel level, int x, int z, List<BlockPos> decorative, List<BlockPos> covers) {
         int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
         //? if >=26.1 {
         int min = level.getMinY();
@@ -154,6 +163,8 @@ public final class CorruptionService {
                     }
                 } else if (++cover > MAX_COVER) {
                     return null;
+                } else if (covers != null) {
+                    covers.add(pos.immutable());
                 }
             }
             pos.move(0, -1, 0);
@@ -192,8 +203,8 @@ public final class CorruptionService {
         if (!plan.drainable()) {
             return false;
         }
-        // The whole column is authorized or denied before anything changes: terrain, water, the plants on it and both
-        // halves of tall plants. A denied column changes nothing and is worth nothing.
+        // The whole column is authorized or denied before anything changes: terrain, water, the plants on it, both
+        // halves of tall plants and the tree turning pale over it. A denied column changes nothing and is worth nothing.
         if (!ProtectionService.allowsAll(level, positions(plan), owner)) {
             return false;
         }
@@ -215,6 +226,9 @@ public final class CorruptionService {
                 level.setBlock(v.base(), v.to(), Block.UPDATE_ALL);
             }
         }
+        for (Conversion c : plan.tree()) {
+            level.setBlock(c.pos(), c.to(), TREE_FLAGS);
+        }
         BlightData.get(level).markCorrupted(x, z);
         return true;
     }
@@ -230,6 +244,9 @@ public final class CorruptionService {
             if (v.upper() != null) {
                 out.add(v.upper());
             }
+        }
+        for (Conversion c : plan.tree()) {
+            out.add(c.pos());
         }
         return out;
     }

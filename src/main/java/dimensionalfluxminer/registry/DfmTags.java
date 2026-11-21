@@ -35,6 +35,18 @@ public final class DfmTags {
         /** Weeds (grass, ferns, dead bushes) turned into corrupted grass; extensible by datapacks. */
         public static final TagKey<Block> CORRUPTIBLE_WEEDS = tag("corruptible_weeds");
         /**
+         * Tree blocks that turn pale when a corrupted column passes through their tree (26.1.2 and 26.3 only); each tag
+         * names its destination: logs -> pale oak log, wood -> pale oak wood, and the stripped forms likewise.
+         */
+        public static final TagKey<Block> CORRUPTIBLE_LOGS = tag("corruptible_logs");
+        public static final TagKey<Block> CORRUPTIBLE_WOOD = tag("corruptible_wood");
+        public static final TagKey<Block> CORRUPTIBLE_STRIPPED_LOGS = tag("corruptible_stripped_logs");
+        public static final TagKey<Block> CORRUPTIBLE_STRIPPED_WOOD = tag("corruptible_stripped_wood");
+        /** Natural leaves of a corrupted tree that become pale oak leaves (26.1.2 and 26.3 only). */
+        public static final TagKey<Block> CORRUPTIBLE_LEAVES = tag("corruptible_leaves");
+        /** Vines removed from a corrupted tree, which gets pale hanging moss instead (26.1.2 and 26.3 only). */
+        public static final TagKey<Block> CORRUPTIBLE_VINES = tag("corruptible_vines");
+        /**
          * Natural ground: the corruption of a column stops at the first ground block and looks through anything else
          * (trees, buildings, machines) above it.
          */

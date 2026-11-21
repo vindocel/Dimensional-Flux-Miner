@@ -1133,6 +1133,12 @@ The corruption of the Basic core is driven by block tags in `data/dimensionalflu
 | `dimensionalfluxminer:corruptible_terracotta` | Becomes **Corrupted Terracotta** | Conversion |
 | `dimensionalfluxminer:corruptible_weeds` | A plant standing on corrupted ground becomes a corrupted grass plant | Conversion (vegetation) |
 | `dimensionalfluxminer:corruptible_flowers` | A plant standing on corrupted ground becomes a wither rose (default: `#minecraft:flowers`) | Conversion (vegetation) |
+| `dimensionalfluxminer:corruptible_logs` | A natural tree's log becomes a pale oak log (default: `#minecraft:logs_that_burn`); 26.1.2 and 26.3 only | Conversion (tree) |
+| `dimensionalfluxminer:corruptible_wood` | A natural tree's wood becomes pale oak wood (vanilla wood blocks); 26.1.2 and 26.3 only | Conversion (tree) |
+| `dimensionalfluxminer:corruptible_stripped_logs` | Becomes a stripped pale oak log (vanilla and `#c:stripped_logs`); 26.1.2 and 26.3 only | Conversion (tree) |
+| `dimensionalfluxminer:corruptible_stripped_wood` | Becomes stripped pale oak wood (vanilla and `#c:stripped_woods`); 26.1.2 and 26.3 only | Conversion (tree) |
+| `dimensionalfluxminer:corruptible_leaves` | A natural tree's leaves become pale oak leaves (default: `#minecraft:leaves`); 26.1.2 and 26.3 only | Conversion (tree) |
+| `dimensionalfluxminer:corruptible_vines` | Vines removed from a corrupted tree, which gets pale hanging moss instead (default: vine); 26.1.2 and 26.3 only | Conversion (tree) |
 | `dimensionalfluxminer:corruption_ground` | Where a column's ground starts: the corruption looks through anything else above it (trees, buildings, machines), up to 32 blocks | Classification |
 | `dimensionalfluxminer:corruption_blacklist` | Never converted | Protection of block types |
 | `dimensionalfluxminer:corrupted_terrain` | Already corrupted: never converted again; the only ground for the extra hostile spawns; undead do not burn in daylight on it; corrupted grass plants can stand on it | Classification |
@@ -1158,6 +1164,13 @@ Rules fixed in the code:
 - Blocks with a block entity are never converted.
 - Only full blocks in the top 3 solid layers are converted.
 - The blacklist, block entities and already corrupted blocks are checked before any conversion tag.
+- Trees (26.1.2 and 26.3 only): a tree is a group of connected logs from the tree tags with at least one natural leaf
+  (`persistent=false`) touching it; leaves placed by players are persistent, so builds never turn pale. When a
+  corrupted column passes through a log or a natural leaf, the whole tree turns pale at once (up to 1,024 logs and
+  6,144 leaves within 6 blocks of a log). Tree tags are checked in this order: stripped wood, stripped logs, wood,
+  logs. 3% of the trees get a natural Creaking Heart in a vertical trunk log. A tree with vines (`corruptible_vines`)
+  loses them, and about one leaf in four with air below gets a pale hanging moss strand of 1 to 3 blocks. The tree gives no extra DM, and a claim
+  on any of its blocks leaves the whole column unchanged.
 
 `corruption_ground` already includes every block conversion tag (`corruptible_dirt`, `corruptible_grass`,
 `corruptible_stone`, `corruptible_sediment`, `corruptible_terracotta`), so a block added to any of them is also

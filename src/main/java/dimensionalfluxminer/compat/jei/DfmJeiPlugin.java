@@ -423,11 +423,14 @@ public class DfmJeiPlugin implements IModPlugin {
             AlloyingRecipe recipe = holder.value();
             List<SizedIngredient> ingredients = recipe.ingredients();
             for (int i = 0; i < ingredients.size() && i < 3; i++) {
+                SizedIngredient sized = ingredients.get(i);
                 builder.addInputSlot(2 + ElectricFurnaceLayout.INPUT_X[i], 2 + ElectricFurnaceLayout.INPUT_Y)
                         //? if >=26.1 {
-                        .addItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(ingredients.get(i).ingredient())));
+                        // Each option shows the amount one craft takes (e.g. 3 ingots), not a single item.
+                        .addItemStacks(List.of(dimensionalfluxminer.recipe.Recipes.stacks(sized.ingredient())).stream()
+                                .map(s -> s.copyWithCount(sized.count())).toList());
                         //?} else {
-                        /*.addItemStacks(List.of(ingredients.get(i).getItems()));
+                        /*.addItemStacks(List.of(sized.getItems()));
                         *///?}
             }
             builder.addOutputSlot(2 + ElectricFurnaceLayout.Variant.ALLOY.outputX[0], 2 + ElectricFurnaceLayout.OUTPUT_Y).addItemStack(recipe.result());

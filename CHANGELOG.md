@@ -9,6 +9,9 @@
 - Added a live alloy-energy table to the guide and clarified mining attempts versus ore output.
 - The energy bar of machine screens and Jade now follows the custom icon color.
 - Added an alternative Quantum Core recipe with a Dimensional Block in place of the Conduit, available only when Dimensional Flux is installed; the guide shows it only in that case.
+- Fixed JEI alloy recipes on Minecraft 26.1.2 and 26.3 showing one of each ingredient; they now show the amount each craft needs (for example, 3 + 1 + 2 for an EnderIO alloy).
+- Recipe viewers now list alloys more cleanly: repeated recipes are shown once, recipes whose input or result is an empty tag are hidden, and recipes that differ only in one input's items share one entry that cycles through them.
+- Creative Dimensional Tank tooltips now show the origin (mod) of the endless liquid, and no longer show the "Creative only, no channels" line.
 
 - Updated the Minecraft 26.3 build to NeoForge 26.3.0.103.
 - Added a tank recipe: one Calcite block and 250 mB of Liquid Experience produce one Nautilus Shell, explained in the guide.

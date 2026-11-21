@@ -43,7 +43,10 @@ public final class RecipeViewerData {
         return level == null ? List.of() : CrusherProcessing.displays(level);
     }
 
-    /** The mod's alloys and the alloys of other mods the Electric Furnace runs. */
+    /**
+     * The mod's alloys and the alloys of other mods the Electric Furnace runs, as the viewers list them (see
+     * {@link #forDisplay}).
+     */
     //? if >=26.1 {
     public static List<RecipeHolder<AlloyingRecipe>> alloying(RecipeMap manager) {
     //?} else {
@@ -51,11 +54,114 @@ public final class RecipeViewerData {
     *///?}
         Level level = Minecraft.getInstance().level;
         //? if >=26.1 {
-        return level == null ? List.copyOf(manager.byType(DfmRecipes.ALLOYING.get()))
+        return forDisplay(level == null ? List.copyOf(manager.byType(DfmRecipes.ALLOYING.get()))
         //?} else {
-        /*return level == null ? List.copyOf(manager.getAllRecipesFor(DfmRecipes.ALLOYING.get()))
+        /*return forDisplay(level == null ? List.copyOf(manager.getAllRecipesFor(DfmRecipes.ALLOYING.get()))
         *///?}
-                : dimensionalfluxminer.recipe.ExternalAlloying.all(manager, level.registryAccess());
+                : dimensionalfluxminer.recipe.ExternalAlloying.all(manager, level.registryAccess()));
+    }
+
+    /**
+     * Viewer list of the alloys: recipes with an input or a result that resolves to no item (or to the barrier
+     * placeholder) are left out, and recipes with the same result, byproduct and time whose inputs differ only in the
+     * items of one lane (same count) become one entry whose lane cycles through all of them. An exact repeat is dropped.
+     * Only the list shown changes: the Electric Furnace still matches each original recipe.
+     */
+    static List<RecipeHolder<AlloyingRecipe>> forDisplay(List<RecipeHolder<AlloyingRecipe>> recipes) {
+        List<RecipeHolder<AlloyingRecipe>> out = new ArrayList<>();
+        for (RecipeHolder<AlloyingRecipe> holder : recipes) {
+            AlloyingRecipe recipe = holder.value();
+            if (!displayable(recipe)) {
+                continue;
+            }
+            boolean joined = false;
+            for (int i = 0; i < out.size() && !joined; i++) {
+                AlloyingRecipe merged = join(out.get(i).value(), recipe);
+                if (merged != null) {
+                    out.set(i, new RecipeHolder<>(out.get(i).id(), merged));
+                    joined = true;
+                }
+            }
+            if (!joined) {
+                out.add(holder);
+            }
+        }
+        return out;
+    }
+
+    private static boolean displayable(AlloyingRecipe recipe) {
+        ItemStack result = recipe.result();
+        if (result.isEmpty() || result.is(net.minecraft.world.item.Items.BARRIER) || recipe.ingredients().isEmpty()) {
+            return false;
+        }
+        for (net.neoforged.neoforge.common.crafting.SizedIngredient sized : recipe.ingredients()) {
+            Set<Item> items = items(sized.ingredient());
+            if (items.isEmpty() || items.contains(net.minecraft.world.item.Items.BARRIER)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** {@code a} with {@code b} folded in, or null when they are not the same recipe apart from one lane's items. */
+    private static AlloyingRecipe join(AlloyingRecipe a, AlloyingRecipe b) {
+        List<net.neoforged.neoforge.common.crafting.SizedIngredient> left = a.ingredients();
+        List<net.neoforged.neoforge.common.crafting.SizedIngredient> right = b.ingredients();
+        if (left.size() != right.size() || a.processingTicks() != b.processingTicks()
+                || !sameStack(a.result(), b.result()) || !sameByproduct(a, b)) {
+            return null;
+        }
+        int differing = -1;
+        Set<Item> union = null;
+        for (int lane = 0; lane < left.size(); lane++) {
+            if (left.get(lane).count() != right.get(lane).count()) {
+                return null;
+            }
+            Set<Item> l = items(left.get(lane).ingredient());
+            Set<Item> r = items(right.get(lane).ingredient());
+            if (!l.equals(r)) {
+                if (differing >= 0) {
+                    return null;
+                }
+                differing = lane;
+                union = new java.util.LinkedHashSet<>(l);
+                union.addAll(r);
+            }
+        }
+        if (differing < 0) {
+            return a;
+        }
+        List<net.neoforged.neoforge.common.crafting.SizedIngredient> lanes = new ArrayList<>(left);
+        lanes.set(differing, new net.neoforged.neoforge.common.crafting.SizedIngredient(
+                Ingredient.of(union.toArray(Item[]::new)), left.get(differing).count()));
+        return new AlloyingRecipe(lanes, a.result(), a.byproduct(), a.processingTicks(), Math.max(a.experience(), b.experience()));
+    }
+
+    private static boolean sameByproduct(AlloyingRecipe a, AlloyingRecipe b) {
+        if (a.byproduct().isPresent() != b.byproduct().isPresent()) {
+            return false;
+        }
+        return a.byproduct().isEmpty() || a.byproduct().get().chance() == b.byproduct().get().chance()
+                && sameStack(a.byproduct().get().stack(), b.byproduct().get().stack());
+    }
+
+    private static boolean sameStack(ItemStack a, ItemStack b) {
+        return a.getCount() == b.getCount() && ItemStack.isSameItemSameComponents(a, b);
+    }
+
+    /** The items an ingredient accepts, in its own order. */
+    private static Set<Item> items(Ingredient ingredient) {
+        Set<Item> items = new java.util.LinkedHashSet<>();
+        //? if >=26.1 {
+        for (ItemStack stack : dimensionalfluxminer.recipe.Recipes.stacks(ingredient)) {
+        //?} else {
+        /*for (ItemStack stack : ingredient.getItems()) {
+        *///?}
+            if (!stack.isEmpty()) {
+                items.add(stack.getItem());
+            }
+        }
+        return items;
     }
 
     /**

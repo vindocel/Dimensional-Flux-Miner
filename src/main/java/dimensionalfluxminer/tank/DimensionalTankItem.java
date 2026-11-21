@@ -252,11 +252,17 @@ public class DimensionalTankItem extends BlockItem {
                     ? Component.translatable("tooltip.dimensionalfluxminer.creative_tank.empty").withStyle(ChatFormatting.GRAY)
                     : Component.translatable("tooltip.dimensionalfluxminer.creative_tank.fluid", fluid.copy().getHoverName())
                     .withStyle(ChatFormatting.GRAY));
-            //? if >=26.1 {
-            tooltip.accept(Component.translatable("tooltip.dimensionalfluxminer.creative_tank.no_channels").withStyle(ChatFormatting.DARK_GRAY));
-            //?} else {
-            /*tooltip.add(Component.translatable("tooltip.dimensionalfluxminer.creative_tank.no_channels").withStyle(ChatFormatting.DARK_GRAY));
-            *///?}
+            if (fluid != null && !fluid.isEmpty()) {
+                // Mod that adds the liquid, so similar liquids of different mods can be told apart.
+                String namespace = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid.copy().getFluid()).getNamespace();
+                String modName = net.neoforged.fml.ModList.get().getModContainerById(namespace)
+                        .map(container -> container.getModInfo().getDisplayName()).orElse(namespace);
+                //? if >=26.1 {
+                tooltip.accept(Component.translatable("tooltip.dimensionalfluxminer.creative_tank.mod", modName).withStyle(ChatFormatting.GRAY));
+                //?} else {
+                /*tooltip.add(Component.translatable("tooltip.dimensionalfluxminer.creative_tank.mod", modName).withStyle(ChatFormatting.GRAY));
+                *///?}
+            }
             return;
         }
         if (channelLocked(stack)) {

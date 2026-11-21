@@ -67,8 +67,8 @@ Place the **Miner Terminal** and right-click it: it builds the other 26 parts fr
 - 🧲 A filter keeps only the ores you want.
 - 🔁 Nine configurable ports with Auto Input / Auto Eject.
 
-![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/a4bbe00ca27f5eaa1769cdf824bb43e238a8489b.png)
-![Miner Terminal screens 2](https://cdn.modrinth.com/data/vTLvFHBt/images/852771063e1f07fd83c4b435f7065a80f439ba1f.png)
+![Miner Terminal screen](https://cdn.modrinth.com/data/vTLvFHBt/images/c79661a9656a35a43ec30a5f9d170d308b0becb4.png)
+![Miner Terminal screens 2](https://cdn.modrinth.com/data/vTLvFHBt/images/260c637899789a15576d11c6614c1f5959cf3307.png)
 
 ---
 
@@ -80,7 +80,7 @@ Place the **Miner Terminal** and right-click it: it builds the other 26 parts fr
 
 ![Crusher working](https://cdn.modrinth.com/data/vTLvFHBt/images/cf0fef0b9b2c7ab6da479d3c3317f3c7d6b7bf49.png)
 
-![Crusher screen](https://cdn.modrinth.com/data/vTLvFHBt/images/c7fea63b31e3bf26d97ad84e22e70804893fda77.png)
+![Crusher screen](https://cdn.modrinth.com/data/vTLvFHBt/images/6a0d7eaa44b3e7aae8a6d0101a7c8db5d4a8cec8.png)
 
 ---
 
@@ -96,9 +96,9 @@ Three electric lanes that smelt and make alloys.
 
 > 💡 **Crusher + Electric Furnace**: 1 ore → **3** ingots, up to **6** with both upgrades.
 
-![Electric Furnace modes](https://cdn.modrinth.com/data/vTLvFHBt/images/750ce757274ff2a9a935af03fc7d388fd3c01cf6.png)
+![Electric Furnace modes](https://cdn.modrinth.com/data/vTLvFHBt/images/5ba0f92be3b032f8ebb7aad06a5f8316bed7461a.png)
 
-![Electric Furnace screen — three lanes](https://cdn.modrinth.com/data/vTLvFHBt/images/8bdc38e943bf610a301a62fd927d05c9f490d0e4.png)
+![Electric Furnace screen — three lanes](https://cdn.modrinth.com/data/vTLvFHBt/images/6db64112d26a2db6f31ccd45cd7e42c3e767a2d3.png)
 
 ---
 

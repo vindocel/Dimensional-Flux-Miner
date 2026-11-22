@@ -45,6 +45,7 @@ public final class DimensionalFluxMiner {
         }
         DfmBlocks.BLOCKS.register(modBus);
         DfmItems.ITEMS.register(modBus);
+        dimensionalfluxminer.registry.DfmWood.register(modBus);
         DfmDataComponents.COMPONENTS.register(modBus);
         DfmFluids.FLUID_TYPES.register(modBus);
         DfmFluids.FLUIDS.register(modBus);

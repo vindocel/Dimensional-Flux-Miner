@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "dimensionalfluxminer:block/corrupted_slab"
+    },
+    "type=double": {
+      "model": "dimensionalfluxminer:block/corrupted_planks"
+    },
+    "type=top": {
+      "model": "dimensionalfluxminer:block/corrupted_slab_top"
+    }
+  }
+}

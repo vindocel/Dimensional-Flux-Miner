@@ -210,6 +210,9 @@ public final class DfmClient {
         event.registerSpriteSet(DfmParticles.CORRUPTED_SPLASH.get(), SplashParticle.Provider::new);
         event.registerSpriteSet(DfmParticles.CORE_FLUX_BASIC.get(), CoreFluxParticle::basic);
         event.registerSpriteSet(DfmParticles.CORE_FLUX_STABILIZED.get(), CoreFluxParticle::stabilized);
+        //? if >=26.1 {
+        event.registerSpriteSet(DfmParticles.CORRUPTED_LEAVES.get(), net.minecraft.client.particle.FallingLeavesParticle.PaleOakProvider::new);
+        //?}
     }
 
     @SubscribeEvent

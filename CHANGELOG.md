@@ -12,7 +12,12 @@
 - Fixed JEI alloy recipes on Minecraft 26.1.2 and 26.3 showing one of each ingredient; they now show the amount each craft needs (for example, 3 + 1 + 2 for an EnderIO alloy).
 - Recipe viewers now list alloys more cleanly: repeated recipes are shown once, recipes whose input or result is an empty tag are hidden, and recipes that differ only in one input's items share one entry that cycles through them.
 - Creative Dimensional Tank tooltips now show the origin (mod) of the endless liquid, and no longer show the "Creative only, no channels" line.
-- On Minecraft 26.1.2 and 26.3, Dimensional Death now turns natural trees of any kind into pale oak trees, leaves included, and 3% of the trees get a Creaking Heart. Trees with vines lose them and get pale hanging moss under some leaves instead. Logs and leaves placed by players are not affected. Tree conversions are data-driven through new `corruptible_logs`, `corruptible_wood`, `corruptible_stripped_logs`, `corruptible_stripped_wood`, `corruptible_leaves` and `corruptible_vines` block tags.
+- Added Corrupted Wood: log, wood, stripped log and wood, planks, stairs, slab, fence, fence gate, door, trapdoor, pressure plate, button, sign, hanging sign, boat, boat with chest, leaves and vine, plus a shelf on Minecraft 26.1.2 and 26.3. It works like any other wood (crafting, fuel, tools, stripping, sounds) and only exists through tree corruption; it has no sapling.
+- Dimensional Death now turns natural trees of any kind into Corrupted Wood on every Minecraft version, leaves included, and the vines of the tree become Corrupted Vines on the same faces. Logs and leaves placed by players are not affected. Tree conversions are data-driven through new `corruptible_logs`, `corruptible_wood`, `corruptible_stripped_logs`, `corruptible_stripped_wood`, `corruptible_leaves` and `corruptible_vines` block tags.
+- Added Corrupted Tall Grass: Dimensional Death now turns tall grass and large ferns into a two-block corrupted plant with the vanilla tall grass shape (new `corruptible_tall_weeds` block tag); shears give two Corrupted Grass.
+- Corrupted Grass now has the same shape and fullness as vanilla short grass.
+- Corrupted Leaves drop purple falling leaf particles on Minecraft 26.1.2 and 26.3 instead of white ones.
+- FTB Chunks maps now show corrupted land in purple shades: corrupted trees lighter, corrupted grass in the middle, and corrupted dirt and stone darker, instead of green trees.
 
 - Updated the Minecraft 26.3 build to NeoForge 26.3.0.103.
 - Added a tank recipe: one Calcite block and 250 mB of Liquid Experience produce one Nautilus Shell, explained in the guide.

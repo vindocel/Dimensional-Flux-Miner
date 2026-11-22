@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_shelf_inventory",
+  "textures": {
+    "all": "dimensionalfluxminer:block/corrupted_wood/corrupted_shelf",
+    "particle": "dimensionalfluxminer:block/corrupted_wood/stripped_corrupted_log"
+  }
+}

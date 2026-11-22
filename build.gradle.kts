@@ -176,6 +176,7 @@ val replaceProperties = mapOf(
     "mod_license" to property("mod_license") as String,
     "mod_version" to releaseVersion,
     "mod_logo" to property("mod_logo") as String,
+    "mod_enum_extensions" to property("mod_enum_extensions") as String,
 )
 val generateModMetadata = tasks.register<ProcessResources>("generateModMetadata") {
     inputs.properties(replaceProperties)

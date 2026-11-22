@@ -162,7 +162,7 @@ final class GuideContent {
         Builder b = new Builder("blight");
         b.text("intro");
         b.itemsAndFluids(List.of(DfmItems.CORRUPTED_GRASS, DfmItems.CORRUPTED_DIRT, DfmItems.CORRUPTED_STONE, DfmItems.CORRUPTED_TERRACOTTA, DfmItems.CORRUPTED_SEDIMENT,
-                DfmItems.CORRUPTED_GRASS_PLANT), List.<Supplier<? extends Fluid>>of(DfmFluids.CORRUPTED_WATER));
+                DfmItems.CORRUPTED_GRASS_PLANT, DfmItems.CORRUPTED_TALL_GRASS), List.<Supplier<? extends Fluid>>of(DfmFluids.CORRUPTED_WATER));
         b.heading("terrain").text("terrain");
         b.heading("water").text("water");
         b.heading("creatures").text("creatures");

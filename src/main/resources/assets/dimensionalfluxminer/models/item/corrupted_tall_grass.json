@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dimensionalfluxminer:block/corruption/corrupted_tall_grass_top"
+  }
+}

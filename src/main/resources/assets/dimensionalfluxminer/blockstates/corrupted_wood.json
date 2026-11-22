@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "dimensionalfluxminer:block/corrupted_wood",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "dimensionalfluxminer:block/corrupted_wood"
+    },
+    "axis=z": {
+      "model": "dimensionalfluxminer:block/corrupted_wood",
+      "x": 90
+    }
+  }
+}

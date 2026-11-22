@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_sign_rot_2",
+  "textures": {
+    "all": "dimensionalfluxminer:block/corrupted_wood/corrupted_sign",
+    "particle": "dimensionalfluxminer:block/corrupted_wood/corrupted_planks"
+  }
+}

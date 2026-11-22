@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_hanging_sign_rot_0",
+  "textures": {
+    "all": "dimensionalfluxminer:block/corrupted_wood/corrupted_hanging_sign",
+    "particle": "dimensionalfluxminer:block/corrupted_wood/stripped_corrupted_log"
+  }
+}

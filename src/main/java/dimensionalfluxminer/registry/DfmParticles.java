@@ -13,7 +13,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Purple counterparts of the water particles, shown in and on Corrupted Water, and the quantum motes the Miner's core
- * pulls in while it works (one type per core color).
+ * pulls in while it works (one type per core color), and the falling leaves of Corrupted Leaves (26.x only; the
+ * 1.21.1 leaves have no falling particles).
  */
 public final class DfmParticles {
     public static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(Registries.PARTICLE_TYPE, DimensionalFluxMiner.MOD_ID);
@@ -21,6 +22,7 @@ public final class DfmParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CORRUPTED_BUBBLE = register("corrupted_bubble");
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CORRUPTED_BUBBLE_POP = register("corrupted_bubble_pop");
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CORRUPTED_SPLASH = register("corrupted_splash");
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> CORRUPTED_LEAVES = register("corrupted_leaves");
     public static final DeferredHolder<ParticleType<?>, ParticleType<CoreFluxOptions>> CORE_FLUX_BASIC = registerFlux("core_flux_basic");
     public static final DeferredHolder<ParticleType<?>, ParticleType<CoreFluxOptions>> CORE_FLUX_STABILIZED = registerFlux("core_flux_stabilized");
 

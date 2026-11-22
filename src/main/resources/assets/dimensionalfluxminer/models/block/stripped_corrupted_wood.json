@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "dimensionalfluxminer:block/corrupted_wood/stripped_corrupted_log",
+    "side": "dimensionalfluxminer:block/corrupted_wood/stripped_corrupted_log"
+  }
+}

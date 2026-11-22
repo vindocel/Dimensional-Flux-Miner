@@ -22,7 +22,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
  *     <li>up to 3 contiguous water layers from the exposed surface, never following deep water further;</li>
  *     <li>then exactly 3 full terrain blocks;</li>
  *     <li>blacklisted blocks and block entities are never converted;</li>
- *     <li>on 26.1.2 and 26.3, the first natural tree met in the cover turns into pale oak ({@link PaleTreeCorruption}).</li>
+ *     <li>the first natural tree met in the cover turns into corrupted wood ({@link TreeCorruption}).</li>
  * </ul>
  * One successfully corrupted column is one logical corruption unit = 64 DM, whatever the number of blocks.
  */
@@ -33,7 +33,7 @@ public final class CorruptionService {
     public static final int MAX_COVER = 32;
     private static final int REMOVE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
     /**
-     * Pale tree blocks are swapped without neighbour or shape updates: leaves keep the distance they had (pale logs are
+     * Tree blocks are swapped without neighbour or shape updates: leaves keep the distance they had (corrupted logs are
      * logs too) and nothing attached to the tree pops off as drops.
      */
     private static final int TREE_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
@@ -45,11 +45,11 @@ public final class CorruptionService {
     public record Conversion(BlockPos pos, BlockState to) {
     }
 
-    /** Vegetation action: replace {@code base} (and remove {@code upper} if present). */
+    /** Vegetation action: replace {@code base} (and remove {@code upper} if present; a two-block {@code to} fills both). */
     public record Vegetation(BlockPos base, BlockPos upper, BlockState to) {
     }
 
-    /** {@code tree}: pale conversion of the tree standing over the column (always empty on 1.21.1). */
+    /** {@code tree}: conversion of the tree standing over the column into corrupted wood. */
     public record ColumnPlan(List<Conversion> conversions, List<Vegetation> vegetation, List<Conversion> tree) {
         public boolean drainable() {
             return !conversions.isEmpty();
@@ -97,7 +97,7 @@ public final class CorruptionService {
         if (!conversions.isEmpty() && waterLayers == 0) {
             planVegetation(level, decorative, surface, vegetation);
         }
-        List<Conversion> tree = conversions.isEmpty() ? List.of() : PaleTreeCorruption.plan(level, cover);
+        List<Conversion> tree = conversions.isEmpty() ? List.of() : TreeCorruption.plan(level, cover);
         return new ColumnPlan(List.copyOf(conversions), List.copyOf(vegetation), tree);
     }
 
@@ -180,8 +180,11 @@ public final class CorruptionService {
         }
         boolean doublePlant = state.hasProperty(DoublePlantBlock.HALF) && state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER;
         BlockPos upper = doublePlant ? above.above() : null;
-        if (state.is(DfmTags.Blocks.CORRUPTIBLE_WEEDS)) {
-            // Weeds (two-cell ones atomically) become one corrupted grass plant at their base.
+        if (upper != null && state.is(DfmTags.Blocks.CORRUPTIBLE_TALL_WEEDS)) {
+            // Two-cell weeds become corrupted tall grass filling the same two cells.
+            out.add(new Vegetation(above, upper, DfmBlocks.CORRUPTED_TALL_GRASS.get().defaultBlockState()));
+        } else if (state.is(DfmTags.Blocks.CORRUPTIBLE_WEEDS) || state.is(DfmTags.Blocks.CORRUPTIBLE_TALL_WEEDS)) {
+            // Other weeds (two-cell ones atomically) become one corrupted grass plant at their base.
             out.add(new Vegetation(above, upper, DfmBlocks.CORRUPTED_GRASS_PLANT.get().defaultBlockState()));
         } else if (state.is(DfmTags.Blocks.CORRUPTIBLE_FLOWERS) && !state.is(Blocks.WITHER_ROSE)) {
             out.add(new Vegetation(above, upper, Blocks.WITHER_ROSE.defaultBlockState()));
@@ -204,7 +207,7 @@ public final class CorruptionService {
             return false;
         }
         // The whole column is authorized or denied before anything changes: terrain, water, the plants on it, both
-        // halves of tall plants and the tree turning pale over it. A denied column changes nothing and is worth nothing.
+        // halves of tall plants and the tree turning into corrupted wood over it. A denied column changes nothing and is worth nothing.
         if (!ProtectionService.allowsAll(level, positions(plan), owner)) {
             return false;
         }
@@ -222,7 +225,15 @@ public final class CorruptionService {
             }
         }
         for (Vegetation v : plan.vegetation()) {
-            if (v.to().canSurvive(level, v.base())) {
+            if (!v.to().canSurvive(level, v.base())) {
+                continue;
+            }
+            if (v.to().getBlock() instanceof DoublePlantBlock) {
+                // Both halves, only into the two cells the plan cleared (and the claims check covered).
+                if (v.upper() != null && level.getBlockState(v.upper()).isAir()) {
+                    DoublePlantBlock.placeAt(level, v.to(), v.base(), Block.UPDATE_ALL);
+                }
+            } else {
                 level.setBlock(v.base(), v.to(), Block.UPDATE_ALL);
             }
         }

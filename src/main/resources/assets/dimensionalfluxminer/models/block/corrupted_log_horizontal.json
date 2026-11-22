@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column_horizontal",
+  "textures": {
+    "end": "dimensionalfluxminer:block/corrupted_wood/corrupted_log_top",
+    "side": "dimensionalfluxminer:block/corrupted_wood/corrupted_log"
+  }
+}

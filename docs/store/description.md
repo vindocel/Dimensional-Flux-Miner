@@ -28,7 +28,10 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 - 🔒 **Tank padlocks on 26.3** now require Shift + left click.
 - 🎨 **Refined side buttons** have smaller frames and an adjusted chest icon.
 - 🧱 **Minecraft 26.3** now uses NeoForge 26.3.0.103.
-- 🌳 **Pale corruption (26.1.2 and 26.3)**: Dimensional Death turns natural trees into pale oak, swaps their vines for pale hanging moss and sometimes plants a **Creaking Heart**. Your builds stay untouched.
+- 🌳 **Corrupted Wood**: Dimensional Death turns natural trees into Corrupted Wood and their vines into corrupted vines, with a full purple wood set to craft from it. Your builds stay untouched.
+- 🌾 **Corrupted Tall Grass**: tall grass and large ferns now turn into a two-block corrupted plant, and Corrupted Grass has the vanilla grass shape.
+- 🍂 **Purple falling leaves** under corrupted trees on 26.1.2 and 26.3.
+- 🗺️ **FTB Chunks maps** show the corrupted land in purple shades, trees included.
 
 ---
 
@@ -138,8 +141,8 @@ Pick a speed on any machine: each level uses more energy and works faster in the
 
 Where the Basic core drains the land, it falls apart.
 
-- 🟣 Dirt, stone, sand and terracotta darken and corrupt; flowers become wither roses.
-- 🌳 On 26.1.2 and 26.3, trees turn into **pale oak**, vines give way to **pale hanging moss** and a few trees hide a **Creaking Heart**.
+- 🟣 Dirt, stone, sand and terracotta darken and corrupt; grass becomes corrupted grass, tall grass becomes corrupted tall grass and flowers become wither roses.
+- 🌳 Trees turn into **Corrupted Wood** and their vines into **corrupted vines**.
 - 💧 **Corrupted Water** turns purple and spreads down. *No, it is not grape juice.*
 - 🧟 It hurts players and peaceful creatures and **heals hostile ones**.
 

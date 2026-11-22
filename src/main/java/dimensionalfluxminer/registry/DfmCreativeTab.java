@@ -47,7 +47,11 @@ public final class DfmCreativeTab {
                 output.accept(DfmItems.CORRUPTED_TERRACOTTA.get());
                 output.accept(DfmItems.CORRUPTED_SEDIMENT.get());
                 output.accept(DfmItems.CORRUPTED_GRASS_PLANT.get());
+                output.accept(DfmItems.CORRUPTED_TALL_GRASS.get());
                 output.accept(DfmItems.CORRUPTED_WATER_BUCKET.get());
+                for (var item : DfmWood.creativeItems()) {
+                    output.accept(item.get());
+                }
             })
             .build());
 

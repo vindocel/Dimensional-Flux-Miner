@@ -1,0 +1,10 @@
+{
+  "values": {
+    "dimensionalfluxminer:corrupted_leaves": {
+      "chance": 0.3
+    },
+    "dimensionalfluxminer:corrupted_vine": {
+      "chance": 0.5
+    }
+  }
+}

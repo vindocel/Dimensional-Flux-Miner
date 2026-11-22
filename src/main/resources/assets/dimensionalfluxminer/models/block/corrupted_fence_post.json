@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/fence_post",
+  "textures": {
+    "texture": "dimensionalfluxminer:block/corrupted_wood/corrupted_planks"
+  }
+}

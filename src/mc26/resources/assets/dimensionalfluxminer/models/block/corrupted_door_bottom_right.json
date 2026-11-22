@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_bottom_right",
+  "textures": {
+    "bottom": "dimensionalfluxminer:block/corrupted_wood/corrupted_door_bottom",
+    "top": "dimensionalfluxminer:block/corrupted_wood/corrupted_door_top"
+  }
+}

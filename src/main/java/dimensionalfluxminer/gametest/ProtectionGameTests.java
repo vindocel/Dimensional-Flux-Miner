@@ -179,8 +179,8 @@ public final class ProtectionGameTests {
             // Bob's own Miner corrupts it, the two-block plant at once.
             helper.assertTrue(corrupt(helper, 2, 2, BOB), "owner of the protected part: allowed");
             helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS.get(), new BlockPos(2, 2, 2));
-            helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS_PLANT.get(), new BlockPos(2, 3, 2));
-            helper.assertBlockPresent(Blocks.AIR, new BlockPos(2, 4, 2));
+            helper.assertBlockPresent(DfmBlocks.CORRUPTED_TALL_GRASS.get(), new BlockPos(2, 3, 2));
+            helper.assertBlockPresent(DfmBlocks.CORRUPTED_TALL_GRASS.get(), new BlockPos(2, 4, 2));
         } finally {
             ProtectionService.unregister(claims);
         }

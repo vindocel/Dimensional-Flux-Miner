@@ -46,13 +46,14 @@ import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.capabilities.Capabilities;
-//? if >=26.1 {
-import dimensionalfluxminer.miner.corruption.PaleTreeCorruption;
-import net.minecraft.util.RandomSource;
-//?} else {
+import dimensionalfluxminer.registry.DfmWood;
+//? if <26.1 {
 /*import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -980,6 +981,10 @@ public final class MinerGameTests {
         helper.setBlock(new BlockPos(3, 3, 3), Blocks.FERN);
         helper.setBlock(new BlockPos(5, 1, 3), Blocks.STONE);
         helper.setBlock(new BlockPos(5, 2, 3), Blocks.GRAVEL);
+        // Column H: tall grass (two cells) becomes corrupted tall grass in the same two cells.
+        helper.setBlock(new BlockPos(7, 2, 3), Blocks.GRASS_BLOCK);
+        helper.setBlock(new BlockPos(7, 3, 3), Blocks.TALL_GRASS.defaultBlockState().setValue(DoublePlantBlock.HALF, DoubleBlockHalf.LOWER));
+        helper.setBlock(new BlockPos(7, 4, 3), Blocks.TALL_GRASS.defaultBlockState().setValue(DoublePlantBlock.HALF, DoubleBlockHalf.UPPER));
 
         var level = helper.getLevel();
         BlockPos a = helper.absolutePos(new BlockPos(1, 0, 1));
@@ -989,6 +994,7 @@ public final class MinerGameTests {
         BlockPos e = helper.absolutePos(new BlockPos(1, 0, 3));
         BlockPos f = helper.absolutePos(new BlockPos(3, 0, 3));
         BlockPos g = helper.absolutePos(new BlockPos(5, 0, 3));
+        BlockPos h = helper.absolutePos(new BlockPos(7, 0, 3));
         helper.assertFalse(CorruptionService.plan(level, e.getX(), e.getZ()).drainable(), "sandstone column is not drainable");
         helper.assertTrue(CorruptionService.corrupt(level, d.getX(), d.getZ(), null), "covered column D corrupted");
         helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS.get(), new BlockPos(7, 1, 1));
@@ -998,6 +1004,14 @@ public final class MinerGameTests {
         helper.assertTrue(CorruptionService.corrupt(level, g.getX(), g.getZ(), null), "column G corrupted");
         helper.assertBlockPresent(DfmBlocks.CORRUPTED_SEDIMENT.get(), new BlockPos(5, 2, 3));
         helper.assertFalse(CorruptionService.corrupt(level, g.getX(), g.getZ(), null), "corrupted sediment is never corrupted again");
+        helper.assertTrue(CorruptionService.corrupt(level, h.getX(), h.getZ(), null), "column H corrupted");
+        helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS.get(), new BlockPos(7, 2, 3));
+        BlockState tallLower = helper.getBlockState(new BlockPos(7, 3, 3));
+        BlockState tallUpper = helper.getBlockState(new BlockPos(7, 4, 3));
+        helper.assertTrue(tallLower.is(DfmBlocks.CORRUPTED_TALL_GRASS.get()) && tallLower.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER,
+                "corrupted tall grass, lower half: " + tallLower);
+        helper.assertTrue(tallUpper.is(DfmBlocks.CORRUPTED_TALL_GRASS.get()) && tallUpper.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.UPPER,
+                "corrupted tall grass, upper half: " + tallUpper);
         helper.assertTrue(CorruptionService.corrupt(level, a.getX(), a.getZ(), null), "column A corrupted");
         helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS.get(), new BlockPos(1, 3, 1));
         helper.assertBlockPresent(DfmBlocks.CORRUPTED_DIRT.get(), new BlockPos(1, 2, 1));
@@ -1015,9 +1029,8 @@ public final class MinerGameTests {
         helper.succeed();
     }
 
-    //? if >=26.1 {
     @GameTest(template = "empty_large", skyAccess = true)
-    public static void naturalTreesTurnPale(GameTestHelper helper) {
+    public static void naturalTreesTurnCorrupted(GameTestHelper helper) {
         // Tree T: five oak logs crowned by natural leaves (persistent=false), as grown by the world or a sapling.
         helper.setBlock(new BlockPos(2, 1, 2), Blocks.GRASS_BLOCK);
         helper.setBlock(new BlockPos(3, 1, 2), Blocks.GRASS_BLOCK);
@@ -1034,7 +1047,7 @@ public final class MinerGameTests {
         var vine = Blocks.VINE.defaultBlockState().setValue(BlockStateProperties.EAST, true);
         helper.setBlock(new BlockPos(0, 6, 2), vine);
         helper.setBlock(new BlockPos(0, 5, 2), vine);
-        // Build B: oak logs under placed leaves (persistent=true) is a player build and never turns pale.
+        // Build B: oak logs under placed leaves (persistent=true) is a player build and never changes.
         helper.setBlock(new BlockPos(6, 1, 2), Blocks.GRASS_BLOCK);
         for (int y = 2; y <= 4; y++) {
             helper.setBlock(new BlockPos(6, y, 2), Blocks.OAK_LOG);
@@ -1042,63 +1055,30 @@ public final class MinerGameTests {
         helper.setBlock(new BlockPos(6, 5, 2), Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true));
 
         var level = helper.getLevel();
-        // The Creaking Heart roll: some fixed seed plans a heart in a trunk log with pale logs above and below.
+        // Corrupting the column under one leaf turns the whole tree into corrupted wood.
         BlockPos leafColumn = helper.absolutePos(new BlockPos(3, 6, 2));
-        List<BlockPos> cover = List.of(leafColumn);
-        boolean heartPlanned = false;
-        boolean mossPlanned = false;
-        for (int seed = 0; seed < 2000 && !(heartPlanned && mossPlanned); seed++) {
-            for (CorruptionService.Conversion c : PaleTreeCorruption.planTree(level, cover, RandomSource.create(seed))) {
-                if (c.to().is(Blocks.PALE_HANGING_MOSS)) {
-                    // Moss hangs straight down from a crown leaf (under the four side leaves, at y 5, 4 or 3).
-                    boolean underLeaf = false;
-                    for (BlockPos leaf : crown) {
-                        for (int drop = 1; drop <= PaleTreeCorruption.MOSS_MAX_LENGTH; drop++) {
-                            underLeaf |= c.pos().equals(helper.absolutePos(leaf.below(drop)));
-                        }
-                    }
-                    helper.assertTrue(underLeaf, "pale hanging moss under a leaf, got " + c.pos());
-                    mossPlanned = true;
-                }
-                if (c.to().is(Blocks.CREAKING_HEART)) {
-                    // Compared in absolute positions: relativePos inverts rotated tests wrongly on 26.1.2.
-                    boolean inTrunk = false;
-                    for (int y = 3; y <= 5; y++) {
-                        inTrunk |= c.pos().equals(helper.absolutePos(new BlockPos(2, y, 2)));
-                    }
-                    helper.assertTrue(inTrunk, "heart inside the trunk, got " + c.pos());
-                    helper.assertTrue(c.to().getValue(BlockStateProperties.NATURAL), "natural heart");
-                    heartPlanned = true;
-                }
-            }
-        }
-        helper.assertTrue(heartPlanned, "a Creaking Heart is planned for some trees");
-        helper.assertTrue(mossPlanned, "a tree with vines gets pale hanging moss");
-
-        // Corrupting the column under one leaf turns the whole tree pale.
         helper.assertTrue(CorruptionService.corrupt(level, leafColumn.getX(), leafColumn.getZ(), null), "column under the crown corrupted");
-        int hearts = 0;
         for (int y = 2; y <= 6; y++) {
             var state = level.getBlockState(helper.absolutePos(new BlockPos(2, y, 2)));
-            if (state.is(Blocks.CREAKING_HEART)) {
-                hearts++;
-            } else {
-                helper.assertTrue(state.is(Blocks.PALE_OAK_LOG), "trunk log turned pale at y " + y);
-            }
+            helper.assertTrue(state.is(DfmWood.LOG.get()), "trunk log corrupted at y " + y);
+            helper.assertTrue(state.getValue(BlockStateProperties.AXIS) == Direction.Axis.Y, "log axis kept at y " + y);
         }
-        helper.assertTrue(hearts <= 1, "at most one Creaking Heart per tree");
         for (BlockPos leaf : crown) {
             var state = level.getBlockState(helper.absolutePos(leaf));
-            helper.assertTrue(state.is(Blocks.PALE_OAK_LEAVES), "leaf turned pale at " + leaf);
-            helper.assertFalse(state.getValue(BlockStateProperties.PERSISTENT), "pale leaves stay natural");
+            helper.assertTrue(state.is(DfmWood.LEAVES.get()), "leaf corrupted at " + leaf);
+            helper.assertFalse(state.getValue(BlockStateProperties.PERSISTENT), "corrupted leaves stay natural");
             helper.assertTrue(state.getValue(BlockStateProperties.DISTANCE) == 1, "leaf distance kept");
         }
         helper.assertBlockPresent(DfmBlocks.CORRUPTED_GRASS.get(), new BlockPos(3, 1, 2));
-        helper.assertBlockNotPresent(Blocks.VINE, new BlockPos(0, 6, 2));
-        helper.assertBlockNotPresent(Blocks.VINE, new BlockPos(0, 5, 2));
-        // The trunk column (already pale tree) still corrupts its ground and changes nothing else.
+        // The vines became corrupted vines on the same face.
+        for (int y = 5; y <= 6; y++) {
+            var state = level.getBlockState(helper.absolutePos(new BlockPos(0, y, 2)));
+            helper.assertTrue(state.is(DfmWood.VINE.get()), "vine corrupted at y " + y);
+            helper.assertTrue(state.getValue(BlockStateProperties.EAST), "corrupted vine keeps its face at y " + y);
+        }
+        // The trunk column (already corrupted tree) still corrupts its ground and changes nothing else.
         BlockPos trunk = helper.absolutePos(new BlockPos(2, 1, 2));
-        helper.assertTrue(CorruptionService.plan(level, trunk.getX(), trunk.getZ()).tree().isEmpty(), "a pale tree is not converted again");
+        helper.assertTrue(CorruptionService.plan(level, trunk.getX(), trunk.getZ()).tree().isEmpty(), "a corrupted tree is not converted again");
 
         BlockPos build = helper.absolutePos(new BlockPos(6, 1, 2));
         helper.assertTrue(CorruptionService.corrupt(level, build.getX(), build.getZ(), null), "build column corrupted");
@@ -1108,7 +1088,6 @@ public final class MinerGameTests {
         helper.assertBlockPresent(Blocks.OAK_LEAVES, new BlockPos(6, 5, 2));
         helper.succeed();
     }
-    //?}
 
     @GameTest(template = "empty_small")
     public static void resourceProfileFamiliesAreWeightedAndCrushable(GameTestHelper helper) {

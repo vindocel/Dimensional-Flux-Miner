@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.DoubleHighBlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
@@ -91,6 +92,12 @@ public final class DfmItems {
     public static final DeferredItem<?> CORRUPTED_TERRACOTTA = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_TERRACOTTA);
     public static final DeferredItem<?> CORRUPTED_SEDIMENT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_SEDIMENT);
     public static final DeferredItem<?> CORRUPTED_GRASS_PLANT = ITEMS.registerSimpleBlockItem(DfmBlocks.CORRUPTED_GRASS_PLANT);
+    public static final DeferredItem<DoubleHighBlockItem> CORRUPTED_TALL_GRASS = ITEMS.registerItem("corrupted_tall_grass",
+            //? if >=26.1 {
+            props -> new DoubleHighBlockItem(DfmBlocks.CORRUPTED_TALL_GRASS.get(), props), () -> new Item.Properties().useBlockDescriptionPrefix());
+            //?} else {
+            /*props -> new DoubleHighBlockItem(DfmBlocks.CORRUPTED_TALL_GRASS.get(), props), new Item.Properties());
+            *///?}
     public static final DeferredItem<BucketItem> CORRUPTED_WATER_BUCKET = ITEMS.registerItem("corrupted_water_bucket",
             //? if >=26.1 {
             props -> new BucketItem(DfmFluids.CORRUPTED_WATER.get(), props), () -> new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1));

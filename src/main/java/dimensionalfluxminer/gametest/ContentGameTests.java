@@ -97,7 +97,13 @@ public final class ContentGameTests {
         /*int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0);
         *///?}
         int expectedAlloying = 2 + (mods.isLoaded("create") ? 1 : 0);
-        helper.assertTrue(crafting == 16, "crafting recipes: " + crafting);
+        // 16 machine and material recipes plus the corrupted wood set (16 with the shelf on 26.x, 15 on 1.21.1).
+        //? if >=26.1 {
+        long expectedCrafting = 32;
+        //?} else {
+        /*long expectedCrafting = 31;
+        *///?}
+        helper.assertTrue(crafting == expectedCrafting, "crafting recipes: " + crafting + ", expected " + expectedCrafting);
         helper.assertTrue(crushing == 3, "crushing recipes: " + crushing);
         helper.assertTrue(ore == expectedOre, "ore_crushing recipes: " + ore + ", expected " + expectedOre);
         helper.assertTrue(alloying == expectedAlloying, "alloying recipes: " + alloying + ", expected " + expectedAlloying);

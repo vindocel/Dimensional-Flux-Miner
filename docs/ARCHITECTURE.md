@@ -50,7 +50,7 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | Package | Responsibility |
 |---|---|
 | (root) | `DimensionalFluxMiner` (mod entry point, event wiring) and `DfmConfig` (server config, parsed corruption rules) |
-| `registry` | Every deferred register: blocks, items, data components, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab |
+| `registry` | Every deferred register: blocks, items, data components, block entities, menus, fluids, recipes, data maps, tags, sounds, particles, creative tab. `DfmWood` holds the corrupted wood set (its own `WoodType` and `BlockSetType`, boats, signs, shelf on 26.x; on 1.21.1 the boat type is a `Boat.Type` enum extension in `META-INF/enumextensions.json`) with its flammability, stripping (axe tool-modification event; on 26.3 the `neoforge:transformables` data map in `versions/26.3`) and dispenser behaviour; the blocks copy the properties of pale oak (oak on 1.21.1) and their resources are the vanilla ones renamed |
 | `machine` | What the single-block machines share: `AbstractMachineBlockEntity`, item queues, neighbour transfer, read-only views, redstone, quick install, tick acceleration bookkeeping, cable detection (`CableActivity`, also used by the Miner ports, and `CablePortItemHandler`), advancement streaks (`ThroughputStreak`, `FullSpeedStreak`) |
 | `machine.math` | Pure math, covered by JUnit: `RateScale` (Rate 1–10 curve and FE/t), `MinerProductionCurve`, `DynamicEnergyBuffer` (buffer and fractional FE debt), `WorkAccumulator` |
 | `machine.side` | Side Configuration: relative faces, routes per transmission (item / energy / redstone / experience / fluid), per-machine rules (the Dimensional Tanks too), `NodeInputLanes` (lanes of the network node item inputs on the Electric Furnace Alloy profile) |
@@ -224,7 +224,7 @@ caches one per dimension and rebuilds them on reload; it combines the datapack e
 | Class | Responsibility |
 |---|---|
 | `CorruptionService` | Converts a column: terrain, plants, the whole column checked before anything changes |
-| `PaleTreeCorruption` | 26.1.2 and 26.3: finds the natural tree over a corrupted column and plans its pale oak conversion, Creaking Heart and the swap of vines for pale hanging moss |
+| `TreeCorruption` | All versions: finds the natural tree over a corrupted column and plans its conversion into corrupted wood (logs keep their axis, leaves keep distance) and the swap of its vines for corrupted vines on the same faces |
 | `WaterCorruption` | Which water corrupts and how a water position becomes Corrupted Water (also used by the fluid itself) |
 | `ProtectionService` | Whether a position may be corrupted: config switches, spawn protection, regions, claims |
 | `compat.claims` | `ClaimAdapters` finds the installed claim mods; `FtbChunksAdapter`, `OpenPacAdapter` query them by reflection |
@@ -238,7 +238,7 @@ caches one per dimension and rebuilds them on reload; it combines the datapack e
 | `data/<ns>/dimensional_miner_resources/*.json` | `ResourceProfiles` (overrides and dimension rules) |
 | `data/<ns>/data_maps/item/matter_value.json` | `MatterValues` |
 | `data/dimensionalfluxminer/tags/block/corrupt*.json` | `CorruptionService` |
-| `src/mc26/resources/data/dimensionalfluxminer/tags/block/corruptible_{logs,wood,stripped_logs,stripped_wood,leaves,vines}.json` | `PaleTreeCorruption` |
+| `src/main/resources/data/dimensionalfluxminer/tags/block/corruptible_{logs,wood,stripped_logs,stripped_wood,leaves,vines}.json`, `corrupted_logs.json` | `TreeCorruption` |
 | recipe types | `crusher`, `electric_furnace`, `recipe` |
 | `data/dimensionalfluxminer/kubejs/recipe_schema/*.json` | KubeJS only: the script form of each recipe type |
 

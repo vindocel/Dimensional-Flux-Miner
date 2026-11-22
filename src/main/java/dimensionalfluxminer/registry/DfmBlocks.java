@@ -2,6 +2,7 @@ package dimensionalfluxminer.registry;
 
 import dimensionalfluxminer.DimensionalFluxMiner;
 import dimensionalfluxminer.content.CorruptedGrassPlantBlock;
+import dimensionalfluxminer.content.CorruptedTallGrassBlock;
 import dimensionalfluxminer.crusher.MechanicalCrusherBlock;
 import dimensionalfluxminer.miner.block.MinerChassisBlock;
 import dimensionalfluxminer.miner.block.MinerPartBlock;
@@ -175,6 +176,18 @@ public final class DfmBlocks {
             *///?} else {
             /*BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).replaceable().noCollission().instabreak()
                     .sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XYZ).ignitedByLava().pushReaction(PushReaction.DESTROY));
+            *///?}
+    /** Same shape and behaviour as vanilla tall grass, standing on corrupted ground. */
+    public static final DeferredBlock<CorruptedTallGrassBlock> CORRUPTED_TALL_GRASS = BLOCKS.registerBlock("corrupted_tall_grass", CorruptedTallGrassBlock::new,
+            //? if =26.1.2 {
+            () -> BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).replaceable().noCollision().instabreak()
+                    .sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).ignitedByLava().pushReaction(PushReaction.DESTROY));
+            //?} else if >=26.3 {
+            /*() -> BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).replaceable().noCollision().instabreak()
+                    .sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).ignitedByLava().pushReaction(PushReaction.POPPED));
+            *///?} else {
+            /*BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).replaceable().noCollission().instabreak()
+                    .sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).ignitedByLava().pushReaction(PushReaction.DESTROY));
             *///?}
     public static final DeferredBlock<LiquidBlock> CORRUPTED_WATER = BLOCKS.registerBlock("corrupted_water",
             //? if >=26.1 {

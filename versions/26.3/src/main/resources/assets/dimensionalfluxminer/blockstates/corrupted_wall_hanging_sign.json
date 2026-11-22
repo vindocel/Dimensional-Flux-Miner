@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "dimensionalfluxminer:block/corrupted_wall_hanging_sign",
+      "y": 270
+    },
+    "facing=north": {
+      "model": "dimensionalfluxminer:block/corrupted_wall_hanging_sign",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "dimensionalfluxminer:block/corrupted_wall_hanging_sign"
+    },
+    "facing=west": {
+      "model": "dimensionalfluxminer:block/corrupted_wall_hanging_sign",
+      "y": 90
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "half=lower": {
+      "model": "dimensionalfluxminer:block/corruption/corrupted_tall_grass_bottom"
+    },
+    "half=upper": {
+      "model": "dimensionalfluxminer:block/corruption/corrupted_tall_grass_top"
+    }
+  }
+}

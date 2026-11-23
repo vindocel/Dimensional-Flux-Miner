@@ -21,7 +21,8 @@ import net.neoforged.fml.loading.FMLPaths;
 /**
  * The player's own settings of the machines, kept on this computer (never sent to the server, so every player has them
  * their way): {@code config/dimensionalfluxminer-themes.json}. The look of the screens, screen color (light / dark) and
- * icon color ({@link IconColor}: white by default, blue or purple):
+ * theme color ({@link IconColor}: blue by default, purple or a custom color; it also colors the animated terminal of
+ * the machines in the world, see {@code TerminalTint}). Saved white choices from before 2026-11-23 load as blue:
  * <ul>
  *     <li>{@code applyToAll} (shared by every machine): every screen uses {@code allDark} and {@code allIcons};</li>
  *     <li>otherwise each machine uses its own choices, and a machine never chosen uses the shared ones, so turning
@@ -38,7 +39,7 @@ public final class GuiThemes {
     private static boolean loaded;
     private static boolean applyToAll = true;
     private static boolean allDark;
-    private static IconColor allIcons = IconColor.WHITE;
+    private static IconColor allIcons = IconColor.BLUE;
     private static int allCustomColor = DEFAULT_CUSTOM_COLOR;
     private static final Map<String, Boolean> MACHINES = new LinkedHashMap<>();
     private static final Map<String, IconColor> ACCENTS = new LinkedHashMap<>();
@@ -49,12 +50,12 @@ public final class GuiThemes {
     }
 
     /** Sound volume of the machine at {@code pos} in the player's current world, 0 to 100 (%). */
-    public static int volume(BlockPos pos) {
+    public static synchronized int volume(BlockPos pos) {
         load();
         return VOLUMES.getOrDefault(key(pos), 100);
     }
 
-    static void setVolume(BlockPos pos, int percent) {
+    static synchronized void setVolume(BlockPos pos, int percent) {
         load();
         int value = Math.max(0, Math.min(100, percent));
         if (value == 100) {
@@ -65,13 +66,13 @@ public final class GuiThemes {
         save();
     }
 
-    static boolean applyToAll() {
+    static synchronized boolean applyToAll() {
         load();
         return applyToAll;
     }
 
     /** Look of the machine at {@code pos} in the player's current world and dimension. */
-    static boolean dark(BlockPos pos) {
+    static synchronized boolean dark(BlockPos pos) {
         load();
         if (applyToAll) {
             return allDark;
@@ -80,7 +81,7 @@ public final class GuiThemes {
     }
 
     /** Chooses the look for this machine, or for every machine while {@link #applyToAll} is on. */
-    static void choose(BlockPos pos, boolean dark) {
+    static synchronized void choose(BlockPos pos, boolean dark) {
         load();
         if (applyToAll) {
             allDark = dark;
@@ -90,8 +91,8 @@ public final class GuiThemes {
         save();
     }
 
-    /** Icon color of the machine at {@code pos} (white by default). */
-    public static IconColor icons(BlockPos pos) {
+    /** Theme color of the machine at {@code pos} (blue by default). */
+    public static synchronized IconColor icons(BlockPos pos) {
         load();
         if (applyToAll) {
             return allIcons;
@@ -99,8 +100,8 @@ public final class GuiThemes {
         return ACCENTS.getOrDefault(key(pos), allIcons);
     }
 
-    /** Chooses the icon color for this machine, or for every machine while {@link #applyToAll} is on. */
-    static void chooseAccent(BlockPos pos, IconColor color) {
+    /** Chooses the theme color for this machine, or for every machine while {@link #applyToAll} is on. */
+    static synchronized void chooseAccent(BlockPos pos, IconColor color) {
         load();
         if (applyToAll) {
             allIcons = color;
@@ -108,19 +109,40 @@ public final class GuiThemes {
             ACCENTS.put(key(pos), color);
         }
         save();
+        refreshTerminals(pos);
+    }
+
+    /** Color (0xRRGGBB) of the animated terminal of the machine at {@code pos}; read while chunks are built. */
+    public static synchronized int terminalRgb(BlockPos pos) {
+        return icons(pos).terminalRgb(customRgb(pos));
+    }
+
+    /** Shared theme color (0xRRGGBB): items and guide pictures. */
+    public static synchronized int globalTerminalRgb() {
+        load();
+        return allIcons.terminalRgb(allCustomColor);
+    }
+
+    /** Redraws the terminals that show the color just chosen: this machine, or every machine while shared. */
+    private static void refreshTerminals(BlockPos pos) {
+        if (applyToAll) {
+            dimensionalfluxminer.client.render.TerminalTint.refreshAll();
+        } else {
+            dimensionalfluxminer.client.render.TerminalTint.refresh(pos);
+        }
     }
 
     /** Vertex color of the energy fill of the machine at {@code pos} (its custom color, otherwise white). */
-    public static int energyTint(BlockPos pos) {
+    public static synchronized int energyTint(BlockPos pos) {
         return icons(pos).energyTint(customRgb(pos));
     }
 
-    static int customRgb(BlockPos pos) {
+    static synchronized int customRgb(BlockPos pos) {
         load();
         return applyToAll ? allCustomColor : CUSTOM_COLORS.getOrDefault(key(pos), allCustomColor);
     }
 
-    static void chooseCustom(BlockPos pos, int rgb) {
+    static synchronized void chooseCustom(BlockPos pos, int rgb) {
         load();
         if (applyToAll) {
             allCustomColor = rgb & 0xFFFFFF;
@@ -130,6 +152,7 @@ public final class GuiThemes {
             ACCENTS.put(key(pos), IconColor.CUSTOM);
         }
         save();
+        refreshTerminals(pos);
     }
 
     /**
@@ -137,7 +160,7 @@ public final class GuiThemes {
      * those of every machine. Off: that machine keeps the colors it shows (no machine goes back to the defaults). The
      * volume is never shared.
      */
-    static void setApplyToAll(BlockPos pos, boolean value) {
+    static synchronized void setApplyToAll(BlockPos pos, boolean value) {
         load();
         boolean currentDark = dark(pos);
         IconColor currentIcons = icons(pos);
@@ -153,16 +176,17 @@ public final class GuiThemes {
             CUSTOM_COLORS.put(key(pos), currentRgb);
         }
         save();
+        dimensionalfluxminer.client.render.TerminalTint.refreshAll();
     }
 
     /** Global preferences without a synthetic device position or changes to per-device maps. */
-    public static Map<String, Object> globalPreferences() {
+    public static synchronized Map<String, Object> globalPreferences() {
         load();
         return Map.of("appearance.dark", allDark, "appearance.shared", applyToAll,
                 "appearance.icons", allIcons.id(), "appearance.color", String.format(java.util.Locale.ROOT, "%06X", allCustomColor));
     }
 
-    public static void setGlobalPreferences(Map<String, Object> values) {
+    public static synchronized void setGlobalPreferences(Map<String, Object> values) {
         load();
         boolean oldDark = allDark, oldShared = applyToAll;
         IconColor oldIcons = allIcons;
@@ -173,6 +197,7 @@ public final class GuiThemes {
             allIcons = IconColor.valueOf(((String) values.get("appearance.icons")).toUpperCase(java.util.Locale.ROOT));
             allCustomColor = Integer.parseInt((String) values.get("appearance.color"), 16);
             writePreferences();
+            dimensionalfluxminer.client.render.TerminalTint.refreshAll();
         } catch (RuntimeException failure) {
             allDark = oldDark; applyToAll = oldShared; allIcons = oldIcons; allCustomColor = oldColor;
             throw failure;
@@ -203,7 +228,7 @@ public final class GuiThemes {
         return FMLPaths.CONFIGDIR.get().resolve(FILE);
     }
 
-    private static void load() {
+    private static synchronized void load() {
         if (loaded) {
             return;
         }
@@ -223,7 +248,7 @@ public final class GuiThemes {
             if (json.has("allIcons")) {
                 allIcons = IconColor.byId(json.get("allIcons").getAsString());
             } else if (json.has("allPurple") && json.get("allPurple").getAsBoolean()) {
-                // Files from before the white icons kept only purple or not; not purple is the default (white) now.
+                // Files from before the white icons kept only purple or not; not purple is the default (blue) now.
                 allIcons = IconColor.PURPLE;
             }
             // Replace the former inactive cyan default without changing an active custom choice.

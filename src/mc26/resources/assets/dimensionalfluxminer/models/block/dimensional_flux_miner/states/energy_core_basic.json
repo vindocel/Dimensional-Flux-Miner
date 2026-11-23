@@ -11,8 +11,8 @@
   "textures": {
     "particle": "dimensionalfluxminer:block/dimensional_flux_miner/dimensional_flux_miner",
     "core_side_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_cyan_active_glow",
-    "terminal_face": "dimensionalfluxminer:block/dimensional_flux_miner/terminal_face_cyan_body",
-    "terminal_face_glow": "dimensionalfluxminer:block/dimensional_flux_miner/terminal_face_cyan_active_glow",
+    "terminal_face": "dimensionalfluxminer:block/dimensional_flux_miner/terminal_face_body",
+    "terminal_face_glow": "dimensionalfluxminer:block/dimensional_flux_miner/terminal_face_active_glow",
     "containment_side_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_side_cyan_active_glow",
     "containment_cap_glow": "dimensionalfluxminer:block/dimensional_flux_miner/core_cap_cyan_active_glow",
     "rotor_plate_glow": "dimensionalfluxminer:block/dimensional_flux_miner/rotor_bar_cyan_active_glow",

@@ -76,20 +76,28 @@ look their textures go through the `dark_gui` core shader (gray pixels keep 32% 
 keep their color), and grays drawn with `fill` use `GuiTheme.gray`. Items, liquids and the navy screens are never
 drawn inside `chrome`. Icons use one source image each in `icon_white/`; `GuiIcon` draws them centered at native size.
 `IconPalette` uses one `icon_palette` pipeline with the desired RGB in vertex color, so arbitrary colors do not create pipelines.
-The shader multiplies neutral pixels by that RGB
-while preserving colored details and grayscale shading. White icons use the original artwork. The separate furnace
-terminal and mixed-mode separator layers use cyan (#45E5E9) with white/blue icons and the selected accent with purple or custom icons.
-Only the alloy half receives the terminal overlay in mixed mode; the separator is drawn last.
+The shader multiplies neutral pixels by that RGB while preserving colored details and grayscale shading. Icons are drawn
+white; only the separate furnace terminal and mixed-mode separator layers take the theme color (`IconColor`: blue
+#45E5E9 by default, purple #C6A5FF or custom). Only the alloy half receives the terminal overlay in mixed mode; the separator is drawn last.
 `CustomColorWindow` edits a draft through HSV sliders and a hex field, showing only the color swatch and code, with explicit Apply/Cancel.
 The 18x18 preview uses `ColorSwatch`, sharing the sunken slot bevel with tank channel code colors. `GuiThemes` keeps
 `allCustomColor` and per-machine `customColors` alongside the existing preset IDs, preserving scope switches and old files.
 The initial custom choice is orange (#EF8B32). An inactive former cyan default is normalized to orange; active custom choices remain intact.
-`GuiTheme` caches custom glass gradients/rim and display text colors when RGB changes. Their hue/saturation follow the custom accent
+`GuiTheme` caches custom glass gradients/rim and display text colors when RGB changes. Their hue/saturation follow the custom theme color
 while retaining the base palette brightness for readable text and dark glass, including neutral and very dark choices.
-`ButtonArt` tints enabled selections and active switch tracks; white presets and disabled controls retain neutral gray; the switch handle always keeps its silver/white colors.
-`DfmScreen` passes enabled selection state to `GuiIcon` for icon buttons and lit tabs. Selected neutral icon pixels and furnace overlays use 42% of the accent brightness for balanced contrast.
-The silver power-off artwork uses a fixed monochrome variant of the icon pipeline only when selected, preserving its shading while taking the same dark accent.
-Unselected and disabled controls keep their normal icon colors; semantic colored details remain intact. Hover alone does not change the icon's selection state.
+`ThemeAccent` derives the frame and control shades from the theme color, as the Steelframe screens of Dimensional Flux do:
+selected buttons and lit switches use a deep shade (HSL lightness 0.36, top 0.50, bottom 0.24), the hover outline 0.58,
+and `MetalFrame` passes every band, ear and rivet color through `ThemeAccent.band` (theme hue, muted saturation, 82% of
+the steel lightness; gray choices keep the steel 10% darker). The blue theme keeps the plain steel and the teal controls.
+Selected icon buttons keep white icons over the deep fill; disabled controls stay gray.
+**Terminal color in the world** (`client/render/TerminalTint`): the animated terminal textures of the Miner, Crusher and
+Electric Furnace are neutral gray and sit on tint layer 0 (`neoforge_TintIndex 0` in the OBJ materials, `tintindex` in
+the furnace JSON). The Crusher and the Furnace register a block tint source (26.x `BlockTintSources`, 1.21.1 `BlockColor`)
+that reads `GuiThemes.terminalRgb(pos)` and returns white while the machine is off; their items use the
+`dimensionalfluxminer:theme` item tint (shared color). The Miner's terminal is drawn by `MinerRenderer` with the tint
+of its controller position while powered with a core (`MinerVisualStage.themedTerminal`); the no-core yellow and the
+off gray keep their art. The colored ring around each screen is part of the tinted terminal layer, so it follows the
+color; off machines show it gray. Choosing a color marks the chunks of the machines seen on this client for rebuilding.
 The volume controls use editable `icon_white/minus.png` and `plus.png` sprites without font shadows. Label colors come from
 `GuiTheme.title/heading/subheading`. Inside `chrome` the mod's own shader is always used (Darkness 1.0 in the light
 look). `compat.DarkModeCompat` registers shader exceptions with Dark Mode Everywhere.

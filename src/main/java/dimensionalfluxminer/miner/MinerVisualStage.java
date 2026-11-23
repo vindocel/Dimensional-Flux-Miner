@@ -28,6 +28,12 @@ public enum MinerVisualStage {
         return this == ENERGY_CORE_BASIC || this == ENERGY_CORE_STABILIZED;
     }
 
+    /** Powered with a core: the terminal shows the player's theme color (otherwise gray when off, yellow without a core). */
+    public boolean themedTerminal() {
+        return this == ENERGY_CORE_BASIC_IDLE || this == ENERGY_CORE_BASIC
+                || this == ENERGY_CORE_STABILIZED_IDLE || this == ENERGY_CORE_STABILIZED;
+    }
+
     public boolean hasCore() {
         return this != NO_ENERGY && this != ENERGY_NO_CORE;
     }

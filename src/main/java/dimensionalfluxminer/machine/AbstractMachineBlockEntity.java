@@ -271,6 +271,7 @@ public abstract class AbstractMachineBlockEntity extends dimensionalfluxminer.co
     public static void clientTick(Level level, BlockPos pos, BlockState state, AbstractMachineBlockEntity be) {
         be.clientEffects();
         ClientHooks.machineSound.accept(be);
+        ClientHooks.machineSeen.accept(be);
     }
 
     /**

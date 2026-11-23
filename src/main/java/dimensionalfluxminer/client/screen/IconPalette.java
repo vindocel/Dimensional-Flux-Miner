@@ -29,12 +29,6 @@ public final class IconPalette {
             .withLocation(DimensionalFluxMiner.id("pipeline/icon_palette"))
             .withFragmentShader(DimensionalFluxMiner.id("core/icon_palette"))
             .build();
-    /** Fixed monochrome artwork, including the silver power-off symbol. */
-    public static final RenderPipeline MONOCHROME_PIPELINE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
-            .withLocation(DimensionalFluxMiner.id("pipeline/icon_monochrome"))
-            .withFragmentShader(DimensionalFluxMiner.id("core/icon_palette"))
-            .withShaderDefine("MONOCHROME_ICON")
-            .build();
     //?} else {
     /*private static ShaderInstance shader;
     /^* Mode of the icon being drawn: -1 none, 0 neutral pixels take the tint, 1 the whole artwork as monochrome. ^/
@@ -80,7 +74,7 @@ public final class IconPalette {
     *///?}
     }
 
-    /** Furnace display details stay cyan with white icons. */
+    /** Furnace mode icon: its small terminal and divider take the theme color. */
     //? if >=26.1 {
     static RenderPipeline accent(IconColor color) {
         return PIPELINE;
@@ -88,15 +82,6 @@ public final class IconPalette {
 
     //?}
     static int accentColor(IconColor color) {
-        return color == IconColor.WHITE ? 0xFF45E5E9 : color.iconTint();
-    }
-
-    /** Dark foreground over the selected button's lighter accent. */
-    static int selectedColor(int argb) {
-        int rgb = 0;
-        for (int shift = 0; shift <= 16; shift += 8) {
-            rgb |= Math.round((argb >> shift & 255) * 0.42F) << shift;
-        }
-        return 0xFF000000 | rgb;
+        return color.iconTint();
     }
 }

@@ -68,11 +68,22 @@ public final class ModelRendering {
     /** Draws the model with the render type of each of its quads (cutout unless the model says otherwise). */
     public static void render(PoseStack pose, SubmitNodeCollector collector, BlockStateModelPart model, int light, int overlay) {
         collector.submitMultiLayerBlockModel(pose, List.of(model), false, BlockModelRenderState.EMPTY_TINTS, light, overlay, 0);
+    }
+
+    /** Same, with {@code tint} (ARGB) on the quads of tint layer 0. */
+    public static void render(PoseStack pose, SubmitNodeCollector collector, BlockStateModelPart model, int light, int overlay, int tint) {
+        collector.submitMultiLayerBlockModel(pose, List.of(model), false, new int[]{tint}, light, overlay, 0);
     //?} else {
     /*public static void render(PoseStack pose, MultiBufferSource buffers, BakedModel model, int light, int overlay) {
+        render(pose, buffers, model, light, overlay, 0xFFFFFFFF);
+    }
+
+    /^* Same, with {@code tint} (ARGB) on the tinted quads (only the terminal glow uses a tint layer). ^/
+    public static void render(PoseStack pose, MultiBufferSource buffers, BakedModel model, int light, int overlay, int tint) {
         RenderType type = RenderType.cutout();
         Minecraft.getInstance().getBlockRenderer().getModelRenderer().renderModel(pose.last(), buffers.getBuffer(type), null,
-                model, 1.0F, 1.0F, 1.0F, light, overlay, ModelData.EMPTY, type);
+                model, (tint >> 16 & 255) / 255.0F, (tint >> 8 & 255) / 255.0F, (tint & 255) / 255.0F, light, overlay,
+                ModelData.EMPTY, type);
     *///?}
     }
 

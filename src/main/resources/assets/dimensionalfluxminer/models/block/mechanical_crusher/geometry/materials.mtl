@@ -1,11 +1,13 @@
 # Ka of the terminal: the animated panel glows at full brightness while the machine has energy (idle and active models
-# set emissive_ambient; the off model does not).
+# set emissive_ambient; the off model does not). The terminal texture is neutral gray, tinted by the theme color.
 newmtl terminal
 Ka 1.0 1.0 1.0
 Kd 1.0 1.0 1.0
 Ks 0.0 0.0 0.0
 d 1.0
 map_Kd #terminal
+# Tint layer 0: the player's theme color (TerminalTint); white while off.
+neoforge_TintIndex 0
 newmtl machine
 Ka 0.0 0.0 0.0
 Kd 1.0 1.0 1.0

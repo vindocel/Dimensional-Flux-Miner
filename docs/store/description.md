@@ -19,7 +19,7 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 - ⚙️ **New configuration screen** in Mods: four tabs, clear explanations with example pictures, animated switches, list editors and resets. Edit gameplay settings in a loaded singleplayer world and save with Done; multiplayer and script-controlled settings are read-only.
 - ⚡ **Lower default energy costs**: 88% less FE for mining, crushing and smelting; 90% less for alloys, at the same speeds.
-- 🎨 **Custom icon color** now also tints the energy bar, on screens and in Jade.
+- 🎨 **Theme color**: pick Default (blue), Purple or any color. The screen frame, buttons, read-outs and the energy bar (screens and Jade) follow it, and so does the glowing terminal on the front of your Miner, Crusher and Electric Furnace. Icons stay white.
 - 🌀 **Dimensional Flux installed?** The Quantum Core can also be crafted with a Dimensional Block instead of a Conduit.
 
 - 🐚 **Craft Nautilus Shells** in the single tank with calcite and Liquid Experience.

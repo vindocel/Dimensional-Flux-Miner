@@ -15,8 +15,8 @@ import net.minecraft.resources.Identifier;
 *///?}
 
 /**
- * One source image per icon. The selected palette colors neutral pixels during drawing and preserves colored details.
- * Furnace display accents are composed from separate layers in the same pixel coordinates.
+ * One source image per icon, drawn white. The furnace mode icon's terminal and divider are separate layers in the same
+ * pixel coordinates, drawn in the theme color; the palette shader colors only neutral pixels and keeps colored details.
  */
 enum GuiIcon {
     AUTO_EJECT,
@@ -77,7 +77,7 @@ enum GuiIcon {
         drawCentered(g, x, y, w, h, false);
     }
 
-    /** Selected buttons use a darker foreground; colored artwork details retain their native colors. */
+    /** {@code selected} is kept for the callers; a selected button shows its state through its own fill. */
     //? if >=26.1 {
     void drawCentered(GuiGraphicsExtractor g, int x, int y, int w, int h, boolean selected) {
         TextureAtlasSprite atlasSprite = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.GUI).getSprite(sprite);
@@ -97,18 +97,15 @@ enum GuiIcon {
         g.pose().translate(x + (w - width * scale) / 2.0F, y + nudgeY + (h - height * scale) / 2.0F, 0);
         g.pose().scale(scale, scale, 1.0F);
         *///?}
+        // Icons stay white, also on a selected button (its deep theme fill keeps them readable); only the furnace
+        // mode icon's terminal and divider take the theme color.
         IconColor color = GuiTheme.icons();
-        int tint = selected ? IconPalette.selectedColor(color.iconTint()) : color.iconTint();
+        int tint = 0xFFFFFFFF;
         int accent = IconPalette.accentColor(color);
         //? if >=26.1 {
-        if (selected) accent = IconPalette.selectedColor(accent);
-        var pipeline = selected && this == POWER_OFF ? IconPalette.MONOCHROME_PIPELINE : IconPalette.pipeline(color);
-        g.blitSprite(pipeline, sprite, 0, 0, width, height, tint);
+        g.blitSprite(IconPalette.pipeline(color), sprite, 0, 0, width, height, tint);
         //?} else {
-        /*if (selected) {
-            accent = IconPalette.selectedColor(accent);
-        }
-        IconPalette.draw(g, tint, selected && this == POWER_OFF, () -> g.blitSprite(sprite, 0, 0, width, height));
+        /*IconPalette.draw(g, tint, false, () -> g.blitSprite(sprite, 0, 0, width, height));
         *///?}
         if (this == SMELTING_ALLOY) {
             //? if >=26.1 {

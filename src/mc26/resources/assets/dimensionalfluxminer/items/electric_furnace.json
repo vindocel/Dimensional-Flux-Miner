@@ -8,7 +8,12 @@
         "threshold": 1,
         "model": {
           "type": "minecraft:model",
-          "model": "dimensionalfluxminer:block/electric_furnace/active"
+          "model": "dimensionalfluxminer:block/electric_furnace/active",
+          "tints": [
+            {
+              "type": "dimensionalfluxminer:theme"
+            }
+          ]
         }
       }
     ],

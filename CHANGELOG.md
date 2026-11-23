@@ -7,7 +7,10 @@
 - Server clients now receive the effective configuration and script ownership, so the guide and configuration screen show the server's actual values.
 - Reduced default energy costs by 88% for mining, crushing and furnace smelting, and by 90% for alloying; speeds and upgrade bonuses are unchanged. Existing server configuration values are preserved; see the Balance reference to adopt the new defaults.
 - Added a live alloy-energy table to the guide and clarified mining attempts versus ore output.
-- The energy bar of machine screens and Jade now follows the custom icon color.
+- The energy bar of machine screens and Jade now follows the custom theme color.
+- The screen color is now a **theme color**: Default (blue), Purple or any custom color. It tints the metal frame of the screens, selected buttons, switches, read-outs and bars, while icons stay white (only the Electric Furnace mode icon keeps its colored terminal). The White choice was removed; saved White settings become Default.
+- The animated terminal on the front of the Miner, the Mechanical Crusher and the Electric Furnace now shows your theme color in the world, with all its animation and glow. Each player sees their own choice. Machines without power stay gray, and a powered Miner without a core still warns in yellow; the Miner's core, cage and lights keep the core color.
+- Fixed the Electric Furnace terminal not glowing on Minecraft 26.1.2 and 26.3, which made it look darker than the Crusher's.
 - Added an alternative Quantum Core recipe with a Dimensional Block in place of the Conduit, available only when Dimensional Flux is installed; the guide shows it only in that case.
 - Fixed JEI alloy recipes on Minecraft 26.1.2 and 26.3 showing one of each ingredient; they now show the amount each craft needs (for example, 3 + 1 + 2 for an EnderIO alloy).
 - Recipe viewers now list alloys more cleanly: repeated recipes are shown once, recipes whose input or result is an empty tag are hidden, and recipes that differ only in one input's items share one entry that cycles through them.

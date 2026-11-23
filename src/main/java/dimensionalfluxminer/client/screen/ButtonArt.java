@@ -7,11 +7,11 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 *///?}
 
 /**
- * Every button of the machine screens, drawn with plain fills: dark outline (cyan when hovered, purple with purple
- * icons, see {@link IconColor#hoverOutline}), light border and a slate inside. A disabled button and a switched-on
- * one (toggle on, selected tab) are sunk; enabled selections follow the icon accent while disabled controls remain gray.
- * The switched-on one still reacts
- * to the mouse. In the dark look the neutral parts follow {@link GuiTheme#chromeColor}; colored parts keep their color.
+ * Every button of the machine screens, drawn with plain fills as in the Steelframe screens of Dimensional Flux: dark
+ * outline (a light shade of the theme color when hovered, see {@link ThemeAccent#hover}), light border and a slate
+ * inside. A switched-on one (toggle on, selected tab) takes a deep shade of the theme color inside
+ * ({@link ThemeAccent#fill}), dark enough for the white icons, and still reacts to the mouse; a disabled one is sunk and
+ * gray. In the dark look the neutral parts follow {@link GuiTheme#chromeColor}; colored parts keep their color.
  */
 final class ButtonArt {
     static final int SWITCH_WIDTH = 31;
@@ -32,12 +32,9 @@ final class ButtonArt {
     //?} else {
     /*static void draw(GuiGraphics g, int x, int y, int w, int h, boolean enabled, boolean hovered, boolean on) {
     *///?}
-        border(g, x, y, w, h, enabled, hovered, !enabled || on);
-        if (enabled && on) {
-            frame(g, x + 1, y + 1, w - 2, h - 2, GuiTheme.chromeColor(GuiTheme.selectionColor(BORDER_DISABLED)));
-        }
-        int fill = !enabled || on ? FILL_DISABLED : FILL;
-        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, GuiTheme.chromeColor(enabled && on ? GuiTheme.selectionColor(fill) : fill));
+        border(g, x, y, w, h, enabled, hovered, !enabled);
+        int fill = !enabled ? FILL_DISABLED : on ? ThemeAccent.fill() : FILL;
+        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, GuiTheme.chromeColor(fill));
     }
 
     /** A recessed track with the handle on the right when enabled. */
@@ -50,8 +47,9 @@ final class ButtonArt {
         g.fill(x + 2, y + 2, x + SWITCH_WIDTH - 2, y + SWITCH_HEIGHT - 2, GuiTheme.chromeColor(0xFF182229));
         g.fill(x + 3, y + 3, x + SWITCH_WIDTH - 3, y + SWITCH_HEIGHT - 3, GuiTheme.chromeColor(0xFF29363D));
         if (on) {
-            g.fill(x + 12, y + 3, x + 20, y + 11, GuiTheme.chromeColor(GuiTheme.selectionColor(0xFF506066)));
-            g.fill(x + 12, y + 3, x + 20, y + 4, GuiTheme.chromeColor(GuiTheme.selectionColor(0xFF69777B)));
+            g.fill(x + 12, y + 3, x + 20, y + 4, GuiTheme.chromeColor(ThemeAccent.top()));
+            g.fill(x + 12, y + 4, x + 20, y + 10, GuiTheme.chromeColor(ThemeAccent.fill()));
+            g.fill(x + 12, y + 10, x + 20, y + 11, GuiTheme.chromeColor(ThemeAccent.bottom()));
         }
         int knob = x + (on ? 20 : 3);
         g.fill(knob, y + 3, knob + 8, y + 11, GuiTheme.chromeColor(0xFF3E4A50));
@@ -70,7 +68,7 @@ final class ButtonArt {
     //?} else {
     /*static void drawMarked(GuiGraphics g, int x, int y, int w, int h, boolean enabled, boolean hovered, int rgb) {
     *///?}
-        int outline = hovered && enabled ? GuiTheme.icons().hoverOutline() : GuiTheme.chromeColor(OUTLINE);
+        int outline = hovered && enabled ? ThemeAccent.hover() : GuiTheme.chromeColor(OUTLINE);
         frame(g, x, y, w, h, outline);
         frame(g, x + 1, y + 1, w - 2, h - 2, 0xFF000000 | rgb);
         g.fill(x + 2, y + 2, x + w - 2, y + h - 2, GuiTheme.chromeColor(enabled ? FILL : FILL_DISABLED));
@@ -81,7 +79,7 @@ final class ButtonArt {
     //?} else {
     /*private static void border(GuiGraphics g, int x, int y, int w, int h, boolean enabled, boolean hovered, boolean sunk) {
     *///?}
-        int outline = hovered && enabled ? GuiTheme.icons().hoverOutline() : GuiTheme.chromeColor(OUTLINE);
+        int outline = hovered && enabled ? ThemeAccent.hover() : GuiTheme.chromeColor(OUTLINE);
         frame(g, x, y, w, h, outline);
         frame(g, x + 1, y + 1, w - 2, h - 2, GuiTheme.chromeColor(sunk ? BORDER_DISABLED : BORDER));
     }

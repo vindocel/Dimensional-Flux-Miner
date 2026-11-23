@@ -190,7 +190,7 @@ Ores count only in a dimension where that exact ore generates (Overworld diamond
 
 ---
 
-Machine screen icons share one white source image. Choose white, blue, purple or a custom color with HSV sliders and a hex field; display glass/text, the energy bar and the lit parts of toggles follow the accent, while switch handles stay neutral. Selected icon buttons use a darker accent for contrast. Colored details stay unchanged, and furnace display accents remain cyan with white icons.
+Machine screens follow a theme color: Default (blue), Purple or a custom color with HSV sliders and a hex field. The metal frame, selected buttons, the lit parts of toggles, display glass/text and the energy bar follow it, and so does the animated terminal on the front of the Miner, Crusher and Electric Furnace in the world. Icons stay white over the colored selections; only the Electric Furnace mode icon keeps its small colored terminal.
 
 ## 🛢️ Dimensional Tanks
 

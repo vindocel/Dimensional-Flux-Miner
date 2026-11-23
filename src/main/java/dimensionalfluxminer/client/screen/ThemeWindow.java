@@ -65,13 +65,15 @@ final class ThemeWindow extends DfmScreen.Window {
         choice(g, left + themeWidth + GAP, y + SCREEN_Y, themeWidth, GuiTheme.DARK_PANEL, dark, "dark", mouseX, mouseY,
                 () -> GuiThemes.choose(pos, true));
 
-        screen.text(g, Component.translatable(THEME + "icons"), left, y + ICONS_Y - 12, GuiTheme.heading());
+        screen.text(g, Component.translatable(THEME + "accent"), left, y + ICONS_Y - 12, GuiTheme.heading());
         IconColor icons = GuiThemes.icons(pos);
         IconColor[] colors = IconColor.values();
         int iconWidth = (contentWidth - GAP) / 2;
         for (IconColor color : colors) {
+            // Blue and purple side by side; the custom color takes the whole second row.
             int offset = color.ordinal() % 2 * (iconWidth + GAP);
-            choice(g, left + offset, y + ICONS_Y + color.ordinal() / 2 * (CHOICE_HEIGHT + GAP), iconWidth,
+            int choiceWidth = color == IconColor.CUSTOM ? contentWidth : iconWidth;
+            choice(g, left + offset, y + ICONS_Y + color.ordinal() / 2 * (CHOICE_HEIGHT + GAP), choiceWidth,
                     color.preview(), color == icons, color.id(), mouseX, mouseY, () -> {
                         if (color == IconColor.CUSTOM) {
                             colorPicker.open();

@@ -66,7 +66,8 @@ public final class GuideStructureRenderer extends PictureInPictureRenderer<Guide
             pose.pushPose();
             pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(Direction.SOUTH)));
             pose.translate(-0.5, -1.5, -0.5);
-            ModelRendering.render(pose, collector, ModelRendering.model(FORMED), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            ModelRendering.render(pose, collector, ModelRendering.model(FORMED), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                    dimensionalfluxminer.client.render.TerminalTint.global());
             pose.popPose();
             dispatcher.renderAllFeatures();
             bufferSource.endBatch();
@@ -177,7 +178,8 @@ public final class GuideStructureRenderer extends PictureInPictureRenderer<Guide
             pose.pushPose();
             pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(Direction.SOUTH)));
             pose.translate(-0.5, -1.5, -0.5);
-            ModelRendering.render(pose, collector, ModelRendering.model(FORMED), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            ModelRendering.render(pose, collector, ModelRendering.model(FORMED), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                    dimensionalfluxminer.client.render.TerminalTint.global());
             pose.popPose();
             return;
         }

@@ -9,25 +9,23 @@ import net.minecraft.resources.Identifier;
 *///?}
 
 /**
- * Icon color the player picks for a machine screen; white is the default. The energy fill (screens and Jade), the
- * text and glass of the read-out windows, the volume bar and the outline of the button under the mouse are blue with white and
- * blue icons, purple with purple icons, and the chosen color with a custom color. Every choice uses the same source
- * artwork and a runtime palette.
+ * Theme color the player picks for a machine (blue by default, purple, or a custom color). It colors the frame of the
+ * screens, the selected controls, the outline of the button under the mouse, the text and glass of the read-out
+ * windows, the energy fill (screens and Jade), the volume bar, the mode icon of the Electric Furnace and the animated
+ * terminal of the machines in the world. The other icons stay white. Every choice uses the same source artwork and a
+ * runtime palette.
  */
 public enum IconColor {
-    WHITE(0xFFFFFFFF, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
+    BLUE(0xFF20C8D1, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, "energy_shimmer_sheet",
             0x14243A, 0x1F3852, 0x0F1A2B),
-    BLUE(0xFF20C8D1, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet",
-            0x14243A, 0x1F3852, 0x0F1A2B),
-    PURPLE(0xFF9366DE, 0xFFB592FF, 0xFF9366DE, 0xFF784AB9, "energy_shimmer_sheet_purple",
+    PURPLE(0xFF9366DE, 0xFFB592FF, 0xFF9366DE, "energy_shimmer_sheet_purple",
             0x1E1430, 0x2E1F4A, 0x170F24),
-    CUSTOM(0xFFEF8B32, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, 0xFF4AABB9, "energy_shimmer_sheet_neutral",
+    CUSTOM(0xFFEF8B32, DfmScreen.SCREEN_TEXT, DfmScreen.SCREEN_TEXT, "energy_shimmer_sheet_neutral",
             0x14243A, 0x1F3852, 0x0F1A2B);
 
     private final int preview;
     private final int screenText;
     private final int volumeLit;
-    private final int hoverOutline;
     //? if >=26.1 {
     private final Identifier energySheet;
     //?} else {
@@ -37,12 +35,11 @@ public enum IconColor {
     private final int glassBottom;
     private final int glassRim;
 
-    IconColor(int preview, int screenText, int volumeLit, int hoverOutline, String energySheet, int glassTop,
+    IconColor(int preview, int screenText, int volumeLit, String energySheet, int glassTop,
             int glassBottom, int glassRim) {
         this.preview = preview;
         this.screenText = screenText;
         this.volumeLit = volumeLit;
-        this.hoverOutline = hoverOutline;
         this.energySheet = DimensionalFluxMiner.id("textures/gui/energy/" + energySheet + ".png");
         this.glassTop = glassTop;
         this.glassBottom = glassBottom;
@@ -54,14 +51,14 @@ public enum IconColor {
         return name().toLowerCase(Locale.ROOT);
     }
 
-    /** The color saved as {@code id}; white (the default) when unknown. */
+    /** The color saved as {@code id}; blue (the default) when unknown, including the former white choice. */
     static IconColor byId(String id) {
         for (IconColor color : values()) {
             if (color.id().equals(id)) {
                 return color;
             }
         }
-        return WHITE;
+        return BLUE;
     }
 
     /** Color shown for this choice in the settings window. */
@@ -69,9 +66,9 @@ public enum IconColor {
         return this == CUSTOM ? iconTint() : preview;
     }
 
+    /** The theme color itself (ARGB): accents, furnace mode icon, terminal of the machines. */
     int iconTint() {
         return switch (this) {
-            case WHITE -> 0xFFFFFFFF;
             case BLUE -> 0xFF45E5E9;
             case PURPLE -> 0xFFC6A5FF;
             case CUSTOM -> 0xFF000000 | GuiTheme.customRgb();
@@ -88,12 +85,7 @@ public enum IconColor {
         return this == CUSTOM ? iconTint() : volumeLit;
     }
 
-    /** Outline of the button under the mouse: cyan, or the same tone turned purple (hue 265) with purple icons. */
-    int hoverOutline() {
-        return this == CUSTOM ? iconTint() : hoverOutline;
-    }
-
-    /** Glass of the read-out windows at the top and at the bottom (0xRRGGBB): navy, or dark purple with purple icons. */
+    /** Glass of the read-out windows at the top and at the bottom (0xRRGGBB): navy, or dark purple with the purple theme. */
     int glassTop() {
         return this == CUSTOM ? GuiTheme.customTop() : glassTop;
     }
@@ -105,6 +97,15 @@ public enum IconColor {
     /** Dark rim around the glass (0xRRGGBB). */
     int glassRim() {
         return this == CUSTOM ? GuiTheme.customRim() : glassRim;
+    }
+
+    /**
+     * Color (0xRRGGBB) of the animated terminal of the machines in the world, over its neutral gray texture: the hue of
+     * the theme color at a mid lightness (see {@link ThemeAccent#terminal}), so light colors such as the purple do not
+     * wash out to pink over the bright pixels of the screen.
+     */
+    public int terminalRgb(int customRgb) {
+        return ThemeAccent.terminal(this == CUSTOM ? customRgb & 0xFFFFFF : iconTint() & 0xFFFFFF);
     }
 
     /** Vertex color of the energy fill: the chosen color over the gray sheet with a custom color, otherwise white. */

@@ -54,10 +54,9 @@ final class ConfigPreview {
     private static Picture picture(String option, Object value) {
         if (option.equals("appearance.dark")) return Boolean.TRUE.equals(value) ? MACHINE_DARK : MACHINE_LIGHT;
         if (option.equals("appearance.icons")) return switch (String.valueOf(value)) {
-            case "blue" -> ICONS_BLUE;
             case "purple" -> ICONS_PURPLE;
             case "custom" -> ICONS_CUSTOM;
-            default -> MACHINE_LIGHT;
+            default -> ICONS_BLUE;
         };
         return BY_OPTION.get(option);
     }

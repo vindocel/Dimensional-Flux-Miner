@@ -336,7 +336,7 @@ public abstract class DfmScreen<M extends MachineMenu<?>> extends AbstractContai
             outsideAreas = List.copyOf(pendingAreas);
         } finally {
             GuiTheme.setDark(false);
-            GuiTheme.setIcons(IconColor.WHITE);
+            GuiTheme.setIcons(IconColor.BLUE);
             GuiTheme.setCustomRgb(GuiThemes.DEFAULT_CUSTOM_COLOR);
         }
     }

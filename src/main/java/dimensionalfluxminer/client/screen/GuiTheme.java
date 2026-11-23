@@ -38,8 +38,8 @@ public final class GuiTheme {
     /*private static ShaderInstance shader;
     *///?}
     private static boolean dark;
-    /** Icon color of the screen being drawn. */
-    private static IconColor icons = IconColor.WHITE;
+    /** Theme color of the screen being drawn. */
+    private static IconColor icons = IconColor.BLUE;
     private static int customRgb = -1;
     private static int customText;
     private static int customTop;
@@ -120,20 +120,6 @@ public final class GuiTheme {
         return customRgb;
     }
 
-    /** A selected control retains its depth while taking the icon accent. */
-    static int selectionColor(int base) {
-        if (icons == IconColor.WHITE) {
-            return base;
-        }
-        int tint = icons.iconTint();
-        int rgb = 0;
-        for (int shift = 0; shift <= 16; shift += 8) {
-            int value = Math.round(((base >> shift) & 255) * 0.35F + ((tint >> shift) & 255) * 0.65F);
-            rgb |= value << shift;
-        }
-        return 0xFF000000 | rgb;
-    }
-
     /** Draws {@code drawing} as screen chrome: darkened in the dark look, unchanged in the light one. */
     static void chrome(Runnable drawing) {
         chromeDepth++;
@@ -212,20 +198,6 @@ public final class GuiTheme {
 
     static int customRgb() {
         return customRgb;
-    }
-
-    /^* A selected control retains its depth while taking the icon accent. ^/
-    static int selectionColor(int base) {
-        if (icons == IconColor.WHITE) {
-            return base;
-        }
-        int tint = icons.iconTint();
-        int rgb = 0;
-        for (int shift = 0; shift <= 16; shift += 8) {
-            int value = Math.round(((base >> shift) & 255) * 0.35F + ((tint >> shift) & 255) * 0.65F);
-            rgb |= value << shift;
-        }
-        return 0xFF000000 | rgb;
     }
 
     /^* Draws {@code drawing} as screen chrome: darkened in the dark look, unchanged in the light one. ^/

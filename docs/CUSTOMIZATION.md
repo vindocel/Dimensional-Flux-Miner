@@ -17,8 +17,8 @@ it, but you should know how to edit a text file and how to put a folder inside a
 Other references: gameplay numbers in [BALANCE.md](BALANCE.md), code layout in [ARCHITECTURE.md](ARCHITECTURE.md),
 the player-facing overview in the [README](../README.md).
 Machine screen appearance is a local player preference, separate from server configuration and KubeJS. The settings
-window offers white, blue, purple or a custom RGB color using HSV sliders and hexadecimal input. Apply confirms a
-draft; Cancel discards it. The custom choice starts orange. Icons, display glass/text and the lit part of active toggles follow the accent; switch handles stay neutral. The local file
+window offers the theme color: Default (blue), purple or a custom RGB color using HSV sliders and hexadecimal input. Apply confirms a
+draft; Cancel discards it. The custom choice starts orange. The metal frame, selected buttons, lit toggles, the hover outline, display glass/text, the energy and volume bars and the animated terminal of the machines in the world follow the theme color; icons stay white (except the Electric Furnace mode icon's small terminal) and switch handles stay neutral. Saved white choices load as Default. The local file
 `config/dimensionalfluxminer-themes.json` keeps preset IDs in `allIcons`/`accents` and 24-bit custom RGB values in
 `allCustomColor`/`customColors`. The global/individual switch preserves the current RGB; volume stays per machine.
 Resource packs can replace the single white icon sources, including `icon_white/minus.png` and `plus.png`.

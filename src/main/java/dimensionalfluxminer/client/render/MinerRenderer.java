@@ -101,6 +101,7 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         float tilt;
         int portLooks;
         int[] nodeColors = new int[0];
+        int terminalTint = TerminalTint.WHITE;
     }
 
     //?}
@@ -132,6 +133,7 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         state.stage = stage;
         state.front = front;
         state.origin = core.below().subtract(be.getBlockPos());
+        state.terminalTint = stage.themedTerminal() ? TerminalTint.at(be.getBlockPos()) : TerminalTint.WHITE;
         //?} else {
         /*BlockPos origin = core.below().subtract(be.getBlockPos());
         *///?}
@@ -198,7 +200,9 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         if (state.moving) {
             state.angle = (float) (spin.angle % 360.0);
         //?} else {
-        /*ModelRendering.render(pose, buffers, ModelRendering.model(model(moving ? "body" : "states", stage)), fullLight, overlay);
+        /*int terminalTint = stage.themedTerminal() ? TerminalTint.at(be.getBlockPos()) : TerminalTint.WHITE;
+        ModelRendering.render(pose, buffers, ModelRendering.model(model(moving ? "body" : "states", stage)), fullLight, overlay,
+                terminalTint);
         pose.popPose();
         // Configured ports of the lower layer, drawn in world axes over the casing.
         MinerPortRenderer.render(pose, buffers, be.portLooks(), be.nodeColors(), front, fullLight);
@@ -234,7 +238,8 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         pose.translate(0.5, 0, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
         pose.translate(-0.5, 0, -0.5);
-        ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay);
+        ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay,
+                state.terminalTint);
         pose.popPose();
         // Configured ports of the lower layer, drawn in world axes over the casing.
         MinerPortRenderer.render(pose, collector, state.portLooks, state.nodeColors, front, fullLight);
@@ -262,7 +267,8 @@ public class MinerRenderer implements BlockEntityRenderer<MinerControllerBlockEn
         pose.translate(0.5, 0, 0.5);
         pose.rotate(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(front)));
         pose.translate(-0.5, 0, -0.5);
-        ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay);
+        ModelRendering.render(pose, collector, ModelRendering.model(model(state.moving ? "body" : "states", stage)), fullLight, overlay,
+                state.terminalTint);
         pose.popPose();
         // Configured ports of the lower layer, drawn in world axes over the casing.
         MinerPortRenderer.render(pose, collector, state.portLooks, state.nodeColors, front, fullLight);

@@ -94,7 +94,7 @@ public final class DfmConfigScreen extends Screen {
             int y = contentTop + (i - scroll) * ConfigStyle.ROW;
             AbstractWidget control;
             if (option.key.equals("appearance.icons") || option.key.equals("corruption.claimFailurePolicy")) {
-                List<String> choices = option.appearance ? List.of("white", "blue", "purple", "custom") : List.of("deny", "ignore");
+                List<String> choices = option.appearance ? List.of("blue", "purple", "custom") : List.of("deny", "ignore");
                 control = ConfigStyle.button(text("choice." + draft.get(option.key)), barRight - controlWidth - 6, y + 1,
                         controlWidth, 20, button -> {
                             String next = choices.get((choices.indexOf(draft.get(option.key)) + 1) % choices.size());

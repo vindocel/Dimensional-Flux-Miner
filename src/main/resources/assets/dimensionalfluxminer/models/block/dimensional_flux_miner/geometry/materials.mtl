@@ -54,6 +54,8 @@ Ks 0 0 0
 d 1
 illum 2
 map_Kd #terminal_face_glow
+# Tint layer 0: the player's theme color (MinerRenderer); white keeps the art (no core, off).
+neoforge_TintIndex 0
 
 newmtl machine
 Ka 0.0 0.0 0.0

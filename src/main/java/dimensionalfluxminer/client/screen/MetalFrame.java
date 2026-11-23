@@ -10,7 +10,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  * Brushed-metal frame drawn in code around panels and windows: a 4 px band outside the panel (dark outline with
  * chamfered corners, light bevel on the top and left, shade on the bottom and right, steel body with a rivet in
  * each corner) and a soft shadow under it. Side tabs are ears of the same metal that grow out of the band, so the
- * frame and its tabs read as one piece; a tab's color is a thin light ring around its button, never the metal.
+ * frame and its tabs read as one piece; a tab's color is a thin light ring around its button, never the metal. The
+ * metal takes a dark, muted shade of the theme color ({@link ThemeAccent#band}); the blue theme keeps the plain steel.
  */
 final class MetalFrame {
     /** Width of the band outside the panel. */
@@ -50,19 +51,19 @@ final class MetalFrame {
         // Shadow under the bottom edge only, tapered like the chamfered corners so it never shows at the sides.
         g.fill(x0 + 2, y1, x1 - 2, y1 + 1, SHADOW);
         g.fill(x0 + 3, y1 + 1, x1 - 3, y1 + 2, SHADOW);
-        g.fill(x0 + 2, y0, x1 - 2, y0 + 1, OUTLINE);
-        g.fill(x0 + 2, y1 - 1, x1 - 2, y1, OUTLINE);
-        g.fill(x0, y0 + 2, x0 + 1, y1 - 2, OUTLINE);
-        g.fill(x1 - 1, y0 + 2, x1, y1 - 2, OUTLINE);
-        pixel(g, x0 + 1, y0 + 1, OUTLINE);
-        pixel(g, x1 - 2, y0 + 1, OUTLINE);
-        pixel(g, x0 + 1, y1 - 2, OUTLINE);
-        pixel(g, x1 - 2, y1 - 2, OUTLINE);
-        g.fill(x0 + 2, y0 + 1, x1 - 2, y0 + 2, LIGHT_TOP);
-        g.fill(x0 + 1, y0 + 2, x0 + 2, y1 - 2, LIGHT_SIDE);
-        g.fill(x0 + 2, y1 - 2, x1 - 2, y1 - 1, SHADE);
-        g.fill(x1 - 2, y0 + 2, x1 - 1, y1 - 2, SHADE);
-        g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, BODY);
+        g.fill(x0 + 2, y0, x1 - 2, y0 + 1, ThemeAccent.band(OUTLINE));
+        g.fill(x0 + 2, y1 - 1, x1 - 2, y1, ThemeAccent.band(OUTLINE));
+        g.fill(x0, y0 + 2, x0 + 1, y1 - 2, ThemeAccent.band(OUTLINE));
+        g.fill(x1 - 1, y0 + 2, x1, y1 - 2, ThemeAccent.band(OUTLINE));
+        pixel(g, x0 + 1, y0 + 1, ThemeAccent.band(OUTLINE));
+        pixel(g, x1 - 2, y0 + 1, ThemeAccent.band(OUTLINE));
+        pixel(g, x0 + 1, y1 - 2, ThemeAccent.band(OUTLINE));
+        pixel(g, x1 - 2, y1 - 2, ThemeAccent.band(OUTLINE));
+        g.fill(x0 + 2, y0 + 1, x1 - 2, y0 + 2, ThemeAccent.band(LIGHT_TOP));
+        g.fill(x0 + 1, y0 + 2, x0 + 2, y1 - 2, ThemeAccent.band(LIGHT_SIDE));
+        g.fill(x0 + 2, y1 - 2, x1 - 2, y1 - 1, ThemeAccent.band(SHADE));
+        g.fill(x1 - 2, y0 + 2, x1 - 1, y1 - 2, ThemeAccent.band(SHADE));
+        g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, ThemeAccent.band(BODY));
         rivet(g, x0 + 2, y0 + 2);
         rivet(g, x1 - 4, y0 + 2);
         rivet(g, x0 + 2, y1 - 4);
@@ -70,10 +71,10 @@ final class MetalFrame {
         // Flat panel (no vanilla bevel), set into the band by one line: shade on the top and left, light on the
         // bottom and right.
         g.fill(x, y, x + w, y + h, GuiTheme.gray(PANEL));
-        g.fill(x, y, x + w, y + 1, INNER);
-        g.fill(x, y, x + 1, y + h, INNER);
-        g.fill(x, y + h - 1, x + w, y + h, INNER_LIGHT);
-        g.fill(x + w - 1, y + 1, x + w, y + h, INNER_LIGHT);
+        g.fill(x, y, x + w, y + 1, ThemeAccent.band(INNER));
+        g.fill(x, y, x + 1, y + h, ThemeAccent.band(INNER));
+        g.fill(x, y + h - 1, x + w, y + h, ThemeAccent.band(INNER_LIGHT));
+        g.fill(x + w - 1, y + 1, x + w, y + h, ThemeAccent.band(INNER_LIGHT));
     }
 
     /**
@@ -86,18 +87,18 @@ final class MetalFrame {
     //?} else {
     /*static void ear(GuiGraphics g, int x, int y, int size, int height, boolean leftSide) {
     *///?}
-        int light = LIGHT_TOP;
-        int side = leftSide ? LIGHT_SIDE : SHADE;
-        int shade = SHADE;
-        int body = BODY;
+        int light = ThemeAccent.band(LIGHT_TOP);
+        int side = ThemeAccent.band(leftSide ? LIGHT_SIDE : SHADE);
+        int shade = ThemeAccent.band(SHADE);
+        int body = ThemeAccent.band(BODY);
         int last = height - 1;
         // Columns counted from the outer side; the band itself takes the last BAND columns.
         int open = size - BAND;
-        column(g, x, size, leftSide, 0, y + 2, y + last - 1, OUTLINE);
-        row(g, x, size, leftSide, 2, open, y, OUTLINE);
-        row(g, x, size, leftSide, 2, open, y + last, OUTLINE);
-        column(g, x, size, leftSide, 1, y + 1, y + 2, OUTLINE);
-        column(g, x, size, leftSide, 1, y + last - 1, y + last, OUTLINE);
+        column(g, x, size, leftSide, 0, y + 2, y + last - 1, ThemeAccent.band(OUTLINE));
+        row(g, x, size, leftSide, 2, open, y, ThemeAccent.band(OUTLINE));
+        row(g, x, size, leftSide, 2, open, y + last, ThemeAccent.band(OUTLINE));
+        column(g, x, size, leftSide, 1, y + 1, y + 2, ThemeAccent.band(OUTLINE));
+        column(g, x, size, leftSide, 1, y + last - 1, y + last, ThemeAccent.band(OUTLINE));
         column(g, x, size, leftSide, 1, y + 2, y + last - 1, side);
         row(g, x, size, leftSide, 2, open + 1, y + 1, light);
         row(g, x, size, leftSide, 2, open + 1, y + last - 1, shade);
@@ -171,10 +172,10 @@ final class MetalFrame {
     //?} else {
     /*private static void rivet(GuiGraphics g, int x, int y) {
     *///?}
-        pixel(g, x, y, RIVET_LIGHT);
-        pixel(g, x + 1, y, RIVET_MID);
-        pixel(g, x, y + 1, RIVET_MID);
-        pixel(g, x + 1, y + 1, RIVET_DARK);
+        pixel(g, x, y, ThemeAccent.band(RIVET_LIGHT));
+        pixel(g, x + 1, y, ThemeAccent.band(RIVET_MID));
+        pixel(g, x, y + 1, ThemeAccent.band(RIVET_MID));
+        pixel(g, x + 1, y + 1, ThemeAccent.band(RIVET_DARK));
     }
 
     //? if >=26.1 {

@@ -18,7 +18,7 @@ final class ConfigSettings {
         Map<String, Object> defaults = new java.util.LinkedHashMap<>();
         defaults.put("appearance.dark", false);
         defaults.put("appearance.shared", true);
-        defaults.put("appearance.icons", "white");
+        defaults.put("appearance.icons", "blue");
         defaults.put("appearance.color", "EF8B32");
         return java.util.Collections.unmodifiableMap(defaults);
     }
@@ -26,7 +26,7 @@ final class ConfigSettings {
         if (!key.startsWith("appearance.")) return DfmConfig.checkedValue(key, raw);
         Object fallback = appearanceDefaults().get(key);
         if (fallback instanceof Boolean && raw instanceof Boolean) return raw;
-        if (key.equals("appearance.icons") && java.util.List.of("white", "blue", "purple", "custom").contains(raw)) return raw;
+        if (key.equals("appearance.icons") && java.util.List.of("blue", "purple", "custom").contains(raw)) return raw;
         if (key.equals("appearance.color") && raw instanceof String text && text.matches("#?[0-9a-fA-F]{6}"))
             return text.replace("#", "").toUpperCase(java.util.Locale.ROOT);
         throw new IllegalArgumentException("Invalid appearance preference");

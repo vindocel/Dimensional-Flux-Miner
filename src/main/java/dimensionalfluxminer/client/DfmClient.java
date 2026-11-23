@@ -112,6 +112,7 @@ public final class DfmClient {
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         ClientHooks.machineSound = MachineSounds::update;
+        ClientHooks.machineSeen = dimensionalfluxminer.client.render.TerminalTint::seen;
         ClientHooks.minerTick = MinerClientEffects::tick;
         ClientHooks.formationEffect = MinerClientEffects::formationBurst;
         ClientHooks.assemblyHighlight = MinerAssemblyHighlight::show;
@@ -152,7 +153,6 @@ public final class DfmClient {
         event.registerPipeline(GuiTheme.DARK_PIPELINE);
         event.registerPipeline(GuiTheme.LIGHT_PIPELINE);
         event.registerPipeline(dimensionalfluxminer.client.screen.IconPalette.PIPELINE);
-        event.registerPipeline(dimensionalfluxminer.client.screen.IconPalette.MONOCHROME_PIPELINE);
     //?} else {
     /*/^* Shader of the dark look of the machine screens (reloaded with the resource packs). ^/
     @SubscribeEvent
@@ -163,6 +163,30 @@ public final class DfmClient {
                 com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX), dimensionalfluxminer.client.screen.IconPalette::setShader);
     *///?}
     }
+
+    //? if >=26.1 {
+    /** The animated terminal of the Crusher and the Electric Furnace takes the player's theme color. */
+    @SubscribeEvent
+    static void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.BlockTintSources event) {
+        dimensionalfluxminer.client.render.TerminalTint.registerBlocks(event);
+    }
+
+    @SubscribeEvent
+    static void onRegisterItemTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.ItemTintSources event) {
+        dimensionalfluxminer.client.render.TerminalTint.registerItems(event);
+    }
+    //?} else {
+    /*/^* The animated terminal of the Crusher and the Electric Furnace takes the player's theme color. ^/
+    @SubscribeEvent
+    static void onRegisterBlockColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Block event) {
+        dimensionalfluxminer.client.render.TerminalTint.registerBlocks(event);
+    }
+
+    @SubscribeEvent
+    static void onRegisterItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
+        dimensionalfluxminer.client.render.TerminalTint.registerItems(event);
+    }
+    *///?}
 
     @SubscribeEvent
     static void onRegisterScreens(RegisterMenuScreensEvent event) {

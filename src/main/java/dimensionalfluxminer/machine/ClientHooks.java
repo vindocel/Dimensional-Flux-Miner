@@ -9,6 +9,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public final class ClientHooks {
     /** Starts/keeps the single looping sound of an active machine. */
     public static Consumer<BlockEntity> machineSound = be -> { };
+    /** Client tick of a Crusher or Electric Furnace: remembered so its terminal is redrawn when the theme color changes. */
+    public static Consumer<BlockEntity> machineSeen = be -> { };
     /** Client tick of a formed Dimensional Flux Miner: its running loop and the motes its core pulls in. */
     public static Consumer<BlockEntity> minerTick = be -> { };
     /** Short particle burst when a Miner assembly forms. */

@@ -1809,9 +1809,9 @@
             7.25
           ],
           "texture": "#terminal_idle",
+          "tintindex": 0,
           "neoforge_data": {
-            "block_light": 15,
-            "sky_light": 15,
+            "light_emission": 15,
             "ambient_occlusion": false
           }
         }

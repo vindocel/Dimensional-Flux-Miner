@@ -175,7 +175,8 @@ final class GuideMultiblock {
             pose.pushPose();
             pose.mulPose(Axis.YP.rotationDegrees(-ModelRendering.blockstateY(Direction.SOUTH)));
             pose.translate(-0.5, -1.5, -0.5);
-            ModelRendering.render(pose, buffers, ModelRendering.model(FORMED), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            ModelRendering.render(pose, buffers, ModelRendering.model(FORMED), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                    dimensionalfluxminer.client.render.TerminalTint.global());
             pose.popPose();
         } else {
             var dispatcher = Minecraft.getInstance().getBlockRenderer();

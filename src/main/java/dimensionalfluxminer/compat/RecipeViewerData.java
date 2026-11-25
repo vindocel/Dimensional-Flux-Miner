@@ -182,6 +182,7 @@ public final class RecipeViewerData {
     *///?}
         List<FurnaceDisplay> result = new ArrayList<>();
         Set<Item> blastable = new HashSet<>();
+        Set<Item> smeltable = new HashSet<>();
         //? if >=26.1 {
         for (RecipeHolder<?> holder : manager.byType(RecipeType.BLASTING)) {
         //?} else {
@@ -213,12 +214,32 @@ public final class RecipeViewerData {
             boolean allBlastable = options.length > 0;
             for (ItemStack option : options) {
                 allBlastable &= blastable.contains(option.getItem());
+                smeltable.add(option.getItem());
             }
             if (!allBlastable) {
                 //? if >=26.1 {
                 add(result, holder.id().identifier(), recipe, registries);
                 //?} else {
                 /*add(result, holder.id(), recipe, registries);
+                *///?}
+            }
+        }
+        // Furnace recipes of other mods' furnaces, for the items no blast furnace or furnace recipe takes.
+        for (RecipeHolder<net.minecraft.world.item.crafting.SmeltingRecipe> holder : dimensionalfluxminer.recipe.ExternalCooking.all(manager, registries)) {
+            //? if >=26.1 {
+            ItemStack[] options = dimensionalfluxminer.recipe.Recipes.stacks(holder.value().input());
+            //?} else {
+            /*ItemStack[] options = holder.value().getIngredients().getFirst().getItems();
+            *///?}
+            boolean covered = true;
+            for (ItemStack option : options) {
+                covered &= blastable.contains(option.getItem()) || smeltable.contains(option.getItem());
+            }
+            if (!covered) {
+                //? if >=26.1 {
+                add(result, holder.id().identifier(), holder.value(), registries);
+                //?} else {
+                /*add(result, holder.id(), holder.value(), registries);
                 *///?}
             }
         }

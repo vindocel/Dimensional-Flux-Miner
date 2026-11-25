@@ -96,7 +96,8 @@ public final class ContentGameTests {
         //?} else {
         /*int expectedOre = 10 + (mods.isLoaded("malum") ? 5 : 0) + (mods.isLoaded("forbidden_arcanus") ? 2 : 0);
         *///?}
-        int expectedAlloying = 2 + (mods.isLoaded("create") ? 1 : 0);
+        // Steel, slag recovery and netherite, plus the Create andesite alloy.
+        int expectedAlloying = 3 + (mods.isLoaded("create") ? 1 : 0);
         // 16 machine and material recipes plus the corrupted wood set (16 with the shelf on 26.x, 15 on 1.21.1).
         //? if >=26.1 {
         long expectedCrafting = 32;

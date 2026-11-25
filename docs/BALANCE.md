@@ -209,6 +209,7 @@ Recipe viewer fluid gauges show the amount for one operation; their full appeara
 | Jade | Item, energy and XP display |
 | FTB Chunks, Open Parties and Claims | Claim protection against Dimensional Death |
 | EnderIO, Oritech | Their alloy recipes in the Electric Furnace |
+| Forbidden Arcanus | Clibano melting in the Electric Furnace lanes and Clibano alloys of up to three materials in its Alloy mode |
 | Create | Andesite Alloy in the Electric Furnace; asurine corrupts into Corrupted Stone |
 | AE2 | Sky stone corrupts into Corrupted Stone |
 | Malum, Forbidden Arcanus | Their ores in the Miner and the Crusher |

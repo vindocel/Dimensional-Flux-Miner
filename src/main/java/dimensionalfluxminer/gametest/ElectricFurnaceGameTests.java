@@ -177,6 +177,54 @@ public final class ElectricFurnaceGameTests {
         helper.succeedWhen(() -> helper.assertTrue(be.alloyMain().countOf(new ItemStack(DfmItems.INGOT_STEEL.get())) == 5, "5 steel"));
     }
 
+    /** The mod's own netherite alloy: one gold ingot and one netherite scrap make one netherite ingot. */
+    @GameTest(template = "empty_small")
+    public static void netheriteIngotFromGoldAndScrap(GameTestHelper helper) {
+        ElectricFurnaceBlockEntity be = place(helper);
+        be.setMode(ElectricFurnaceMode.ALLOY);
+        be.input(0).insert(new ItemStack(Items.GOLD_INGOT), 3, false);
+        be.input(1).insert(new ItemStack(Items.NETHERITE_SCRAP), 3, false);
+        helper.succeedWhen(() -> helper.assertTrue(be.alloyMain().countOf(new ItemStack(Items.NETHERITE_INGOT)) == 3,
+                "3 netherite ingots, got " + be.alloyMain().countOf(new ItemStack(Items.NETHERITE_INGOT))));
+    }
+
+    /**
+     * Alloys of other mods that a recipe already covers are left out: an identical one (other time) and one needing more
+     * of the same items for the same result. A different alloy stays; the mod's own recipes always stay.
+     */
+    @GameTest(template = "empty_small")
+    public static void coveredAlloysOfOtherModsAreLeftOut(GameTestHelper helper) {
+        var gold = net.minecraft.world.item.crafting.Ingredient.of(Items.GOLD_INGOT);
+        var scrap = net.minecraft.world.item.crafting.Ingredient.of(Items.NETHERITE_SCRAP);
+        var iron = net.minecraft.world.item.crafting.Ingredient.of(Items.IRON_INGOT);
+        var own = alloy("own", 100, sized(gold, 1), sized(scrap, 1));
+        var same = alloy("same", 50, sized(scrap, 1), sized(gold, 1));
+        var costly = alloy("costly", 100, sized(scrap, 3), sized(gold, 3));
+        var other = alloy("other", 100, sized(scrap, 1), sized(iron, 1));
+        var kept = dimensionalfluxminer.recipe.ExternalAlloying.withoutRedundant(java.util.List.of(own, same, costly, other), 1);
+        helper.assertTrue(kept.equals(java.util.List.of(own, other)), "kept own + other, got " + kept.size() + " recipes");
+        // Between two converted recipes, the first of two identical ones stays.
+        var twice = dimensionalfluxminer.recipe.ExternalAlloying.withoutRedundant(java.util.List.of(same, own), 0);
+        helper.assertTrue(twice.equals(java.util.List.of(same)), "first identical recipe stays");
+        helper.succeed();
+    }
+
+    private static net.neoforged.neoforge.common.crafting.SizedIngredient sized(net.minecraft.world.item.crafting.Ingredient ingredient, int count) {
+        return new net.neoforged.neoforge.common.crafting.SizedIngredient(ingredient, count);
+    }
+
+    private static net.minecraft.world.item.crafting.RecipeHolder<dimensionalfluxminer.recipe.AlloyingRecipe> alloy(
+            String name, int ticks, net.neoforged.neoforge.common.crafting.SizedIngredient... lanes) {
+        var recipe = new dimensionalfluxminer.recipe.AlloyingRecipe(java.util.List.of(lanes), new ItemStack(Items.NETHERITE_INGOT),
+                java.util.Optional.empty(), ticks, 0.0F);
+        //? if >=26.1 {
+        return new net.minecraft.world.item.crafting.RecipeHolder<>(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.RECIPE, DimensionalFluxMiner.id("test/" + name)), recipe);
+        //?} else {
+        /*return new net.minecraft.world.item.crafting.RecipeHolder<>(DimensionalFluxMiner.id("test/" + name), recipe);
+        *///?}
+    }
+
     @GameTest(template = "empty_small")
     public static void modesCycleAndKeepOutputsReachable(GameTestHelper helper) {
         ElectricFurnaceBlockEntity be = place(helper);

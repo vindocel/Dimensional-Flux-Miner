@@ -34,7 +34,8 @@ On 26.x the gameplay code is the same as on 1.21.1; these layers keep it and the
 - `gametest.DfmGameTests`: registers every `@GameTest` method (the mod's own annotation) as a test function and
   instance; each batch is a test environment that moves the world spawn away while it runs.
 - Recipes are a registry read before item components exist: results are `ItemStackTemplate`s. Clients get the
-  mod's recipe types from the server (`OnDatapackSyncEvent`, `recipe.Recipes`).
+  mod's recipe types from the server (`OnDatapackSyncEvent`, `recipe.Recipes`), plus the types of other mods the
+  Electric Furnace converts (`ExternalAlloying.convertedTypes`), so the viewers list the same recipes.
 - JEI, REI and EMI (`compat/rei`, `compat/emi`, recipe viewer order EMI, REI, JEI), Jade, AE2 and KubeJS are
   compile-only on every version that has them.
 - Data formats are selected per version: 26.1.2 uses loot tables with `conditions` / `functions` and datapack
@@ -62,11 +63,11 @@ Everything lives under `src/main/java/dimensionalfluxminer`.
 | `miner.profile` | Resource Profiles: what the Miner can find in each dimension |
 | `miner.survey` | The Basic core's survey of drainable columns |
 | `miner.corruption` | Dimensional Death: terrain and water conversion, protection, effects, spawns |
-| `recipe` | Recipe types (`crushing`, `ore_crushing`, `alloying`, `tag_smelting`, `tag_blasting`) and the reader of other mods' alloy recipes |
+| `recipe` | Recipe types (`crushing`, `ore_crushing`, `alloying`, `tag_smelting`, `tag_blasting`), the reader of other mods' alloy recipes (`ExternalAlloying`, which also leaves out converted alloys another recipe covers) and `ExternalCooking` (furnace recipes of other mods' furnaces, kept out of the recipe manager and used only by the Electric Furnace for items without a furnace recipe) |
 | `content` | Blocks, items and fluids that are not machines (corrupted blocks, Corrupted Water, guide book, Reinforced Eye of Ender) and `Waterlogging`, shared by every waterloggable machine, tank and Miner part |
 | `advancement` | Custom advancement trigger, including nearby-player awards after completed tank conversions |
 | `network` | Payloads (menu sync, Miner assembly outline, formation burst, effective configuration and script ownership) |
-| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `rei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded), `ae2` (all three versions: `Ae2Power` joins the ME network only through an adjacent energy cell or a quartz fiber facing the side; `Ae2Parts` gives the side screens the part facing the machine; `Ae2TestParts` places cables for the GameTests), always called through `compat.Ae2Compat` |
+| `compat` | Optional integrations, never loaded unless the other mod is present: `emi`, `jei`, `rei`, `jade`, `claims` (FTB Chunks and Open Parties and Claims, by reflection), `kubejs` (server script events, loaded only by KubeJS through `kubejs.plugins.txt`), `polymorph` (recipe choice on the Crusher and Electric Furnace screens, registered only when Polymorph is loaded), `ForbiddenArcanusRecipes` (reads the Clibano melting and alloys from their encoded data, no dependency), `ae2` (all three versions: `Ae2Power` joins the ME network only through an adjacent energy cell or a quartz fiber facing the side; `Ae2Parts` gives the side screens the part facing the machine; `Ae2TestParts` places cables for the GameTests), always called through `compat.Ae2Compat` |
 | `mixin` | Corrupted Water particles, sunlight on corrupted terrain, the dark-screen shader on textures drawn as screen chrome (`GuiGraphicsThemeMixin`) |
 | `client` | Renderers, screens, the guide (including live tank conversion diagrams and fluid-amount tooltips), sounds, particles, `ConnectedTextureModel` (connected textures of the loose chassis, glass and vents). Common code reaches it only through `machine.ClientHooks`; the EMI, JEI, REI and Jade plugins are client side and may use it |
 

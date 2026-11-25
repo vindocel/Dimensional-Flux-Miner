@@ -19,7 +19,7 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 
 - ⚙️ **New configuration screen** in Mods: four tabs, clear explanations with example pictures, animated switches, list editors and resets. Edit gameplay settings in a loaded singleplayer world and save with Done; multiplayer and script-controlled settings are read-only.
 - ⚡ **Lower default energy costs**: 88% less FE for mining, crushing and smelting; 90% less for alloys, at the same speeds.
-- 🎨 **Theme color**: pick Default (blue), Purple or any color. The screen frame, buttons, read-outs and the energy bar (screens and Jade) follow it, and so does the glowing terminal on the front of your Miner, Crusher and Electric Furnace. Icons stay white.
+- 🎨 **Theme color**: pick Default (blue), Purple or any color. The screen frame, buttons, read-outs and the energy bar follow it, and so does the glowing terminal on the front of your Miner, Crusher and Electric Furnace. Icons stay white.
 - 🌀 **Dimensional Flux installed?** The Quantum Core can also be crafted with a Dimensional Block instead of a Conduit.
 
 - 🐚 **Craft Nautilus Shells** in the single tank with calcite and Liquid Experience.
@@ -31,7 +31,9 @@ Around it: the **Mechanical Crusher**, the **Electric Furnace**, the **Dimension
 - 🌳 **Corrupted Wood**: Dimensional Death turns natural trees into Corrupted Wood and their vines into corrupted vines, with a full purple wood set to craft from it. Your builds stay untouched.
 - 🌾 **Corrupted Tall Grass**: tall grass and large ferns now turn into a two-block corrupted plant, and Corrupted Grass has the vanilla grass shape.
 - 🍂 **Purple falling leaves** under corrupted trees on 26.1.2 and 26.3.
-- 🗺️ **FTB Chunks maps** show the corrupted land in purple shades, trees included.
+- 🗺️ **World maps** show the corrupted land in purple shades, trees included.
+- 🔥 **Netherite alloy**: 1 gold ingot + 1 netherite scrap make a netherite ingot in the Electric Furnace.
+- 🧪 **More compatibility with other mods**: the Electric Furnace now runs more alloys and furnace recipes from other mods.
 
 ---
 

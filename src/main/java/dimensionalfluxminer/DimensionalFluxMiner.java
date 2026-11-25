@@ -92,10 +92,14 @@ public final class DimensionalFluxMiner {
         //? if >=26.1 {
 
         // The guide, the matter values and the recipe viewers read these recipes on the client too.
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> event.sendRecipes(
-                DfmRecipes.CRUSHING.get(), DfmRecipes.ORE_CRUSHING.get(), DfmRecipes.ALLOYING.get(), DfmRecipes.TANK_CONTAINER.get(),
-                net.minecraft.world.item.crafting.RecipeType.CRAFTING, net.minecraft.world.item.crafting.RecipeType.SMELTING,
-                net.minecraft.world.item.crafting.RecipeType.BLASTING, net.minecraft.world.item.crafting.RecipeType.STONECUTTING));
+        // The recipes of other mods the Electric Furnace converts go too, so the viewers list the same alloys and furnace recipes.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> {
+            event.sendRecipes(
+                    DfmRecipes.CRUSHING.get(), DfmRecipes.ORE_CRUSHING.get(), DfmRecipes.ALLOYING.get(), DfmRecipes.TANK_CONTAINER.get(),
+                    net.minecraft.world.item.crafting.RecipeType.CRAFTING, net.minecraft.world.item.crafting.RecipeType.SMELTING,
+                    net.minecraft.world.item.crafting.RecipeType.BLASTING, net.minecraft.world.item.crafting.RecipeType.STONECUTTING);
+            event.sendRecipes(dimensionalfluxminer.recipe.ExternalAlloying.convertedTypes().toArray(net.minecraft.world.item.crafting.RecipeType<?>[]::new));
+        });
         //?} else {
         /*if (net.neoforged.fml.ModList.get().isLoaded("polymorph")) {
             dimensionalfluxminer.compat.polymorph.PolymorphCompat.register();

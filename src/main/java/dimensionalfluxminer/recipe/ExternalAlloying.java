@@ -7,10 +7,13 @@ import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import dimensionalfluxminer.DfmConfig;
 import dimensionalfluxminer.DimensionalFluxMiner;
+import dimensionalfluxminer.compat.ForbiddenArcanusRecipes;
 import dimensionalfluxminer.registry.DfmRecipes;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +29,7 @@ import net.minecraft.resources.Identifier;
 //?} else {
 /*import net.minecraft.resources.ResourceLocation;
 *///?}
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -46,16 +50,18 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 /**
  * Alloy recipes of other mods run by the Electric Furnace. The recipe types are configured
  * ({@link DfmConfig#externalAlloyTypes()}); each recipe is encoded with its own codec and read from that data: the
- * input list ({@code inputs} / {@code ingredients} / {@code input0..2}, each entry with an optional {@code count}),
- * the results ({@code output} / {@code result}, or the lists {@code results} / {@code outputs}: the second becomes the
- * byproduct), {@code experience} and the time ({@code time} / {@code processing_ticks}). Recipes this does not fit
- * (fluids, more than 3 ingredients, no item result) are skipped. No other mod is needed to build or run.
+ * input list ({@code inputs} / {@code ingredients} / {@code itemInputs} / {@code input0..2}, each entry with an optional
+ * {@code count}, a repeated entry counting once more), the results ({@code output} / {@code result}, or the lists
+ * {@code results} / {@code outputs} / {@code itemResults}: the second becomes the byproduct), {@code experience} and the
+ * time ({@code time} / {@code processing_ticks}). Recipes this does not fit (fluids, more than 3 ingredients, no item
+ * result) are skipped. The Clibano alloys are always converted ({@link ForbiddenArcanusRecipes}). A converted recipe
+ * that another recipe already covers is left out ({@link #withoutRedundant}). No other mod is needed to build or run.
  */
 public final class ExternalAlloying {
-    private static final List<String> INPUT_LISTS = List.of("inputs", "ingredients");
+    private static final List<String> INPUT_LISTS = List.of("inputs", "ingredients", "itemInputs");
     private static final List<String> INPUT_KEYS = List.of("input0", "input1", "input2");
     private static final List<String> SINGLE_RESULTS = List.of("output", "result");
-    private static final List<String> RESULT_LISTS = List.of("results", "outputs");
+    private static final List<String> RESULT_LISTS = List.of("results", "outputs", "itemResults");
     private static final List<String> TIME_KEYS = List.of("time", "processing_ticks", "processingTime", "duration");
     private static final Set<String> NESTED_INGREDIENT = Set.of("ingredient", "base_ingredient", "value");
 
@@ -81,8 +87,9 @@ public final class ExternalAlloying {
             //?} else {
             /*List<RecipeHolder<AlloyingRecipe>> list = new ArrayList<>(manager.getAllRecipesFor(DfmRecipes.ALLOYING.get()));
             *///?}
+            int own = list.size();
             list.addAll(convert(manager, registries));
-            cached = List.copyOf(list);
+            cached = List.copyOf(withoutRedundant(list, own));
             cachedManager = manager;
         }
         return cached;
@@ -110,6 +117,23 @@ public final class ExternalAlloying {
         return Optional.empty();
     }
 
+    /** Recipe types of other mods the Electric Furnace converts (configured alloys and the Clibano), when registered. */
+    public static List<RecipeType<?>> convertedTypes() {
+        List<RecipeType<?>> out = new ArrayList<>();
+        //? if >=26.1 {
+        List<Identifier> ids = new ArrayList<>(DfmConfig.externalAlloyTypes());
+        //?} else {
+        /*List<ResourceLocation> ids = new ArrayList<>(DfmConfig.externalAlloyTypes());
+        *///?}
+        ids.addAll(ForbiddenArcanusRecipes.types());
+        ids.forEach(id -> BuiltInRegistries.RECIPE_TYPE.getOptional(id).ifPresent(type -> {
+            if (!out.contains(type)) {
+                out.add(type);
+            }
+        }));
+        return out;
+    }
+
     //? if >=26.1 {
     private static List<RecipeHolder<AlloyingRecipe>> convert(RecipeMap manager, HolderLookup.Provider registries) {
         List<Identifier> types = DfmConfig.externalAlloyTypes();
@@ -117,9 +141,6 @@ public final class ExternalAlloying {
     /*private static List<RecipeHolder<AlloyingRecipe>> convert(RecipeManager manager, HolderLookup.Provider registries) {
         List<ResourceLocation> types = DfmConfig.externalAlloyTypes();
     *///?}
-        if (types.isEmpty()) {
-            return List.of();
-        }
         RegistryOps<JsonElement> ops = registries.createSerializationContext(JsonOps.INSTANCE);
         List<AbstractCookingRecipe> cooking = new ArrayList<>();
         //? if >=26.1 {
@@ -137,19 +158,104 @@ public final class ExternalAlloying {
         /*for (RecipeHolder<?> holder : manager.getRecipes()) {
             ResourceLocation type = BuiltInRegistries.RECIPE_TYPE.getKey(holder.value().getType());
         *///?}
-            if (type != null && types.contains(type)) {
-                // Own id, so recipe viewers never mix it up with the original recipe of the other mod.
-                //? if >=26.1 {
-                Identifier original = holder.id().identifier();
-                ResourceKey<Recipe<?>> id = ResourceKey.create(Registries.RECIPE, DimensionalFluxMiner.id("external/" + original.getNamespace() + "/" + original.getPath()));
-                //?} else {
-                /*ResourceLocation id = DimensionalFluxMiner.id("external/" + holder.id().getNamespace() + "/" + holder.id().getPath());
-                *///?}
-                read(holder.value(), ops).filter(recipe -> !isFurnaceCopy(recipe, cooking, registries))
-                        .ifPresent(recipe -> out.add(new RecipeHolder<>(id, recipe)));
+            if (type == null) {
+                continue;
+            }
+            Optional<AlloyingRecipe> converted;
+            if (types.contains(type)) {
+                converted = read(holder.value(), ops).filter(recipe -> !isFurnaceCopy(recipe, cooking, registries));
+            } else if (ForbiddenArcanusRecipes.isAlloyType(type)) {
+                converted = encode(holder.value(), ops).flatMap(json -> ForbiddenArcanusRecipes.alloy(json, ops, registries));
+            } else {
+                continue;
+            }
+            // Own id, so recipe viewers never mix it up with the original recipe of the other mod.
+            //? if >=26.1 {
+            Identifier original = holder.id().identifier();
+            ResourceKey<Recipe<?>> id = ResourceKey.create(Registries.RECIPE, DimensionalFluxMiner.id("external/" + original.getNamespace() + "/" + original.getPath()));
+            //?} else {
+            /*ResourceLocation id = DimensionalFluxMiner.id("external/" + holder.id().getNamespace() + "/" + holder.id().getPath());
+            *///?}
+            converted.ifPresent(recipe -> out.add(new RecipeHolder<>(id, recipe)));
+        }
+        return out;
+    }
+
+    /**
+     * Leaves out the converted recipes another recipe already covers: same result (at least as many), same byproduct and
+     * the same items in each lane, none needed in a larger amount. Of two identical recipes the first stays. The mod's
+     * own recipes (the first {@code own} entries) always stay.
+     */
+    public static List<RecipeHolder<AlloyingRecipe>> withoutRedundant(List<RecipeHolder<AlloyingRecipe>> recipes, int own) {
+        List<List<Set<Item>>> lanes = new ArrayList<>();
+        recipes.forEach(holder -> lanes.add(laneItems(holder.value())));
+        List<RecipeHolder<AlloyingRecipe>> out = new ArrayList<>(recipes.subList(0, own));
+        for (int i = own; i < recipes.size(); i++) {
+            AlloyingRecipe recipe = recipes.get(i).value();
+            boolean covered = false;
+            for (int j = 0; j < recipes.size() && !covered; j++) {
+                AlloyingRecipe other = recipes.get(j).value();
+                covered = j != i && covers(other, lanes.get(j), recipe, lanes.get(i))
+                        && (j < i || !covers(recipe, lanes.get(i), other, lanes.get(j)));
+            }
+            if (!covered) {
+                out.add(recipes.get(i));
             }
         }
         return out;
+    }
+
+    /** True when {@code a} makes at least what {@code b} makes from the same items, never needing more of them. */
+    private static boolean covers(AlloyingRecipe a, List<Set<Item>> aLanes, AlloyingRecipe b, List<Set<Item>> bLanes) {
+        if (a.ingredients().size() != b.ingredients().size() || !atLeast(a.result(), b.result())
+                || a.byproduct().isPresent() != b.byproduct().isPresent()) {
+            return false;
+        }
+        if (a.byproduct().isPresent() && (a.byproduct().get().chance() < b.byproduct().get().chance()
+                || !atLeast(a.byproduct().get().stack(), b.byproduct().get().stack()))) {
+            return false;
+        }
+        return lanesCovered(a, aLanes, b, bLanes, 0, new boolean[b.ingredients().size()]);
+    }
+
+    private static boolean lanesCovered(AlloyingRecipe a, List<Set<Item>> aLanes, AlloyingRecipe b, List<Set<Item>> bLanes,
+                                        int lane, boolean[] used) {
+        if (lane == aLanes.size()) {
+            return true;
+        }
+        for (int k = 0; k < bLanes.size(); k++) {
+            if (!used[k] && !aLanes.get(lane).isEmpty() && aLanes.get(lane).equals(bLanes.get(k))
+                    && a.ingredients().get(lane).count() <= b.ingredients().get(k).count()) {
+                used[k] = true;
+                if (lanesCovered(a, aLanes, b, bLanes, lane + 1, used)) {
+                    return true;
+                }
+                used[k] = false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean atLeast(ItemStack a, ItemStack b) {
+        return !a.isEmpty() && ItemStack.isSameItemSameComponents(a, b) && a.getCount() >= b.getCount();
+    }
+
+    private static List<Set<Item>> laneItems(AlloyingRecipe recipe) {
+        List<Set<Item>> lanes = new ArrayList<>();
+        for (SizedIngredient sized : recipe.ingredients()) {
+            Set<Item> items = new LinkedHashSet<>();
+            //? if >=26.1 {
+            for (ItemStack option : dimensionalfluxminer.recipe.Recipes.stacks(sized.ingredient())) {
+            //?} else {
+            /*for (ItemStack option : sized.ingredient().getItems()) {
+            *///?}
+                if (!option.isEmpty()) {
+                    items.add(option.getItem());
+                }
+            }
+            lanes.add(items);
+        }
+        return lanes;
     }
 
     /**
@@ -183,18 +289,24 @@ public final class ExternalAlloying {
         return false;
     }
 
+    /** The recipe as its own codec writes it, or empty when it cannot be written. */
     @SuppressWarnings("unchecked")
-    static Optional<AlloyingRecipe> read(Recipe<?> recipe, RegistryOps<JsonElement> ops) {
-        JsonElement encoded;
+    public static Optional<JsonObject> encode(Recipe<?> recipe, RegistryOps<JsonElement> ops) {
         try {
             MapCodec<Recipe<?>> codec = (MapCodec<Recipe<?>>) recipe.getSerializer().codec();
-            encoded = codec.codec().encodeStart(ops, recipe).result().orElse(null);
+            return codec.codec().encodeStart(ops, recipe).result()
+                    .filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject);
         } catch (RuntimeException e) {
             return Optional.empty();
         }
-        if (!(encoded instanceof JsonObject json)) {
+    }
+
+    static Optional<AlloyingRecipe> read(Recipe<?> recipe, RegistryOps<JsonElement> ops) {
+        Optional<JsonObject> encoded = encode(recipe, ops);
+        if (encoded.isEmpty() || usesFluid(encoded.get())) {
             return Optional.empty();
         }
+        JsonObject json = encoded.get();
         List<SizedIngredient> ingredients = ingredients(json, ops);
         List<ItemStack> results = results(json, ops);
         if (ingredients.isEmpty() || ingredients.size() > AlloyRecipeInput.LANES || results.isEmpty()) {
@@ -211,6 +323,27 @@ public final class ExternalAlloying {
             }
         }
         return Optional.of(new AlloyingRecipe(ingredients, results.getFirst(), byproduct, ticks, Math.max(0, experience)));
+    }
+
+    /** True when a fluid field holds a fluid (a non-empty list, or an entry with an amount): the furnace moves items only. */
+    private static boolean usesFluid(JsonObject json) {
+        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+            if (!entry.getKey().toLowerCase(Locale.ROOT).contains("fluid")) {
+                continue;
+            }
+            JsonElement value = entry.getValue();
+            if (value.isJsonArray() && !value.getAsJsonArray().isEmpty()) {
+                return true;
+            }
+            if (value.isJsonObject()) {
+                JsonObject fluid = value.getAsJsonObject();
+                JsonElement amount = fluid.has("amount") ? fluid.get("amount") : fluid.get("count");
+                if (amount != null && amount.isJsonPrimitive() && amount.getAsJsonPrimitive().isNumber() && amount.getAsInt() > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** Counted ingredients; identical entries are merged. Empty when an entry is not an item ingredient. */

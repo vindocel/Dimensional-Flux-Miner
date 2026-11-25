@@ -3,6 +3,7 @@ package dimensionalfluxminer.furnace;
 import dimensionalfluxminer.recipe.AlloyRecipeInput;
 import dimensionalfluxminer.recipe.AlloyingRecipe;
 import dimensionalfluxminer.recipe.ExternalAlloying;
+import dimensionalfluxminer.recipe.ExternalCooking;
 import dimensionalfluxminer.recipe.RecipeChoices;
 import dimensionalfluxminer.registry.DfmTags;
 import java.util.ArrayList;
@@ -161,7 +162,10 @@ final class ElectricFurnaceRecipes {
         return defaultRecipe(level, new SingleRecipeInput(stack.copyWithCount(1))).map(RecipeHolder::value);
     }
 
-    /** Blast furnace recipe of the item, otherwise its furnace recipe. */
+    /**
+     * Blast furnace recipe of the item, otherwise its furnace recipe, otherwise a furnace recipe of another mod's furnace
+     * that only the Electric Furnace runs ({@link ExternalCooking}).
+     */
     private static Optional<RecipeHolder<? extends AbstractCookingRecipe>> defaultRecipe(Level level, SingleRecipeInput input) {
         //? if >=26.1 {
         RecipeMap manager = dimensionalfluxminer.recipe.Recipes.map(level);
@@ -171,11 +175,15 @@ final class ElectricFurnaceRecipes {
         Optional<RecipeHolder<? extends AbstractCookingRecipe>> blasting = manager.getRecipeFor(RecipeType.BLASTING, input, level)
         *///?}
                 .map(h -> h);
+        if (blasting.isPresent()) {
+            return blasting;
+        }
         //? if >=26.1 {
-        return blasting.isPresent() ? blasting : dimensionalfluxminer.recipe.Recipes.first(level, RecipeType.SMELTING, input).map(h -> h);
+        Optional<RecipeHolder<? extends AbstractCookingRecipe>> smelting = dimensionalfluxminer.recipe.Recipes.first(level, RecipeType.SMELTING, input).map(h -> h);
         //?} else {
-        /*return blasting.isPresent() ? blasting : manager.getRecipeFor(RecipeType.SMELTING, input, level).map(h -> h);
+        /*Optional<RecipeHolder<? extends AbstractCookingRecipe>> smelting = manager.getRecipeFor(RecipeType.SMELTING, input, level).map(h -> h);
         *///?}
+        return smelting.isPresent() ? smelting : ExternalCooking.find(level, input).map(h -> h);
     }
 
     /**

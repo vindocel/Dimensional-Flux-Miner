@@ -318,13 +318,19 @@ also runs as alloys:
 - A recipe is taken only when it has 1 to 3 item ingredients (counts allowed) and item results. A second result becomes
   the byproduct, always with a 100% chance. Recipes with fluids, more than 3 ingredients or no item result are skipped,
   and so are plain copies of furnace recipes.
-- The mod reads the recipe's own data, so it can only find the fields it knows: inputs in `inputs`, `ingredients` or
-  `input0` to `input2`; results in `output`, `result`, `results` or `outputs`; `experience`; the time in `time`,
+- The mod reads the recipe's own data, so it can only find the fields it knows: inputs in `inputs`, `ingredients`,
+  `itemInputs` or `input0` to `input2` (a repeated entry counts once more); results in `output`, `result`, `results`,
+  `outputs` or `itemResults`; `experience`; the time in `time`,
   `processing_ticks`, `processingTime` or `duration` (100 ticks when none is found). Other recipe formats are skipped.
   Whether a given type works therefore depends on the other mod's format. The two defaults are the ones the mod was
   written for.
-- The mod's own `alloying` recipes are always tried first.
-- An empty list (`[]`) turns the feature off.
+- The mod's own `alloying` recipes are always tried first. A converted recipe that another recipe already covers (same
+  result and byproduct, the same items in each input, none in a larger amount) is left out, so an alloy is never listed
+  twice.
+- An empty list (`[]`) turns the feature off. It does not affect the Forbidden Arcanus Clibano recipes, which are read
+  whenever that mod is installed: melting of one item runs in the furnace lanes for items without a furnace recipe,
+  and alloys of up to three materials run as alloys (each molten material counted as its result item, 9 units per item).
+  Remove a Clibano recipe with a datapack to keep it out of the Electric Furnace.
 
 ### 2.4 Dimensional Death
 

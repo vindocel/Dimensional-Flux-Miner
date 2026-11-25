@@ -1,0 +1,21 @@
+{
+  "type": "dimensionalfluxminer:alloying",
+  "ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:ingots/gold"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:netherite_scrap"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "minecraft:netherite_ingot",
+    "count": 1
+  }
+}
